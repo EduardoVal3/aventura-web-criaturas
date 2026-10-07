@@ -1,0 +1,52 @@
+flowchart TD
+    Ingreso["PantallaIngreso"]
+    Registro["PantallaRegistro"]
+    Creditos["PantallaCreditos"]
+    CrearPJ["PantallaCrearPersonaje"]
+    Hub["PantallaHubUbicacion"]
+    Explorar["PantallaExploracion"]
+    Combate["PantallaCombate"]
+    Equipo["PantallaEquipo"]
+    Almacen["PantallaAlmacen"]
+    Inventario["PantallaInventario"]
+    Tienda["PantallaTienda"]
+    Curacion["PantallaCuracion"]
+    Catalogo["PantallaCatalogo"]
+    Historial["PantallaHistorial"]
+
+    Ingreso -->|¿No tiene cuenta?| Registro
+    Ingreso -->|Ver atribuciones| Creditos
+    Registro -->|Cuenta creada| CrearPJ
+    Ingreso -->|Sesión iniciada sin PJ| CrearPJ
+    Ingreso -->|Sesión iniciada con PJ| Hub
+
+    CrearPJ -->|Personaje creado| Hub
+    CrearPJ -->|Cancelar| Ingreso
+    Creditos -->|Volver| Ingreso
+
+    Hub -->|Cerrar sesión| Ingreso
+    Hub -->|Viajar a ruta silvestre| Explorar
+    Hub -->|Gestionar compañeros| Equipo
+    Hub -->|Ver objetos| Inventario
+    Hub -->|Visitar bazar| Tienda
+    Hub -->|Santuario de salud| Curacion
+    Hub -->|Consultar compendio| Catalogo
+    Hub -->|Ver bitácora| Historial
+
+    Explorar -->|Retirada segura| Hub
+    Explorar -->|Evento ENCUENTRO| Combate
+    Explorar -->|Viajar entre zonas| Explorar
+
+    Combate -->|Victoria / Derrota / Huida| Explorar
+    Combate -->|Captura exitosa| Explorar
+
+    Equipo -->|Transferir al almacén| Almacen
+    Equipo -->|Volver al hub| Hub
+    Almacen -->|Mover al equipo| Equipo
+    Almacen -->|Volver al hub| Hub
+
+    Inventario -->|Volver al hub| Hub
+    Tienda -->|Volver al hub| Hub
+    Curacion -->|Equipo restaurado / Volver| Hub
+    Catalogo -->|Volver al hub| Hub
+    Historial -->|Volver al hub| Hub

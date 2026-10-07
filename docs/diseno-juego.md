@@ -88,20 +88,20 @@ flowchart LR
 
 ## 5. Los 13 módulos obligatorios sobre papel
 
-| ID | Nombre | Qué hace en el juego | Pantallas (previstas) | Endpoints (previstos) |
+| ID | Nombre | Qué hace en el juego | Pantallas | Endpoints (previstos) |
 | --- | --- | --- | --- | --- |
-| `M-USR` | Usuarios | Registro de cuenta, inicio de sesión y validación de tokens de sesión. | `PantallaRegistro`, `PantallaLogin` | `POST /api/usuarios/registro`, `POST /api/usuarios/login` |
-| `M-PJ` | Personaje | Creación y visualización del explorador, ubicación actual, saldo de monedas y estado de progreso. | `PantallaCrearPersonaje`, `PantallaEstadoPersonaje` | `POST /api/personajes`, `GET /api/personajes/activo` |
-| `M-MUN` | Mundo | Consulta de localidades, rutas conectadas, desplazamientos válidos y estado de accesos. | `PantallaLocalidad`, `PantallaMapaMundo` | `GET /api/mundo/ubicacion-actual`, `POST /api/mundo/viajar` |
-| `M-EXP` | Exploración | Ejecución de eventos de exploración probabilística al recorrer una zona activa. | `PantallaZonaExploracion` | `POST /api/exploracion/explorar` |
-| `M-CRI` | Criaturas | Catálogo de especies base, fichas detalladas de estadísticas y cálculo de niveles. | `PantallaFichaCriatura`, `PantallaSeleccionInicial` | `GET /api/especies`, `GET /api/especies/:id` |
-| `M-ENC` | Encuentros | Generación y control de encuentros con criaturas salvajes según tablas de aparición de zona. | `PantallaEncuentro` | `GET /api/encuentros/activo` |
+| `M-USR` | Usuarios | Registro de cuenta, inicio de sesión y validación de tokens de sesión. | `PantallaIngreso`, `PantallaRegistro` | `POST /api/usuarios/registro`, `POST /api/usuarios/login` |
+| `M-PJ` | Personaje | Creación y visualización del explorador, ubicación actual, saldo de monedas y estado de progreso. | `PantallaCrearPersonaje`, `PantallaHubUbicacion` | `POST /api/personajes`, `GET /api/personajes/activo` |
+| `M-MUN` | Mundo | Consulta de localidades, rutas conectadas, desplazamientos válidos y estado de accesos. | `PantallaHubUbicacion` | `GET /api/mundo/ubicacion-actual`, `POST /api/mundo/viajar` |
+| `M-EXP` | Exploración | Ejecución de eventos de exploración probabilística al recorrer una zona activa. | `PantallaExploracion` | `POST /api/exploracion/explorar` |
+| `M-CRI` | Criaturas | Catálogo de especies base, fichas detalladas de estadísticas y cálculo de niveles. | `PantallaCatalogo`, `PantallaCrearPersonaje` | `GET /api/especies`, `GET /api/especies/:id` |
+| `M-ENC` | Encuentros | Generación y control de encuentros con criaturas salvajes según tablas de aparición de zona. | `PantallaExploracion`, `PantallaCombate` | `GET /api/encuentros/activo` |
 | `M-COM` | Combate | Resolución del combate por turnos (ataques, daño, orden de turnos, estado de combate). | `PantallaCombate` | `POST /api/combate/atacar`, `POST /api/combate/huir` |
 | `M-CAP` | Captura | Intento de captura de criaturas durante el combate mediante talismanes, validado por servidor. | `PantallaCombate` | `POST /api/combate/capturar` |
 | `M-EQU` | Equipo | Gestión de hasta 6 criaturas activas en el equipo y transferencia al almacén de reserva. | `PantallaEquipo`, `PantallaAlmacen` | `GET /api/equipo`, `POST /api/equipo/transferir` |
 | `M-INV` | Inventario | Administración de objetos consumibles (talismanes, pociones) y compra en tiendas de localidades. | `PantallaInventario`, `PantallaTienda` | `GET /api/inventario`, `POST /api/tienda/comprar` |
-| `M-CUR` | Curación | Restauración completa de la salud de todas las criaturas del equipo en centros autorizados. | `PantallaCentroCuracion` | `POST /api/curacion/restaurar` |
-| `M-PRO` | Progreso | Registro de hitos, verificación de requisitos y desbloqueo formal de zonas restringidas. | `PantallaEstadoPersonaje`, `PantallaZonaExploracion` | `GET /api/progreso/desbloqueos`, `POST /api/progreso/verificar-zona` |
+| `M-CUR` | Curación | Restauración completa de la salud de todas las criaturas del equipo en centros autorizados. | `PantallaCuracion` | `POST /api/curacion/restaurar` |
+| `M-PRO` | Progreso | Registro de hitos, verificación de requisitos y desbloqueo formal de zonas restringidas. | `PantallaHubUbicacion` | `GET /api/progreso/desbloqueos`, `POST /api/progreso/verificar-zona` |
 | `M-HIS` | Historial | Registro cronológico y consulta de eventos destacados de exploración, combates y capturas. | `PantallaHistorial` | `GET /api/historial` |
 
 ---

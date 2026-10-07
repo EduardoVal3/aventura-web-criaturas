@@ -1,0 +1,107 @@
+erDiagram
+    USUARIO ||--o| PERSONAJE : "posee"
+    PERSONAJE ||--o{ CRIATURA : "tiene"
+    PERSONAJE ||--o{ INVENTARIO_ITEM : "guarda"
+    PERSONAJE }o--|| UBICACION : "se encuentra en"
+    PERSONAJE ||--o{ ENCUENTRO : "participa en"
+    PERSONAJE ||--o{ HISTORIAL_EVENTO : "registra"
+    
+    UBICACION ||--o{ CONEXION_UBICACION : "conecta desde"
+    UBICACION ||--o{ TABLA_APARICION : "alberga"
+    UBICACION ||--o{ TABLA_EVENTO : "dispone de"
+
+    ESPECIE ||--o{ MOVIMIENTO : "dispone de"
+    ESPECIE ||--o{ CRIATURA : "arquetipo de"
+    ESPECIE ||--o{ TABLA_APARICION : "se sortea en"
+    
+    ITEM ||--o{ INVENTARIO_ITEM : "clasifica"
+    ENCUENTRO }o--|| ESPECIE : "enfrenta especie"
+
+    USUARIO {
+        string id
+        string correo
+        string nombreUsuario
+    }
+    PERSONAJE {
+        string id
+        string nombre
+        int monedas
+        string ubicacionActualId
+    }
+    UBICACION {
+        string id
+        string nombre
+        string tipo
+        boolean esSegura
+        string descripcion
+    }
+    CONEXION_UBICACION {
+        string origenId
+        string destinoId
+        boolean estaBloqueada
+        string requisitoDesbloqueo
+    }
+    ESPECIE {
+        string id
+        string keyExterna
+        string nombre
+        string slug
+        string tipo
+        float challengeRating
+        int hpBase
+        int ataqueBase
+        int defensaBase
+        int velocidadBase
+        float tasaCaptura
+        boolean esEspecial
+    }
+    MOVIMIENTO {
+        string id
+        string nombre
+        string nombreOriginal
+        float poder
+    }
+    CRIATURA {
+        string id
+        int nivel
+        int hpActual
+        int hpMaximo
+        int puntosExperiencia
+        boolean enEquipo
+        int ordenEquipo
+        boolean enAlmacen
+    }
+    ITEM {
+        string id
+        string codigo
+        string nombre
+        string tipo
+        int precio
+    }
+    INVENTARIO_ITEM {
+        string id
+        int cantidad
+    }
+    ENCUENTRO {
+        string id
+        string estado
+        int turno
+        int hpActualRival
+    }
+    TABLA_APARICION {
+        string id
+        int peso
+        int nivelMin
+        int nivelMax
+    }
+    TABLA_EVENTO {
+        string id
+        string tipoEvento
+        int peso
+    }
+    HISTORIAL_EVENTO {
+        string id
+        string tipoEvento
+        string descripcion
+        string marcaTiempo
+    }

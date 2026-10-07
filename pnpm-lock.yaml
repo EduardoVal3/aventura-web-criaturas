@@ -7,3 +7,7 @@ settings:
 importers:
 
   .: {}
+
+  apps/api: {}
+
+  apps/web: {}

@@ -83,7 +83,7 @@ export default function EnemyHealthDisplay({
         <div className="flex items-center gap-2">
           <span className={cn("font-bold", enemyNameColor)}>{enemyName}</span>
           {showLevel && level && (
-            <span className="text-muted-foreground">Lv.{level}</span>
+            <span className="text-muted-foreground">Niv.{level}</span>
           )}
         </div>
         {showHealthText && (

@@ -13,7 +13,7 @@ export default function XpBar({
   className,
   variant,
   value,
-  levelUpMessage = "LEVEL UP!",
+  levelUpMessage = "¡SUBIÓ DE NIVEL!",
   ...props
 }: XpBarProps) {
   const isLevelUp = value === 100;

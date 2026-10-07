@@ -29,7 +29,7 @@ const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
             strokeWidth="0.25"
             className={cn("animate-spin size-5", className)}
             role="status"
-            aria-label="Loading"
+            aria-label="Cargando"
             {...(props as React.ComponentProps<"svg">)}
           >
             <rect x="200" y="80" width="14" height="14" rx="1"></rect>
@@ -80,7 +80,7 @@ const Spinner = React.forwardRef<SVGSVGElement, SpinnerProps>(
             fill="currentColor"
             className={cn("size-4", className)}
             role="status"
-            aria-label="Loading"
+            aria-label="Cargando"
             {...(props as React.ComponentProps<"svg">)}
           >
             <style

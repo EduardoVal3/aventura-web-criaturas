@@ -5,6 +5,7 @@ import {
 } from "react-router";
 
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
+import { PaginaKitUi } from "@/paginas/PaginaKitUi";
 import { PaginaNoEncontrada } from "@/paginas/PaginaNoEncontrada";
 import { PaginaPendiente } from "@/paginas/PaginaPendiente";
 
@@ -23,7 +24,6 @@ const rutasPlaceholder = [
   { ruta: "/catalogo", titulo: "Catálogo" },
   { ruta: "/historial", titulo: "Historial" },
   { ruta: "/creditos", titulo: "Créditos y licencias" },
-  { ruta: "/kit-ui", titulo: "Kit de interfaz" },
 ];
 
 const enrutador = createBrowserRouter([
@@ -34,6 +34,10 @@ const enrutador = createBrowserRouter([
       {
         index: true,
         element: <Navigate to="/ingreso" replace />,
+      },
+      {
+        path: "/kit-ui",
+        element: <PaginaKitUi />,
       },
       ...rutasPlaceholder.map(({ ruta, titulo }) => ({
         path: ruta,

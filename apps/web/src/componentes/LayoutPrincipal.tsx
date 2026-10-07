@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router";
+import { Toaster } from "@/components/ui/sonner";
 
 export function LayoutPrincipal() {
   return (
@@ -54,6 +55,7 @@ export function LayoutPrincipal() {
           </nav>
         </div>
       </footer>
+      <Toaster />
     </div>
   );
 }

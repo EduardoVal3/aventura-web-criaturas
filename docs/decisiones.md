@@ -70,3 +70,54 @@
   - Módulos: `M-MUN`, `M-EXP`, `M-CUR`, `M-PRO`.
   - Pantallas: `PantallaLocalidad`, `PantallaZonaExploracion`, `PantallaMapaMundo`.
   - Tablas/Entidades: `Ubicacion`, `ConexionUbicacion`, `TablaAparicionZona`, `TablaEventoZona`.
+
+## D-06. Sistema de diseño Front-End: 8bitcn/ui sobre shadcn/ui y Tailwind CSS v4
+- **Fuentes y documentación consultada:**
+  - 8bitcn/ui: `https://www.8bitcn.com/docs` y `https://github.com/TheOrcDev/8bitcn-ui` (Licencia MIT, Copyright (c) 2025 8bitcn).
+  - shadcn/ui para Vite: `https://github.com/shadcn-ui/ui/blob/main/apps/v4/content/docs/installation/vite.mdx`.
+  - React Router (modo biblioteca): `https://github.com/remix-run/react-router/blob/main/docs/start/modes.md`.
+- **Versiones exactas instaladas (sin rangos `^` ni `~`):**
+  - `react`: 19.3.0
+  - `react-dom`: 19.3.0
+  - `vite`: 8.3.3
+  - `typescript`: 6.0.3
+  - `tailwindcss`: 4.3.3
+  - `@tailwindcss/vite`: 4.3.3
+  - `shadcn` (CLI): 4.21.4
+  - `react-router`: 8.4.0
+  - `radix-ui`: 1.7.0
+  - `lucide-react`: 1.52.0
+  - `class-variance-authority`: 0.7.1
+  - `cn`: 0.4.0
+  - `sonner`: 2.0.8
+  - `next-themes`: 0.4.6
+  - `tw-animate-css`: 1.4.0
+- **Ruta real de los componentes generada por el CLI:**
+  - Los componentes de 8bitcn se ubican en `apps/web/src/components/ui/8bit/`, acompañados de sus envoltorios base de shadcn en `apps/web/src/components/ui/`.
+  - *Nota:* Esta ruta en inglés (`components/ui/8bit/`) la impone la herramienta y el registro oficial de shadcn/8bitcn como excepción técnica aceptada por el glosario (§1 y R1).
+- **Tabla de uso de componentes en el juego:**
+  | Elemento del juego | Componente 8bitcn/ui | Función en la interfaz |
+  | --- | --- | --- |
+  | HP de criatura aliada | `health-bar` | Barra de salud con valor porcentual en equipo y combate |
+  | HP de enemigo en encuentro | `enemy-health-display` | Panel con nombre, nivel y barra de salud del rival |
+  | Experiencia acumulada | `xp-bar` | Barra de XP con animación de ¡SUBIÓ DE NIVEL! |
+  | Progreso general de zona | `progress` | Porcentaje de avance de expedición en el área |
+  | Tarjetas de equipo y criaturas | `card` y `badge` | Fichas de criaturas, estadísticas y distintivos de tipo |
+  | Encuentro y confirmaciones | `dialog` y `alert-dialog` | Modales de encuentro silvestre y confirmación de huida |
+  | Inventario e historial | `table` | Tablas con encabezados, subtítulos y datos de eventos |
+  | Mensajes de eventos | `toast` | Notificaciones emergentes de capturas y subidas de nivel |
+  | Carga y esperas | `skeleton` y `spinner` | Bloques animados y rueda retro durante consultas asíncronas |
+  | Acciones principales | `button` | Interacciones, ataques, opciones y navegación |
+  | Formulario de expedición | `form` + `input`, `label`, `select` | Captura y validación nativa de datos de usuario |
+  | Pestañas de pantalla | `tabs` | Separación de vistas de equipo, almacén y ajustes |
+- **Compatibilidad con Vite y dependencias extra:**
+  - Reemplazos de `next/*`: ninguno (`Get-ChildItem` no detectó imports de Next.js en el código copiado).
+  - Componentes que requirieron dependencias extra para tipado estricto en TypeScript:
+    - `@radix-ui/react-alert-dialog`: 1.1.24 (para tipos de `AlertDialogPrimitive`)
+    - `@radix-ui/react-label`: 2.1.16 (para tipos de `LabelPrimitive`)
+    - `@radix-ui/react-select`: 2.3.8 (para tipos de `SelectPrimitive`)
+    - `@radix-ui/react-tabs`: 1.1.22 (para tipos de `TabsPrimitive`)
+- **Modo de API:**
+  - Controlado por la variable de entorno `VITE_MODO_API` (`simulado` por defecto, o `http`).
+  - URL base configurable mediante `VITE_URL_API` (prefijo `/api`).
+  - La interfaz `ApiJuego` aísla por completo la capa de presentación de la implementación de datos (`ARQ`).

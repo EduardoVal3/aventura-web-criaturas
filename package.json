@@ -8,5 +8,14 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "dev": "docker compose up -d postgres && pnpm -r --parallel run dev"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "bcrypt",
+      "prisma"
+    ]
   }
 }

@@ -1,0 +1,2026 @@
+[
+  {
+    "key": "srd-2024_wolf",
+    "name": "Wolf",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 12,
+    "hit_points": 11,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_giant-wolf-spider",
+    "name": "Giant Wolf Spider",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 40,
+      "swim": 20
+    },
+    "armor_class": 13,
+    "hit_points": 11,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 5 (1d4 + 3) Piercing damage plus 5 (2d4) Poison damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_skeleton",
+    "name": "Skeleton",
+    "type": {
+      "name": "Undead",
+      "key": "undead"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 14,
+    "hit_points": 13,
+    "actions": [
+      {
+        "name": "Shortbow",
+        "desc": "Ranged Attack Roll: +5, range 80/320 ft. 6 (1d6 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Shortbow attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": null,
+            "range": 80,
+            "long_range": 320,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Shortsword",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 6 (1d6 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Shortsword attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_zombie",
+    "name": "Zombie",
+    "type": {
+      "name": "Undead",
+      "key": "undead"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 8,
+    "hit_points": 15,
+    "actions": [
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +3, reach 5 ft. 5 (1d8 + 1) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 3,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": null,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_axe-beak",
+    "name": "Axe Beak",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 11,
+    "hit_points": 19,
+    "actions": [
+      {
+        "name": "Beak",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Beak attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_black-bear",
+    "name": "Black Bear",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 30
+    },
+    "armor_class": 11,
+    "hit_points": 19,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The bear makes two Rend attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_cockatrice",
+    "name": "Cockatrice",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 0.5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 40,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 11,
+    "hit_points": 22,
+    "actions": [
+      {
+        "name": "Petrifying Bite",
+        "desc": "Melee Attack Roll: +3, reach 5 ft. 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure The target has the Petrified condition, instead of the Restrained condition, for 24 hours.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Petrifying Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 3,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": 1,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_dire-wolf",
+    "name": "Dire Wolf",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 14,
+    "hit_points": 22,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 8 (1d10 + 3) Piercing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D10",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_ghoul",
+    "name": "Ghoul",
+    "type": {
+      "name": "Undead",
+      "key": "undead"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 12,
+    "hit_points": 22,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Piercing damage plus 3 (1d6) Necrotic damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 4 (1d4 + 2) Slashing damage. If the target is a creature that isn't an Undead or elf, it is subjected to the following effect. Constitution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The ghoul makes two Bite attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_brown-bear",
+    "name": "Brown Bear",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 20
+    },
+    "armor_class": 11,
+    "hit_points": 22,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 7 (1d8 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 5 (1d4 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The bear makes one Bite attack and one Claw attack.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_tiger",
+    "name": "Tiger",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 13,
+    "hit_points": 30,
+    "actions": [
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 10 (2d6 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Nimble Escape",
+        "desc": "The tiger takes the Disengage or Hide action.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_animated-armor",
+    "name": "Animated Armor",
+    "type": {
+      "name": "Construct",
+      "key": "construct"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 25,
+      "crawl": 12,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 12,
+      "swim": 12
+    },
+    "armor_class": 18,
+    "hit_points": 33,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The armor makes two Slam attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_allosaurus",
+    "name": "Allosaurus",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 60,
+      "crawl": 30,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 30
+    },
+    "armor_class": 13,
+    "hit_points": 51,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 15 (2d10 + 4) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D10",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Claws",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 8 (1d8 + 4) Slashing damage. If the target is a Large or smaller creature and the allosaurus moved 30+ feet straight toward it immediately before the hit, the target has the Prone condition, and the allosaurus can make one Bite attack against it.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claws attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_awakened-tree",
+    "name": "Awakened Tree",
+    "type": {
+      "name": "Plant",
+      "key": "plant"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 13,
+    "hit_points": 59,
+    "actions": [
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +6, reach 10 ft. 13 (2d8 + 4) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_griffon",
+    "name": "Griffon",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 80,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 12,
+    "hit_points": 59,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The griffon makes two Rend attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 8 (1d8 + 4) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon's front claws.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_gargoyle",
+    "name": "Gargoyle",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 60,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 15,
+    "hit_points": 67,
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 7 (2d4 + 2) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D4",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The gargoyle makes two Claw attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_basilisk",
+    "name": "Basilisk",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 15,
+    "hit_points": 52,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 10 (2d6 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Petrifying Gaze (Recharge 4-6)",
+        "desc": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If the basilisk sees its reflection within the Cone, the basilisk must make this save. First Failure The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure The target has the Petrified condition instead of the Restrained condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE",
+          "param": 4
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_owlbear",
+    "name": "Owlbear",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 40,
+      "swim": 20
+    },
+    "armor_class": 13,
+    "hit_points": 59,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The owlbear makes two Rend attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 14 (2d8 + 5) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 5,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_manticore",
+    "name": "Manticore",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 50,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 14,
+    "hit_points": 68,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The manticore makes three attacks, using Rend or Tail Spike in any combination.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 7 (1d8 + 3) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Tail Spike",
+        "desc": "Ranged Attack Roll: +5, range 100/200 ft. 7 (1d8 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Tail Spike attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": null,
+            "range": 100,
+            "long_range": 200,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_werewolf",
+    "name": "Werewolf",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 15,
+    "hit_points": 71,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 12 (2d8 + 3) Piercing damage. If the target is a Humanoid, it is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target is cursed. If the cursed target drops to 0 Hit Points, it instead becomes a Werewolf under the DM's control and has 10 Hit Points. Success: The target is immune to this werewolf's curse for 24 hours.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite (Wolf or Hybrid Form Only) attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": null,
+        "limited_to_form": "Wolf or Hybrid Form Only",
+        "usage_limits": null
+      },
+      {
+        "name": "Longbow",
+        "desc": "Ranged Attack Roll: +4, range 150/600 ft. 11 (2d8 + 2) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Longbow attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": null,
+            "range": 150,
+            "long_range": 600,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 3,
+        "legendary_action_cost": 1,
+        "limited_to_form": "Humanoid or Hybrid Form Only",
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The werewolf makes two attacks, using Scratch or Longbow in any combination. It can replace one attack with a Bite attack.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Scratch",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 10 (2d6 + 3) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Scratch attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Shape-Shift",
+        "desc": "The werewolf shape-shifts into a Large wolf-humanoid hybrid or a Medium wolf, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_winter-wolf",
+    "name": "Winter Wolf",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 13,
+    "hit_points": 75,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Cold Breath",
+        "desc": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_air-elemental",
+    "name": "Air Elemental",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 10,
+      "crawl": 5,
+      "hover": true,
+      "fly": 90,
+      "burrow": 0,
+      "climb": 5,
+      "swim": 5
+    },
+    "armor_class": 15,
+    "hit_points": 90,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The elemental makes two Thunderous Slam attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Thunderous Slam",
+        "desc": "Melee Attack Roll: +8, reach 10 ft. 14 (2d8 + 5) Thunder damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Thunderous Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 8,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 5,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Thunder",
+              "key": "thunder"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Whirlwind",
+        "desc": "Strength Saving Throw: DC 13, one Medium or smaller creature in the elemental's space. Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition. Success: Half damage only.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 4
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_fire-elemental",
+    "name": "Fire Elemental",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 13,
+    "hit_points": 93,
+    "actions": [
+      {
+        "name": "Burn",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 10 (2d6 + 3) Fire damage. If the target is a creature or a flammable object, it starts burning.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Burn attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Fire",
+              "key": "fire"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The elemental makes two Burn attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_chimera",
+    "name": "Chimera",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 6,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 60,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 14,
+    "hit_points": 114,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 11 (2d6 + 4) Piercing damage, or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 7 (1d6 + 4) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Fire Breath",
+        "desc": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 4,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The chimera makes one Ram attack, one Bite attack, and one Claw attack. It can replace the Claw attack with a use of Fire Breath if available.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Ram",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 10 (1d12 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Ram attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D12",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 3,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_hydra",
+    "name": "Hydra",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 8,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 40
+    },
+    "armor_class": 15,
+    "hit_points": 184,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +8, reach 10 ft. 10 (1d10 + 5) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 8,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D10",
+            "damage_bonus": 5,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The hydra makes as many Bite attacks as it has heads.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  }
+]

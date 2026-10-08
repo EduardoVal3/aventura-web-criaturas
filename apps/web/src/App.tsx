@@ -5,6 +5,7 @@ import {
 } from "react-router";
 
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
+import { ProveedorAutenticacion } from "@/contextos/ContextoAutenticacion";
 import { PaginaCreditos } from "@/paginas/PaginaCreditos";
 import { PaginaKitUi } from "@/paginas/PaginaKitUi";
 import { PaginaNoEncontrada } from "@/paginas/PaginaNoEncontrada";
@@ -56,7 +57,11 @@ const enrutador = createBrowserRouter([
 ]);
 
 export function App() {
-  return <RouterProvider router={enrutador} />;
+  return (
+    <ProveedorAutenticacion>
+      <RouterProvider router={enrutador} />
+    </ProveedorAutenticacion>
+  );
 }
 
 export default App;

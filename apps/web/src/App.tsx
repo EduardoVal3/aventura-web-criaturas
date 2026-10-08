@@ -5,15 +5,16 @@ import {
 } from "react-router";
 
 import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
+import { ProveedorAutenticacion } from "@/contextos/ContextoAutenticacion";
 import { PaginaCreditos } from "@/paginas/PaginaCreditos";
 import { PaginaKitUi } from "@/paginas/PaginaKitUi";
 import { PaginaNoEncontrada } from "@/paginas/PaginaNoEncontrada";
 import { PaginaPendiente } from "@/paginas/PaginaPendiente";
+import { PantallaIngreso } from "@/paginas/PantallaIngreso";
+import { PantallaRegistro } from "@/paginas/PantallaRegistro";
+import { PantallaCrearPersonaje } from "@/paginas/PantallaCrearPersonaje";
 
 const rutasPlaceholder = [
-  { ruta: "/ingreso", titulo: "Ingreso" },
-  { ruta: "/registro", titulo: "Registro" },
-  { ruta: "/crear-personaje", titulo: "Crear personaje" },
   { ruta: "/hub", titulo: "Hub de ubicación" },
   { ruta: "/exploracion", titulo: "Exploración" },
   { ruta: "/combate", titulo: "Combate" },
@@ -36,6 +37,18 @@ const enrutador = createBrowserRouter([
         element: <Navigate to="/ingreso" replace />,
       },
       {
+        path: "/ingreso",
+        element: <PantallaIngreso />,
+      },
+      {
+        path: "/registro",
+        element: <PantallaRegistro />,
+      },
+      {
+        path: "/crear-personaje",
+        element: <PantallaCrearPersonaje />,
+      },
+      {
         path: "/kit-ui",
         element: <PaginaKitUi />,
       },
@@ -56,7 +69,11 @@ const enrutador = createBrowserRouter([
 ]);
 
 export function App() {
-  return <RouterProvider router={enrutador} />;
+  return (
+    <ProveedorAutenticacion>
+      <RouterProvider router={enrutador} />
+    </ProveedorAutenticacion>
+  );
 }
 
 export default App;

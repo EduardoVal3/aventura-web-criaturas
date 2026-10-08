@@ -14,7 +14,7 @@ import { Publico } from '../../comun/decoradores/publico.decorator';
 import { UsuarioActual } from '../../comun/decoradores/usuario-actual.decorator';
 
 @ApiTags('Autenticación')
-@Controller('autenticacion')
+@Controller(['autenticacion', 'usuarios'])
 export class AutenticacionController {
   constructor(private readonly autenticacionService: AutenticacionService) {}
 

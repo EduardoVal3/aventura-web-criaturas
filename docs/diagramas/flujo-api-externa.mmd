@@ -1,0 +1,60 @@
+sequenceDiagram
+    autonumber
+    actor Dev as Desarrollador / CLI
+    participant Script as Script Batch (importar-especies.ts)
+    participant Adaptador as AdaptadorCriaturasExternas
+    participant Open5e as API Externa (Open5e v2)
+    participant Snapshot as Snapshot Local (open5e-srd-2024-seleccion.json)
+    participant Normalizador as Normalizador Matemático (Anexo A.3)
+    participant DB as PostgreSQL (Prisma ORM)
+
+    Dev->>Script: pnpm run importar:especies
+    activate Script
+
+    Script->>Adaptador: obtenerEspeciesSeleccionadas(25 claves)
+    activate Adaptador
+
+    alt Conexión Exitosa con Open5e
+        Adaptador->>Open5e: GET /v2/creatures/?key__in=... (timeout 10s)
+        Open5e-->>Adaptador: 200 OK con registros crudos
+    else Falla de Red / Timeout / Error HTTP
+        Adaptador->>Open5e: GET /v2/creatures/?key__in=...
+        Open5e--xAdaptador: Error de red o Timeout
+        Note over Adaptador,Snapshot: Logger.warn: Activando fallback al snapshot local
+        Adaptador->>Snapshot: fs.readFileSync(datos/open5e-srd-2024-seleccion.json)
+        Snapshot-->>Adaptador: Retorna 25 criaturas de contingencia
+    end
+
+    Adaptador-->>Script: Lista de 25 CriaturaExternaDto
+    deactivate Adaptador
+
+    loop Para cada criatura (25 especies)
+        Script->>Normalizador: calcularHpBase(hit_points)
+        Normalizador-->>Script: hpBase calibrado [30-100]
+
+        Script->>Normalizador: calcularAtaqueBase(mejorAtaque)
+        Normalizador-->>Script: ataqueBase calibrado [30-100]
+
+        Script->>Normalizador: calcularDefensaBase(armor_class)
+        Normalizador-->>Script: defensaBase calibrada [30-100]
+
+        Script->>Normalizador: calcularVelocidadBase(speedMax)
+        Normalizador-->>Script: velocidadBase calibrada [30-100]
+
+        Script->>Normalizador: calcularTasaCaptura(challenge_rating)
+        Normalizador-->>Script: tasaCaptura calibrada [0.10-0.90]
+
+        Script->>DB: prisma.especie.upsert(...)
+        DB-->>Script: Especie persistida / actualizada
+
+        Script->>DB: prisma.movimiento.deleteMany() + createMany() (hasta 3 ataques)
+        DB-->>Script: Movimientos traducidos persistidos
+    end
+
+    loop Para cada zona (6 zonas silvestres)
+        Script->>DB: prisma.aparicionZona.upsert(...) (pesos y rangos de nivel)
+        DB-->>Script: Tabla de aparición persistida
+    end
+
+    Script-->>Dev: Proceso de importación finalizado con éxito
+    deactivate Script

@@ -1,0 +1,55 @@
+flowchart TD
+    subgraph Cliente["1. Capa de Cliente"]
+        Navegador["Navegador Web (apps/web)"]
+        Swagger["Explorador Swagger (/docs)"]
+        Curl["Cliente HTTP / Pruebas"]
+    end
+
+    subgraph Enrutamiento["2. Capa de Enrutamiento Global"]
+        Prefijo["Prefijo Global (/api)"]
+        CORS["CORS (CORS_ORIGEN)"]
+    end
+
+    subgraph MiddlewareGlobal["3. Filtros, Guards y Pipes Globales"]
+        Filtro["ExcepcionesFilter (Formato unificado de error)"]
+        Guard["AutenticacionGuard (@Publico / Bearer JWT)"]
+        Pipe["ValidationPipe (whitelist, forbidNonWhitelisted, transform)"]
+    end
+
+    subgraph Controladores["4. Capa de Controladores (apps/api/src/modulos)"]
+        CtrlAuth["AutenticacionController (/api/autenticacion)"]
+        CtrlDominios["Controladores de Dominio (Fases futuras)"]
+    end
+
+    subgraph Servicios["5. Capa de Servicios de Dominio"]
+        SrvAuth["AutenticacionService (Registro, Login, bcrypt, JWT)"]
+        SrvDominios["10 Módulos de Dominio (usuarios, personajes, mundo, etc.)"]
+    end
+
+    subgraph Persistencia["6. Capa de Persistencia"]
+        Prisma["PrismaService (Prisma Client Singleton)"]
+    end
+
+    subgraph BaseDatos["7. Almacenamiento Relacional"]
+        Postgres["PostgreSQL 17 en Docker (aventura-postgres)"]
+    end
+
+    Navegador --> Prefijo
+    Swagger --> Prefijo
+    Curl --> Prefijo
+
+    Prefijo --> CORS
+    CORS --> Filtro
+    Filtro --> Guard
+    Guard --> Pipe
+
+    Pipe --> CtrlAuth
+    Pipe --> CtrlDominios
+
+    CtrlAuth --> SrvAuth
+    CtrlDominios --> SrvDominios
+
+    SrvAuth --> Prisma
+    SrvDominios --> Prisma
+
+    Prisma --> Postgres

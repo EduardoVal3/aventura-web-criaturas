@@ -4,7 +4,7 @@ import {
   RouterProvider,
 } from "react-router";
 
-import { LayoutPrincipal } from "@/componentes/LayoutPrincipal";
+import { LayoutPrincipal } from "@/components/LayoutPrincipal";
 import {
   ProveedorAutenticacion,
   useAutenticacion,

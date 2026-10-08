@@ -40,8 +40,7 @@ const ContextoAutenticacion = createContext<ContextoAutenticacionTipo | undefine
 const CLAVE_ALMACENAMIENTO_TOKEN = "aethelgard_token_acceso";
 
 export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
-  // simplificacion: almacenamiento en localStorage para preservar sesión durante navegación y recarga local.
-  const [token, setToken] = useState<string | null>(() => {
+  const [tokenInicial] = useState<string | null>(() => {
     try {
       return localStorage.getItem(CLAVE_ALMACENAMIENTO_TOKEN);
     } catch {
@@ -49,9 +48,10 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     }
   });
 
+  const [token, setToken] = useState<string | null>(tokenInicial);
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(null);
   const [personajeActivo, setPersonajeActivo] = useState<PersonajeActivo | null>(null);
-  const [cargando, setCargando] = useState<boolean>(true);
+  const [cargando, setCargando] = useState<boolean>(() => Boolean(tokenInicial));
 
   const actualizarPersonajeActivo = useCallback(async (): Promise<PersonajeActivo | null> => {
     try {
@@ -65,27 +65,44 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelado = false;
     api.establecerToken(token);
+
     if (token) {
       try {
         localStorage.setItem(CLAVE_ALMACENAMIENTO_TOKEN, token);
       } catch {
-        // ignorar fallo de almacenamiento en modo restringido
+        // ignorar fallo
       }
-      actualizarPersonajeActivo().finally(() => {
-        setCargando(false);
-      });
+      api
+        .obtenerPersonajeActivo()
+        .then((personaje) => {
+          if (!cancelado) {
+            setPersonajeActivo(personaje);
+          }
+        })
+        .catch(() => {
+          if (!cancelado) {
+            setPersonajeActivo(null);
+          }
+        })
+        .finally(() => {
+          if (!cancelado) {
+            setCargando(false);
+          }
+        });
     } else {
       try {
         localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
       } catch {
         // ignorar fallo
       }
-      setUsuario(null);
-      setPersonajeActivo(null);
-      setCargando(false);
     }
-  }, [token, actualizarPersonajeActivo]);
+
+    return () => {
+      cancelado = true;
+    };
+  }, [token]);
 
   const iniciarSesion = useCallback(
     async (peticion: PeticionLogin): Promise<RespuestaLogin> => {

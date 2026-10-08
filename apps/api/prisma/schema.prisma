@@ -8,12 +8,235 @@ datasource db {
 }
 
 model Usuario {
-  id                 String   @id @default(uuid())
-  nombreUsuario      String   @unique @map("nombre_usuario")
-  correo             String   @unique
-  contrasenaHash     String   @map("contrasena_hash")
-  fechaCreacion      DateTime @default(now()) @map("fecha_creacion")
-  fechaActualizacion DateTime @updatedAt @map("fecha_actualizacion")
+  id                 String     @id @default(uuid())
+  nombreUsuario      String     @unique @map("nombre_usuario")
+  correo             String     @unique
+  contrasenaHash     String     @map("contrasena_hash")
+  fechaCreacion      DateTime   @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime   @updatedAt @map("fecha_actualizacion")
+  personaje          Personaje?
 
   @@map("usuario")
+}
+
+model Personaje {
+  id                 String              @id @default(uuid())
+  usuarioId          String              @unique @map("usuario_id")
+  nombre             String
+  monedas            Int                 @default(100)
+  ubicacionActualId  String              @default("LOC-01") @map("ubicacion_actual_id")
+  fechaCreacion      DateTime            @default(now()) @map("fecha_creacion")
+  fechaActualizacion DateTime            @updatedAt @map("fecha_actualizacion")
+
+  usuario            Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ubicacionActual    Zona                @relation(fields: [ubicacionActualId], references: [id])
+  criaturas          Criatura[]
+  inventario         InventarioPersonaje[]
+  encuentros         Encuentro[]
+  zonasDesbloqueadas ZonaDesbloqueada[]
+  historiales        Historial[]
+
+  @@map("personaje")
+}
+
+model Zona {
+  id                 String              @id
+  nombre             String
+  descripcion        String
+  tipo               String
+  esSegura           Boolean             @default(false) @map("es_segura")
+  nivelMinimo        Int?                @map("nivel_minimo")
+  nivelMaximo        Int?                @map("nivel_maximo")
+  servicios          String[]            @default([])
+
+  personajes         Personaje[]
+  conexionesOrigen   ConexionZona[]      @relation("ZonaOrigen")
+  conexionesDestino  ConexionZona[]      @relation("ZonaDestino")
+  eventos            EventoZona[]
+  apariciones        AparicionZona[]
+  encuentros         Encuentro[]
+  zonasDesbloqueadas ZonaDesbloqueada[]
+
+  @@map("zona")
+}
+
+model ConexionZona {
+  id            String @id @default(uuid())
+  zonaOrigenId  String @map("zona_origen_id")
+  zonaDestinoId String @map("zona_destino_id")
+
+  zonaOrigen    Zona   @relation("ZonaOrigen", fields: [zonaOrigenId], references: [id], onDelete: Cascade)
+  zonaDestino   Zona   @relation("ZonaDestino", fields: [zonaDestinoId], references: [id], onDelete: Cascade)
+
+  @@unique([zonaOrigenId, zonaDestinoId])
+  @@map("conexion_zona")
+}
+
+model EventoZona {
+  id     String @id @default(uuid())
+  zonaId String @map("zona_id")
+  tipo   String
+  peso   Int
+
+  zona   Zona   @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+
+  @@unique([zonaId, tipo])
+  @@map("evento_zona")
+}
+
+model AparicionZona {
+  id          String  @id @default(uuid())
+  zonaId      String  @map("zona_id")
+  especieId   String  @map("especie_id")
+  peso        Int
+  nivelMinimo Int     @map("nivel_minimo")
+  nivelMaximo Int     @map("nivel_maximo")
+
+  zona        Zona    @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+  especie     Especie @relation(fields: [especieId], references: [id], onDelete: Cascade)
+
+  @@unique([zonaId, especieId])
+  @@map("aparicion_zona")
+}
+
+model Especie {
+  id              String          @id @default(uuid())
+  idExterno       String          @unique @map("id_externo")
+  nombre          String
+  slug            String          @unique
+  tipo            String
+  challengeRating Float           @map("challenge_rating")
+  hpBase          Int             @map("hp_base")
+  ataqueBase      Int             @map("ataque_base")
+  defensaBase     Int             @map("defensa_base")
+  velocidadBase   Int             @map("velocidad_base")
+  tasaCaptura     Float           @map("tasa_captura")
+  esEspecial      Boolean         @default(false) @map("es_especial")
+  descripcion     String?
+
+  movimientos     Movimiento[]
+  criaturas       Criatura[]
+  apariciones     AparicionZona[]
+
+  @@map("especie")
+}
+
+model Movimiento {
+  id             String  @id @default(uuid())
+  especieId      String  @map("especie_id")
+  nombreOriginal String  @map("nombre_original")
+  nombre         String
+  tipoAccion     String  @map("tipo_accion")
+  poder          Float
+
+  especie        Especie @relation(fields: [especieId], references: [id], onDelete: Cascade)
+
+  @@map("movimiento")
+}
+
+model Criatura {
+  id                String      @id @default(uuid())
+  personajeId       String?     @map("personaje_id")
+  especieId         String      @map("especie_id")
+  apodo             String?
+  nivel             Int         @default(1)
+  experiencia       Int         @default(0)
+  hpActual          Int         @map("hp_actual")
+  hpMaximo          Int         @map("hp_maximo")
+  ataque            Int
+  defensa           Int
+  velocidad         Int
+  enEquipo          Boolean     @default(false) @map("en_equipo")
+  ordenEquipo       Int?        @map("orden_equipo")
+  fechaCaptura      DateTime    @default(now()) @map("fecha_captura")
+
+  personaje         Personaje?  @relation(fields: [personajeId], references: [id], onDelete: Cascade)
+  especie           Especie     @relation(fields: [especieId], references: [id], onDelete: Restrict)
+  encuentrosRivales Encuentro[] @relation("CriaturaRival")
+
+  @@map("criatura")
+}
+
+model Objeto {
+  id           String                @id @default(uuid())
+  codigo       String                @unique
+  nombre       String
+  descripcion  String
+  tipo         String
+  precioCompra Int                   @map("precio_compra")
+  precioVenta  Int                   @map("precio_venta")
+  efectoValor  Int                   @map("efecto_valor")
+
+  inventarios  InventarioPersonaje[]
+
+  @@map("objeto")
+}
+
+model InventarioPersonaje {
+  id          String    @id @default(uuid())
+  personajeId String    @map("personaje_id")
+  objetoId    String    @map("objeto_id")
+  cantidad    Int       @default(1)
+
+  personaje   Personaje @relation(fields: [personajeId], references: [id], onDelete: Cascade)
+  objeto      Objeto    @relation(fields: [objetoId], references: [id], onDelete: Cascade)
+
+  @@unique([personajeId, objetoId])
+  @@map("inventario_personaje")
+}
+
+model Encuentro {
+  id               String     @id @default(uuid())
+  personajeId      String     @map("personaje_id")
+  zonaId           String     @map("zona_id")
+  criaturaRivalId  String     @map("criatura_rival_id")
+  estado           String     @default("EN_CURSO")
+  fechaCreacion    DateTime   @default(now()) @map("fecha_creacion")
+  fechaResolucion  DateTime?  @map("fecha_resolucion")
+
+  personaje        Personaje  @relation(fields: [personajeId], references: [id], onDelete: Cascade)
+  zona             Zona       @relation(fields: [zonaId], references: [id], onDelete: Restrict)
+  criaturaRival    Criatura   @relation("CriaturaRival", fields: [criaturaRivalId], references: [id], onDelete: Restrict)
+  combates         Combate[]
+
+  @@map("encuentro")
+}
+
+model Combate {
+  id             String    @id @default(uuid())
+  encuentroId    String    @map("encuentro_id")
+  turno          Int
+  esTurnoJugador Boolean   @map("es_turno_jugador")
+  accionUltima   String?   @map("accion_ultima")
+  detalleJson    Json?     @map("detalle_json")
+
+  encuentro      Encuentro @relation(fields: [encuentroId], references: [id], onDelete: Cascade)
+
+  @@map("combate")
+}
+
+model ZonaDesbloqueada {
+  id              String    @id @default(uuid())
+  personajeId     String    @map("personaje_id")
+  zonaId          String    @map("zona_id")
+  fechaDesbloqueo DateTime  @default(now()) @map("fecha_desbloqueo")
+
+  personaje       Personaje @relation(fields: [personajeId], references: [id], onDelete: Cascade)
+  zona            Zona      @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+
+  @@unique([personajeId, zonaId])
+  @@map("zona_desbloqueada")
+}
+
+model Historial {
+  id            String    @id @default(uuid())
+  personajeId   String    @map("personaje_id")
+  tipo          String
+  descripcion   String
+  datosJson     Json?     @map("datos_json")
+  fechaRegistro DateTime  @default(now()) @map("fecha_registro")
+
+  personaje     Personaje @relation(fields: [personajeId], references: [id], onDelete: Cascade)
+
+  @@map("historial")
 }

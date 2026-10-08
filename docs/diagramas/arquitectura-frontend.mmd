@@ -1,0 +1,10 @@
+flowchart TD
+    Navegador["Navegador 360 a 1280 px"] --> Enrutador["React Router"]
+    Enrutador --> Layout["LayoutPrincipal"]
+    Layout --> Paginas["Páginas: placeholders, /kit-ui, /creditos"]
+    Paginas --> Kit["Componentes 8bitcn/ui en src/components/ui/8bit"]
+    Kit --> Base["shadcn/ui + Tailwind CSS v4"]
+    Paginas --> Api["ApiJuego en src/api"]
+    Api -->|"VITE_MODO_API=simulado"| Simulada["apiSimulada.ts, datos en memoria"]
+    Api -->|"VITE_MODO_API=http"| Http["apiHttp.ts, fetch"]
+    Http -.->|"Fase posterior"| Nest["API NestJS con prefijo /api"]

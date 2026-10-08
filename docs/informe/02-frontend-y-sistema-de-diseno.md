@@ -58,14 +58,8 @@ apps/web/src/
 │   ├── apiHttp.ts                      # Implementación basada en fetch (/api)
 │   ├── apiSimulada.ts                  # Implementación en memoria con retardo realista
 │   └── index.ts                        # Selector de implementación por VITE_MODO_API
-├── componentes/                        # Componentes transversales de la aplicación
-│   └── LayoutPrincipal.tsx             # Shell estructural mobile-first (header, nav, main, footer)
-├── paginas/                            # Vistas completas de la aplicación
-│   ├── PaginaCreditos.tsx              # Licencias de 8bitcn y atribución de Open5e
-│   ├── PaginaKitUi.tsx                 # Catálogo interactivo de los 17 componentes de UI
-│   ├── PaginaNoEncontrada.tsx          # Manejo de rutas inexistentes (404)
-│   └── PaginaPendiente.tsx             # Componente reutilizable para pantallas placeholder
-├── components/                         # Código generado y copiado por shadcn CLI
+├── components/                         # Componentes de la aplicación y sistema de diseño
+│   ├── LayoutPrincipal.tsx             # Shell estructural mobile-first (header, nav, main, footer)
 │   └── ui/                             # Primitivas base de shadcn (button, card, dialog, etc.)
 │       └── 8bit/                       # Componentes retro temáticos de 8bitcn/ui
 │           ├── styles/retro.css        # Hoja de estilos con bordes pixelados y fuentes retro
@@ -86,6 +80,11 @@ apps/web/src/
 │           ├── tabs.tsx
 │           ├── toast.tsx
 │           └── xp-bar.tsx
+├── paginas/                            # Vistas completas de la aplicación
+│   ├── PaginaCreditos.tsx              # Licencias de 8bitcn y atribución de Open5e
+│   ├── PaginaKitUi.tsx                 # Catálogo interactivo de los 17 componentes de UI
+│   ├── PaginaNoEncontrada.tsx          # Manejo de rutas inexistentes (404)
+│   └── PaginaPendiente.tsx             # Componente reutilizable para pantallas placeholder
 ├── lib/
 │   └── utils.ts                        # Helper cn para combinación de clases
 ├── App.tsx                             # Configuración del enrutador React Router

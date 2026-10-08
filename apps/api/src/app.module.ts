@@ -15,6 +15,8 @@ import { TiendaModule } from './modulos/tienda/tienda.module';
 import { HistorialModule } from './modulos/historial/historial.module';
 import { ExternoModule } from './modulos/externo/externo.module';
 
+import { EquipoModule } from './modulos/equipo/equipo.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -22,6 +24,7 @@ import { ExternoModule } from './modulos/externo/externo.module';
     AutenticacionModule,
     UsuariosModule,
     PersonajesModule,
+    EquipoModule,
     MundoModule,
     CriaturasModule,
     EncuentrosModule,

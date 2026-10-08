@@ -33,3 +33,20 @@ export const esquemaLogin = z.object({
 });
 
 export type DatosLogin = z.infer<typeof esquemaLogin>;
+
+export const esquemaCrearPersonaje = z.object({
+  nombre: z
+    .string()
+    .trim()
+    .min(3, "El nombre del explorador debe tener al menos 3 caracteres."),
+  especieInicialSlug: z.enum(
+    ["lobo-gris", "pico-de-hacha", "arana-lobo-gigante"],
+    {
+      errorMap: () => ({
+        message: "Debes seleccionar una de las criaturas iniciales.",
+      }),
+    },
+  ),
+});
+
+export type DatosCrearPersonaje = z.infer<typeof esquemaCrearPersonaje>;

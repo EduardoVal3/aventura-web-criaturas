@@ -85,11 +85,15 @@ export class AutenticacionService {
     };
     const tokenAcceso = await this.jwtService.signAsync(cargaUtil);
 
+    const personaje = await this.prisma.personaje.findUnique({
+      where: { usuarioId: usuario.id },
+    });
+
     return {
       usuarioId: usuario.id,
       nombreUsuario: usuario.nombreUsuario,
       tokenAcceso,
-      tienePersonaje: false,
+      tienePersonaje: Boolean(personaje),
     };
   }
 }

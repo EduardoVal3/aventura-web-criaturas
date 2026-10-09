@@ -128,14 +128,10 @@ export function PantallaCombate() {
         movimientoIndice,
       });
 
-      const nuevosMensajes: string[] = [];
+      // 1. Aplicar de inmediato el impacto del jugador
+      const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
+      setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
 
-      // Registro de acción del jugador
-      nuevosMensajes.push(
-        `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`,
-      );
-
-      // Actualizar salud del rival gobernada por el servidor
       if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
         setRival({
           ...rival,
@@ -143,11 +139,13 @@ export function PantallaCombate() {
         });
       }
 
-      // Registro de acción del rival si contraatacó
+      // 2. Si el rival sobrevive y contraatacó, pausar la UI 800ms manteniendo procesandoAccion=true
       if (resultado.accionRival && aliado) {
-        nuevosMensajes.push(
-          `El rival respondió con ${resultado.accionRival.movimiento} causando ${resultado.accionRival.danoCausado} de daño.`,
-        );
+        await new Promise((resolver) => setTimeout(resolver, 800));
+
+        const mensajeRival = `El rival respondió con ${resultado.accionRival.movimiento} causando ${resultado.accionRival.danoCausado} de daño.`;
+        setBitacoraCombate((prev) => [mensajeRival, ...prev]);
+
         if (typeof resultado.accionRival.hpRestanteAliado === "number") {
           setAliado({
             ...aliado,
@@ -156,9 +154,12 @@ export function PantallaCombate() {
         }
       }
 
-      // Evaluación del estado devuelto por el servidor
+      // 3. Evaluación del estado final devuelto por el servidor
       if (resultado.estado === "VICTORIA") {
-        nuevosMensajes.push("¡Victoria! La criatura enemiga ha caído debilitada.");
+        setBitacoraCombate((prev) => [
+          "¡Victoria! La criatura enemiga ha caído debilitada.",
+          ...prev,
+        ]);
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
         if (resultado.resultadoFinal?.subioNivel) {
@@ -171,13 +172,14 @@ export function PantallaCombate() {
           toast.success(`¡Ganaste ${resultado.resultadoFinal.experienciaGanada} XP!`);
         }
       } else if (resultado.estado === "DERROTA") {
-        nuevosMensajes.push("Tu criatura ha quedado fuera de combate.");
+        setBitacoraCombate((prev) => [
+          "Tu criatura ha quedado fuera de combate.",
+          ...prev,
+        ]);
         setCombateFinalizado(true);
         setEstadoFinal("DERROTA");
         toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
       }
-
-      setBitacoraCombate((prev) => [...nuevosMensajes, ...prev]);
     } catch (error) {
       if (error instanceof ErrorApi) {
         toast.error(error.message);

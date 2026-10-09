@@ -11,11 +11,13 @@ async function iniciarServidor() {
 
   app.setGlobalPrefix('api');
 
+  // Auditoría S-7: CORS restringido al origen web autorizado sin comodín universal
   app.enableCors({
     origin: configService.get<string>('CORS_ORIGEN', 'http://localhost:5173'),
     credentials: true,
   });
 
+  // Auditoría S-6: Rechazo estricto de campos no permitidos en DTOs
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

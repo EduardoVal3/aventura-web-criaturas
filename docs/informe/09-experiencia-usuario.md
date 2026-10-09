@@ -49,3 +49,50 @@ Previo a la intervención, las vistas de autenticación cumplían con el contrat
 - **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 3 pruebas aprobadas verificando esquemas de validación Zod y helpers de recursos multimedia.
 - **Pruebas Backend y Seguridad (`pnpm --filter api test`):** 35 pruebas aprobadas, cubriendo salvaguardas S-1 a S-7 e invariantes del sistema sin regresiones.
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa con TypeScript estricto y Vite.
+
+---
+
+## 2. Sub-Fase 10b: Creación de Explorador y Selección de Criatura (`PantallaCrearPersonaje.tsx`)
+
+### 2.1 Diagnóstico Inicial y Auditoría Impeccable
+La vista previa permitía el flujo básico pero presentaba carencias visuales y de interacción:
+1. **Ausencia de Sprites y Representación Gráfica:** Las criaturas iniciales solo se listaban como texto plano sin renderizar su imagen pixel-art ni degradación a placeholders SVG.
+2. **Estadísticas Incompletas y Poco Claras:** La velocidad (`VEL`) estaba ausente en el desglose y las estadísticas no contaban con barras visuales comparativas para entender las fortalezas relativas (defensa vs velocidad vs ataque).
+3. **Feedback de Selección Débil:** La selección no ofrecía distinción de borde destacada, badge activo (`ELEGIDO`) ni elevación acentuada.
+4. **Validación Reactiva:** La validación del nombre ocurría únicamente al someter el formulario, sin asistencia visual en tiempo real.
+5. **Micro-interacciones y Audio Ausentes:** No existía retroalimentación sonora retro al seleccionar criaturas, confirmar creación ni ante errores.
+
+---
+
+### 2.2 Mejoras Implementadas
+
+#### A. Identidad Retro y Tarjetas Interactivas de Criaturas (`docs/DESIGN.md`)
+- **Visualizador Pixelado con Fallback SVG:** Sprites integrados con `obtenerImagenCriatura(slug)` y `onError={(e) => manejarErrorImagen(e, "criatura")}`, aplicando la clase `.pixelated` y sombra dinámica en la criatura activa.
+- **Tarjetas 8-Bit Interactivas:** Cada criatura (`Lobo Gris`, `Pico de Hacha`, `Araña Lobo Gigante`) dispone de tarjeta con borde biselado, arquetipo de combate, insignia de estado y realce visual (`scale-[1.02]`, `border-primary`, `bg-primary/10`).
+- **Desglose Gráfico de Atributos Base:** Integración de los 4 atributos esenciales (HP, ATQ, DEF, VEL) con badges numéricos codificados por color e indicadores de barra comparativa.
+
+#### B. Componentes Táctiles 8bitcn/ui y Prevención de Mutaciones
+- Controles construidos con `Card`, `Badge`, `Input`, `Label`, `Button` y `Spinner`.
+- **Prevención Estricta de Doble Clic (Harden):** Guarda de seguridad `if (enviando) return;`, inputs deshabilitados durante el envío, formulario con `aria-busy={enviando}` y botón con estado retro de progreso (`INICIANDO AVENTURA...`).
+- **Validación en Tiempo Real:** Configuración de `useForm` con modo `onChange` en Zod (`esquemaCrearPersonaje`) y mensajes de error accesibles (`AlertCircle`, `role="alert"`).
+
+#### C. Integración Multimedia y Efectos Sonoros (`assets.ts`)
+- Consumo centralizado de la API de audio:
+  - `seleccionar` (volumen 0.35) al alternar entre las cartas de criatura inicial.
+  - `click` (volumen 0.4) al presionar el botón de inicio de aventura.
+  - `confirmar` (volumen 0.5) tras recibir confirmación exitosa de la API y sincronizar el estado de sesión.
+  - `error` (volumen 0.5) ante fallas de validación o del servidor.
+
+#### D. Sincronización Robusta con Backend y Sesión
+- Conexión con `POST /personajes` vía `api.crearPersonaje(...)`.
+- Actualización atómica del contexto de autenticación (`actualizarPersonajeActivo()`), con salvaguarda defensiva mediante `establecerPersonajeActivo(...)` para garantizar consistencia inmediata en la navegación hacia `/hub`.
+
+---
+
+### 2.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-crear-personaje.spec.ts`):** 3 pruebas nuevas cubriendo validaciones del esquema Zod, filtrado de espacios (`trim`), rechazo de slugs no autorizados y consistencia de atributos/sprites.
+- **Suite Total Web (`pnpm --filter web test`):** 6 de 6 pruebas aprobadas (100% éxito).
+- **Linter Web (`oxlint`):** 0 errores.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa en TypeScript estricto y Vite.
+- **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
+

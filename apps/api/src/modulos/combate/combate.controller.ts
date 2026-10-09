@@ -9,16 +9,21 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CombateService } from './combate.service';
+import { CapturaService } from './servicios/captura.service';
 import { UsuarioActual } from '../../comun/decoradores/usuario-actual.decorator';
 import { AtacarDto } from './dto/atacar.dto';
 import { HuirDto } from './dto/huir.dto';
+import { CapturarDto } from './dto/capturar.dto';
 import { AccionCombateDto } from './dto/accion-combate.dto';
 
 @ApiTags('Combate')
 @ApiBearerAuth()
 @Controller(['combate', 'combates'])
 export class CombateController {
-  constructor(private readonly combateService: CombateService) {}
+  constructor(
+    private readonly combateService: CombateService,
+    private readonly capturaService: CapturaService,
+  ) {}
 
   @Post('atacar')
   @HttpCode(HttpStatus.OK)
@@ -52,6 +57,32 @@ export class CombateController {
     return this.combateService.huir(usuarioId, dto.encuentroId);
   }
 
+  @Post('capturar')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Intenta capturar la criatura rival usando un talismán del inventario',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resolución probabilística de la captura y actualización atómica.',
+  })
+  capturar(
+    @UsuarioActual('sub') usuarioId: string,
+    @Body() dto: CapturarDto,
+  ) {
+    if (!dto.encuentroId) {
+      throw new BadRequestException({
+        codigo: 'ENCUENTRO_REQUERIDO',
+        mensaje: 'El identificador del encuentro es requerido para la captura.',
+      });
+    }
+    return this.capturaService.capturar(
+      usuarioId,
+      dto.encuentroId,
+      dto.itemCodigo,
+    );
+  }
+
   @Post(':id/acciones')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -75,6 +106,18 @@ export class CombateController {
         );
       case 'HUIR':
         return this.combateService.huir(usuarioId, encuentroId);
+      case 'CAPTURAR':
+        if (!dto.itemCodigo) {
+          throw new BadRequestException({
+            codigo: 'ITEM_REQUERIDO',
+            mensaje: 'El código del talismán es requerido para la captura.',
+          });
+        }
+        return this.capturaService.capturar(
+          usuarioId,
+          encuentroId,
+          dto.itemCodigo,
+        );
       default:
         throw new BadRequestException({
           codigo: 'ACCION_NO_SOPORTADA',

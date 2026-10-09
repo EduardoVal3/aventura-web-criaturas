@@ -96,6 +96,7 @@ export interface UbicacionActual {
   esSegura: boolean;
   descripcion: string;
   servicios: string[];
+  progresoZona?: number;
   conexiones: ConexionUbicacion[];
 }
 
@@ -135,6 +136,7 @@ export interface RecompensaExploracion {
 export interface RespuestaExploracion {
   tipoEvento: "ENCUENTRO" | "OBJETO" | "SIN_EVENTO";
   mensaje: string;
+  progresoZona?: number;
   encuentro?: EncuentroDetalle;
   recompensa?: RecompensaExploracion | null;
 }

@@ -62,6 +62,11 @@ export class MundoService {
       };
     });
 
+    const registroZonaActual = zonasDesbloqueadas.find(
+      (d) => d.zonaId === zona.id,
+    );
+    const progresoZona = registroZonaActual?.progreso ?? (zona.esSegura ? 100 : 0);
+
     return {
       ubicacionId: zona.id,
       nombre: zona.nombre,
@@ -69,6 +74,7 @@ export class MundoService {
       esSegura: zona.esSegura,
       descripcion: zona.descripcion,
       servicios: zona.servicios,
+      progresoZona,
       conexiones,
     };
   }

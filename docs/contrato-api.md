@@ -170,7 +170,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/mundo/ubicacion-actual`
 - **Módulo:** `M-MUN`.
-- **Descripción:** Retorna los detalles de la ubicación actual del personaje, sus servicios y destinos conectados.
+- **Descripción:** Retorna los detalles de la ubicación actual del personaje, sus servicios, progreso de exploración y destinos conectados.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -180,6 +180,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "esSegura": true,
     "descripcion": "Aldea pacífica en el valle donde inician los reclutas del gremio.",
     "servicios": ["CURACION", "ALMACEN", "HISTORIAL"],
+    "progresoZona": 100,
     "conexiones": [
       {
         "ubicacionDestinoId": "ZON-01",
@@ -226,13 +227,14 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/exploracion/explorar`
 - **Módulo:** `M-EXP`.
-- **Descripción:** Ejecuta una tirada probabilística de exploración en la zona activa.
+- **Descripción:** Ejecuta una tirada probabilística de exploración en la zona activa y computa el progreso (+20% persistido en BD).
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`) - Caso Encuentro:**
   ```json
   {
     "tipoEvento": "ENCUENTRO",
     "mensaje": "¡Una criatura salvaje te desafía en el camino!",
+    "progresoZona": 20,
     "encuentro": {
       "encuentroId": "enc-401",
       "estado": "EN_CURSO",
@@ -254,6 +256,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "tipoEvento": "OBJETO",
     "mensaje": "Has encontrado un cofre oculto en la maleza con 20 monedas.",
+    "progresoZona": 40,
     "recompensa": {
       "tipo": "MONEDAS",
       "cantidad": 20
@@ -265,6 +268,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "tipoEvento": "SIN_EVENTO",
     "mensaje": "Recorres la senda con tranquilidad; el viento sopla apacible.",
+    "progresoZona": 60,
     "recompensa": null
   }
   ```

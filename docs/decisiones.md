@@ -121,3 +121,14 @@
   - Controlado por la variable de entorno `VITE_MODO_API` (`simulado` por defecto, o `http`).
   - URL base configurable mediante `VITE_URL_API` (prefijo `/api`).
   - La interfaz `ApiJuego` aísla por completo la capa de presentación de la implementación de datos (`ARQ`).
+
+---
+
+## 5. Persistencia del progreso de exploración en base de datos relacional (Fase 9)
+
+- **Decisión arquitectónica:**
+  - Se descarta formalmente el almacenamiento del progreso de exploración en el cliente (`localStorage` o estado volátil del navegador) para dar cumplimiento estricto a las salvaguardas **S-6** (inmunidad ante manipulación de estado por el cliente) y **A-8** (la lógica de progresión y mundo se computa y valida exclusivamente en el servidor).
+  - El porcentaje de avance exploratorio se persiste en la tabla relacional `zona_desbloqueada`, agregando la columna `progreso INTEGER NOT NULL DEFAULT 0` mediante la migración `20261009042525_agrega_progreso_zona_desbloqueada`.
+  - Cada acción de exploración (`POST /api/exploracion/explorar`) incrementa en el Back-End el progreso de la zona en $+20\,\%$ hasta un tope de $100\,\%$.
+  - Los endpoints `GET /api/mundo/ubicacion-actual` y `POST /api/exploracion/explorar` devuelven el atributo `progresoZona`, permitiendo al Front-End reflejar de forma reactiva y fidedigna el avance cartográfico y desplegar la insignia de "Zona 100% Explorada / Cartografiada".
+

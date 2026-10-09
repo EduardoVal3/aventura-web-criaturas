@@ -53,13 +53,16 @@ Determina el daño infligido a los puntos de golpe del defensor al impactar un m
   - $\text{poder}$ (Movimiento): $[5, 50]$.
   - $\text{nivel}$ (Atacante): $[1, 50]$.
 - **Fórmula:**
-  $$\text{danoBruto} = \left\lfloor \left( \frac{\text{ataque}}{\max(1, \text{defensa})} \times \text{poder} \times 0.8 \right) + (\text{nivel} \times 0.5) \right\rfloor$$
-  $$\text{danoFinal} = \max(1, \text{danoBruto})$$
-- **Invariante cumplido:** **INV-04** (El daño mínimo de un golpe es siempre $\ge 1$).
+  $$\text{danoBruto} = \left( \frac{\text{ataque}}{\max(1, \text{defensa})} \times \text{poder} \times 0.8 \right) + (\text{nivel} \times 0.5)$$
+  $$\text{factorVariacion} = 0.85 + 0.30 \times r, \quad r \sim \mathcal{U}[0, 1) \quad (\pm 15\,\% \text{ de variación estocástica})$$
+  $$\text{danoFinal} = \max(1, \lfloor \text{danoBruto} \times \text{factorVariacion} \rfloor)$$
+- **Invariante cumplido:** **INV-04** (El daño mínimo de un golpe es siempre $\ge 1$, garantizado aun bajo el factor estocástico mínimo de $0.85$).
 - **Ejemplo numérico resuelto:**
   - Atacante Nivel 3 con $\text{ataque} = 45$ usa movimiento con $\text{poder} = 12$. Defensor con $\text{defensa} = 50$.
-  - $\text{danoBruto} = \lfloor (45 / 50 \times 12 \times 0.8) + (3 \times 0.5) \rfloor = \lfloor (0.9 \times 9.6) + 1.5 \rfloor = \lfloor 8.64 + 1.5 \rfloor = \lfloor 10.14 \rfloor = 10$.
-  - $\text{danoFinal} = \max(1, 10) = 10$.
+  - Con factor base $1.0$: $\text{danoBruto} = (45 / 50 \times 12 \times 0.8) + (3 \times 0.5) = 8.64 + 1.5 = 10.14$.
+  - $\text{danoFinal} = \max(1, \lfloor 10.14 \times 1.0 \rfloor) = 10$.
+  - Con factor mínimo $0.85$: $\lfloor 10.14 \times 0.85 \rfloor = \lfloor 8.619 \rfloor = 8$.
+  - Con factor máximo $1.15$: $\lfloor 10.14 \times 1.15 \rfloor = \lfloor 11.661 \rfloor = 11$.
 
 ### 2.2 Probabilidad final de captura
 Determina la probabilidad de éxito al intentar capturar una criatura salvaje durante un turno de combate.
@@ -125,6 +128,17 @@ Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje.
   - Jugador con $\text{velJugador} = 40$ frente a rival con $\text{velRival} = 60$ en el primer intento ($\text{intentos} = 1$).
   - $\text{probHuidaBruta} = (40 / (40 + 60)) + 0 = 0.40$ ($40\,\%$).
   - $\text{probHuidaFinal} = \text{clamp}(0.10, 0.90, 0.40) = 0.40$.
+
+### 2.6 Progreso de exploración de zona (Fase 9)
+Determina el grado de reconocimiento cartográfico de una zona salvaje por parte del explorador.
+
+- **Variables y rangos:**
+  - $\text{progresoPrevio}$: $[0, 100]$ (porcentaje persistido en la tabla `zona_desbloqueada` en PostgreSQL).
+  - $\text{incrementoPorExploracion}$: $+20\,\%$ por cada acción de exploración realizada en la zona.
+- **Fórmula de actualización:**
+  $$\text{progresoNuevo} = \min(100, \text{progresoPrevio} + 20)$$
+- **Regla del servidor (A-8 / S-6):**
+  El progreso es administrado y persistido íntegramente en el servidor en la columna `zona_desbloqueada.progreso`. Al alcanzar $100\,\%$, el cliente despliega la insignia de "Zona 100% Explorada / Cartografiada".
 
 ---
 

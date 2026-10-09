@@ -219,6 +219,7 @@ model ZonaDesbloqueada {
   id              String    @id @default(uuid())
   personajeId     String    @map("personaje_id")
   zonaId          String    @map("zona_id")
+  progreso        Int       @default(0)
   fechaDesbloqueo DateTime  @default(now()) @map("fecha_desbloqueo")
 
   personaje       Personaje @relation(fields: [personajeId], references: [id], onDelete: Cascade)

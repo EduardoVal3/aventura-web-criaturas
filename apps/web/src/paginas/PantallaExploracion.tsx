@@ -34,7 +34,7 @@ export function PantallaExploracion() {
   const navigate = useNavigate();
   const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
   const [cargandoInicial, setCargandoInicial] = useState(true);
-  const [progresoZona, setProgresoZona] = useState(20);
+  const [progresoZona, setProgresoZona] = useState<number>(0);
   const [explorando, setExplorando] = useState(false);
   const [eventoEncuentro, setEventoEncuentro] = useState<RespuestaExploracion | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -50,6 +50,7 @@ export function PantallaExploracion() {
         const ubi = await api.obtenerUbicacionActual();
         if (!cancelado) {
           setUbicacion(ubi);
+          setProgresoZona(ubi.progresoZona ?? 0);
           setBitacoraExploracion([
             `Te encuentras en ${ubi.nombre}. El terreno se extiende ante ti.`,
           ]);
@@ -91,7 +92,9 @@ export function PantallaExploracion() {
       setExplorando(true);
       const resultado = await api.explorar();
 
-      setProgresoZona((prev) => Math.min(100, prev + 20));
+      if (typeof resultado.progresoZona === "number") {
+        setProgresoZona(resultado.progresoZona);
+      }
       setBitacoraExploracion((prev) => [resultado.mensaje, ...prev.slice(0, 5)]);
 
       if (resultado.tipoEvento === "ENCUENTRO") {
@@ -146,6 +149,11 @@ export function PantallaExploracion() {
                 <Badge variant={ubicacion?.esSegura ? "default" : "destructive"}>
                   {ubicacion?.esSegura ? "Zona Segura" : "Zona Hostil"}
                 </Badge>
+                {progresoZona >= 100 && (
+                  <Badge variant="outline" className="border-emerald-500 text-emerald-400 bg-emerald-950/40">
+                    Zona 100% Explorada / Cartografiada
+                  </Badge>
+                )}
               </div>
               <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
                 {ubicacion?.descripcion}

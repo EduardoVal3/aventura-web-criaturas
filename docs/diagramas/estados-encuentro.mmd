@@ -1,0 +1,11 @@
+stateDiagram-v2
+    [*] --> ACTIVO: Exploración genera encuentro
+    ACTIVO --> ACTIVO: Atacar / Fallo captura / Fallo huida
+    ACTIVO --> VICTORIA: Rival debilitado (HP = 0)
+    ACTIVO --> DERROTA: Equipo aliado debilitado (HP = 0)
+    ACTIVO --> CAPTURADO: Captura exitosa (Talismán)
+    ACTIVO --> HUIDO: Escape exitoso
+    VICTORIA --> [*]
+    DERROTA --> [*]
+    CAPTURADO --> [*]
+    HUIDO --> [*]

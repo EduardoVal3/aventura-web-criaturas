@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    actor Jugador
+    participant API as NestJS (CapturaService)
+    participant Azar as GeneradorAleatorio
+    participant DB as PostgreSQL (Prisma $transaction)
+
+    Jugador->>API: POST /api/encuentros/{id}/capturar { itemCodigo }
+    API->>DB: Validar encuentro ACTIVO y pertenencia (JWT)
+    API->>DB: Verificar posesión de talismán (cantidad > 0)
+    API->>API: Calcular probabilidad final (clamp 0.05 a 0.95)
+    API->>Azar: generar()
+    alt Tirada exitosa
+        API->>DB: BEGIN TRANSACTION
+        DB->>DB: Descontar 1 talismán de inventario
+        DB->>DB: Actualizar encuentro a CAPTURADO
+        DB->>DB: Asignar criatura a Equipo (<6) o Almacén (=6)
+        DB->>DB: Registrar en Historial
+        DB-->>API: COMMIT TRANSACTION
+        API-->>Jugador: 200 OK (Captura exitosa)
+    else Tirada fallida
+        API->>DB: BEGIN TRANSACTION
+        DB->>DB: Descontar 1 talismán de inventario
+        DB->>DB: Contraataque rival (reducir HP aliado)
+        DB-->>API: COMMIT TRANSACTION
+        API-->>Jugador: 200 OK (Captura fallida, encuentro sigue ACTIVO)
+    end

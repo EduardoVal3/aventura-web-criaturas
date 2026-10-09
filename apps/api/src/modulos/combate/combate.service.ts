@@ -19,16 +19,17 @@ import { ProgresoService } from '../progreso/progreso.service';
  * danoBruto = floor((ataque / max(1, defensa)) * poder * 0.8 + nivel * 0.5)
  * danoFinal = max(1, danoBruto) -> Cumple INV-04
  */
+// simplificacion: factor base 1.0 para compatibilidad con tests unitarios existentes
 export function calcularDano(
   ataque: number,
   defensa: number,
   poder: number,
   nivel: number,
+  factorVariacion: number = 1.0,
 ): number {
-  const danoBruto = Math.floor(
-    (ataque / Math.max(1, defensa)) * poder * 0.8 + nivel * 0.5,
-  );
-  return Math.max(1, danoBruto);
+  const danoBruto = (ataque / Math.max(1, defensa)) * poder * 0.8 + nivel * 0.5;
+  const danoConVariacion = Math.floor(danoBruto * factorVariacion);
+  return Math.max(1, danoConVariacion); // Cumple INV-04
 }
 
 /**
@@ -187,12 +188,14 @@ export class CombateService {
 
     const turnoActual = (ultimoCombate?.turno ?? 0) + 1;
 
-    // 1. Daño del jugador al rival
+    // 1. Daño del jugador al rival con variación de ±15%
+    const factorJugador = 0.85 + this.generador.generar() * 0.30;
     const danoJugador = calcularDano(
       criaturaAliada.ataque,
       encuentro.criaturaRival.defensa,
       movimientoAliado.poder,
       criaturaAliada.nivel,
+      factorJugador,
     );
     const nuevoHpRival = aplicarDano(
       encuentro.criaturaRival.hpActual,
@@ -265,19 +268,23 @@ export class CombateService {
       });
     }
 
-    // 2. Si el rival sobrevive: contraataque rival
+    // 2. Si el rival sobrevive: contraataque rival con selección aleatoria y variación
     const movimientosRivales = encuentro.criaturaRival.especie.movimientos;
-    const movimientoRival =
-      movimientosRivales[0] ?? {
-        nombre: 'Ataque Salvaje',
-        poder: 10,
-      };
+    const indiceRival = movimientosRivales.length > 0
+      ? Math.floor(this.generador.generar() * movimientosRivales.length)
+      : 0;
+    const movimientoRival = movimientosRivales[indiceRival] ?? {
+      nombre: 'Ataque Salvaje',
+      poder: 10,
+    };
 
+    const factorRival = 0.85 + this.generador.generar() * 0.30;
     const danoRival = calcularDano(
       encuentro.criaturaRival.ataque,
       criaturaAliada.defensa,
       movimientoRival.poder,
       encuentro.criaturaRival.nivel,
+      factorRival,
     );
     const nuevoHpAliado = aplicarDano(
       criaturaAliada.hpActual,
@@ -452,17 +459,21 @@ export class CombateService {
 
     // Huida fallida: contraataque rival
     const movimientosRivales = encuentro.criaturaRival.especie.movimientos;
-    const movimientoRival =
-      movimientosRivales[0] ?? {
-        nombre: 'Ataque Salvaje',
-        poder: 10,
-      };
+    const indiceRival = movimientosRivales.length > 0
+      ? Math.floor(this.generador.generar() * movimientosRivales.length)
+      : 0;
+    const movimientoRival = movimientosRivales[indiceRival] ?? {
+      nombre: 'Ataque Salvaje',
+      poder: 10,
+    };
 
+    const factorRival = 0.85 + this.generador.generar() * 0.30;
     const danoRival = calcularDano(
       encuentro.criaturaRival.ataque,
       criaturaAliada.defensa,
       movimientoRival.poder,
       encuentro.criaturaRival.nivel,
+      factorRival,
     );
     const nuevoHpAliado = aplicarDano(
       criaturaAliada.hpActual,

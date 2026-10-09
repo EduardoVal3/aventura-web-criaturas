@@ -42,7 +42,11 @@ const CLAVE_ALMACENAMIENTO_TOKEN = "aethelgard_token_acceso";
 export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
   const [tokenInicial] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(CLAVE_ALMACENAMIENTO_TOKEN);
+      const guardado = localStorage.getItem(CLAVE_ALMACENAMIENTO_TOKEN);
+      if (guardado) {
+        api.establecerToken(guardado);
+      }
+      return guardado;
     } catch {
       return null;
     }
@@ -64,6 +68,24 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const cerrarSesion = useCallback(async (): Promise<void> => {
+    try {
+      await api.cerrarSesion();
+    } catch {
+      // simplificacion: si falla en servidor por token inválido, se purga de todos modos en cliente
+    } finally {
+      setToken(null);
+      api.establecerToken(null);
+      setUsuario(null);
+      setPersonajeActivo(null);
+      try {
+        localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
+      } catch {
+        // ignorar fallo
+      }
+    }
+  }, []);
+
   useEffect(() => {
     let cancelado = false;
     api.establecerToken(token);
@@ -81,9 +103,17 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
             setPersonajeActivo(personaje);
           }
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (!cancelado) {
             setPersonajeActivo(null);
+            if (
+              typeof error === "object" &&
+              error !== null &&
+              "estado" in error &&
+              (error as { estado: number }).estado === 401
+            ) {
+              cerrarSesion();
+            }
           }
         })
         .finally(() => {
@@ -97,16 +127,32 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
       } catch {
         // ignorar fallo
       }
+      setCargando(false);
     }
 
     return () => {
       cancelado = true;
     };
-  }, [token]);
+  }, [token, cerrarSesion]);
+
+  useEffect(() => {
+    const alDesautorizar = () => {
+      cerrarSesion();
+    };
+    window.addEventListener("aethelgard:no-autorizado", alDesautorizar);
+    return () => {
+      window.removeEventListener("aethelgard:no-autorizado", alDesautorizar);
+    };
+  }, [cerrarSesion]);
 
   const iniciarSesion = useCallback(
     async (peticion: PeticionLogin): Promise<RespuestaLogin> => {
       const respuesta = await api.iniciarSesion(peticion);
+      try {
+        localStorage.setItem(CLAVE_ALMACENAMIENTO_TOKEN, respuesta.tokenAcceso);
+      } catch {
+        // ignorar fallo
+      }
       setToken(respuesta.tokenAcceso);
       api.establecerToken(respuesta.tokenAcceso);
       setUsuario({
@@ -127,6 +173,11 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
   const registrarUsuario = useCallback(
     async (peticion: PeticionRegistro): Promise<RespuestaRegistro> => {
       const respuesta = await api.registrarUsuario(peticion);
+      try {
+        localStorage.setItem(CLAVE_ALMACENAMIENTO_TOKEN, respuesta.tokenAcceso);
+      } catch {
+        // ignorar fallo
+      }
       setToken(respuesta.tokenAcceso);
       api.establecerToken(respuesta.tokenAcceso);
       setUsuario({
@@ -139,22 +190,6 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     },
     [],
   );
-
-  const cerrarSesion = useCallback(async (): Promise<void> => {
-    try {
-      await api.cerrarSesion();
-    } finally {
-      setToken(null);
-      api.establecerToken(null);
-      setUsuario(null);
-      setPersonajeActivo(null);
-      try {
-        localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
-      } catch {
-        // ignorar fallo
-      }
-    }
-  }, []);
 
   const valor: ContextoAutenticacionTipo = {
     token,

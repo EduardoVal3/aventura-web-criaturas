@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
 import { HistorialService } from '../historial/historial.service';
@@ -11,11 +12,15 @@ import { GeneradorAleatorio, GeneradorAleatorioNativo } from '../../comun/azar/g
 
 @Injectable()
 export class ExploracionService {
+  private readonly generador: GeneradorAleatorio;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly historialService: HistorialService,
-    private readonly generador: GeneradorAleatorio = new GeneradorAleatorioNativo(),
-  ) {}
+    @Optional() generador?: GeneradorAleatorio,
+  ) {
+    this.generador = generador ?? new GeneradorAleatorioNativo();
+  }
 
   /**
    * Ejecuta la tirada probabilística de exploración en la zona activa del explorador.

@@ -78,6 +78,10 @@ async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Pro
       // simplificacion: si el cuerpo no es JSON legible, se usan los valores por defecto.
     }
 
+    if (respuesta.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("aethelgard:no-autorizado"));
+    }
+
     throw new ErrorApi(respuesta.status, codigo, mensaje);
   }
 

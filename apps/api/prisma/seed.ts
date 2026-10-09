@@ -167,49 +167,49 @@ async function sembrarEventosZona() {
     {
       zonaId: 'ZON-01',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 60 },
-        { tipo: 'OBJETO', peso: 25 },
-        { tipo: 'SIN_EVENTO', peso: 15 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
     {
       zonaId: 'ZON-02',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 65 },
-        { tipo: 'OBJETO', peso: 20 },
-        { tipo: 'SIN_EVENTO', peso: 15 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
     {
       zonaId: 'ZON-03',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 65 },
-        { tipo: 'OBJETO', peso: 20 },
-        { tipo: 'SIN_EVENTO', peso: 15 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
     {
       zonaId: 'ZON-04',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 70 },
-        { tipo: 'OBJETO', peso: 20 },
-        { tipo: 'SIN_EVENTO', peso: 10 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
     {
       zonaId: 'ZON-05',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 75 },
-        { tipo: 'OBJETO', peso: 15 },
-        { tipo: 'SIN_EVENTO', peso: 10 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
     {
       zonaId: 'ZON-06',
       eventos: [
-        { tipo: 'ENCUENTRO', peso: 80 },
-        { tipo: 'OBJETO', peso: 15 },
-        { tipo: 'SIN_EVENTO', peso: 5 },
+        { tipo: 'ENCUENTRO', peso: 50 },
+        { tipo: 'OBJETO', peso: 30 },
+        { tipo: 'SIN_EVENTO', peso: 20 },
       ],
     },
   ];

@@ -88,18 +88,54 @@ export class ExploracionService {
     );
     const tipoEventoSeleccionado = selectorEvento.seleccionar();
 
-    // 3. RESOLUCIÓN SEGÚN EL TIPO DE EVENTO SORTEADO
+    // 3. ACTUALIZACIÓN DE PROGRESO DE ZONA EN BASE DE DATOS (+20% hasta 100%)
+    const registroZona = await this.prisma.zonaDesbloqueada.findUnique({
+      where: {
+        personajeId_zonaId: {
+          personajeId: personaje.id,
+          zonaId: zona.id,
+        },
+      },
+    });
+
+    const nuevoProgreso = Math.min(100, (registroZona?.progreso ?? 0) + 20);
+
+    await this.prisma.zonaDesbloqueada.upsert({
+      where: {
+        personajeId_zonaId: {
+          personajeId: personaje.id,
+          zonaId: zona.id,
+        },
+      },
+      update: { progreso: nuevoProgreso },
+      create: {
+        personajeId: personaje.id,
+        zonaId: zona.id,
+        progreso: nuevoProgreso,
+      },
+    });
+
+    // 4. RESOLUCIÓN SEGÚN EL TIPO DE EVENTO SORTEADO
+    let resultadoExploracion: any;
     switch (tipoEventoSeleccionado) {
       case 'ENCUENTRO':
-        return this.resolverEncuentro(personaje, zona);
+        resultadoExploracion = await this.resolverEncuentro(personaje, zona);
+        break;
 
       case 'OBJETO':
-        return this.resolverObjeto(personaje, zona);
+        resultadoExploracion = await this.resolverObjeto(personaje, zona);
+        break;
 
       case 'SIN_EVENTO':
       default:
-        return this.resolverSinEvento(personaje, zona);
+        resultadoExploracion = await this.resolverSinEvento(personaje, zona);
+        break;
     }
+
+    return {
+      ...resultadoExploracion,
+      progresoZona: nuevoProgreso,
+    };
   }
 
   /**

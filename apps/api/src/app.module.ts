@@ -15,6 +15,7 @@ import { TiendaModule } from './modulos/tienda/tienda.module';
 import { HistorialModule } from './modulos/historial/historial.module';
 import { ExternoModule } from './modulos/externo/externo.module';
 
+import { ExploracionModule } from './modulos/exploracion/exploracion.module';
 import { EquipoModule } from './modulos/equipo/equipo.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { EquipoModule } from './modulos/equipo/equipo.module';
     EquipoModule,
     MundoModule,
     CriaturasModule,
+    ExploracionModule,
     EncuentrosModule,
     CombateModule,
     InventarioModule,

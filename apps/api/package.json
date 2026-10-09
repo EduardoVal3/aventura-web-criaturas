@@ -7,7 +7,7 @@
     "start": "nest start",
     "start:prod": "node dist/main",
     "importar:especies": "ts-node prisma/importar-especies.ts",
-    "test": "node -e \"const args = process.argv.slice(1).map(a => a.replace(/^[./]*apps[\\\\/]api[\\\\/]/, '')); const cp = require('child_process'); const res = cp.spawnSync(process.execPath, ['-r', 'ts-node/register', '--test', ...(args.length ? args : ['src/**/*.spec.ts'])], { stdio: 'inherit' }); process.exit(res.status ?? 0);\"",
+    "test": "node -e \"const args = process.argv.slice(1).map(a => a.replace(/^[./]*apps[\\\\/]api[\\\\/]/, '')); const cp = require('child_process'); const res = cp.spawnSync(process.execPath, ['-r', 'ts-node/register', '--test', ...(args.length ? args : ['src/**/*.spec.ts', 'test/**/*.spec.ts'])], { stdio: 'inherit' }); process.exit(res.status ?? 0);\"",
     "test:e2e": "node -e \"const args = process.argv.slice(1).map(a => a.replace(/^[./]*apps[\\\\/]api[\\\\/]/, '')); const cp = require('child_process'); const res = cp.spawnSync(process.execPath, ['-r', 'ts-node/register', '--test', ...(args.length ? args : ['test/**/*.e2e-spec.ts'])], { stdio: 'inherit' }); process.exit(res.status ?? 0);\""
   },
   "dependencies": {

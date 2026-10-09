@@ -1,4 +1,10 @@
 import { Module } from '@nestjs/common';
+import { HistorialService } from './historial.service';
+import { HistorialController } from './historial.controller';
 
-@Module({})
+@Module({
+  controllers: [HistorialController],
+  providers: [HistorialService],
+  exports: [HistorialService],
+})
 export class HistorialModule {}

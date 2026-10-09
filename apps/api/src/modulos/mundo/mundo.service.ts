@@ -67,9 +67,18 @@ export class MundoService {
     );
     const progresoZona = registroZonaActual?.progreso ?? (zona.esSegura ? 100 : 0);
 
+    const slug = zona.nombre
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
     return {
       ubicacionId: zona.id,
       nombre: zona.nombre,
+      slug,
       tipo: zona.tipo,
       esSegura: zona.esSegura,
       descripcion: zona.descripcion,

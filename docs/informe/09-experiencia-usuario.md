@@ -96,3 +96,59 @@ La vista previa permitía el flujo básico pero presentaba carencias visuales y 
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa en TypeScript estricto y Vite.
 - **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
 
+---
+
+## 3. Sub-Fase 10c: Hub de Ubicación y Navegación del Mundo (`PantallaHubUbicacion.tsx`)
+
+### 3.1 Diagnóstico Inicial y Auditoría Impeccable
+La versión previa del Hub de Ubicación cumplía la funcionalidad básica pero presentaba limitaciones significativas de inmersión y ergonomía:
+1. **Ausencia de Atmósfera Visual y Paisaje:** La localidad se representaba como una tarjeta genérica con fondo plano, desaprovechando los activos visuales de zonas y reduciendo la inmersión del explorador.
+2. **Jerarquía Tipográfica Plana:** Títulos y textos descriptivos carecían de diferenciación entre la estética pixelada (`retro`) y la ergonomía de lectura (`font-sans`), generando saturación visual.
+3. **Falta de Micro-interacción en Rutas de Viaje:** El desplazamiento entre zonas ocurría de forma inmediata al hacer clic, con riesgo de viajes accidentales y sin un modal retro accesible que confirmara el destino o detallara los requisitos de zonas bloqueadas.
+4. **Respuesta Acústica Ausente:** La navegación entre servicios y la ejecución de viajes no emitían feedback auditivo sincronizado.
+
+---
+
+### 3.2 Mejoras Implementadas
+
+#### A. Atmósfera Oscura Retro y Paisaje Panorámico (`docs/DESIGN.md` §2)
+- **Hero de Asentamiento con Ilustración WebP y Fallback SVG:** Integración de la vista panorámica de la zona mediante `obtenerImagenZona(...)` y `sanitizarSlugZona(...)`, con degradado de fusión hacia la base Bastión (`#121927`) y fallback a `placeholder-zona.svg`.
+- **Cero Emojis Unicode (Regla Estricta):** Erradicación total de emojis en badges, botones y textos, reemplazándolos por iconografía vectorial SVG de Lucide (`ShieldCheck`, `Skull`, `Coins`, `Users`, `Package`, `Store`, `Map`, `Compass`, `Lock`, `ArrowRight`, `LogOut`, `Loader2`).
+- **Insignia de Seguridad de Zona:** Badge temático en la esquina del hero (`LOCALIDAD SEGURA` en verde esmeralda o `ZONA HOSTIL` en rojo alerta).
+
+#### B. Panel Superior de Explorador y Cuadrícula de Servicios
+- **Métricas Clave con Iconografía Temática:** Desglose del explorador en 4 tarjetas de datos:
+  - Nombre del explorador (`Compass`).
+  - Monedas acumuladas con icono `Coins` y color oro solar (`#f5b724`).
+  - Equipo activo (`X / 6 aliados`) con icono `Users` en verde vital.
+  - Criaturas en almacén con icono `Package`.
+- **Cuadrícula Interactiva de 8 Servicios (`SERVICIOS_HUB`):**
+  - Módulos para Exploración, Equipo Activo, Almacén, Inventario, Tienda/Bazar, Santuario de Salud, Compendio Open5e y Bitácora.
+  - Efectos táctiles de hover (`scale-[1.02]`, borde cian `#14d1e8`, fondo panel `#1a2332`) y retroalimentación sonora `click`.
+  - Indicador sutil de disponibilidad según los servicios declarados por la zona.
+
+#### C. Rutas de Viaje y Modal de Confirmación `AlertDialog`
+- **Tarjetas de Conexión:** Cada destino muestra nombre, nivel sugerido y badge de estado (`ACCESIBLE` vs `BLOQUEADA`).
+- **Micro-interacción de Viaje Seguro:** Los destinos accesibles despliegan un diálogo modal `AlertDialog` retro que solicita confirmación del explorador antes de desplazarse, previniendo viajes no intencionados y mostrando el estado de carga `VIAJANDO...`.
+- **Inspección de Rutas Restringidas (M-PRO):** Las zonas bloqueadas cuentan con diálogo explicativo detallando los requisitos de gremio o experiencia requeridos para su acceso.
+
+#### D. Audio Retro Centralizado y Tolerancia a Fallos
+- Integración de `reproducirSonido(...)` para eventos de interfaz:
+  - Clic al interactuar con servicios y botones (`0.35`).
+  - Confirmación al iniciar viaje hacia otra zona (`0.5`).
+  - Señalización de error ante bloqueos o fallos de conexión (`0.5`).
+
+---
+
+### 3.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-hub-mundo.spec.ts`):** 4 pruebas nuevas verificando:
+  1. Configuración, rutas e iconos de los 8 servicios del Hub.
+  2. Lógica de habilitación de servicios según la localidad actual.
+  3. Sanitización de nombres y resolución de paisajes WebP con degradación segura.
+  4. Estructura y reglas de conexiones de viaje bloqueadas vs accesibles.
+- **Suite Total Web (`pnpm --filter web test`):** 10 de 10 pruebas aprobadas (100% éxito).
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores de TypeScript y empaquetado Vite exitoso.
+- **Linter Web (`oxlint`):** 0 errores.
+- **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas sin regresiones.
+- **Validación Visual en Navegador (`browser_subagent`):** Flujo completo verificado en vivo sobre `/hub` con captura de pantalla y comprobación de modales, badges y servicios.
+

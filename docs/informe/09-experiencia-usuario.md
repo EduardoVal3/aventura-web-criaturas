@@ -185,9 +185,9 @@ La pantalla de exploración inicial requería elevar su nivel de inmersión y ro
 - **Ficha Táctica del Rival:** Despliegue del nombre en `Press Start 2P`, badge de nivel, barra de vitalidad porcentual y desglose de atributos base (**ATQ**, **DEF**, **VEL**) con chips numéricos monoespaciados.
 - **Acciones Claras:** Botón destacado `INICIAR COMBATE` en carmesí retro y botón alternativo `RETIRARSE` para volver a la senda.
 
-#### D. Modal de Botín y Reanudación Activa
+#### D. Modal de Botín y Reanudación Activa con Banner Persistente
 - **Diálogo de Botín Descubierto:** Presentación enriquecida ante eventos de tipo `OBJETO`, desplegando monedas de oro solar (`Coins`) o el icono del ítem obtenido con su cantidad correspondiente.
-- **Diálogo de Combate en Curso:** Detección automática al cargar la pantalla de combates pendientes de resolución, guiando al explorador a retomar el enfrentamiento.
+- **Flujo de Reanudación y Banner Persistente de Rival Activo:** Si el usuario decide "Retirarse" del modal o si existía un combate en curso previo, la interfaz despliega un banner permanente de alerta táctica con los datos de la criatura rival y conmuta el botón principal de exploración a `RESOLVER COMBATE CON [RIVAL]` (con icono `Swords`). Esto elimina la necesidad de abandonar y reingresar a la pantalla y previene errores `409 Conflict` por reintentos de exploración indebidos.
 
 #### E. Bitácora de Incursión Estructurada
 - **Registro Cronológico Clasificado:** Entradas tipadas (`INICIO`, `PASO`, `ENCUENTRO`, `OBJETO`) con marcas horarias precisas (`HH:MM:SS`), tipografía legible en `font-sans` (Geist) e iconografía específica de Lucide (`Swords`, `Coins`, `Footprints`, `Compass`).
@@ -196,18 +196,28 @@ La pantalla de exploración inicial requería elevar su nivel de inmersión y ro
 #### F. Audio Retro Centralizado y Web Audio API
 - Efectos auditivos sincronizados: `paso` al avanzar por la senda, `alerta` ante detección de bestias hostiles, `botin` al obtener recompensas, `confirmar` al entrar a combate y `error` ante bloqueos.
 
+#### G. Lógica de Progresión Desacoplada y Determinista (A-8 / S-6)
+- **Corrección de Avance Prematuro:** El sorteo de un evento de `ENCUENTRO` preserva intacto el porcentaje de cartografía de la ruta silvestre en `exploracion.service.ts`.
+- **Acreditación por Mérito Táctico:** El incremento de $+20\,\%$ hasta el tope de $100\,\%$ se acredita exclusivamente en el Back-End tras la resolución victoriosa del combate (`CombateService`) o mediante la captura exitosa de la criatura rival (`CapturaService`).
+
+#### H. Resiliencia Responsive y Ergonomía Móvil (Auditoría Impeccable)
+- **Hero Panorámico Desacoplado:** Se separó la ilustración visual panorámica superior de los bloques textuales descriptivos y metadatos inferiores, eliminando cualquier superposición o truncamiento tipográfico en anchos reducidos (`320px–425px`).
+- **Modales Adaptativos con Scroll Seguro:** Todo contenedor modal incorpora `w-[94vw] max-w-md max-h-[85vh] overflow-y-auto`, asegurando que las opciones de interacción y botones de acción permanezcan siempre accesibles y visibles en pantallas de altura compacta (ej. viewports de $592\,\text{px}$).
+
 ---
 
 ### 4.3 Verificación de Calidad y Cero Regresiones
-- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-exploracion.spec.ts`):** 5 pruebas exhaustivas verificando:
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-exploracion.spec.ts`):** 6 pruebas exhaustivas verificando:
   1. Estructura y contrato de `RespuestaExploracion` ante encuentros con criaturas.
   2. Manejo de recompensas de botín (monedas e ítems).
   3. Lógica de cálculo y límite persistente del 100% de cartografía.
   4. Diferenciación de expedición y niveles entre zonas seguras y hostiles.
   5. Formato de la bitácora de incursión y garantía de cero emojis unicode.
-- **Suite Total Web (`pnpm --filter web test`):** 15 de 15 pruebas aprobadas (100% éxito).
-- **Compilación de Producción (`pnpm --filter web build`):** 0 errores de TypeScript y empaquetado Vite exitoso en 1.38s.
+  6. Preservación del progreso ante encuentros hostiles en progreso.
+- **Suite Total Web (`pnpm --filter web test`):** 16 de 16 pruebas aprobadas (100% éxito).
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores de TypeScript y empaquetado Vite exitoso en 1.78s.
 - **Auditoría Mecánica Impeccable (`detect.mjs`):** 0 hallazgos o defectos en `PantallaExploracion.tsx`.
 - **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
+
 
 

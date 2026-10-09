@@ -132,3 +132,12 @@
   - Cada acción de exploración (`POST /api/exploracion/explorar`) incrementa en el Back-End el progreso de la zona en $+20\,\%$ hasta un tope de $100\,\%$.
   - Los endpoints `GET /api/mundo/ubicacion-actual` y `POST /api/exploracion/explorar` devuelven el atributo `progresoZona`, permitiendo al Front-End reflejar de forma reactiva y fidedigna el avance cartográfico y desplegar la insignia de "Zona 100% Explorada / Cartografiada".
 
+---
+
+## 6. Progresión condicionada y resiliencia UX en Exploración y Encuentros (Subfase 10d)
+
+- **Decisión arquitectónica:**
+  - **Desacoplamiento de Progreso ante Encuentros Hostiles:** En `exploracion.service.ts`, los eventos de tipo `ENCUENTRO` no incrementan el progreso de la ruta de manera anticipada. El avance cartográfico (+20% hasta 100%) se reserva para exploraciones pacíficas (`OBJETO` o `SIN_EVENTO`) o para la resolución favorable del combate mediante victoria (`CombateService`) o captura exitosa (`CapturaService`). Esto asegura consistencia lógica: una senda silvestre no se considera cartografiada hasta superar el peligro que la bloquea.
+  - **Estado Reactivo de Combate Activo y Banner Permanente:** Para prevenir desorientación del explorador si cierra el modal o elige inspeccionar la criatura, `PantallaExploracion.tsx` mantiene un banner de alerta con los datos del rival (`rivalActivo`) y muta el botón principal a `RESOLVER COMBATE CON [RIVAL]`. Esto erradica bloqueos de flujo y previene errores `409 Conflict` por reintentos de exploración no permitidos.
+  - **Arquitectura de Interfaz Responsive Impecable:** El Hero Panorámico de la ruta separa la ilustración visual superior de la descripción y metadatos inferiores, garantizando cero colisiones entre insignias de cabecera y tipografías en viewports compactos (`320px–425px`). Asimismo, el modal de encuentro incorpora contención `max-h-[85vh]` y scroll interno para prevenir desbordes de pantalla en dispositivos móviles.
+

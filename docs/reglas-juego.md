@@ -129,16 +129,18 @@ Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje.
   - $\text{probHuidaBruta} = (40 / (40 + 60)) + 0 = 0.40$ ($40\,\%$).
   - $\text{probHuidaFinal} = \text{clamp}(0.10, 0.90, 0.40) = 0.40$.
 
-### 2.6 Progreso de exploración de zona (Fase 9)
+### 2.6 Progreso de exploración de zona (Fase 9 / Subfase 10d)
 Determina el grado de reconocimiento cartográfico de una zona salvaje por parte del explorador.
 
 - **Variables y rangos:**
   - $\text{progresoPrevio}$: $[0, 100]$ (porcentaje persistido en la tabla `zona_desbloqueada` en PostgreSQL).
-  - $\text{incrementoPorExploracion}$: $+20\,\%$ por cada acción de exploración realizada en la zona.
+  - $\text{incrementoPorExploracion}$: $+20\,\%$ otorgado al completar una acción de exploración pacífica (`OBJETO` o `SIN_EVENTO`), o al resolver favorablemente un encuentro hostil mediante victoria (`VICTORIA`) o captura (`CAPTURADO`).
 - **Fórmula de actualización:**
   $$\text{progresoNuevo} = \min(100, \text{progresoPrevio} + 20)$$
-- **Regla del servidor (A-8 / S-6):**
-  El progreso es administrado y persistido íntegramente en el servidor en la columna `zona_desbloqueada.progreso`. Al alcanzar $100\,\%$, el cliente despliega la insignia de "Zona 100% Explorada / Cartografiada".
+- **Regla del servidor y activación condicionada (Subfase 10d, A-8 / S-6):**
+  1. Si la exploración resulta en un evento de `ENCUENTRO`, el progreso de la ruta **no se incrementa prematuramente** mientras el combate permanezca en curso (`EN_CURSO`).
+  2. El incremento de $+20\,\%$ de la zona se acredita y persiste en la base de datos exclusivamente cuando el encuentro es resuelto favorablemente (al derrotar a la bestia en `CombateService` o al capturarla en `CapturaService`). Si el jugador huye o es derrotado, la senda retiene su progreso previo.
+  3. El progreso es administrado y validado íntegramente en el servidor en la columna `zona_desbloqueada.progreso`. Al alcanzar $100\,\%$, el cliente despliega la insignia de "100% Cartografiada / Explorada".
 
 ---
 

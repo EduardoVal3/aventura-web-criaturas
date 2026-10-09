@@ -17,6 +17,7 @@ import { calcularDano, aplicarDano } from '../combate.service';
 export const MULTIPLICADORES_TALISMAN: Record<string, number> = {
   'talisman-basico': 1.0,
   'talisman-resonante': 1.5,
+  'talisman-avanzado': 1.5,
 };
 
 /**

@@ -88,7 +88,7 @@ export class ExploracionService {
     );
     const tipoEventoSeleccionado = selectorEvento.seleccionar();
 
-    // 3. ACTUALIZACIÓN DE PROGRESO DE ZONA EN BASE DE DATOS (+20% hasta 100%)
+    // 3. CONSULTA DE PROGRESO DE ZONA ACTUAL
     const registroZona = await this.prisma.zonaDesbloqueada.findUnique({
       where: {
         personajeId_zonaId: {
@@ -98,22 +98,29 @@ export class ExploracionService {
       },
     });
 
-    const nuevoProgreso = Math.min(100, (registroZona?.progreso ?? 0) + 20);
+    const progresoActual = registroZona?.progreso ?? 0;
+    let nuevoProgreso = progresoActual;
 
-    await this.prisma.zonaDesbloqueada.upsert({
-      where: {
-        personajeId_zonaId: {
+    // Solo se incrementa el progreso inmediato en la exploración si NO es un encuentro con criatura
+    // (en los encuentros, el avance de la zona se gana al resolver con victoria o captura el combate).
+    if (tipoEventoSeleccionado !== 'ENCUENTRO') {
+      nuevoProgreso = Math.min(100, progresoActual + 20);
+
+      await this.prisma.zonaDesbloqueada.upsert({
+        where: {
+          personajeId_zonaId: {
+            personajeId: personaje.id,
+            zonaId: zona.id,
+          },
+        },
+        update: { progreso: nuevoProgreso },
+        create: {
           personajeId: personaje.id,
           zonaId: zona.id,
+          progreso: nuevoProgreso,
         },
-      },
-      update: { progreso: nuevoProgreso },
-      create: {
-        personajeId: personaje.id,
-        zonaId: zona.id,
-        progreso: nuevoProgreso,
-      },
-    });
+      });
+    }
 
     // 4. RESOLUCIÓN SEGÚN EL TIPO DE EVENTO SORTEADO
     let resultadoExploracion: any;

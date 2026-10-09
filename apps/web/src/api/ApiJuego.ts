@@ -96,6 +96,9 @@ export interface UbicacionActual {
   tipo: "LOCALIDAD" | "ZONA_PELIGRO";
   esSegura: boolean;
   descripcion: string;
+  nivelMinimo?: number | null;
+  nivelMaximo?: number | null;
+  nivelSugerido?: string | null;
   servicios: string[];
   progresoZona?: number;
   conexiones: ConexionUbicacion[];

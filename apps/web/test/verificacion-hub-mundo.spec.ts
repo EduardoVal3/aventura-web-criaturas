@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import {
   SERVICIOS_HUB,
   estaServicioHabilitadoEnZona,
-  type ServicioHub,
 } from "../src/lib/servicios-hub.ts";
 import {
   obtenerImagenZona,

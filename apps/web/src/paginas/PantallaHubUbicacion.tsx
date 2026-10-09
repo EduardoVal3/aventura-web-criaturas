@@ -81,7 +81,11 @@ export function PantallaHubUbicacion() {
       setUbicacion(nuevaUbicacion);
     } catch (error) {
       if (error instanceof ErrorApi) {
-        toast.error(error.message);
+        if (error.codigo === "ZONA_BLOQUEADA") {
+          toast.error(`Zona bloqueada: ${error.message}`);
+        } else {
+          toast.error(error.message);
+        }
       } else {
         toast.error("No fue posible completar el viaje.");
       }

@@ -131,13 +131,13 @@ export function PantallaAlmacen() {
       ) : almacen.length === 0 ? (
         <Card className="text-center p-8">
           <CardTitle className="text-base text-muted-foreground mb-2">
-            No tienes criaturas reservadas en el almacén
+            Tu almacén está vacío
           </CardTitle>
           <CardDescription className="text-xs mb-4">
-            Todas tus criaturas capturadas se encuentran en tu equipo activo.
+            ¡Captura más criaturas en tus viajes!
           </CardDescription>
-          <Link to="/equipo">
-            <Button size="sm">Ver Equipo Activo</Button>
+          <Link to="/exploracion">
+            <Button size="sm">Ir a Explorar</Button>
           </Link>
         </Card>
       ) : (

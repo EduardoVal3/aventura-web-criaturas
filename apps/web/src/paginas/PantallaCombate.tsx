@@ -27,10 +27,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/8bit/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/8bit/dialog";
+import {
   api,
   type EncuentroActivo,
   type CriaturaCombateRival,
   type CriaturaCombateAliada,
+  type ItemInventario,
   ErrorApi,
 } from "@/api";
 
@@ -41,13 +50,18 @@ export function PantallaCombate() {
   const [aliado, setAliado] = useState<CriaturaCombateAliada | null>(null);
   const [cargando, setCargando] = useState(true);
   const [procesandoAccion, setProcesandoAccion] = useState(false);
-  const [porcentajeXp, setPorcentajeXp] = useState(60);
+  const [porcentajeXp, setPorcentajeXp] = useState(0);
   const [subioNivel, setSubioNivel] = useState(false);
   const [bitacoraCombate, setBitacoraCombate] = useState<string[]>([]);
   const [combateFinalizado, setCombateFinalizado] = useState(false);
+  const [estadoFinal, setEstadoFinal] = useState<"VICTORIA" | "DERROTA" | "CAPTURADO" | null>(null);
+  const [talismanes, setTalismanes] = useState<ItemInventario[]>([]);
+  const [modalCapturaAbierto, setModalCapturaAbierto] = useState(false);
+  const [talismanSeleccionado, setTalismanSeleccionado] = useState<string>("talisman-basico");
 
   useEffect(() => {
     let cancelado = false;
+
     async function inicializarCombate() {
       try {
         const datos = await api.obtenerEncuentroActivo();
@@ -56,13 +70,36 @@ export function PantallaCombate() {
           setRival(datos.criaturaRival);
           setAliado(datos.criaturaAliada);
           setBitacoraCombate([
-            `¡Un ${datos.criaturaRival.nombre} salvaje (Nv. ${datos.criaturaRival.nivel}) apareció!`,
-            `¡Adelante, ${datos.criaturaAliada.nombre}!`,
+            `Turno ${datos.turno}: ¡Un ${datos.criaturaRival.nombre} salvaje (Nv. ${datos.criaturaRival.nivel}) está frente a ti!`,
+            `¡Tu aliada es ${datos.criaturaAliada.nombre} (Nv. ${datos.criaturaAliada.nivel})!`,
           ]);
+        }
+
+        // Cargar talismanes para captura
+        try {
+          const inv = await api.obtenerInventario();
+          if (!cancelado) {
+            const itemsTalisman = inv.items.filter((i) => i.tipo === "CAPTURA" && i.cantidad > 0);
+            setTalismanes(itemsTalisman);
+            if (itemsTalisman.length > 0) {
+              setTalismanSeleccionado(itemsTalisman[0].codigo);
+            }
+          }
+        } catch {
+          // ignora fallo no crítico de inventario
         }
       } catch (error) {
         if (!cancelado) {
           if (error instanceof ErrorApi) {
+            if (error.codigo === "ENCUENTRO_NO_ENCONTRADO" || error.estado === 404) {
+              toast.info("No tienes ningún combate pendiente.");
+              navigate("/exploracion");
+              return;
+            }
+            if (error.estado === 401) {
+              navigate("/ingreso");
+              return;
+            }
             toast.error(error.message);
           } else {
             toast.error("Error al cargar los datos del combate activo.");
@@ -98,7 +135,7 @@ export function PantallaCombate() {
         `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`,
       );
 
-      // Actualizar salud del rival según lo recibido por la API
+      // Actualizar salud del rival gobernada por el servidor
       if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
         setRival({
           ...rival,
@@ -119,19 +156,25 @@ export function PantallaCombate() {
         }
       }
 
-      // Evaluación del estado devuelto por la API
+      // Evaluación del estado devuelto por el servidor
       if (resultado.estado === "VICTORIA") {
         nuevosMensajes.push("¡Victoria! La criatura enemiga ha caído debilitada.");
         setCombateFinalizado(true);
+        setEstadoFinal("VICTORIA");
         if (resultado.resultadoFinal?.subioNivel) {
           setSubioNivel(true);
           setPorcentajeXp(100);
-          toast.success("¡Tu criatura ha subido de nivel!");
+          toast.success(
+            `¡Tu criatura subió al nivel ${resultado.resultadoFinal.nivelNuevo ?? "superior"}!`,
+          );
+        } else if (resultado.resultadoFinal?.experienciaGanada) {
+          toast.success(`¡Ganaste ${resultado.resultadoFinal.experienciaGanada} XP!`);
         }
       } else if (resultado.estado === "DERROTA") {
         nuevosMensajes.push("Tu criatura ha quedado fuera de combate.");
         setCombateFinalizado(true);
-        toast.error("Has sido derrotado. Regresa a Villa Serena a recuperarte.");
+        setEstadoFinal("DERROTA");
+        toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
       }
 
       setBitacoraCombate((prev) => [...nuevosMensajes, ...prev]);
@@ -146,25 +189,45 @@ export function PantallaCombate() {
     }
   };
 
-  const handleCapturar = async () => {
+  const abrirSelectorCaptura = () => {
+    if (talismanes.length === 0) {
+      toast.error("No tienes talismanes de captura en tu inventario. Visita la tienda.");
+      return;
+    }
+    setModalCapturaAbierto(true);
+  };
+
+  const ejecutarCaptura = async () => {
     if (!encuentro) return;
+    setModalCapturaAbierto(false);
     try {
       setProcesandoAccion(true);
       const resultado = await api.capturar({
         encuentroId: encuentro.encuentroId,
-        itemCodigo: "talisman-basico",
+        itemCodigo: talismanSeleccionado,
       });
 
       if (resultado.exito) {
-        toast.success(resultado.mensaje);
+        const destino = resultado.destinoCaptura === "EQUIPO" ? "tu equipo activo" : "el almacén";
+        toast.success(`¡Captura exitosa! ${resultado.criaturaCapturada?.nombre ?? "La criatura"} fue enviada a ${destino}.`);
         setBitacoraCombate((prev) => [resultado.mensaje, ...prev]);
         setCombateFinalizado(true);
+        setEstadoFinal("CAPTURADO");
       } else {
-        toast.error(resultado.mensaje || "El talismán no logró contener a la criatura.");
-        setBitacoraCombate((prev) => [
-          resultado.mensaje || "La criatura se resistió a la captura.",
-          ...prev,
-        ]);
+        toast.error(resultado.mensaje || "El talismán falló y la criatura se resistió.");
+        const mensajesFallo = [resultado.mensaje || "La criatura se resistió a la captura."];
+        if (resultado.contraataqueRival && aliado) {
+          mensajesFallo.push(
+            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño.`,
+          );
+          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
+            setAliado({
+              ...aliado,
+              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
+            });
+          }
+        }
+        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
       }
     } catch (error) {
       if (error instanceof ErrorApi) {
@@ -188,6 +251,8 @@ export function PantallaCombate() {
       if (resultado.exito) {
         toast.info(resultado.mensaje || "Has escapado exitosamente del combate.");
         navigate("/exploracion");
+      } else {
+        toast.error("No lograste escapar. El combate continúa.");
       }
     } catch (error) {
       if (error instanceof ErrorApi) {
@@ -203,15 +268,16 @@ export function PantallaCombate() {
   if (cargando || !rival || !aliado) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-        <Spinner className="size-8" />
-        <p className="text-sm font-semibold text-muted-foreground">
-          Preparando campo de batalla...
+        <Spinner className="size-8 text-primary" />
+        <p className="text-sm font-semibold text-muted-foreground animate-pulse">
+          Sincronizando estado del combate con el servidor...
         </p>
       </div>
     );
   }
 
   const porcentajeHpAliado = Math.round((aliado.hpActual / aliado.hpMaximo) * 100);
+  const esTurnoJugador = encuentro?.esTurnoJugador ?? true;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-2 sm:py-4">
@@ -223,7 +289,7 @@ export function PantallaCombate() {
             <div className="flex items-center justify-between">
               <Badge variant="destructive">Rival Silvestre</Badge>
               <span className="text-xs font-mono text-muted-foreground">
-                Turno del combate
+                Turno {encuentro?.turno ?? 1}
               </span>
             </div>
           </CardHeader>
@@ -305,19 +371,44 @@ export function PantallaCombate() {
           {combateFinalizado ? (
             <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs font-semibold text-primary">
-                El encuentro ha finalizado.
+                {estadoFinal === "VICTORIA"
+                  ? "¡Has ganado el combate! Victoria registrada."
+                  : estadoFinal === "CAPTURADO"
+                  ? "¡Criatura capturada con éxito!"
+                  : "El combate ha finalizado por derrota."}
               </span>
-              <Button
-                onClick={() => navigate("/exploracion")}
-                className="w-full sm:w-auto"
-              >
-                Regresar a Exploración
-              </Button>
+              <div className="flex gap-2">
+                {estadoFinal === "DERROTA" ? (
+                  <Button
+                    onClick={() => navigate("/curacion")}
+                    variant="destructive"
+                    className="w-full sm:w-auto"
+                  >
+                    Ir a Centro de Curación
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => navigate("/exploracion")}
+                      className="w-full sm:w-auto"
+                    >
+                      Continuar Explorando
+                    </Button>
+                    <Button
+                      onClick={() => navigate("/hub")}
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                    >
+                      Volver al Hub
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
               <Button
-                disabled={procesandoAccion}
+                disabled={procesandoAccion || !esTurnoJugador}
                 onClick={() => handleAtacar(0)}
                 className="flex items-center justify-center gap-2"
               >
@@ -326,8 +417,8 @@ export function PantallaCombate() {
 
               <Button
                 variant="secondary"
-                disabled={procesandoAccion}
-                onClick={handleCapturar}
+                disabled={procesandoAccion || !esTurnoJugador}
+                onClick={abrirSelectorCaptura}
                 className="flex items-center justify-center gap-2"
               >
                 {procesandoAccion ? <Spinner className="size-4" /> : "Capturar (Talismán)"}
@@ -337,7 +428,7 @@ export function PantallaCombate() {
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
-                    disabled={procesandoAccion}
+                    disabled={procesandoAccion || !esTurnoJugador}
                     className="flex items-center justify-center gap-2"
                   >
                     Huir
@@ -347,7 +438,7 @@ export function PantallaCombate() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Deseas retirarte del combate?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Intentarás escapar hacia una posición segura en la ruta.
+                      Intentarás escapar hacia una posición segura en la ruta silvestre.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -362,6 +453,63 @@ export function PantallaCombate() {
           )}
         </CardFooter>
       </Card>
+
+      {/* Modal de Selección de Talismán de Captura */}
+      <Dialog open={modalCapturaAbierto} onOpenChange={setModalCapturaAbierto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base sm:text-lg font-bold text-primary">
+              Seleccionar Talismán de Captura
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Elige el talismán que usarás para intentar sintonizar y capturar al rival.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            {talismanes.map((item) => (
+              <label
+                key={item.codigo}
+                className={`flex items-center justify-between p-3 border-2 rounded cursor-pointer transition-colors ${
+                  talismanSeleccionado === item.codigo
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="talisman"
+                    value={item.codigo}
+                    checked={talismanSeleccionado === item.codigo}
+                    onChange={() => setTalismanSeleccionado(item.codigo)}
+                    className="accent-primary"
+                  />
+                  <span className="font-semibold text-xs text-foreground">
+                    {item.nombre}
+                  </span>
+                </div>
+                <Badge variant="secondary" className="text-[10px]">
+                  x{item.cantidad} disponibles
+                </Badge>
+              </label>
+            ))}
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button className="flex-1" onClick={ejecutarCaptura}>
+              Lanzar Talismán
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setModalCapturaAbierto(false)}
+            >
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

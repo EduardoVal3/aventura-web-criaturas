@@ -419,10 +419,10 @@ export function PaginaKitUi() {
         </div>
       </section>
 
-      {/* 9. Carga con API simulada */}
+      {/* 9. Carga con API del servidor */}
       <section className="space-y-4" aria-labelledby="seccion-carga">
         <h2 id="seccion-carga" className="text-xl sm:text-2xl font-semibold retro">
-          Carga y estado con API simulada
+          Carga y estado con API del servidor
         </h2>
         <Card className="max-w-md">
           <CardHeader>
@@ -438,7 +438,7 @@ export function PaginaKitUi() {
               )}
             </div>
             <CardDescription>
-              Petición asíncrona a la capa ApiJuego en modo simulado.
+              Petición asíncrona a la capa ApiJuego conectada por HTTP REST.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -478,7 +478,7 @@ export function PaginaKitUi() {
               disabled={cargandoApi}
               className="w-full"
             >
-              {cargandoApi ? "Cargando..." : "Recargar datos simulados"}
+              {cargandoApi ? "Cargando..." : "Recargar datos del servidor"}
             </Button>
           </CardFooter>
         </Card>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Progress } from "@/components/ui/8bit/progress";
 import { Spinner } from "@/components/ui/8bit/spinner";
+import { Skeleton } from "@/components/ui/8bit/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -22,25 +23,76 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/8bit/dialog";
-import { api, type RespuestaExploracion, ErrorApi } from "@/api";
+import {
+  api,
+  type RespuestaExploracion,
+  type UbicacionActual,
+  ErrorApi,
+} from "@/api";
 
 export function PantallaExploracion() {
   const navigate = useNavigate();
-  const [progresoZona, setProgresoZona] = useState(35);
+  const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
+  const [cargandoInicial, setCargandoInicial] = useState(true);
+  const [progresoZona, setProgresoZona] = useState(20);
   const [explorando, setExplorando] = useState(false);
   const [eventoEncuentro, setEventoEncuentro] = useState<RespuestaExploracion | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [bitacoraExploracion, setBitacoraExploracion] = useState<string[]>([
-    "Ingresaste a las Praderas del Amanecer con paso cauteloso.",
-  ]);
+  const [modalReanudacion, setModalReanudacion] = useState(false);
+  const [nombreRivalReanudado, setNombreRivalReanudado] = useState<string>("");
+  const [bitacoraExploracion, setBitacoraExploracion] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function cargarEstado() {
+      try {
+        const ubi = await api.obtenerUbicacionActual();
+        if (!cancelado) {
+          setUbicacion(ubi);
+          setBitacoraExploracion([
+            `Te encuentras en ${ubi.nombre}. El terreno se extiende ante ti.`,
+          ]);
+        }
+      } catch (error) {
+        if (!cancelado) {
+          if (error instanceof ErrorApi && error.estado === 401) {
+            navigate("/ingreso");
+            return;
+          }
+          toast.error("Error al cargar la ubicación actual.");
+        }
+      }
+
+      // Reanudación activa: verificar si hay combate en curso
+      try {
+        const encuentroActivo = await api.obtenerEncuentroActivo();
+        if (!cancelado && encuentroActivo && encuentroActivo.estado === "EN_CURSO") {
+          setNombreRivalReanudado(encuentroActivo.criaturaRival.nombre);
+          setModalReanudacion(true);
+        }
+      } catch {
+        // 404 o ENCUENTRO_NO_ENCONTRADO es normal si no hay combate en curso
+      } finally {
+        if (!cancelado) {
+          setCargandoInicial(false);
+        }
+      }
+    }
+
+    cargarEstado();
+    return () => {
+      cancelado = true;
+    };
+  }, [navigate]);
 
   const handleExplorar = async () => {
     try {
       setExplorando(true);
       const resultado = await api.explorar();
 
-      setProgresoZona((prev) => Math.min(100, prev + 15));
-      setBitacoraExploracion((prev) => [resultado.mensaje, ...prev.slice(0, 4)]);
+      setProgresoZona((prev) => Math.min(100, prev + 20));
+      setBitacoraExploracion((prev) => [resultado.mensaje, ...prev.slice(0, 5)]);
 
       if (resultado.tipoEvento === "ENCUENTRO") {
         setEventoEncuentro(resultado);
@@ -52,6 +104,11 @@ export function PantallaExploracion() {
       }
     } catch (error) {
       if (error instanceof ErrorApi) {
+        if (error.codigo === "ENCUENTRO_ACTIVO_PENDIENTE") {
+          toast.info("¡Tienes un combate pendiente de resolución!");
+          navigate("/combate");
+          return;
+        }
         toast.error(error.message);
       } else {
         toast.error("Error al explorar el terreno.");
@@ -66,6 +123,15 @@ export function PantallaExploracion() {
     navigate("/combate");
   };
 
+  if (cargandoInicial) {
+    return (
+      <div className="space-y-6 max-w-4xl mx-auto py-4">
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto py-2 sm:py-4">
       {/* Cabecera de la Ruta Silvestre */}
@@ -75,17 +141,19 @@ export function PantallaExploracion() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <CardTitle className="text-xl sm:text-2xl text-primary font-bold">
-                  Praderas del Amanecer
+                  {ubicacion?.nombre ?? "Zona de Expedición"}
                 </CardTitle>
-                <Badge variant="destructive">Peligro Moderado</Badge>
+                <Badge variant={ubicacion?.esSegura ? "default" : "destructive"}>
+                  {ubicacion?.esSegura ? "Zona Segura" : "Zona Hostil"}
+                </Badge>
               </div>
               <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
-                Colinas verdes onduladas habitadas por aves rapaces y lobos salvajes.
+                {ubicacion?.descripcion}
               </CardDescription>
             </div>
             <Link to="/hub">
               <Button variant="outline" size="sm" className="text-xs">
-                Regresar a Villa Serena
+                Regresar al Hub
               </Button>
             </Link>
           </div>
@@ -181,6 +249,40 @@ export function PantallaExploracion() {
               onClick={() => setModalAbierto(false)}
             >
               Mantener distancia
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal / Diálogo de Reanudación de Combate Activo */}
+      <Dialog open={modalReanudacion} onOpenChange={setModalReanudacion}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl text-primary font-bold text-center">
+              ¡Combate Activo Pendiente!
+            </DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm text-center">
+              Tienes un encuentro en curso con{" "}
+              <strong className="text-foreground">{nombreRivalReanudado}</strong> que no ha sido
+              resuelto.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              className="w-full sm:w-auto flex-1"
+              onClick={() => {
+                setModalReanudacion(false);
+                navigate("/combate");
+              }}
+            >
+              Reanudar Combate
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto flex-1"
+              onClick={() => setModalReanudacion(false)}
+            >
+              Cerrar aviso
             </Button>
           </DialogFooter>
         </DialogContent>

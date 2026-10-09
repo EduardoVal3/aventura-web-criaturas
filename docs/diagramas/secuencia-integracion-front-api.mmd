@@ -1,0 +1,27 @@
+sequenceDiagram
+    autonumber
+    actor Usuario
+    participant UI as React SPA (PantallaCombate)
+    participant API as apiHttp (Fetch)
+    participant Nest as NestJS (CombateController)
+    participant DB as PostgreSQL (Prisma)
+
+    Usuario->>UI: Recarga página (/combate)
+    UI->>API: obtenerEncuentroActivo()
+    API->>Nest: GET /api/encuentros/activo (Bearer JWT)
+    Nest->>DB: Consultar encuentro ACTIVO del personaje
+    DB-->>Nest: Registro de encuentro + criaturas
+    Nest-->>API: 200 OK (EncuentroActivo JSON)
+    API-->>UI: EncuentroActivo
+    UI->>UI: Renderizar rival, aliado y turno
+
+    Usuario->>UI: Clic en "Atacar" (movimiento 0)
+    UI->>UI: Deshabilitar controles (cargando = true)
+    UI->>API: atacar({ encuentroId, movimientoIndice: 0 })
+    API->>Nest: POST /api/combate/atacar (Bearer JWT)
+    Nest->>Nest: Calcular daño (fórmulas servidor)
+    Nest->>DB: Actualizar HP en transacción atómica
+    DB-->>Nest: HP actualizado
+    Nest-->>API: 200 OK (RespuestaAtacar)
+    API-->>UI: RespuestaAtacar
+    UI->>UI: Actualizar barras de HP y bitácora de combate

@@ -5,6 +5,8 @@ import {
 } from "react-router";
 
 import { LayoutPrincipal } from "@/components/LayoutPrincipal";
+import { RutaProtegida, RutaPublica } from "@/components/RutaProtegida";
+import { Spinner } from "@/components/ui/8bit/spinner";
 import {
   ProveedorAutenticacion,
   useAutenticacion,
@@ -27,7 +29,17 @@ import { PantallaCatalogo } from "@/paginas/PantallaCatalogo";
 import { PantallaHistorial } from "@/paginas/PantallaHistorial";
 
 function RutaRaiz() {
-  const { token, personajeActivo } = useAutenticacion();
+  const { cargando, token, personajeActivo } = useAutenticacion();
+  if (cargando) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center p-6">
+        <Spinner className="size-8 text-primary" />
+        <p className="font-mono text-sm tracking-wider text-muted-foreground animate-pulse">
+          Verificando sesión en Aethelgard...
+        </p>
+      </div>
+    );
+  }
   if (!token) {
     return <Navigate to="/ingreso" replace />;
   }
@@ -48,55 +60,107 @@ const enrutador = createBrowserRouter([
       },
       {
         path: "/ingreso",
-        element: <PantallaIngreso />,
+        element: (
+          <RutaPublica>
+            <PantallaIngreso />
+          </RutaPublica>
+        ),
       },
       {
         path: "/registro",
-        element: <PantallaRegistro />,
+        element: (
+          <RutaPublica>
+            <PantallaRegistro />
+          </RutaPublica>
+        ),
       },
       {
         path: "/crear-personaje",
-        element: <PantallaCrearPersonaje />,
+        element: (
+          <RutaProtegida requierePersonaje={false}>
+            <PantallaCrearPersonaje />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/hub",
-        element: <PantallaHubUbicacion />,
+        element: (
+          <RutaProtegida>
+            <PantallaHubUbicacion />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/exploracion",
-        element: <PantallaExploracion />,
+        element: (
+          <RutaProtegida>
+            <PantallaExploracion />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/combate",
-        element: <PantallaCombate />,
+        element: (
+          <RutaProtegida>
+            <PantallaCombate />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/equipo",
-        element: <PantallaEquipo />,
+        element: (
+          <RutaProtegida>
+            <PantallaEquipo />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/almacen",
-        element: <PantallaAlmacen />,
+        element: (
+          <RutaProtegida>
+            <PantallaAlmacen />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/inventario",
-        element: <PantallaInventario />,
+        element: (
+          <RutaProtegida>
+            <PantallaInventario />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/tienda",
-        element: <PantallaTienda />,
+        element: (
+          <RutaProtegida>
+            <PantallaTienda />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/curacion",
-        element: <PantallaCuracion />,
+        element: (
+          <RutaProtegida>
+            <PantallaCuracion />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/catalogo",
-        element: <PantallaCatalogo />,
+        element: (
+          <RutaProtegida>
+            <PantallaCatalogo />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/historial",
-        element: <PantallaHistorial />,
+        element: (
+          <RutaProtegida>
+            <PantallaHistorial />
+          </RutaProtegida>
+        ),
       },
       {
         path: "/kit-ui",

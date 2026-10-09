@@ -29,36 +29,36 @@ const ARTICULOS_TIENDA: ArticuloTienda[] = [
     nombre: "Talismán Básico de Captura",
     precio: 50,
     tipo: "CAPTURA",
-    descripcion: "Artefacto rúnico estándar que permite contener criaturas en combate (x1.0).",
+    descripcion: "Talismán estándar para sintonizar y capturar criaturas salvajes.",
   },
   {
-    codigo: "talisman-resonante",
-    nombre: "Talismán Resonante de Captura",
+    codigo: "talisman-avanzado",
+    nombre: "Talismán Avanzado de Captura",
     precio: 150,
     tipo: "CAPTURA",
-    descripcion: "Talismán reforzado con afinidad arcana para criaturas más esquivas (x1.5).",
+    descripcion: "Talismán reforzado con mayor resonancia para criaturas de alto desafío.",
   },
   {
     codigo: "pocion-menor",
     nombre: "Poción de Curación Menor",
-    precio: 40,
+    precio: 30,
     tipo: "CURACION",
-    descripcion: "Brebaje de hierbas que restablece 30 puntos de salud a un compañero.",
+    descripcion: "Brebaje medicinal que restaura 20 puntos de salud.",
   },
   {
     codigo: "pocion-mayor",
     nombre: "Poción de Curación Mayor",
-    precio: 100,
+    precio: 80,
     tipo: "CURACION",
-    descripcion: "Extracto curativo concentrado que restablece 70 puntos de salud.",
+    descripcion: "Elixir reconstituyente que restaura 50 puntos de salud.",
   },
 ];
 
 export function PantallaTienda() {
-  const [monedas, setMonedas] = useState(120);
+  const [monedas, setMonedas] = useState(0);
   const [cantidades, setCantidades] = useState<Record<string, number>>({
     "talisman-basico": 1,
-    "talisman-resonante": 1,
+    "talisman-avanzado": 1,
     "pocion-menor": 1,
     "pocion-mayor": 1,
   });

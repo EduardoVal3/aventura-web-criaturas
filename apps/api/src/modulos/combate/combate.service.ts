@@ -12,6 +12,7 @@ import {
   GeneradorAleatorioNativo,
 } from '../../comun/azar/generador-aleatorio.interface';
 import { ESTADOS_ENCUENTRO, esEstadoTerminal } from './dominio/estado-encuentro';
+import { ProgresoService } from '../progreso/progreso.service';
 
 /**
  * Calcula el daño final según la fórmula de equilibrio del juego (§2.1).
@@ -65,6 +66,7 @@ export class CombateService {
     private readonly prisma: PrismaService,
     private readonly historialService: HistorialService,
     @Optional() generador?: GeneradorAleatorio,
+    @Optional() private readonly progresoService?: ProgresoService,
   ) {
     this.generador = generador ?? new GeneradorAleatorioNativo();
   }
@@ -214,6 +216,16 @@ export class CombateService {
           },
         });
 
+        let progresoVictoria: any = null;
+        if (this.progresoService) {
+          progresoVictoria = await this.progresoService.aplicarRecompensaVictoria(
+            tx,
+            personaje.id,
+            criaturaAliada.id,
+            encuentro.criaturaRival,
+          );
+        }
+
         await tx.combate.create({
           data: {
             encuentroId: encuentro.id,
@@ -225,6 +237,7 @@ export class CombateService {
               danoJugador,
               hpRestanteRival: 0,
               victoria: true,
+              progreso: progresoVictoria,
             },
           },
         });
@@ -247,6 +260,7 @@ export class CombateService {
           },
           accionRival: null,
           resultadoFinal: ESTADOS_ENCUENTRO.VICTORIA,
+          progreso: progresoVictoria,
         };
       });
     }

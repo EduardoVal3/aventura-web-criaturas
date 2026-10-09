@@ -92,6 +92,7 @@ export interface ConexionUbicacion {
 export interface UbicacionActual {
   ubicacionId: string;
   nombre: string;
+  slug?: string;
   tipo: "LOCALIDAD" | "ZONA_PELIGRO";
   esSegura: boolean;
   descripcion: string;

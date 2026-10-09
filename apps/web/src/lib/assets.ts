@@ -19,6 +19,20 @@ export function obtenerImagenCriatura(slug?: string | null): string {
 }
 
 /**
+ * Normaliza nombres de localidades o identificadores a formato kebab-case para assets.
+ */
+export function sanitizarSlugZona(nombreOId?: string | null): string {
+  if (!nombreOId) return "zona";
+  return nombreOId
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
  * Obtiene la ruta del paisaje de una zona por su slug o ID.
  */
 export function obtenerImagenZona(slug?: string | null): string {

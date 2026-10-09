@@ -1,20 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/8bit/card";
+  Map,
+  Users,
+  Package,
+  Backpack,
+  Store,
+  Sparkles,
+  BookOpen,
+  Scroll,
+  Compass,
+  Coins,
+  Lock,
+  ArrowRight,
+  ShieldCheck,
+  Skull,
+  LogOut,
+  Loader2,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Skeleton } from "@/components/ui/8bit/skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -30,6 +42,17 @@ import {
   ErrorApi,
 } from "@/api";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
+import {
+  obtenerImagenZona,
+  manejarErrorImagen,
+  reproducirSonido,
+  sanitizarSlugZona,
+} from "@/lib/assets";
+import {
+  SERVICIOS_HUB,
+  type ServicioHub,
+  estaServicioHabilitadoEnZona,
+} from "@/lib/servicios-hub";
 
 export function PantallaHubUbicacion() {
   const navigate = useNavigate();
@@ -73,13 +96,16 @@ export function PantallaHubUbicacion() {
   }, [navigate]);
 
   const handleViajar = async (conexion: ConexionUbicacion) => {
+    if (viajando) return;
     try {
       setViajando(true);
+      reproducirSonido("confirmar", 0.5);
       const respuesta = await api.viajar({ destinoId: conexion.ubicacionDestinoId });
       toast.success(respuesta.mensaje || `Has viajado hacia ${respuesta.nombre}`);
       const nuevaUbicacion = await api.obtenerUbicacionActual();
       setUbicacion(nuevaUbicacion);
     } catch (error) {
+      reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
         if (error.codigo === "ZONA_BLOQUEADA") {
           toast.error(`Zona bloqueada: ${error.message}`);
@@ -95,249 +121,415 @@ export function PantallaHubUbicacion() {
   };
 
   const handleCerrarSesion = async () => {
+    reproducirSonido("click", 0.4);
     await cerrarSesion();
     toast.info("Has cerrado sesión.");
     navigate("/ingreso");
   };
 
+  const renderIconoServicio = (icono: ServicioHub["icono"]) => {
+    switch (icono) {
+      case "compass":
+        return <Compass className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "users":
+        return <Users className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "package":
+        return <Package className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "backpack":
+        return <Backpack className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "store":
+        return <Store className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "sparkles":
+        return <Sparkles className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "book-open":
+        return <BookOpen className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+      case "scroll":
+        return <Scroll className="size-5 text-[#14d1e8] group-hover:scale-110 transition-transform" />;
+    }
+  };
+
   if (cargando) {
     return (
-      <div className="space-y-6 max-w-5xl mx-auto py-4">
-        <Skeleton className="h-40 w-full" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-64 w-full" />
+      <div className="space-y-6 max-w-5xl mx-auto py-2 sm:py-4 animate-pulse">
+        {/* Skeleton del Hero del Asentamiento */}
+        <div className="bg-[#121927] border-2 border-[#43526d] p-4 space-y-4">
+          <Skeleton className="h-48 sm:h-64 w-full bg-[#1a2332]" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Skeleton className="h-16 w-full bg-[#1a2332]" />
+            <Skeleton className="h-16 w-full bg-[#1a2332]" />
+            <Skeleton className="h-16 w-full bg-[#1a2332]" />
+            <Skeleton className="h-16 w-full bg-[#1a2332]" />
+          </div>
+        </div>
+
+        {/* Skeleton de Servicios */}
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-64 bg-[#1a2332]" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full bg-[#121927] border-2 border-[#43526d]" />
+            ))}
+          </div>
+        </div>
+
+        {/* Skeleton de Rutas */}
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-64 bg-[#1a2332]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-32 w-full bg-[#121927] border-2 border-[#43526d]" />
+            <Skeleton className="h-32 w-full bg-[#121927] border-2 border-[#43526d]" />
+          </div>
         </div>
       </div>
     );
   }
 
+  const slugZona = ubicacion?.slug || sanitizarSlugZona(ubicacion?.nombre || ubicacion?.ubicacionId);
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto py-2 sm:py-4">
-      {/* Cabecera del Explorador y Asentamiento */}
-      <Card className="border-2 border-primary/50 shadow-md">
-        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      {/* Hero del Asentamiento y Paisaje Retro */}
+      <div className="relative bg-[#121927] border-2 border-[#43526d] overflow-hidden">
+        {/* Contenedor del paisaje de la zona */}
+        <div className="relative w-full h-48 sm:h-64 bg-[#090d16] border-b-2 border-[#43526d] overflow-hidden">
+          <img
+            src={obtenerImagenZona(slugZona)}
+            onError={(e) => manejarErrorImagen(e, "zona")}
+            alt={`Paisaje de ${ubicacion?.nombre ?? "Aethelgard"}`}
+            className="w-full h-full object-cover object-center pixelated filter brightness-95 contrast-105"
+          />
+
+          {/* Degradado oscuro para integrar con el panel y maximizar contraste */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#121927] via-transparent to-black/40 pointer-events-none" />
+
+          {/* Badges superiores sobre el paisaje */}
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-auto">
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <CardTitle className="text-xl sm:text-2xl text-primary font-bold">
-                  {ubicacion?.nombre ?? "Villa Serena"}
-                </CardTitle>
-                <Badge variant={ubicacion?.esSegura ? "default" : "destructive"}>
-                  {ubicacion?.esSegura ? "Localidad Segura" : "Zona Hostil"}
+              {ubicacion?.esSegura ? (
+                <Badge
+                  font="retro"
+                  className="bg-emerald-950/80 text-emerald-400 border-emerald-500 gap-1.5 py-1 px-2.5 backdrop-blur-xs"
+                >
+                  <ShieldCheck className="size-3.5 text-emerald-400" />
+                  <span className="text-[10px]">LOCALIDAD SEGURA</span>
                 </Badge>
-              </div>
-              <CardDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
-                {ubicacion?.descripcion}
-              </CardDescription>
+              ) : (
+                <Badge
+                  font="retro"
+                  className="bg-red-950/80 text-red-400 border-red-500 gap-1.5 py-1 px-2.5 backdrop-blur-xs"
+                >
+                  <Skull className="size-3.5 text-red-400" />
+                  <span className="text-[10px]">ZONA HOSTIL</span>
+                </Badge>
+              )}
             </div>
 
             <Button
               variant="outline"
               size="sm"
+              font="retro"
               onClick={handleCerrarSesion}
-              className="text-xs self-end sm:self-auto"
+              className="bg-[#090d16]/80 text-slate-300 hover:text-red-400 border-[#43526d] hover:border-red-400 text-[10px] gap-1.5 cursor-pointer backdrop-blur-xs"
             >
-              Cerrar sesión
+              <LogOut className="size-3.5" />
+              <span>SALIR</span>
             </Button>
           </div>
-        </CardHeader>
 
-        <CardContent className="p-4 sm:p-6 pt-2 border-t border-border/60">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="p-2 bg-muted/40 rounded">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-                Explorador
-              </span>
-              <span className="font-semibold text-sm sm:text-base">
+          {/* Nombre y descripción de la localidad */}
+          <div className="absolute bottom-3 left-3 right-3 pointer-events-none">
+            <h1 className="retro text-lg sm:text-2xl text-[#14d1e8] tracking-wider uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+              {ubicacion?.nombre ?? "Villa Serena"}
+            </h1>
+            <p className="font-sans text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {ubicacion?.descripcion}
+            </p>
+          </div>
+        </div>
+
+        {/* Panel Superior del Explorador: Nombre, Oro, Equipo y Almacén */}
+        <div className="p-3 sm:p-4 bg-[#121927]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            {/* Nombre del Explorador */}
+            <div className="p-2.5 bg-[#1a2332] border border-[#43526d]/60 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="retro text-[9px] uppercase tracking-wider">Explorador</span>
+                <Compass className="size-3.5 text-[#14d1e8]" />
+              </div>
+              <span className="font-sans font-bold text-sm sm:text-base text-slate-100 truncate">
                 {personaje?.nombre ?? "Aventurero"}
               </span>
             </div>
 
-            <div className="p-2 bg-muted/40 rounded">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-                Monedas
-              </span>
-              <span className="font-semibold text-sm sm:text-base text-amber-500">
-                {personaje?.monedas ?? 0} oro
-              </span>
+            {/* Monedas de Oro con Icono Coins */}
+            <div className="p-2.5 bg-[#1a2332] border border-[#43526d]/60 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="retro text-[9px] uppercase tracking-wider">Monedas</span>
+                <Coins className="size-3.5 text-[#f5b724]" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="retro text-xs sm:text-sm font-bold text-[#f5b724]">
+                  {personaje?.monedas ?? 0}
+                </span>
+                <span className="font-sans text-[10px] text-amber-200/80">oro</span>
+              </div>
             </div>
 
-            <div className="p-2 bg-muted/40 rounded">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-                Equipo Activo
-              </span>
-              <span className="font-semibold text-sm sm:text-base">
-                {personaje?.totalCriaturasEquipo ?? 0} / 6
-              </span>
+            {/* Equipo Activo (X/6) con Icono Users */}
+            <div className="p-2.5 bg-[#1a2332] border border-[#43526d]/60 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="retro text-[9px] uppercase tracking-wider">Equipo Activo</span>
+                <Users className="size-3.5 text-emerald-400" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="retro text-xs sm:text-sm font-bold text-emerald-400">
+                  {personaje?.totalCriaturasEquipo ?? 0}
+                </span>
+                <span className="font-sans text-[10px] text-slate-400">/ 6 aliados</span>
+              </div>
             </div>
 
-            <div className="p-2 bg-muted/40 rounded">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
-                Almacén
-              </span>
-              <span className="font-semibold text-sm sm:text-base">
-                {personaje?.totalCriaturasAlmacen ?? 0} criaturas
-              </span>
+            {/* Almacén con Icono Package */}
+            <div className="p-2.5 bg-[#1a2332] border border-[#43526d]/60 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-400 mb-1">
+                <span className="retro text-[9px] uppercase tracking-wider">Almacén</span>
+                <Package className="size-3.5 text-cyan-400" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="retro text-xs sm:text-sm font-bold text-slate-200">
+                  {personaje?.totalCriaturasAlmacen ?? 0}
+                </span>
+                <span className="font-sans text-[10px] text-slate-400">criaturas</span>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Servicios de la Localidad */}
+      {/* Cuadrícula de Servicios de la Localidad */}
       <div className="space-y-3">
-        <h2 className="text-base sm:text-lg font-bold text-foreground tracking-wide">
-          Servicios del Asentamiento
-        </h2>
+        <div className="flex items-center justify-between border-b border-[#43526d]/60 pb-2">
+          <div className="flex items-center gap-2">
+            <Store className="size-4 text-[#14d1e8]" />
+            <h2 className="retro text-xs sm:text-sm text-slate-100 tracking-wider">
+              SERVICIOS DE LA LOCALIDAD
+            </h2>
+          </div>
+          <span className="font-sans text-xs text-slate-400 hidden sm:inline">
+            Instalaciones y actividades del gremio
+          </span>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <Link to="/exploracion" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Exploración
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Incursiona en rutas silvestres
-              </CardDescription>
-            </Card>
-          </Link>
+          {SERVICIOS_HUB.map((servicio) => {
+            const disponible = estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
 
-          <Link to="/equipo" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Equipo Activo
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Inspecciona tus 6 criaturas
-              </CardDescription>
-            </Card>
-          </Link>
+            return (
+              <Link
+                key={servicio.id}
+                to={servicio.ruta}
+                onClick={() => reproducirSonido("click", 0.35)}
+                className="block focus:outline-hidden group"
+              >
+                <div className="h-full bg-[#121927] hover:bg-[#1a2332] border-2 border-[#43526d] hover:border-[#14d1e8] p-3 sm:p-4 text-center flex flex-col justify-between items-center transition-all duration-200 group-hover:scale-[1.02] active:translate-y-0.5">
+                  <div className="w-full flex items-center justify-between mb-2">
+                    <div className="size-8 rounded bg-[#1a2332] group-hover:bg-[#121927] border border-[#43526d]/60 flex items-center justify-center transition-colors">
+                      {renderIconoServicio(servicio.icono)}
+                    </div>
+                    {disponible ? (
+                      <span
+                        className="size-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                        title="Servicio de la localidad"
+                      />
+                    ) : (
+                      <span
+                        className="size-2 rounded-full bg-slate-600"
+                        title="Acceso general"
+                      />
+                    )}
+                  </div>
 
-          <Link to="/almacen" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Almacén
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Reserva y transfiere aliados
-              </CardDescription>
-            </Card>
-          </Link>
-
-          <Link to="/inventario" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Inventario
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Bolsa de objetos y pociones
-              </CardDescription>
-            </Card>
-          </Link>
-
-          <Link to="/tienda" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Tienda / Bazar
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Compra talismanes y botiquines
-              </CardDescription>
-            </Card>
-          </Link>
-
-          <Link to="/curacion" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Santuario de Salud
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Restaura todo tu equipo
-              </CardDescription>
-            </Card>
-          </Link>
-
-          <Link to="/catalogo" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Compendio Open5e
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Consulta especies del mundo
-              </CardDescription>
-            </Card>
-          </Link>
-
-          <Link to="/historial" className="block focus:outline-hidden group">
-            <Card className="h-full hover:border-primary transition-all p-3 text-center flex flex-col justify-between items-center group-hover:scale-[1.02]">
-              <CardTitle className="text-xs sm:text-sm font-semibold mb-1 text-primary">
-                Bitácora
-              </CardTitle>
-              <CardDescription className="text-[11px] text-muted-foreground">
-                Registro de eventos pasados
-              </CardDescription>
-            </Card>
-          </Link>
+                  <div className="w-full text-left">
+                    <span className="retro text-[11px] sm:text-xs font-semibold text-[#14d1e8] block truncate mb-1">
+                      {servicio.titulo}
+                    </span>
+                    <p className="font-sans text-[11px] text-slate-400 leading-snug line-clamp-2">
+                      {servicio.descripcion}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
       {/* Rutas y Destinos de Viaje */}
       <div className="space-y-3">
-        <h2 className="text-base sm:text-lg font-bold text-foreground tracking-wide">
-          Rutas y Destinos de Viaje
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {ubicacion?.conexiones?.map((conexion) => (
-            <Card key={conexion.ubicacionDestinoId} className="p-4 flex flex-col justify-between gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle className="text-sm sm:text-base font-bold">
-                    {conexion.nombre}
-                  </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    Nivel recomendado: {conexion.nivelSugerido}
-                  </CardDescription>
-                </div>
-                {conexion.estaBloqueada ? (
-                  <Badge variant="destructive">Bloqueada</Badge>
-                ) : (
-                  <Badge variant="secondary">Accesible</Badge>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
-                {conexion.estaBloqueada ? (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full text-xs text-destructive">
-                        Requisito de acceso
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Zona Bloqueada: {conexion.nombre}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {conexion.requisito ?? "Esta zona requiere mayor experiencia o cumplir misiones previas."}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogAction>Comprendido</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="w-full text-xs"
-                    disabled={viajando}
-                    onClick={() => handleViajar(conexion)}
-                  >
-                    {viajando ? "Viajando..." : "Viajar a esta ruta"}
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ))}
+        <div className="flex items-center justify-between border-b border-[#43526d]/60 pb-2">
+          <div className="flex items-center gap-2">
+            <Map className="size-4 text-[#14d1e8]" />
+            <h2 className="retro text-xs sm:text-sm text-slate-100 tracking-wider">
+              RUTAS Y DESTINOS DE VIAJE
+            </h2>
+          </div>
+          <span className="font-sans text-xs text-slate-400 hidden sm:inline">
+            Senderos conectados a esta posición
+          </span>
         </div>
+
+        {!ubicacion?.conexiones || ubicacion.conexiones.length === 0 ? (
+          <div className="bg-[#121927] border-2 border-[#43526d] p-6 text-center">
+            <Compass className="size-8 text-slate-500 mx-auto mb-2" />
+            <p className="font-sans text-sm text-slate-300">
+              No se divisan sendas transitables desde esta posición.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {ubicacion.conexiones.map((conexion) => (
+              <div
+                key={conexion.ubicacionDestinoId}
+                className="bg-[#121927] border-2 border-[#43526d] p-4 flex flex-col justify-between gap-3 transition-colors hover:border-[#14d1e8]/70"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="retro text-xs sm:text-sm font-bold text-slate-100 block">
+                      {conexion.nombre}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-sans mt-1">
+                      <Compass className="size-3.5 text-[#14d1e8]" />
+                      <span>
+                        Nivel sugerido: {conexion.nivelSugerido ?? "Rango libre"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {conexion.estaBloqueada ? (
+                    <Badge
+                      font="retro"
+                      className="bg-red-950/80 text-red-400 border-red-500 gap-1 text-[9px] py-0.5"
+                    >
+                      <Lock className="size-3 text-red-400" />
+                      <span>BLOQUEADA</span>
+                    </Badge>
+                  ) : (
+                    <Badge
+                      font="retro"
+                      className="bg-emerald-950/80 text-emerald-400 border-emerald-500 gap-1 text-[9px] py-0.5"
+                    >
+                      <ArrowRight className="size-3 text-emerald-400" />
+                      <span>ACCESIBLE</span>
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-[#43526d]/60">
+                  {conexion.estaBloqueada ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          font="retro"
+                          onClick={() => reproducirSonido("click", 0.3)}
+                          className="w-full text-[10px] text-red-400 border-red-500/60 hover:bg-red-500/10 gap-1.5 cursor-pointer"
+                        >
+                          <Lock className="size-3 text-red-400" />
+                          <span>REQUISITO DE ACCESO</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent
+                        font="normal"
+                        className="bg-[#121927] border-2 border-[#43526d] text-slate-100 max-w-md"
+                      >
+                        <AlertDialogHeader>
+                          <div className="flex items-center gap-2 text-red-400">
+                            <Lock className="size-4" />
+                            <AlertDialogTitle className="retro text-xs sm:text-sm text-red-400">
+                              RUTA RESTRINGIDA
+                            </AlertDialogTitle>
+                          </div>
+                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                            {conexion.requisito ??
+                              "Esta senda requiere mayor experiencia o cumplir misiones previas con el gremio."}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-4">
+                          <AlertDialogAction
+                            onClick={() => reproducirSonido("click", 0.3)}
+                            className="retro bg-[#1a2332] hover:bg-[#232d3f] text-slate-200 border border-[#43526d] text-[10px]"
+                          >
+                            COMPRENDIDO
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          font="retro"
+                          disabled={viajando}
+                          onClick={() => reproducirSonido("click", 0.3)}
+                          className="w-full text-[10px] bg-[#14d1e8] hover:bg-[#14d1e8]/90 text-slate-950 font-bold border-[#14d1e8] gap-1.5 cursor-pointer"
+                        >
+                          {viajando ? (
+                            <>
+                              <Loader2 className="size-3.5 animate-spin" />
+                              <span>VIAJANDO...</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight className="size-3.5" />
+                              <span>VIAJAR A ESTA RUTA</span>
+                            </>
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent
+                        font="normal"
+                        className="bg-[#121927] border-2 border-[#43526d] text-slate-100 max-w-md"
+                      >
+                        <AlertDialogHeader>
+                          <div className="flex items-center gap-2 text-[#14d1e8]">
+                            <Compass className="size-4 text-[#14d1e8]" />
+                            <AlertDialogTitle className="retro text-xs sm:text-sm text-[#14d1e8]">
+                              CONFIRMAR VIAJE
+                            </AlertDialogTitle>
+                          </div>
+                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                            ¿Deseas desplazarte hacia{" "}
+                            <strong className="text-white">{conexion.nombre}</strong>?
+                            <br />
+                            <span className="text-slate-400 mt-1 block">
+                              Nivel recomendado: {conexion.nivelSugerido ?? "Rango libre"}.
+                            </span>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-4 flex gap-2">
+                          <AlertDialogCancel
+                            onClick={() => reproducirSonido("click", 0.3)}
+                            className="retro bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-[10px]"
+                          >
+                            PERMANECER AQUÍ
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleViajar(conexion)}
+                            className="retro bg-[#14d1e8] hover:bg-[#14d1e8]/90 text-slate-950 font-bold border-[#14d1e8] text-[10px]"
+                          >
+                            EMPRENDER CAMINO
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

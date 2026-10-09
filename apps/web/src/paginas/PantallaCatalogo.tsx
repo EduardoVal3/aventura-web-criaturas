@@ -24,10 +24,10 @@ import {
   type EspecieDetalle,
   ErrorApi,
 } from "@/api";
-import muestrasOpen5e from "@/api/datos-simulados/open5e-muestras.json";
 
 export function PantallaCatalogo() {
   const [especies, setEspecies] = useState<EspecieDetalle[]>([]);
+  const [totalEspecies, setTotalEspecies] = useState<number>(0);
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
   const [cargando, setCargando] = useState(true);
 
@@ -36,8 +36,9 @@ export function PantallaCatalogo() {
       setCargando(true);
       const tipoConsulta = filtro && filtro !== "todos" ? filtro : undefined;
       const res = await api.obtenerEspecies(tipoConsulta);
+      setTotalEspecies(res.total);
 
-      // Enriquecer con detalles y movimientos de cada especie
+      // Enriquecer con detalles y movimientos de cada especie consultando el endpoint real
       const especiesDetalladas = await Promise.all(
         res.especies.map(async (esp) => {
           try {
@@ -84,7 +85,7 @@ export function PantallaCatalogo() {
               Compendio de Criaturas
             </h1>
             <Badge variant="secondary" className="font-mono text-xs">
-              Open5e srd-2024
+              Catálogo PostgreSQL
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -99,7 +100,7 @@ export function PantallaCatalogo() {
         </Link>
       </div>
 
-      {/* Barra de Filtros y Atribución */}
+      {/* Barra de Filtros y Total */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-card border-2 border-border/60 rounded">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
@@ -121,7 +122,7 @@ export function PantallaCatalogo() {
         </div>
 
         <div className="text-[11px] text-muted-foreground font-mono">
-          {especies.length} de {muestrasOpen5e.totalRegistros} especies registradas en muestra local
+          {especies.length} de {totalEspecies} especies registradas en el catálogo oficial
         </div>
       </div>
 
@@ -155,7 +156,7 @@ export function PantallaCatalogo() {
                       {especie.nombre}
                     </CardTitle>
                     <CardDescription className="text-xs italic text-muted-foreground font-mono mt-0.5">
-                      Open5e: {especie.keyExterna}
+                      Registro: {especie.keyExterna}
                     </CardDescription>
                   </div>
                   <Badge variant="secondary" className="text-[10px] uppercase">

@@ -170,15 +170,19 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/mundo/ubicacion-actual`
 - **Módulo:** `M-MUN`.
-- **Descripción:** Retorna los detalles de la ubicación actual del personaje, sus servicios, progreso de exploración y destinos conectados.
+- **Descripción:** Retorna los detalles de la ubicación actual del personaje, su slug para recursos multimedia, nivel sugerido, servicios, progreso de exploración y destinos conectados.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "ubicacionId": "LOC-01",
     "nombre": "Villa Serena",
+    "slug": "villa-serena",
     "tipo": "LOCALIDAD",
     "esSegura": true,
     "descripcion": "Aldea pacífica en el valle donde inician los reclutas del gremio.",
+    "nivelMinimo": null,
+    "nivelMaximo": null,
+    "nivelSugerido": null,
     "servicios": ["CURACION", "ALMACEN", "HISTORIAL"],
     "progresoZona": 100,
     "conexiones": [
@@ -227,14 +231,14 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/exploracion/explorar`
 - **Módulo:** `M-EXP`.
-- **Descripción:** Ejecuta una tirada probabilística de exploración en la zona activa y computa el progreso (+20% persistido en BD).
+- **Descripción:** Ejecuta una tirada probabilística de exploración en la ruta silvestre activa. Si el evento es `OBJETO` o `SIN_EVENTO`, computa y persiste el avance cartográfico (+20% hasta 100%). Si resulta en `ENCUENTRO`, el progreso de la zona se mantiene en su valor actual sin incremento prematuro, acreditándose el +20% al resolver el combate en el servidor (`VICTORIA` o `CAPTURADO`).
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`) - Caso Encuentro:**
   ```json
   {
     "tipoEvento": "ENCUENTRO",
     "mensaje": "¡Una criatura salvaje te desafía en el camino!",
-    "progresoZona": 20,
+    "progresoZona": 0,
     "encuentro": {
       "encuentroId": "enc-401",
       "estado": "EN_CURSO",

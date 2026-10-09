@@ -229,6 +229,33 @@ export class CombateService {
           );
         }
 
+        // Actualizar progreso de zona por victoria en combate (+20% hasta 100%)
+        if (encuentro.zonaId) {
+          const regZona = await tx.zonaDesbloqueada.findUnique({
+            where: {
+              personajeId_zonaId: {
+                personajeId: personaje.id,
+                zonaId: encuentro.zonaId,
+              },
+            },
+          });
+          const progresoActualizado = Math.min(100, (regZona?.progreso ?? 0) + 20);
+          await tx.zonaDesbloqueada.upsert({
+            where: {
+              personajeId_zonaId: {
+                personajeId: personaje.id,
+                zonaId: encuentro.zonaId,
+              },
+            },
+            update: { progreso: progresoActualizado },
+            create: {
+              personajeId: personaje.id,
+              zonaId: encuentro.zonaId,
+              progreso: progresoActualizado,
+            },
+          });
+        }
+
         await tx.combate.create({
           data: {
             encuentroId: encuentro.id,

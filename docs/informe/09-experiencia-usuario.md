@@ -152,3 +152,62 @@ La versión previa del Hub de Ubicación cumplía la funcionalidad básica pero 
 - **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas sin regresiones.
 - **Validación Visual en Navegador (`browser_subagent`):** Flujo completo verificado en vivo sobre `/hub` con captura de pantalla y comprobación de modales, badges y servicios.
 
+---
+
+## 4. Sub-Fase 10d: Enriquecimiento de Exploración y Encuentros en Rutas (`PantallaExploracion.tsx`)
+
+### 4.1 Diagnóstico Inicial y Auditoría Impeccable
+La pantalla de exploración inicial requería elevar su nivel de inmersión y robustez técnica:
+1. **Falta de Ambientación Visual de Ruta:** Se utilizaban tarjetas estándar sin renderizado del paisaje panorámico de la zona silvestre.
+2. **Carencia de Presentación Cinemática de Criaturas:** Ante un encuentro hostil, el modal desplegaba únicamente texto plano sin el sprite pixel-art de la bestia rival ni el desglose táctico de sus estadísticas de combate.
+3. **Bitácora Desestructurada:** El registro histórico se basaba en cadenas de texto genéricas sin marcas temporales, categorías de evento ni formato bimodal accesible.
+4. **Ausencia de Señalización de Rutas Seguras:** Los asentamientos pacíficos no contaban con advertencia explícita sobre la imposibilidad de cazar dentro de villas seguras, arrojando excepciones en lugar de guiar al usuario hacia las salidas del Hub.
+
+---
+
+### 4.2 Mejoras Implementadas
+
+#### A. Panel de Entorno y Paisaje Panorámico Retro (`docs/DESIGN.md` §2)
+- **Hero Silvestre Panorámico:** Paisaje contextual de la ruta actual mediante `obtenerImagenZona(...)` con degradado oscuro de fondo Abismo (`#090d16`) y Bastión (`#121927`), asegurando contraste WCAG AAA.
+- **Insignias Dinámicas sin Emojis:** Identificación inmediata de la ruta mediante iconos SVG de Lucide:
+  - `ZONA HOSTIL` (`AlertTriangle`) con borde carmesí `#ef4444`.
+  - `NV. SUGERIDO: X-Y` (`MapPin`) con acento cian `#14d1e8`.
+  - `100% CARTOGRAFIADA` (`Sparkles`) en oro solar `#f5b724`.
+  - Botón de retorno rápido hacia el asentamiento (`HUB`).
+
+#### B. Medidor de Progreso y Control Táctil de Expedición
+- **Barra de Progreso Segmentada Retro:** Utilización de `Progress` con canal empotrado oscuro `#090d16` y relleno dinámico en cian resonante `#14d1e8` o verde esmeralda `#22c55e` al completar el 100%.
+- **Botón de Inmersión "Explorar Senda":** Botón de acción principal con tipografía `Press Start 2P`, micro-animación de pulsación física (`active:translate-y-1`), sombra retro ortogonal y prevención estricta de doble clic (`aria-busy`, deshabilitación inmediata y spinner retro `EXPLORANDO SENDA...`).
+- **Manejo Preventivo de Localidades Pacíficas:** Banner informativo con `ShieldCheck` que explica que las localidades están protegidas y provee navegación directa hacia las rutas silvestres conectadas.
+
+#### C. Presentación Cinemática de Criatura Rival (Modal `Dialog` 8-bit)
+- **Ilustración Nítida de la Criatura:** Renderizado del sprite pixelado mediante `obtenerImagenCriatura(slug)` con clase `.pixelated` y fallback defensivo con `manejarErrorImagen(e, "criatura")`.
+- **Ficha Táctica del Rival:** Despliegue del nombre en `Press Start 2P`, badge de nivel, barra de vitalidad porcentual y desglose de atributos base (**ATQ**, **DEF**, **VEL**) con chips numéricos monoespaciados.
+- **Acciones Claras:** Botón destacado `INICIAR COMBATE` en carmesí retro y botón alternativo `RETIRARSE` para volver a la senda.
+
+#### D. Modal de Botín y Reanudación Activa
+- **Diálogo de Botín Descubierto:** Presentación enriquecida ante eventos de tipo `OBJETO`, desplegando monedas de oro solar (`Coins`) o el icono del ítem obtenido con su cantidad correspondiente.
+- **Diálogo de Combate en Curso:** Detección automática al cargar la pantalla de combates pendientes de resolución, guiando al explorador a retomar el enfrentamiento.
+
+#### E. Bitácora de Incursión Estructurada
+- **Registro Cronológico Clasificado:** Entradas tipadas (`INICIO`, `PASO`, `ENCUENTRO`, `OBJETO`) con marcas horarias precisas (`HH:MM:SS`), tipografía legible en `font-sans` (Geist) e iconografía específica de Lucide (`Swords`, `Coins`, `Footprints`, `Compass`).
+- **Cero Emojis Unicode:** Cumplimiento total de la directriz de interfaz retro sin glifos unicode no estilizados.
+
+#### F. Audio Retro Centralizado y Web Audio API
+- Efectos auditivos sincronizados: `paso` al avanzar por la senda, `alerta` ante detección de bestias hostiles, `botin` al obtener recompensas, `confirmar` al entrar a combate y `error` ante bloqueos.
+
+---
+
+### 4.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-exploracion.spec.ts`):** 5 pruebas exhaustivas verificando:
+  1. Estructura y contrato de `RespuestaExploracion` ante encuentros con criaturas.
+  2. Manejo de recompensas de botín (monedas e ítems).
+  3. Lógica de cálculo y límite persistente del 100% de cartografía.
+  4. Diferenciación de expedición y niveles entre zonas seguras y hostiles.
+  5. Formato de la bitácora de incursión y garantía de cero emojis unicode.
+- **Suite Total Web (`pnpm --filter web test`):** 15 de 15 pruebas aprobadas (100% éxito).
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores de TypeScript y empaquetado Vite exitoso en 1.38s.
+- **Auditoría Mecánica Impeccable (`detect.mjs`):** 0 hallazgos o defectos en `PantallaExploracion.tsx`.
+- **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
+
+

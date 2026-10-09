@@ -75,6 +75,13 @@ export class MundoService {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
+    const nivelSugerido =
+      zona.nivelMinimo && zona.nivelMaximo
+        ? `${zona.nivelMinimo}-${zona.nivelMaximo}`
+        : zona.nivelMinimo
+          ? `${zona.nivelMinimo}+`
+          : null;
+
     return {
       ubicacionId: zona.id,
       nombre: zona.nombre,
@@ -82,6 +89,9 @@ export class MundoService {
       tipo: zona.tipo,
       esSegura: zona.esSegura,
       descripcion: zona.descripcion,
+      nivelMinimo: zona.nivelMinimo,
+      nivelMaximo: zona.nivelMaximo,
+      nivelSugerido,
       servicios: zona.servicios,
       progresoZona,
       conexiones,

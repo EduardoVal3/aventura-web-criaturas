@@ -108,9 +108,38 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.12);
+    } else if (nombre === "paso" || nombre === "explorar") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(160, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.08);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    } else if (nombre === "alerta" || nombre === "encuentro") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(330, ctx.currentTime);
+      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.07);
+      osc.frequency.setValueAtTime(990, ctx.currentTime + 0.14);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.22);
+    } else if (nombre === "botin" || nombre === "fanfarria") {
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.setValueAtTime(554.37, ctx.currentTime + 0.07);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.14);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.21);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
     }
   } catch {
-    // simplificacion: silencio controlado si el navegador bloquea la Web Audio API
+    // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.
   }
 }
 

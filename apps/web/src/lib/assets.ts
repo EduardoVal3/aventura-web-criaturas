@@ -50,16 +50,72 @@ export function manejarErrorImagen(
 }
 
 /**
- * Reproduce un efecto de sonido retro si está disponible en /assets/sonidos/[nombre].mp3
+ * Sintetizador nativo Web Audio de respaldo para efectos de sonido 8-bit.
+ */
+function sintetizarTonoRetro(nombre: string, volumen: number): void {
+  try {
+    const ventanaAudio =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (!ventanaAudio) return;
+    const ctx = new ventanaAudio();
+    const osc = ctx.createOscillator();
+    const ganancia = ctx.createGain();
+    osc.type = "square";
+    ganancia.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);
+
+    if (nombre === "click" || nombre === "seleccionar") {
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.05);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+    } else if (
+      nombre === "exito" ||
+      nombre === "confirmar" ||
+      nombre === "victoria"
+    ) {
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.16);
+    } else if (nombre === "error") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(220, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.12);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    }
+  } catch {
+    // simplificacion: silencio controlado si el navegador bloquea la Web Audio API
+  }
+}
+
+/**
+ * Reproduce un efecto de sonido retro si está disponible en /assets/sonidos/[nombre].mp3.
+ * Si no está disponible o falla, degrada limpiamente a síntesis retro 8-bit nativa.
  */
 export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
   try {
     const audio = new Audio(`/assets/sonidos/${nombre}.mp3`);
     audio.volume = Math.max(0, Math.min(1, volumen));
-    audio.play().catch(() => {
-      // Ignorar restricciones de reproducción automática del navegador
-    });
+    const promesa = audio.play();
+    if (promesa) {
+      promesa.catch(() => {
+        sintetizarTonoRetro(nombre, volumen);
+      });
+    }
   } catch {
-    // Entorno sin soporte de Audio
+    sintetizarTonoRetro(nombre, volumen);
   }
 }
+

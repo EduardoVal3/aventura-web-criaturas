@@ -13,8 +13,10 @@ dist/
 # Documentos de planificación que no se versionan (regla R3)
 Plan_Desarrollo_ISC305_Entregable1.md
 Proyecto Integrador ISC305 Aventura Web Criaturas.md
+docs/workflows/
 
 # Registros y archivos del sistema
 *.log
 .DS_Store
 Thumbs.db
+

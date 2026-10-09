@@ -1,0 +1,171 @@
+erDiagram
+    USUARIO ||--o| PERSONAJE : "posee (1:1)"
+    PERSONAJE ||--o{ CRIATURA : "captura / posee"
+    PERSONAJE ||--o{ INVENTARIO_PERSONAJE : "almacena"
+    PERSONAJE ||--o{ ENCUENTRO : "inicia"
+    PERSONAJE ||--o{ ZONA_DESBLOQUEADA : "desbloquea"
+    PERSONAJE ||--o{ HISTORIAL : "registra"
+    PERSONAJE }|--|| ZONA : "reside_en"
+
+    ZONA ||--o{ CONEXION_ZONA : "origen"
+    ZONA ||--o{ CONEXION_ZONA : "destino"
+    ZONA ||--o{ EVENTO_ZONA : "configura_eventos"
+    ZONA ||--o{ APARICION_ZONA : "configura_fauna"
+    ZONA ||--o{ ENCUENTRO : "alberga"
+    ZONA ||--o{ ZONA_DESBLOQUEADA : "habilitada_para"
+
+    ESPECIE ||--o{ MOVIMIENTO : "aprende"
+    ESPECIE ||--o{ CRIATURA : "instancia"
+    ESPECIE ||--o{ APARICION_ZONA : "aparece_en"
+
+    OBJETO ||--o{ INVENTARIO_PERSONAJE : "contenido_en"
+
+    ENCUENTRO ||--|| CRIATURA : "enfrenta_rival"
+    ENCUENTRO ||--o{ COMBATE : "registra_turnos"
+
+    USUARIO {
+        string id PK
+        string nombre_usuario UK
+        string correo UK
+        string contrasena_hash
+        datetime fecha_creacion
+        datetime fecha_actualizacion
+    }
+
+    PERSONAJE {
+        string id PK
+        string usuario_id FK,UK
+        string nombre
+        int monedas
+        string ubicacion_actual_id FK
+        datetime fecha_creacion
+        datetime fecha_actualizacion
+    }
+
+    ZONA {
+        string id PK
+        string nombre
+        string descripcion
+        string tipo
+        boolean es_segura
+        int nivel_minimo
+        int nivel_maximo
+        string_array servicios
+    }
+
+    CONEXION_ZONA {
+        string id PK
+        string zona_origen_id FK
+        string zona_destino_id FK
+    }
+
+    EVENTO_ZONA {
+        string id PK
+        string zona_id FK
+        string tipo
+        int peso
+    }
+
+    APARICION_ZONA {
+        string id PK
+        string zona_id FK
+        string especie_id FK
+        int peso
+        int nivel_minimo
+        int nivel_maximo
+    }
+
+    ESPECIE {
+        string id PK
+        string id_externo UK
+        string nombre
+        string slug UK
+        string tipo
+        float challenge_rating
+        int hp_base
+        int ataque_base
+        int defensa_base
+        int velocidad_base
+        float tasa_captura
+        boolean es_especial
+        string descripcion
+    }
+
+    MOVIMIENTO {
+        string id PK
+        string especie_id FK
+        string nombre_original
+        string nombre
+        string tipo_accion
+        float poder
+    }
+
+    CRIATURA {
+        string id PK
+        string personaje_id FK
+        string especie_id FK
+        string apodo
+        int nivel
+        int experiencia
+        int hp_actual
+        int hp_maximo
+        int ataque
+        int defensa
+        int velocidad
+        boolean en_equipo
+        int orden_equipo
+        datetime fecha_captura
+    }
+
+    OBJETO {
+        string id PK
+        string codigo UK
+        string nombre
+        string descripcion
+        string tipo
+        int precio_compra
+        int precio_venta
+        int efecto_valor
+    }
+
+    INVENTARIO_PERSONAJE {
+        string id PK
+        string personaje_id FK
+        string objeto_id FK
+        int cantidad
+    }
+
+    ENCUENTRO {
+        string id PK
+        string personaje_id FK
+        string zona_id FK
+        string criatura_rival_id FK
+        string estado
+        datetime fecha_creacion
+        datetime fecha_resolucion
+    }
+
+    COMBATE {
+        string id PK
+        string encuentro_id FK
+        int turno
+        boolean es_turno_jugador
+        string accion_ultima
+        json detalle_json
+    }
+
+    ZONA_DESBLOQUEADA {
+        string id PK
+        string personaje_id FK
+        string zona_id FK
+        datetime fecha_desbloqueo
+    }
+
+    HISTORIAL {
+        string id PK
+        string personaje_id FK
+        string tipo
+        string descripcion
+        json datos_json
+        datetime fecha_registro
+    }

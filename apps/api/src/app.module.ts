@@ -17,6 +17,7 @@ import { ExternoModule } from './modulos/externo/externo.module';
 
 import { ExploracionModule } from './modulos/exploracion/exploracion.module';
 import { EquipoModule } from './modulos/equipo/equipo.module';
+import { ProgresoModule } from './modulos/progreso/progreso.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EquipoModule } from './modulos/equipo/equipo.module';
     ExploracionModule,
     EncuentrosModule,
     CombateModule,
+    ProgresoModule,
     InventarioModule,
     TiendaModule,
     HistorialModule,

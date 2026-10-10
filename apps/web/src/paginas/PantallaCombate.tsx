@@ -1219,10 +1219,19 @@ export function PantallaCombate() {
                   +{recompensasVictoria.monedasGanadas} Monedas
                 </span>
               </div>
+              <div className="pt-1 space-y-1">
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-muted-foreground">Progreso de Nivel:</span>
+                  <span className="text-accent font-bold">
+                    Nv. {recompensasVictoria.nivelNuevo ?? aliado?.nivel} ({porcentajeXp}%)
+                  </span>
+                </div>
+                <XpBar value={porcentajeXp} variant="retro" className="h-2.5" />
+              </div>
               {recompensasVictoria.subioNivel && (
                 <div className="p-2 bg-pixel-dorado/10 border border-pixel-dorado text-center rounded anim-pulso-turno">
                   <p className="retro text-[11px] text-pixel-dorado">
-                    ¡SUBIDA DE NIVEL! Nv. {recompensasVictoria.nivelNuevo ?? (aliado.nivel + 1)}
+                    ¡SUBIDA DE NIVEL! Nv. {recompensasVictoria.nivelNuevo ?? ((aliado?.nivel ?? 1) + 1)}
                   </p>
                 </div>
               )}

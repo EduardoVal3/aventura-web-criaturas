@@ -13,6 +13,7 @@ import {
 } from '../../../comun/azar/generador-aleatorio.interface';
 import { ESTADOS_ENCUENTRO, esEstadoTerminal } from '../dominio/estado-encuentro';
 import { calcularDano, aplicarDano } from '../combate.service';
+import { calcularXpRequerida } from '../../progreso/progreso.service';
 
 export const MULTIPLICADORES_TALISMAN: Record<string, number> = {
   'talisman-basico': 1.0,
@@ -182,6 +183,10 @@ export class CapturaService {
             enEquipo: vaAlEquipo,
             ordenEquipo: vaAlEquipo ? criaturasEquipo + 1 : null,
             fechaCaptura: new Date(),
+            experiencia: Math.max(
+              encuentro.criaturaRival.experiencia,
+              calcularXpRequerida(encuentro.criaturaRival.nivel),
+            ),
           },
           include: {
             especie: true,

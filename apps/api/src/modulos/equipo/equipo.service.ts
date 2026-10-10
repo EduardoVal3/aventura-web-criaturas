@@ -8,7 +8,7 @@ import {
 import { PrismaService } from '../../comun/prisma/prisma.service';
 import { MoverCriaturaEquipoDto } from './dto/mover-criatura-equipo.dto';
 import { ActualizarOrdenEquipoDto } from './dto/actualizar-orden-equipo.dto';
-import { calcularProgresoXp } from '../progreso/progreso.service';
+import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.service';
 
 @Injectable()
 export class EquipoService {
@@ -38,7 +38,9 @@ export class EquipoService {
 
     return {
       criaturas: criaturas.map((c) => {
-        const progreso = calcularProgresoXp(c.nivel, c.experiencia);
+        const xpBase = calcularXpRequerida(c.nivel);
+        const xpReal = c.experiencia < xpBase ? xpBase + c.experiencia : c.experiencia;
+        const progreso = calcularProgresoXp(c.nivel, xpReal);
         return {
           criaturaId: c.id,
           slug: c.especie.slug,
@@ -50,7 +52,7 @@ export class EquipoService {
           ataque: c.ataque,
           defensa: c.defensa,
           velocidad: c.velocidad,
-          experiencia: c.experiencia,
+          experiencia: xpReal,
           porcentajeXp: progreso.porcentajeXp,
           xpSiguienteNivel: progreso.xpSiguienteNivel,
           xpNivelActual: progreso.xpNivelActual,

@@ -9,6 +9,7 @@ import { PrismaService } from '../../comun/prisma/prisma.service';
 import { HistorialService } from '../historial/historial.service';
 import { SelectorPonderado } from '../../comun/azar/selector-ponderado.util';
 import { GeneradorAleatorio, GeneradorAleatorioNativo } from '../../comun/azar/generador-aleatorio.interface';
+import { calcularXpRequerida } from '../progreso/progreso.service';
 
 @Injectable()
 export class ExploracionService {
@@ -192,7 +193,7 @@ export class ExploracionService {
           especieId: especie.id,
           apodo: null,
           nivel: nivelSorteado,
-          experiencia: 0,
+          experiencia: calcularXpRequerida(nivelSorteado),
           hpActual: hpMaximo,
           hpMaximo,
           ataque,

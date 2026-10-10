@@ -283,4 +283,98 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       );
     });
   });
+
+  describe('Aislamiento por Personaje y entrega de recompensas (§2.4)', () => {
+    it('debe rechazar otorgar XP a una criatura que pertenece a otro personaje con ForbiddenException', async () => {
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-otra',
+            personajeId: 'personaje-ajeno', // Pertenencia ajena
+            nivel: 2,
+            experiencia: 150,
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40 },
+          }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      await assert.rejects(
+        async () => {
+          await servicio.aplicarRecompensaVictoria(
+            mockPrisma,
+            'mi-personaje-autenticado',
+            'cri-otra',
+            {
+              nivel: 2,
+              especie: {
+                challengeRating: 0.5,
+                nombre: 'Lobo',
+                hpBase: 30,
+                ataqueBase: 40,
+                defensaBase: 40,
+                velocidadBase: 40,
+              },
+            },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof ForbiddenException, true);
+          return true;
+        },
+      );
+    });
+
+    it('debe otorgar XP y acumular sobre la base canónica del nivel a la criatura propia', async () => {
+      let datosActualizados: any = null;
+      let monedasActualizadas: any = null;
+
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'mi-criatura',
+            personajeId: 'mi-personaje',
+            nivel: 3,
+            experiencia: 10, // Desfasada previamente, base de nivel 3 es 374
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40, nombre: 'Lobo' },
+          }),
+          update: async ({ data }: any) => {
+            datosActualizados = data;
+            return { id: 'mi-criatura', ...data };
+          },
+        },
+        personaje: {
+          update: async ({ data }: any) => {
+            monedasActualizadas = data;
+            return { id: 'mi-personaje', monedas: 150 };
+          },
+        },
+        historial: {
+          create: async () => ({ id: 'his-1' }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      const resultado = await servicio.aplicarRecompensaVictoria(
+        mockPrisma,
+        'mi-personaje',
+        'mi-criatura',
+        {
+          nivel: 2,
+          especie: {
+            challengeRating: 0.5,
+            nombre: 'Lobo',
+            hpBase: 30,
+            ataqueBase: 40,
+            defensaBase: 40,
+            velocidadBase: 40,
+          },
+        },
+      );
+
+      // 374 (base nivel 3) + 10 (previa) + 46 (xpGanada para rival nv 2 con cr 0.5) = 430
+      assert.strictEqual(datosActualizados.experiencia >= 374, true);
+      assert.strictEqual(resultado.porcentajeXp > 0, true);
+    });
+  });
 });

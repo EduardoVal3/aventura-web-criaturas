@@ -13,7 +13,6 @@ export class EncuentrosService {
         criaturas: {
           where: { enEquipo: true },
           orderBy: { ordenEquipo: 'asc' },
-          take: 1,
           include: {
             especie: {
               include: { movimientos: true },
@@ -52,7 +51,8 @@ export class EncuentrosService {
       });
     }
 
-    const aliadaLider = personaje.criaturas[0];
+    const aliadaLider =
+      personaje.criaturas.find((c) => c.hpActual > 0) ?? personaje.criaturas[0];
     const ultimoCombate =
       encuentro.combates.length > 0
         ? encuentro.combates[encuentro.combates.length - 1]
@@ -90,8 +90,14 @@ export class EncuentrosService {
       }
     }
 
+    const xpBaseAliada = aliadaLider ? calcularXpRequerida(aliadaLider.nivel) : 0;
+    const xpRealAliada = aliadaLider
+      ? (aliadaLider.experiencia < xpBaseAliada
+          ? xpBaseAliada + aliadaLider.experiencia
+          : aliadaLider.experiencia)
+      : 0;
     const progresoAliada = aliadaLider
-      ? calcularProgresoXp(aliadaLider.nivel, aliadaLider.experiencia)
+      ? calcularProgresoXp(aliadaLider.nivel, xpRealAliada)
       : null;
 
     return {

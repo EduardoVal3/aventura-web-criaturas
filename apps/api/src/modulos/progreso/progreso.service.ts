@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../comun/prisma/prisma.service';
@@ -144,20 +145,26 @@ export class ProgresoService {
     );
     const monedasGanadas = calcularMonedasVictoria(criaturaRival.nivel);
 
-    // 2. Obtener criatura aliada
+    // 2. Obtener criatura aliada con validación estricta de pertenencia (aislamiento por jugador)
     const criatura = await tx.criatura.findUnique({
       where: { id: criaturaAliadaId },
       include: { especie: true },
     });
 
-    if (!criatura) {
-      throw new NotFoundException({
-        codigo: 'CRIATURA_NO_ENCONTRADA',
-        mensaje: 'No se encontró la criatura aliada para otorgar progreso.',
+    if (!criatura || criatura.personajeId !== personajeId) {
+      throw new ForbiddenException({
+        codigo: 'CRIATURA_NO_AUTORIZADA',
+        mensaje: 'La criatura aliada no pertenece al personaje autenticado.',
       });
     }
 
-    const nuevaExperiencia = criatura.experiencia + xpGanada;
+    const xpBaseNivel = calcularXpRequerida(criatura.nivel);
+    const xpBaseReal =
+      criatura.experiencia < xpBaseNivel
+        ? xpBaseNivel + criatura.experiencia
+        : criatura.experiencia;
+
+    const nuevaExperiencia = xpBaseReal + xpGanada;
     const nuevoNivel = calcularNivelDesdeXp(criatura.nivel, nuevaExperiencia);
     const subioNivel = nuevoNivel > criatura.nivel;
 

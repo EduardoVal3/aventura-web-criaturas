@@ -151,6 +151,9 @@ export interface CriaturaCombateRival {
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  ataque?: number;
+  defensa?: number;
+  velocidad?: number;
 }
 
 export interface CriaturaCombateAliada {

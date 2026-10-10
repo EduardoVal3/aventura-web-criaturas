@@ -295,7 +295,10 @@ Este documento define la especificación técnica de la API REST que comunica el
       "nombre": "Pico de Hacha",
       "nivel": 2,
       "hpActual": 14,
-      "hpMaximo": 19
+      "hpMaximo": 19,
+      "ataque": 42,
+      "defensa": 51,
+      "velocidad": 60
     },
     "criaturaAliada": {
       "criaturaId": "cri-301",

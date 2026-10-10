@@ -131,6 +131,10 @@ La versión previa del Hub de Ubicación cumplía la funcionalidad básica pero 
 - **Tarjetas de Conexión:** Cada destino muestra nombre, nivel sugerido y badge de estado (`ACCESIBLE` vs `BLOQUEADA`).
 - **Micro-interacción de Viaje Seguro:** Los destinos accesibles despliegan un diálogo modal `AlertDialog` retro que solicita confirmación del explorador antes de desplazarse, previniendo viajes no intencionados y mostrando el estado de carga `VIAJANDO...`.
 - **Inspección de Rutas Restringidas (M-PRO):** Las zonas bloqueadas cuentan con diálogo explicativo detallando los requisitos de gremio o experiencia requeridos para su acceso.
+- **Sello contra Desbordamiento y Optimización Tipográfica:**
+  - `AlertDialogContent` configurado con ancho responsivo prioritario (`w-[calc(100vw-2rem)] sm:max-w-md! max-w-md!`) y `overflow-hidden`.
+  - Disposición adaptativa en `AlertDialogFooter` (`flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 w-full`), apilando botones en pantallas estrechas y alineando a la derecha en escritorio sin desbordes.
+  - Corrección de la etiqueta de cancelación a `PERMANECER`, evitando glifos no soportados (como la `Í` acentuada) en la fuente 8-bit `Press Start 2P`.
 
 #### D. Audio Retro Centralizado y Tolerancia a Fallos
 - Integración de `reproducirSonido(...)` para eventos de interfaz:

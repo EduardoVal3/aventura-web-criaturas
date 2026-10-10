@@ -441,24 +441,24 @@ export function PantallaHubUbicacion() {
                       </AlertDialogTrigger>
                       <AlertDialogContent
                         font="normal"
-                        className="bg-[#121927] border-2 border-[#43526d] text-slate-100 max-w-md"
+                        className="w-[calc(100vw-2rem)] sm:max-w-md! max-w-md! bg-[#121927] border-2 border-[#43526d] text-slate-100 overflow-hidden"
                       >
-                        <AlertDialogHeader>
+                        <AlertDialogHeader className="w-full text-left">
                           <div className="flex items-center gap-2 text-red-400">
-                            <Lock className="size-4" />
+                            <Lock className="size-4 shrink-0" />
                             <AlertDialogTitle className="retro text-xs sm:text-sm text-red-400">
                               RUTA RESTRINGIDA
                             </AlertDialogTitle>
                           </div>
-                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed text-left">
                             {conexion.requisito ??
                               "Esta senda requiere mayor experiencia o cumplir misiones previas con el gremio."}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="mt-4">
+                        <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row sm:justify-end w-full">
                           <AlertDialogAction
                             onClick={() => reproducirSonido("click", 0.3)}
-                            className="retro bg-[#1a2332] hover:bg-[#232d3f] text-slate-200 border border-[#43526d] text-[10px]"
+                            className="retro bg-[#1a2332] hover:bg-[#232d3f] text-slate-200 border border-[#43526d] text-[10px] w-full sm:w-auto px-4 py-2 cursor-pointer"
                           >
                             COMPRENDIDO
                           </AlertDialogAction>
@@ -490,34 +490,34 @@ export function PantallaHubUbicacion() {
                       </AlertDialogTrigger>
                       <AlertDialogContent
                         font="normal"
-                        className="bg-[#121927] border-2 border-[#43526d] text-slate-100 max-w-md"
+                        className="w-[calc(100vw-2rem)] sm:max-w-md! max-w-md! bg-[#121927] border-2 border-[#43526d] text-slate-100 overflow-hidden"
                       >
-                        <AlertDialogHeader>
+                        <AlertDialogHeader className="w-full text-left">
                           <div className="flex items-center gap-2 text-[#14d1e8]">
-                            <Compass className="size-4 text-[#14d1e8]" />
+                            <Compass className="size-4 text-[#14d1e8] shrink-0" />
                             <AlertDialogTitle className="retro text-xs sm:text-sm text-[#14d1e8]">
                               CONFIRMAR VIAJE
                             </AlertDialogTitle>
                           </div>
-                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
+                          <AlertDialogDescription className="font-sans text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed text-left">
                             ¿Deseas desplazarte hacia{" "}
-                            <strong className="text-white">{conexion.nombre}</strong>?
+                            <strong className="text-white font-semibold">{conexion.nombre}</strong>?
                             <br />
                             <span className="text-slate-400 mt-1 block">
                               Nivel recomendado: {conexion.nivelSugerido ?? "Rango libre"}.
                             </span>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="mt-4 flex gap-2">
+                        <AlertDialogFooter className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 w-full">
                           <AlertDialogCancel
                             onClick={() => reproducirSonido("click", 0.3)}
-                            className="retro bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-[10px]"
+                            className="retro bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-[10px] w-full sm:w-auto px-4 py-2 shrink-0 cursor-pointer"
                           >
-                            PERMANECER AQUÍ
+                            PERMANECER
                           </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleViajar(conexion)}
-                            className="retro bg-[#14d1e8] hover:bg-[#14d1e8]/90 text-slate-950 font-bold border-[#14d1e8] text-[10px]"
+                            className="retro bg-[#14d1e8] hover:bg-[#14d1e8]/90 text-slate-950 font-bold border-[#14d1e8] text-[10px] w-full sm:w-auto px-4 py-2 shrink-0 cursor-pointer"
                           >
                             EMPRENDER CAMINO
                           </AlertDialogAction>

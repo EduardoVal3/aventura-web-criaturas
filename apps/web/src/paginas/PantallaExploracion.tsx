@@ -27,7 +27,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/8bit/dialog";
@@ -126,6 +125,9 @@ export function PantallaExploracion() {
             nivel: rival.nivel,
             hpActual: rival.hpActual,
             hpMaximo: rival.hpMaximo,
+            ataque: rival.ataque,
+            defensa: rival.defensa,
+            velocidad: rival.velocidad,
             mensaje: `Tienes un enfrentamiento activo pendiente contra ${rival.nombre}.`,
           });
         }
@@ -642,9 +644,10 @@ export function PantallaExploracion() {
       <Dialog open={modalEncuentroAbierto} onOpenChange={setModalEncuentroAbierto}>
         <DialogContent
           font="normal"
-          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-hidden bg-[#121927] border-2 border-[#43526d] text-slate-100 p-0 flex flex-col"
+          className="!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-[#121927] border-2 border-[#43526d] text-slate-100 !p-0 !gap-0 overflow-hidden"
         >
-          <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-5 pb-2 text-center relative pr-10">
+          {/* Header fijo anclado arriba */}
+          <DialogHeader className="shrink-0 px-4 pt-3.5 pb-2 text-center border-b border-[#43526d]/40 relative pr-10">
             <DialogTitle
               font="normal"
               className="retro text-xs sm:text-sm text-red-400 text-center flex items-center justify-center gap-2 uppercase tracking-wider"
@@ -652,26 +655,27 @@ export function PantallaExploracion() {
               <Swords className="size-4 text-red-400 animate-pulse shrink-0" />
               <span>¡CRIATURA SALVAJE!</span>
             </DialogTitle>
-            <DialogDescription className="font-sans text-xs sm:text-sm text-slate-300 text-center mt-1">
+            <DialogDescription className="font-sans text-[11px] sm:text-xs text-slate-300 text-center mt-0.5 line-clamp-2">
               {rivalActivo?.mensaje ?? "¡Una bestia hostil surge entre la maleza y bloquea tu sendero!"}
             </DialogDescription>
           </DialogHeader>
 
+          {/* Cuerpo scrolleable interior: siempre visible y adaptable */}
           {rivalActivo && (
-            <div className="overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-2 flex-1 min-h-0 space-y-3">
-              <div className="p-3 sm:p-4 bg-[#090d16] border-2 border-red-500/50 space-y-3 text-center">
-                {/* Sprite de la criatura rival con renderizado pixelado nítido */}
-                <div className="relative mx-auto size-24 sm:size-28 flex items-center justify-center bg-[#121927]/60 border border-[#43526d]/40">
+            <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-5 py-2.5 space-y-2.5 overscroll-contain">
+              <div className="p-2.5 sm:p-3.5 bg-[#090d16] border-2 border-red-500/50 space-y-2.5 text-center">
+                {/* Sprite de la criatura rival con tamaño óptimo retro */}
+                <div className="relative mx-auto size-20 sm:size-24 flex items-center justify-center bg-[#121927]/60 border border-[#43526d]/40">
                   <img
                     src={obtenerImagenCriatura(rivalActivo.slug)}
                     onError={(e) => manejarErrorImagen(e, "criatura")}
                     alt={rivalActivo.nombre}
-                    className="pixelated max-h-20 sm:max-h-24 max-w-20 sm:max-w-24 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-105"
+                    className="pixelated max-h-16 sm:max-h-20 max-w-16 sm:max-w-20 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-105"
                   />
                 </div>
 
                 {/* Nombre en Press Start 2P e Insignia de Nivel */}
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
                     {rivalActivo.nombre}
                   </h3>
@@ -703,44 +707,41 @@ export function PantallaExploracion() {
                   </div>
                 </div>
 
-                {/* Estadísticas Tácticas de Combate */}
-                {(typeof rivalActivo.ataque === "number" ||
-                  typeof rivalActivo.defensa === "number" ||
-                  typeof rivalActivo.velocidad === "number") && (
-                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[9px] sm:text-[10px] text-slate-300 w-full">
-                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
-                      <div className="flex items-center gap-1 text-red-400">
-                        <Swords className="size-2.5 sm:size-3 shrink-0" />
-                        <span className="truncate">ATQ</span>
-                      </div>
-                      <span className="font-bold text-slate-100">{rivalActivo.ataque ?? 10}</span>
+                {/* Estadísticas Tácticas de Combate: 100% visibles e incondicionales */}
+                <div className="grid grid-cols-3 gap-2 pt-0.5 font-mono text-[9px] sm:text-[10px] text-slate-300 w-full">
+                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 sm:p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                    <div className="flex items-center gap-1 text-red-400">
+                      <Swords className="size-2.5 sm:size-3 shrink-0" />
+                      <span className="truncate">ATQ</span>
                     </div>
-
-                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
-                      <div className="flex items-center gap-1 text-blue-400">
-                        <Shield className="size-2.5 sm:size-3 shrink-0" />
-                        <span className="truncate">DEF</span>
-                      </div>
-                      <span className="font-bold text-slate-100">{rivalActivo.defensa ?? 10}</span>
-                    </div>
-
-                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
-                      <div className="flex items-center gap-1 text-amber-400">
-                        <Zap className="size-2.5 sm:size-3 shrink-0" />
-                        <span className="truncate">VEL</span>
-                      </div>
-                      <span className="font-bold text-slate-100">{rivalActivo.velocidad ?? 10}</span>
-                    </div>
+                    <span className="font-bold text-slate-100">{rivalActivo.ataque ?? 10}</span>
                   </div>
-                )}
+
+                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 sm:p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                    <div className="flex items-center gap-1 text-blue-400">
+                      <Shield className="size-2.5 sm:size-3 shrink-0" />
+                      <span className="truncate">DEF</span>
+                    </div>
+                    <span className="font-bold text-slate-100">{rivalActivo.defensa ?? 10}</span>
+                  </div>
+
+                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 sm:p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      <Zap className="size-2.5 sm:size-3 shrink-0" />
+                      <span className="truncate">VEL</span>
+                    </div>
+                    <span className="font-bold text-slate-100">{rivalActivo.velocidad ?? 10}</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          <DialogFooter className="px-4 pb-4 sm:px-6 sm:pb-5 pt-3 border-t border-[#43526d]/40 flex flex-col gap-2.5 w-full">
+          {/* Footer fijo anclado abajo: garantizado siempre visible e interactuable */}
+          <div className="shrink-0 px-3.5 sm:px-5 py-2.5 sm:py-3 border-t-2 border-[#43526d] bg-[#090d16] flex flex-col gap-2 w-full">
             <Button
               font="retro"
-              className="w-full bg-red-600 hover:bg-red-500 text-white border-2 border-red-400 text-xs py-3 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
+              className="w-full bg-red-600 hover:bg-red-500 text-white border-2 border-red-400 text-xs py-2.5 sm:py-3 gap-2 cursor-pointer shadow-[2px_2px_0px_0px_#05070b] active:translate-y-0.5"
               onClick={handleIniciarCombate}
             >
               <Swords className="size-3.5 shrink-0" />
@@ -749,7 +750,7 @@ export function PantallaExploracion() {
             <Button
               variant="outline"
               font="retro"
-              className="w-full bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-xs py-2.5 gap-2 cursor-pointer active:translate-y-1"
+              className="w-full bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-xs py-2 sm:py-2.5 gap-2 cursor-pointer active:translate-y-0.5"
               onClick={() => {
                 reproducirSonido("click", 0.3);
                 setModalEncuentroAbierto(false);
@@ -758,7 +759,7 @@ export function PantallaExploracion() {
               <Eye className="size-3.5 shrink-0" />
               <span>CERRAR FICHA</span>
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -766,9 +767,9 @@ export function PantallaExploracion() {
       <Dialog open={modalBotinAbierto} onOpenChange={setModalBotinAbierto}>
         <DialogContent
           font="normal"
-          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-hidden bg-[#121927] border-2 border-[#43526d] text-slate-100 p-0 flex flex-col"
+          className="!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-[#121927] border-2 border-[#43526d] text-slate-100 !p-0 !gap-0 overflow-hidden"
         >
-          <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-5 pb-2 text-center relative pr-10">
+          <DialogHeader className="shrink-0 px-4 pt-3.5 pb-2 text-center border-b border-[#43526d]/40 relative pr-10">
             <DialogTitle
               font="normal"
               className="retro text-xs sm:text-sm text-[#f5b724] text-center flex items-center justify-center gap-2 uppercase tracking-wider"
@@ -776,18 +777,18 @@ export function PantallaExploracion() {
               <Coins className="size-4 text-[#f5b724] shrink-0" />
               <span>¡BOTIN DESCUBIERTO!</span>
             </DialogTitle>
-            <DialogDescription className="font-sans text-xs sm:text-sm text-slate-300 text-center mt-1">
+            <DialogDescription className="font-sans text-[11px] sm:text-xs text-slate-300 text-center mt-0.5">
               Tus pasos por la ruta han revelado un recurso valioso para la expedición.
             </DialogDescription>
           </DialogHeader>
 
           {ultimaRecompensa && (
-            <div className="px-4 sm:px-6 py-2 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
-              <div className="p-4 bg-[#090d16] border-2 border-[#f5b724]/50 text-center space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 overscroll-contain">
+              <div className="p-3.5 sm:p-4 bg-[#090d16] border-2 border-[#f5b724]/50 text-center space-y-3">
                 {ultimaRecompensa.tipo === "MONEDAS" ? (
                   <>
-                    <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#f5b724]/60 flex items-center justify-center">
-                      <Coins className="size-7 sm:size-8 text-[#f5b724]" />
+                    <div className="mx-auto size-12 sm:size-14 bg-[#1a2332] border border-[#f5b724]/60 flex items-center justify-center">
+                      <Coins className="size-6 sm:size-7 text-[#f5b724]" />
                     </div>
                     <div className="space-y-1">
                       <h3 className="retro text-xs sm:text-sm text-[#f5b724] uppercase tracking-wider">
@@ -800,12 +801,12 @@ export function PantallaExploracion() {
                   </>
                 ) : (
                   <>
-                    <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#14d1e8]/60 flex items-center justify-center">
+                    <div className="mx-auto size-12 sm:size-14 bg-[#1a2332] border border-[#14d1e8]/60 flex items-center justify-center">
                       <img
                         src={obtenerImagenObjeto(ultimaRecompensa.itemCodigo)}
                         onError={(e) => manejarErrorImagen(e, "objeto")}
                         alt="Ítem obtenido"
-                        className="pixelated size-8 sm:size-10 object-contain"
+                        className="pixelated size-7 sm:size-8 object-contain"
                       />
                     </div>
                     <div className="space-y-1">
@@ -822,19 +823,19 @@ export function PantallaExploracion() {
             </div>
           )}
 
-          <DialogFooter className="px-4 pb-4 sm:px-6 sm:pb-5 pt-3 border-t border-[#43526d]/40 w-full">
+          <div className="shrink-0 px-4 sm:px-5 py-2.5 sm:py-3 border-t-2 border-[#43526d] bg-[#090d16] w-full">
             <Button
               font="retro"
               onClick={() => {
                 reproducirSonido("confirmar", 0.4);
                 setModalBotinAbierto(false);
               }}
-              className="w-full bg-[#f5b724] hover:bg-[#f5b724]/90 text-[#090d16] border-2 border-[#05070b] text-xs py-3 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
+              className="w-full bg-[#f5b724] hover:bg-[#f5b724]/90 text-[#090d16] border-2 border-[#05070b] text-xs py-2.5 sm:py-3 gap-2 cursor-pointer shadow-[2px_2px_0px_0px_#05070b] active:translate-y-0.5"
             >
               <Backpack className="size-4 shrink-0" />
               <span>GUARDAR EN BOLSA</span>
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

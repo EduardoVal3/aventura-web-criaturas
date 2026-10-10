@@ -56,6 +56,9 @@ export class EncuentrosService {
         nivel: encuentro.criaturaRival.nivel,
         hpActual: encuentro.criaturaRival.hpActual,
         hpMaximo: encuentro.criaturaRival.hpMaximo,
+        ataque: encuentro.criaturaRival.ataque,
+        defensa: encuentro.criaturaRival.defensa,
+        velocidad: encuentro.criaturaRival.velocidad,
       },
       criaturaAliada: aliadaLider
         ? {

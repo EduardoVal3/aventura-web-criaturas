@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { calcularProgresoXp } from '../progreso/progreso.service';
 
 @Injectable()
 export class EncuentrosService {
@@ -89,6 +90,10 @@ export class EncuentrosService {
       }
     }
 
+    const progresoAliada = aliadaLider
+      ? calcularProgresoXp(aliadaLider.nivel, aliadaLider.experiencia)
+      : null;
+
     return {
       encuentroId: encuentro.id,
       estado: encuentro.estado,
@@ -117,6 +122,9 @@ export class EncuentrosService {
             defensa: aliadaLider.defensa,
             velocidad: aliadaLider.velocidad,
             experiencia: aliadaLider.experiencia,
+            porcentajeXp: progresoAliada?.porcentajeXp ?? 0,
+            xpSiguienteNivel: progresoAliada?.xpSiguienteNivel ?? 0,
+            xpNivelActual: progresoAliada?.xpNivelActual ?? 0,
             movimientos: aliadaLider.especie?.movimientos?.length
               ? aliadaLider.especie.movimientos.map((m) => ({
                   nombre: m.nombre,

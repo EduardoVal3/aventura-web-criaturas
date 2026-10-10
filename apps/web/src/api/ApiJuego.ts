@@ -171,6 +171,9 @@ export interface CriaturaCombateAliada {
   hpActual: number;
   hpMaximo: number;
   experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
   ataque?: number;
   defensa?: number;
   velocidad?: number;
@@ -205,6 +208,9 @@ export interface ProgresoVictoria {
   subioNivel: boolean;
   nivelAnterior?: number;
   nivelNuevo: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
   saldoMonedas?: number;
 }
 
@@ -262,19 +268,25 @@ export interface PeticionHuir {
 export interface RespuestaHuir {
   exito: boolean;
   mensaje: string;
-  estado: "HUIDO";
+  estado: string;
+  contraataqueRival?: AccionCombate | null;
 }
 
 export interface CriaturaEquipo {
   criaturaId: string;
   slug: string;
   nombre: string;
+  apodo?: string | null;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
   ataque: number;
   defensa: number;
   velocidad: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
   orden: number;
 }
 

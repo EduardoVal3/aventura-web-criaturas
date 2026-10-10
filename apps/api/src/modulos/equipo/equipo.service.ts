@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../comun/prisma/prisma.service';
 import { MoverCriaturaEquipoDto } from './dto/mover-criatura-equipo.dto';
 import { ActualizarOrdenEquipoDto } from './dto/actualizar-orden-equipo.dto';
+import { calcularProgresoXp } from '../progreso/progreso.service';
 
 @Injectable()
 export class EquipoService {
@@ -36,19 +37,26 @@ export class EquipoService {
     });
 
     return {
-      criaturas: criaturas.map((c) => ({
-        criaturaId: c.id,
-        slug: c.especie.slug,
-        nombre: c.especie.nombre,
-        apodo: c.apodo,
-        nivel: c.nivel,
-        hpActual: c.hpActual,
-        hpMaximo: c.hpMaximo,
-        ataque: c.ataque,
-        defensa: c.defensa,
-        velocidad: c.velocidad,
-        orden: c.ordenEquipo ?? 1,
-      })),
+      criaturas: criaturas.map((c) => {
+        const progreso = calcularProgresoXp(c.nivel, c.experiencia);
+        return {
+          criaturaId: c.id,
+          slug: c.especie.slug,
+          nombre: c.especie.nombre,
+          apodo: c.apodo,
+          nivel: c.nivel,
+          hpActual: c.hpActual,
+          hpMaximo: c.hpMaximo,
+          ataque: c.ataque,
+          defensa: c.defensa,
+          velocidad: c.velocidad,
+          experiencia: c.experiencia,
+          porcentajeXp: progreso.porcentajeXp,
+          xpSiguienteNivel: progreso.xpSiguienteNivel,
+          xpNivelActual: progreso.xpNivelActual,
+          orden: c.ordenEquipo ?? 1,
+        };
+      }),
     };
   }
 

@@ -30,7 +30,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/8bit/dialog";
@@ -119,8 +118,9 @@ export function PantallaCombate() {
           ]);
         }
 
-        if (datos.criaturaAliada?.experiencia) {
-          setPorcentajeXp(Math.min(100, Math.round((datos.criaturaAliada.experiencia % 100))));
+        // Sincronización fiel del progreso de XP calculado por el servidor (§2.4)
+        if (datos.criaturaAliada) {
+          setPorcentajeXp(datos.criaturaAliada.porcentajeXp ?? 0);
         }
 
         try {
@@ -173,6 +173,28 @@ export function PantallaCombate() {
       cancelado = true;
     };
   }, [navigate]);
+
+  // Recarga fiel tras relevo de criatura aliada
+  const refrescarCombate = useCallback(async () => {
+    try {
+      const datos = await api.obtenerEncuentroActivo();
+      setEncuentro(datos);
+      setRival(datos.criaturaRival);
+      setAliado(datos.criaturaAliada);
+
+      if (datos.criaturaAliada) {
+        setPorcentajeXp(datos.criaturaAliada.porcentajeXp ?? 0);
+      }
+
+      if (datos.bitacora && datos.bitacora.length > 0) {
+        setBitacoraCombate(datos.bitacora);
+      }
+      const respEquipo = await api.obtenerEquipo();
+      setEquipoCriaturas(respEquipo.criaturas);
+    } catch {
+      // simplificacion: tolerancia a fallo en refresco secundario
+    }
+  }, []);
 
   // Manejador de Ataque con selector de movimientos
   const handleAtacar = async (movimientoIndice = 0) => {
@@ -246,8 +268,14 @@ export function PantallaCombate() {
             setSubioNivel(true);
             setPorcentajeXp(100);
             toast.success(`¡Tu criatura subió al nivel ${nivelNuevo ?? "superior"}!`);
-          } else if (xp > 0) {
-            setPorcentajeXp((prev) => Math.min(99, prev + Math.max(20, xp % 100)));
+          } else if (xp > 0 && aliado) {
+            const nuevaXp = (aliado.experiencia ?? 0) + xp;
+            const nuevoPorcentaje =
+              "porcentajeXp" in recompensa && typeof recompensa.porcentajeXp === "number"
+                ? recompensa.porcentajeXp
+                : porcentajeXp;
+            setAliado({ ...aliado, experiencia: nuevaXp, porcentajeXp: nuevoPorcentaje });
+            setPorcentajeXp(nuevoPorcentaje);
             toast.success(`¡Ganaste ${xp} XP y ${monedas} monedas!`);
           }
         }
@@ -349,22 +377,6 @@ export function PantallaCombate() {
     }
   };
 
-  const refrescarCombate = useCallback(async () => {
-    try {
-      const datos = await api.obtenerEncuentroActivo();
-      setEncuentro(datos);
-      setRival(datos.criaturaRival);
-      setAliado(datos.criaturaAliada);
-      if (datos.bitacora && datos.bitacora.length > 0) {
-        setBitacoraCombate(datos.bitacora);
-      }
-      const respEquipo = await api.obtenerEquipo();
-      setEquipoCriaturas(respEquipo.criaturas);
-    } catch {
-      // simplificacion: tolerancia a fallo en refresco secundario
-    }
-  }, []);
-
   // Manejador de Cambio de Criatura Activa
   const handleCambiarCriatura = async (nuevaCriaturaId: string) => {
     if (procesandoAccion || combateFinalizado) return;
@@ -388,7 +400,7 @@ export function PantallaCombate() {
       reproducirSonido("confirmar");
       toast.success("¡Criatura al frente cambiada con éxito!");
 
-      // Recargar datos actualizados del encuentro con la nueva criatura líder
+      // Recargar datos actualizados del encuentro con la nueva criatura líder y su XP exacta
       await refrescarCombate();
 
       const criaturaNueva = equipoCriaturas.find((c) => c.criaturaId === nuevaCriaturaId);
@@ -465,6 +477,17 @@ export function PantallaCombate() {
             setAnimacionAliado("");
             setDanoFlotanteAliado(null);
           }, 500);
+
+          if (
+            typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0
+          ) {
+            await new Promise((resolver) => setTimeout(resolver, 400));
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+          }
         }
 
         setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
@@ -485,7 +508,7 @@ export function PantallaCombate() {
     }
   };
 
-  // Manejador de Huida del Combate
+  // Manejador de Huida del Combate con aplicación inmediata de daño de contraataque
   const handleHuir = async () => {
     if (!encuentro || procesandoAccion || combateFinalizado) return;
 
@@ -503,11 +526,48 @@ export function PantallaCombate() {
         navigate("/exploracion");
       } else {
         reproducirSonido("error");
-        toast.error("No lograste escapar. El combate continúa.");
-        setBitacoraCombate((prev) => [
-          "Intentaste huir pero el rival te bloqueó el paso.",
-          ...prev,
-        ]);
+        toast.error(resultado.mensaje || "No lograste escapar. El combate continúa.");
+        const mensajesFallo = [
+          resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
+        ];
+
+        // Reflejar de inmediato el daño del contraataque rival sin necesidad de recargar la página
+        if (resultado.contraataqueRival && aliado) {
+          await new Promise((resolver) => setTimeout(resolver, 400));
+          reproducirSonido("golpe");
+          setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
+          setDanoFlotanteAliado(resultado.contraataqueRival.danoCausado);
+
+          mensajesFallo.unshift(
+            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño tras tu intento de huida.`,
+          );
+
+          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
+            setAliado({
+              ...aliado,
+              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
+            });
+          }
+
+          setTimeout(() => {
+            setAnimacionAliado("");
+            setDanoFlotanteAliado(null);
+          }, 500);
+
+          if (
+            resultado.estado === "DERROTA" ||
+            (typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
+              resultado.contraataqueRival.hpRestanteAliado <= 0)
+          ) {
+            await new Promise((resolver) => setTimeout(resolver, 400));
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+          }
+        }
+
+        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
       }
     } catch (error) {
       if (error instanceof ErrorApi) {
@@ -683,7 +743,7 @@ export function PantallaCombate() {
               />
             </div>
 
-            {/* Barra de Experiencia (XP) */}
+            {/* Barra de Experiencia (XP) precisa según escalado de nivel (§2.4) */}
             <div className="space-y-1 pt-0.5">
               <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                 <span>EXP</span>
@@ -884,7 +944,7 @@ export function PantallaCombate() {
                         ¿Intentar escapar del combate?
                       </AlertDialogTitle>
                       <AlertDialogDescription className="text-xs">
-                        La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival.
+                        La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival. Si fallas, el rival contraatacará de inmediato.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex gap-2">
@@ -903,7 +963,7 @@ export function PantallaCombate() {
 
       {/* MODAL RETRO: SELECCIÓN DE TALISMÁN DE CAPTURA */}
       <Dialog open={modalCapturaAbierto} onOpenChange={setModalCapturaAbierto}>
-        <DialogContent className="max-w-md border-2 border-pixel bg-bastion">
+        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
           <DialogHeader>
             <DialogTitle className="text-sm sm:text-base font-bold text-pixel-dorado retro">
               Lanzar Talismán de Captura
@@ -965,9 +1025,9 @@ export function PantallaCombate() {
             )}
           </div>
 
-          <DialogFooter className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
             <Button
-              className="flex-1 text-xs"
+              className="flex-1 text-xs py-2"
               disabled={talismanes.length === 0 || procesandoAccion}
               onClick={ejecutarCaptura}
             >
@@ -975,18 +1035,18 @@ export function PantallaCombate() {
             </Button>
             <Button
               variant="outline"
-              className="flex-1 text-xs"
+              className="flex-1 text-xs py-2"
               onClick={() => setModalCapturaAbierto(false)}
             >
               Cancelar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* MODAL RETRO: OBJETOS CURATIVOS */}
       <Dialog open={modalObjetosAbierto} onOpenChange={setModalObjetosAbierto}>
-        <DialogContent className="max-w-md border-2 border-pixel bg-bastion">
+        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
           <DialogHeader>
             <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
               Bolsa de Pociones y Curación
@@ -1046,21 +1106,21 @@ export function PantallaCombate() {
             )}
           </div>
 
-          <DialogFooter>
+          <div className="pt-2 w-full">
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => setModalObjetosAbierto(false)}
             >
               Cerrar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* MODAL RETRO: CAMBIAR CRIATURA ACTIVA */}
       <Dialog open={modalCambioCriaturaAbierto} onOpenChange={setModalCambioCriaturaAbierto}>
-        <DialogContent className="max-w-md border-2 border-pixel bg-bastion">
+        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
           <DialogHeader>
             <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
               Relevar Criatura en Combate
@@ -1080,6 +1140,7 @@ export function PantallaCombate() {
                 .filter((c) => c.criaturaId !== aliado.criaturaId)
                 .map((comp) => {
                   const debilitada = comp.hpActual <= 0;
+                  const xpIndividual = comp.porcentajeXp ?? 0;
                   return (
                     <div
                       key={comp.criaturaId}
@@ -1099,7 +1160,7 @@ export function PantallaCombate() {
                         <div>
                           <p className="font-semibold text-xs">{comp.nombre}</p>
                           <span className="text-[10px] font-mono text-muted-foreground">
-                            Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP
+                            Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP · {xpIndividual}% EXP
                           </span>
                         </div>
                       </div>
@@ -1117,26 +1178,26 @@ export function PantallaCombate() {
             )}
           </div>
 
-          <DialogFooter>
+          <div className="pt-2 w-full">
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => setModalCambioCriaturaAbierto(false)}
             >
               Cancelar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* DIÁLOGO CINEMÁTICO DE VICTORIA RETRO */}
       <Dialog open={estadoFinal === "VICTORIA"} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md border-4 border-pixel-dorado bg-bastion anim-revelacion-evento">
-          <DialogHeader className="text-center space-y-1">
+        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-pixel-dorado bg-bastion anim-revelacion-evento">
+          <DialogHeader className="text-center space-y-2">
             <div className="mx-auto size-12 rounded bg-pixel-dorado/20 border-2 border-pixel-dorado flex items-center justify-center anim-pulso-turno">
               <span className="text-xl">🏆</span>
             </div>
-            <DialogTitle className="text-base sm:text-lg font-bold text-pixel-dorado retro tracking-wider">
+            <DialogTitle className="text-sm sm:text-base font-bold text-pixel-dorado retro tracking-wider">
               ¡VICTORIA EN COMBATE!
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1168,27 +1229,27 @@ export function PantallaCombate() {
             </div>
           )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+          <div className="flex flex-col gap-2.5 pt-3 w-full">
             <Button
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => navigate("/exploracion")}
             >
               Continuar Explorando
             </Button>
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => navigate("/hub")}
             >
               Volver al Hub
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* DIÁLOGO CINEMÁTICO DE CAPTURA RETRO */}
       <Dialog open={estadoFinal === "CAPTURADO"} onOpenChange={() => {}}>
-        <DialogContent className="max-w-md border-4 border-primary bg-bastion anim-revelacion-evento">
+        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-primary bg-bastion anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
             <div className="mx-auto size-20 rounded border-2 border-primary bg-abismo flex items-center justify-center anim-captura-exito">
               <img
@@ -1198,7 +1259,7 @@ export function PantallaCombate() {
                 className="size-16 pixelated object-contain"
               />
             </div>
-            <DialogTitle className="text-base sm:text-lg font-bold text-primary retro">
+            <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
               ¡CRIATURA CAPTURADA!
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1207,21 +1268,55 @@ export function PantallaCombate() {
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+          <div className="flex flex-col gap-2.5 pt-3 w-full">
             <Button
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => navigate("/exploracion")}
             >
               Continuar Explorando
             </Button>
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full text-xs py-2"
               onClick={() => navigate("/equipo")}
             >
               Ver en Equipo
             </Button>
-          </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO CINEMÁTICO DE DERROTA RETRO */}
+      <Dialog open={estadoFinal === "DERROTA"} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-destructive/80 bg-bastion anim-revelacion-evento">
+          <DialogHeader className="text-center space-y-2">
+            <div className="mx-auto size-12 rounded bg-destructive/20 border-2 border-destructive flex items-center justify-center anim-sacudida">
+              <span className="text-xl">⚔️</span>
+            </div>
+            <DialogTitle className="text-sm sm:text-base font-bold text-destructive retro">
+              EQUIPO DEBILITADO
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Tu criatura aliada ha quedado fuera de combate. Debes acudir al santuario para sanar a tu equipo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2.5 pt-3 w-full">
+            <Button
+              variant="destructive"
+              className="w-full text-xs py-2"
+              onClick={() => navigate("/curacion")}
+            >
+              Ir a Centro de Curación
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full text-xs py-2"
+              onClick={() => navigate("/hub")}
+            >
+              Volver al Hub
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -312,6 +312,9 @@ Este documento define la especificación técnica de la API REST que comunica el
       "defensa": 58,
       "velocidad": 50,
       "experiencia": 45,
+      "porcentajeXp": 30,
+      "xpSiguienteNivel": 150,
+      "xpNivelActual": 0,
       "movimientos": [
         {
           "nombre": "Mordisco Feroz",
@@ -382,6 +385,9 @@ Este documento define la especificación técnica de la API REST que comunica el
       "subioNivel": true,
       "nivelAnterior": 2,
       "nivelNuevo": 3,
+      "porcentajeXp": 12,
+      "xpSiguienteNivel": 661,
+      "xpNivelActual": 374,
       "saldoMonedas": 260
     }
   }
@@ -444,12 +450,25 @@ Este documento define la especificación técnica de la API REST que comunica el
     "encuentroId": "enc-401"
   }
   ```
-- **Respuesta exitosa (`200 OK`):**
+- **Respuesta exitosa - Huida lograda (`200 OK`):**
   ```json
   {
     "exito": true,
     "mensaje": "¡Lograste huir del combate con éxito!",
     "estado": "HUIDO"
+  }
+  ```
+- **Respuesta exitosa - Huida fallida con contraataque rival (`200 OK`):**
+  ```json
+  {
+    "exito": false,
+    "mensaje": "¡No pudiste escapar! El rival aprovecha tu distracción.",
+    "estado": "EN_CURSO",
+    "contraataqueRival": {
+      "movimiento": "Mordisco Feroz",
+      "danoCausado": 6,
+      "hpRestanteAliado": 14
+    }
   }
   ```
 
@@ -474,6 +493,10 @@ Este documento define la especificación técnica de la API REST que comunica el
         "ataque": 42,
         "defensa": 58,
         "velocidad": 50,
+        "experiencia": 45,
+        "porcentajeXp": 30,
+        "xpSiguienteNivel": 150,
+        "xpNivelActual": 0,
         "orden": 1
       }
     ]

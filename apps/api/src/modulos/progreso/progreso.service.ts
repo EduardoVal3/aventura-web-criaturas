@@ -60,6 +60,60 @@ export function calcularNivelDesdeXp(
   return nivel;
 }
 
+/**
+ * Calcula el progreso porcentual [0, 100] de una criatura hacia el siguiente nivel.
+ * Resuelto íntegramente en el servidor (§2.4 e INV-05).
+ */
+export function calcularProgresoXp(
+  nivel: number,
+  experienciaTotal: number,
+): {
+  nivel: number;
+  experiencia: number;
+  xpNivelActual: number;
+  xpSiguienteNivel: number;
+  porcentajeXp: number;
+} {
+  if (nivel >= 50) {
+    const xpMax = calcularXpRequerida(50);
+    return {
+      nivel: 50,
+      experiencia: Math.max(0, experienciaTotal),
+      xpNivelActual: xpMax,
+      xpSiguienteNivel: xpMax,
+      porcentajeXp: 100,
+    };
+  }
+
+  const xpNivelActual = calcularXpRequerida(nivel);
+  const xpSiguienteNivel = calcularXpRequerida(nivel + 1);
+  const rango = xpSiguienteNivel - xpNivelActual;
+
+  if (rango <= 0) {
+    return {
+      nivel,
+      experiencia: Math.max(0, experienciaTotal),
+      xpNivelActual,
+      xpSiguienteNivel,
+      porcentajeXp: 0,
+    };
+  }
+
+  const xpEnNivel = Math.max(0, experienciaTotal - xpNivelActual);
+  const porcentajeXp = Math.min(
+    100,
+    Math.max(0, Math.round((xpEnNivel / rango) * 100)),
+  );
+
+  return {
+    nivel,
+    experiencia: Math.max(0, experienciaTotal),
+    xpNivelActual,
+    xpSiguienteNivel,
+    porcentajeXp,
+  };
+}
+
 @Injectable()
 export class ProgresoService {
   constructor(private readonly prisma: PrismaService) {}
@@ -165,12 +219,17 @@ export class ProgresoService {
       },
     });
 
+    const progresoCalculado = calcularProgresoXp(nuevoNivel, nuevaExperiencia);
+
     return {
       xpGanada,
       monedasGanadas,
       subioNivel,
       nivelAnterior: criatura.nivel,
       nivelNuevo: nuevoNivel,
+      porcentajeXp: progresoCalculado.porcentajeXp,
+      xpSiguienteNivel: progresoCalculado.xpSiguienteNivel,
+      xpNivelActual: progresoCalculado.xpNivelActual,
       criatura: criaturaActualizada,
       saldoMonedas: personajeActualizado.monedas,
     };

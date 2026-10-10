@@ -11,6 +11,7 @@ import {
   calcularXpRequerida,
   calcularMonedasVictoria,
   calcularNivelDesdeXp,
+  calcularProgresoXp,
   ProgresoService,
 } from '../src/modulos/progreso/progreso.service';
 import { CuracionService } from '../src/modulos/curacion/curacion.service';
@@ -57,6 +58,27 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       assert.strictEqual(calcularNivelDesdeXp(1, 149), 1);
       assert.strictEqual(calcularNivelDesdeXp(1, 150), 2);
       assert.strictEqual(calcularNivelDesdeXp(1, 400), 3);
+    });
+
+    it('debe calcular el porcentaje de progreso de XP exactamente en el servidor (§2.4)', () => {
+      // Nivel 1 (0 a 150 XP)
+      const inicio = calcularProgresoXp(1, 0);
+      assert.strictEqual(inicio.porcentajeXp, 0);
+      assert.strictEqual(inicio.xpNivelActual, 0);
+      assert.strictEqual(inicio.xpSiguienteNivel, 150);
+
+      const medio = calcularProgresoXp(1, 75);
+      assert.strictEqual(medio.porcentajeXp, 50);
+
+      // Nivel 2 (150 a 374 XP, rango 224 XP)
+      const justoSubido = calcularProgresoXp(2, 150);
+      assert.strictEqual(justoSubido.porcentajeXp, 0);
+      assert.strictEqual(justoSubido.xpNivelActual, 150);
+      assert.strictEqual(justoSubido.xpSiguienteNivel, 374);
+
+      // Nivel 50 (máximo nivel del juego)
+      const nivelMaximo = calcularProgresoXp(50, 999999);
+      assert.strictEqual(nivelMaximo.porcentajeXp, 100);
     });
   });
 

@@ -282,13 +282,13 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/encuentros/activo`
 - **Módulo:** `M-ENC`.
-- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo.
+- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo, incluyendo movimientos de la aliada líder, turno real y bitácora reconstruida para reanudación fiel.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "encuentroId": "enc-401",
     "estado": "EN_CURSO",
-    "turno": 1,
+    "turno": 2,
     "esTurnoJugador": true,
     "criaturaRival": {
       "slug": "pico-de-hacha",
@@ -302,11 +302,28 @@ Este documento define la especificación técnica de la API REST que comunica el
     },
     "criaturaAliada": {
       "criaturaId": "cri-301",
+      "slug": "lobo-gris",
       "nombre": "Lobo Gris",
+      "nombreEspecie": "Lobo Gris",
       "nivel": 2,
       "hpActual": 25,
-      "hpMaximo": 30
-    }
+      "hpMaximo": 30,
+      "ataque": 42,
+      "defensa": 58,
+      "velocidad": 50,
+      "experiencia": 45,
+      "movimientos": [
+        {
+          "nombre": "Mordisco Feroz",
+          "poder": 14,
+          "tipoAccion": "ATAQUE"
+        }
+      ]
+    },
+    "bitacora": [
+      "Turno 1: ¡Un Pico de Hacha salvaje (Nv. 2) está frente a ti!",
+      "¡Tu aliada es Lobo Gris (Nv. 2)!"
+    ]
   }
   ```
 - **Errores posibles:**
@@ -318,7 +335,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/combate/atacar`
 - **Módulo:** `M-COM`.
-- **Descripción:** Ejecuta el movimiento seleccionado por el jugador y resuelve el contraataque rival.
+- **Descripción:** Ejecuta el movimiento seleccionado por el jugador y resuelve el contraataque rival. En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas.
 - **Cuerpo de petición:**
   ```json
   {
@@ -342,7 +359,31 @@ Este documento define la especificación técnica de la API REST que comunica el
       "danoCausado": 4,
       "hpRestanteAliado": 21
     },
-    "resultadoFinal": null
+    "resultadoFinal": null,
+    "progreso": null
+  }
+  ```
+- **Respuesta exitosa en Victoria (`200 OK`):**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "estado": "VICTORIA",
+    "turno": 3,
+    "accionJugador": {
+      "movimiento": "Mordisco Feroz",
+      "danoCausado": 12,
+      "hpRestanteRival": 0
+    },
+    "accionRival": null,
+    "resultadoFinal": "VICTORIA",
+    "progreso": {
+      "xpGanada": 45,
+      "monedasGanadas": 60,
+      "subioNivel": true,
+      "nivelAnterior": 2,
+      "nivelNuevo": 3,
+      "saldoMonedas": 260
+    }
   }
   ```
 - **Errores posibles:**

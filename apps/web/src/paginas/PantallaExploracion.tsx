@@ -638,18 +638,18 @@ export function PantallaExploracion() {
         </ul>
       </div>
 
-      {/* 5. Modal / Diálogo de Encuentro Retro Cinemático (Dialog 8-bit con scroll interno y responsive) */}
+      {/* 5. Modal / Diálogo de Encuentro Retro Cinemático (Dialog 8-bit Impeccable) */}
       <Dialog open={modalEncuentroAbierto} onOpenChange={setModalEncuentroAbierto}>
         <DialogContent
           font="normal"
-          className="w-[94vw] max-w-md max-h-[85vh] overflow-y-auto bg-[#121927] border-2 border-[#43526d] text-slate-100 p-4 sm:p-5"
+          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-hidden bg-[#121927] border-2 border-[#43526d] text-slate-100 p-0 flex flex-col"
         >
-          <DialogHeader>
+          <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-5 pb-2 text-center relative pr-10">
             <DialogTitle
               font="normal"
-              className="retro text-sm sm:text-base text-red-400 text-center flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="retro text-xs sm:text-sm text-red-400 text-center flex items-center justify-center gap-2 uppercase tracking-wider"
             >
-              <Swords className="size-4 sm:size-5 text-red-400 animate-pulse shrink-0" />
+              <Swords className="size-4 text-red-400 animate-pulse shrink-0" />
               <span>¡CRIATURA SALVAJE!</span>
             </DialogTitle>
             <DialogDescription className="font-sans text-xs sm:text-sm text-slate-300 text-center mt-1">
@@ -658,121 +658,123 @@ export function PantallaExploracion() {
           </DialogHeader>
 
           {rivalActivo && (
-            <div className="my-2 sm:my-3 p-3 sm:p-4 bg-[#090d16] border-2 border-red-500/50 space-y-3 text-center">
-              {/* Sprite de la criatura rival con renderizado pixelado nítido */}
-              <div className="relative mx-auto size-24 sm:size-28 md:size-32 flex items-center justify-center bg-[#121927]/60 border border-[#43526d]/40">
-                <img
-                  src={obtenerImagenCriatura(rivalActivo.slug)}
-                  onError={(e) => manejarErrorImagen(e, "criatura")}
-                  alt={rivalActivo.nombre}
-                  className="pixelated max-h-20 sm:max-h-24 max-w-20 sm:max-w-24 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-105"
-                />
-              </div>
-
-              {/* Nombre en Press Start 2P e Insignia de Nivel */}
-              <div>
-                <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
-                  {rivalActivo.nombre}
-                </h3>
-                <Badge
-                  font="retro"
-                  className="bg-[#1a2332] text-amber-300 border-[#f5b724] text-[9px] sm:text-[10px] mt-1"
-                >
-                  Nv. {rivalActivo.nivel}
-                </Badge>
-              </div>
-
-              {/* Vitalidad de la Criatura Rival */}
-              <div className="space-y-1 text-left">
-                <div className="flex justify-between text-[10px] sm:text-[11px] font-mono text-slate-400">
-                  <span>VITALIDAD RIVAL</span>
-                  <span className="text-emerald-400 font-bold">
-                    {rivalActivo.hpActual} / {rivalActivo.hpMaximo} HP
-                  </span>
-                </div>
-                <div className="w-full bg-[#121927] border border-[#43526d]/60 h-2 sm:h-2.5">
-                  <div
-                    className="bg-[#22c55e] h-full transition-all"
-                    style={{
-                      width: `${Math.round(
-                        (rivalActivo.hpActual / (rivalActivo.hpMaximo || 1)) * 100,
-                      )}%`,
-                    }}
+            <div className="overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-2 flex-1 min-h-0 space-y-3">
+              <div className="p-3 sm:p-4 bg-[#090d16] border-2 border-red-500/50 space-y-3 text-center">
+                {/* Sprite de la criatura rival con renderizado pixelado nítido */}
+                <div className="relative mx-auto size-24 sm:size-28 flex items-center justify-center bg-[#121927]/60 border border-[#43526d]/40">
+                  <img
+                    src={obtenerImagenCriatura(rivalActivo.slug)}
+                    onError={(e) => manejarErrorImagen(e, "criatura")}
+                    alt={rivalActivo.nombre}
+                    className="pixelated max-h-20 sm:max-h-24 max-w-20 sm:max-w-24 object-contain drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] filter brightness-105"
                   />
                 </div>
-              </div>
 
-              {/* Estadísticas Tácticas de Combate (si están disponibles) */}
-              {(typeof rivalActivo.ataque === "number" ||
-                typeof rivalActivo.defensa === "number" ||
-                typeof rivalActivo.velocidad === "number") && (
-                <div className="grid grid-cols-3 gap-1.5 pt-1 font-mono text-[9px] sm:text-[10px] text-slate-300">
-                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 text-center flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-1 text-red-400">
-                      <Swords className="size-2.5 sm:size-3" />
-                      <span>ATQ</span>
-                    </div>
-                    <span className="font-bold text-slate-100">{rivalActivo.ataque ?? 10}</span>
+                {/* Nombre en Press Start 2P e Insignia de Nivel */}
+                <div className="space-y-1">
+                  <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
+                    {rivalActivo.nombre}
+                  </h3>
+                  <Badge
+                    font="retro"
+                    className="bg-[#1a2332] text-amber-300 border-[#f5b724] text-[9px] sm:text-[10px]"
+                  >
+                    Nv. {rivalActivo.nivel}
+                  </Badge>
+                </div>
+
+                {/* Vitalidad de la Criatura Rival */}
+                <div className="space-y-1 text-left">
+                  <div className="flex justify-between text-[10px] sm:text-[11px] font-mono text-slate-400">
+                    <span>VITALIDAD RIVAL</span>
+                    <span className="text-emerald-400 font-bold">
+                      {rivalActivo.hpActual} / {rivalActivo.hpMaximo} HP
+                    </span>
                   </div>
-
-                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 text-center flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-1 text-blue-400">
-                      <Shield className="size-2.5 sm:size-3" />
-                      <span>DEF</span>
-                    </div>
-                    <span className="font-bold text-slate-100">{rivalActivo.defensa ?? 10}</span>
-                  </div>
-
-                  <div className="bg-[#1a2332] border border-[#43526d]/50 p-1 text-center flex flex-col items-center gap-0.5">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      <Zap className="size-2.5 sm:size-3" />
-                      <span>VEL</span>
-                    </div>
-                    <span className="font-bold text-slate-100">{rivalActivo.velocidad ?? 10}</span>
+                  <div className="w-full bg-[#121927] border border-[#43526d]/60 h-2 sm:h-2.5">
+                    <div
+                      className="bg-[#22c55e] h-full transition-all"
+                      style={{
+                        width: `${Math.round(
+                          (rivalActivo.hpActual / (rivalActivo.hpMaximo || 1)) * 100,
+                        )}%`,
+                      }}
+                    />
                   </div>
                 </div>
-              )}
+
+                {/* Estadísticas Tácticas de Combate */}
+                {(typeof rivalActivo.ataque === "number" ||
+                  typeof rivalActivo.defensa === "number" ||
+                  typeof rivalActivo.velocidad === "number") && (
+                  <div className="grid grid-cols-3 gap-2 pt-1 font-mono text-[9px] sm:text-[10px] text-slate-300 w-full">
+                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                      <div className="flex items-center gap-1 text-red-400">
+                        <Swords className="size-2.5 sm:size-3 shrink-0" />
+                        <span className="truncate">ATQ</span>
+                      </div>
+                      <span className="font-bold text-slate-100">{rivalActivo.ataque ?? 10}</span>
+                    </div>
+
+                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                      <div className="flex items-center gap-1 text-blue-400">
+                        <Shield className="size-2.5 sm:size-3 shrink-0" />
+                        <span className="truncate">DEF</span>
+                      </div>
+                      <span className="font-bold text-slate-100">{rivalActivo.defensa ?? 10}</span>
+                    </div>
+
+                    <div className="bg-[#1a2332] border border-[#43526d]/50 p-1.5 text-center flex flex-col items-center gap-0.5 min-w-0">
+                      <div className="flex items-center gap-1 text-amber-400">
+                        <Zap className="size-2.5 sm:size-3 shrink-0" />
+                        <span className="truncate">VEL</span>
+                      </div>
+                      <span className="font-bold text-slate-100">{rivalActivo.velocidad ?? 10}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-1">
+          <DialogFooter className="px-4 pb-4 sm:px-6 sm:pb-5 pt-3 border-t border-[#43526d]/40 flex flex-col gap-2.5 w-full">
             <Button
               font="retro"
-              className="w-full sm:w-auto flex-1 bg-red-600 hover:bg-red-500 text-white border-2 border-red-400 text-xs py-2.5 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
+              className="w-full bg-red-600 hover:bg-red-500 text-white border-2 border-red-400 text-xs py-3 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
               onClick={handleIniciarCombate}
             >
-              <Swords className="size-3.5" />
+              <Swords className="size-3.5 shrink-0" />
               <span>INICIAR COMBATE</span>
             </Button>
             <Button
               variant="outline"
               font="retro"
-              className="w-full sm:w-auto flex-1 bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-xs py-2.5 gap-2 cursor-pointer active:translate-y-1"
+              className="w-full bg-[#1a2332] text-slate-300 hover:text-white border-[#43526d] text-xs py-2.5 gap-2 cursor-pointer active:translate-y-1"
               onClick={() => {
                 reproducirSonido("click", 0.3);
                 setModalEncuentroAbierto(false);
               }}
             >
-              <Eye className="size-3.5" />
+              <Eye className="size-3.5 shrink-0" />
               <span>CERRAR FICHA</span>
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 6. Modal / Diálogo de Botín u Objeto Encontrado */}
+      {/* 6. Modal / Diálogo de Botín u Objeto Encontrado (Dialog 8-bit Impeccable) */}
       <Dialog open={modalBotinAbierto} onOpenChange={setModalBotinAbierto}>
         <DialogContent
           font="normal"
-          className="w-[94vw] max-w-md max-h-[85vh] overflow-y-auto bg-[#121927] border-2 border-[#43526d] text-slate-100 p-4 sm:p-5"
+          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-hidden bg-[#121927] border-2 border-[#43526d] text-slate-100 p-0 flex flex-col"
         >
-          <DialogHeader>
+          <DialogHeader className="px-4 pt-4 sm:px-6 sm:pt-5 pb-2 text-center relative pr-10">
             <DialogTitle
               font="normal"
-              className="retro text-sm sm:text-base text-[#f5b724] text-center flex items-center justify-center gap-2 uppercase tracking-wider"
+              className="retro text-xs sm:text-sm text-[#f5b724] text-center flex items-center justify-center gap-2 uppercase tracking-wider"
             >
-              <Coins className="size-4 sm:size-5 text-[#f5b724]" />
-              <span>¡BOTÍN DESCUBIERTO!</span>
+              <Coins className="size-4 text-[#f5b724] shrink-0" />
+              <span>¡BOTIN DESCUBIERTO!</span>
             </DialogTitle>
             <DialogDescription className="font-sans text-xs sm:text-sm text-slate-300 text-center mt-1">
               Tus pasos por la ruta han revelado un recurso valioso para la expedición.
@@ -780,54 +782,56 @@ export function PantallaExploracion() {
           </DialogHeader>
 
           {ultimaRecompensa && (
-            <div className="my-3 p-4 bg-[#090d16] border-2 border-[#f5b724]/50 text-center space-y-3">
-              {ultimaRecompensa.tipo === "MONEDAS" ? (
-                <>
-                  <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#f5b724]/60 flex items-center justify-center">
-                    <Coins className="size-7 sm:size-8 text-[#f5b724]" />
-                  </div>
-                  <div>
-                    <h3 className="retro text-xs sm:text-sm text-[#f5b724] uppercase tracking-wider">
-                      +{ultimaRecompensa.cantidad} MONEDAS DE ORO
-                    </h3>
-                    <p className="font-sans text-xs text-slate-300 mt-1">
-                      Añadidas automáticamente a tus reservas del gremio.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#14d1e8]/60 flex items-center justify-center">
-                    <img
-                      src={obtenerImagenObjeto(ultimaRecompensa.itemCodigo)}
-                      onError={(e) => manejarErrorImagen(e, "objeto")}
-                      alt="Ítem obtenido"
-                      className="pixelated size-8 sm:size-10 object-contain"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
-                      {ultimaRecompensa.itemCodigo || "OBJETO ÚTIL"} (x{ultimaRecompensa.cantidad})
-                    </h3>
-                    <p className="font-sans text-xs text-slate-300 mt-1">
-                      Guardado con éxito en tu mochila de explorador.
-                    </p>
-                  </div>
-                </>
-              )}
+            <div className="px-4 sm:px-6 py-2 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+              <div className="p-4 bg-[#090d16] border-2 border-[#f5b724]/50 text-center space-y-3">
+                {ultimaRecompensa.tipo === "MONEDAS" ? (
+                  <>
+                    <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#f5b724]/60 flex items-center justify-center">
+                      <Coins className="size-7 sm:size-8 text-[#f5b724]" />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="retro text-xs sm:text-sm text-[#f5b724] uppercase tracking-wider">
+                        +{ultimaRecompensa.cantidad} MONEDAS DE ORO
+                      </h3>
+                      <p className="font-sans text-xs text-slate-300">
+                        Añadidas automáticamente a tus reservas del gremio.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mx-auto size-14 sm:size-16 bg-[#1a2332] border border-[#14d1e8]/60 flex items-center justify-center">
+                      <img
+                        src={obtenerImagenObjeto(ultimaRecompensa.itemCodigo)}
+                        onError={(e) => manejarErrorImagen(e, "objeto")}
+                        alt="Ítem obtenido"
+                        className="pixelated size-8 sm:size-10 object-contain"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
+                        {ultimaRecompensa.itemCodigo || "OBJETO ÚTIL"} (x{ultimaRecompensa.cantidad})
+                      </h3>
+                      <p className="font-sans text-xs text-slate-300">
+                        Guardado con éxito en tu mochila de explorador.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="px-4 pb-4 sm:px-6 sm:pb-5 pt-3 border-t border-[#43526d]/40 w-full">
             <Button
               font="retro"
               onClick={() => {
                 reproducirSonido("confirmar", 0.4);
                 setModalBotinAbierto(false);
               }}
-              className="w-full bg-[#f5b724] hover:bg-[#f5b724]/90 text-[#090d16] border-2 border-[#05070b] text-xs py-2.5 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
+              className="w-full bg-[#f5b724] hover:bg-[#f5b724]/90 text-[#090d16] border-2 border-[#05070b] text-xs py-3 gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#05070b] active:translate-y-1"
             >
-              <Backpack className="size-4" />
+              <Backpack className="size-4 shrink-0" />
               <span>GUARDAR EN BOLSA</span>
             </Button>
           </DialogFooter>

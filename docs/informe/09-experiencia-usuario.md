@@ -200,9 +200,12 @@ La pantalla de exploración inicial requería elevar su nivel de inmersión y ro
 - **Corrección de Avance Prematuro:** El sorteo de un evento de `ENCUENTRO` preserva intacto el porcentaje de cartografía de la ruta silvestre en `exploracion.service.ts`.
 - **Acreditación por Mérito Táctico:** El incremento de $+20\,\%$ hasta el tope de $100\,\%$ se acredita exclusivamente en el Back-End tras la resolución victoriosa del combate (`CombateService`) o mediante la captura exitosa de la criatura rival (`CapturaService`).
 
-#### H. Resiliencia Responsive y Ergonomía Móvil (Auditoría Impeccable)
+#### H. Resiliencia Responsive, Cero Overflow y Ergonomía en Modales (Auditoría Impeccable)
 - **Hero Panorámico Desacoplado:** Se separó la ilustración visual panorámica superior de los bloques textuales descriptivos y metadatos inferiores, eliminando cualquier superposición o truncamiento tipográfico en anchos reducidos (`320px–425px`).
-- **Modales Adaptativos con Scroll Seguro:** Todo contenedor modal incorpora `w-[94vw] max-w-md max-h-[85vh] overflow-y-auto`, asegurando que las opciones de interacción y botones de acción permanezcan siempre accesibles y visibles en pantallas de altura compacta (ej. viewports de $592\,\text{px}$).
+- **Sellado de Modales contra Overflow Horizontal:** El contenedor principal `DialogContent` aplica `w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-hidden p-0 flex flex-col`. Al contener los bordes decorativos de 8bitcn/ui (`-mx-1.5`) dentro de `overflow-hidden`, se extingue la aparición de barras de scroll horizontal no deseadas.
+- **Scroll Vertical Aislado:** El contenido central del diálogo se confina a un sub-panel con `overflow-y-auto overflow-x-hidden flex-1 min-h-0 px-4 sm:px-6 py-2`, manteniendo el encabezado y el pie de acciones anclados y visibles sin recortes.
+- **Acciones Tácticas Apiladas a Ancho Completo:** Los botones de decisión en el modal de encuentro (`INICIAR COMBATE` y `CERRAR FICHA`) se estructuran en disposición vertical (`flex flex-col gap-2.5 w-full`), garantizando que la tipografía monoespaciada ancha `Press Start 2P` respire con holgura sin desbordarse hacia la derecha en ningún breakpoint.
+- **Sanitización Tipográfica 8-Bit:** El título de botín se normaliza a `¡BOTIN DESCUBIERTO!` para eliminar glifos rotos (`BOTiN`) causados por la ausencia de diacríticos mayúsculos en la fuente retro.
 
 ---
 

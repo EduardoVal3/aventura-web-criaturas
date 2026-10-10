@@ -6,8 +6,63 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
+    --font-heading: var(--font-pixel);
     --font-sans: 'Geist Variable', sans-serif;
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-mono: 'Geist Mono', monospace;
+
+    /* Superficies de Fantasía Oscura Aethelgard */
+    --color-abismo: hsl(222, 47%, 7%);
+    --color-bastion: hsl(222, 40%, 12%);
+    --color-panel: hsl(220, 35%, 16%);
+    --color-flotante: hsl(218, 32%, 20%);
+    --color-superposicion: hsla(222, 47%, 5%, 0.85);
+
+    /* Bordes y Biseles Retro Pixel-Art */
+    --color-pixel: hsl(222, 47%, 4%);
+    --color-pixel-bisel: hsl(215, 25%, 35%);
+    --color-pixel-dorado: hsl(43, 85%, 55%);
+    --color-pixel-cian: hsl(187, 85%, 53%);
+    --color-borde-pixel: hsl(222, 47%, 4%);
+    --color-borde-bisel: hsl(215, 25%, 35%);
+    --color-borde-dorado: hsl(43, 85%, 55%);
+    --color-borde-cian: hsl(187, 85%, 53%);
+
+    /* Barras de Estado Reactivas */
+    --color-salud-alta: hsl(142, 70%, 45%);
+    --color-salud-media: hsl(38, 92%, 50%);
+    --color-salud-critica: hsl(0, 84%, 60%);
+    --color-energia-mp: hsl(217, 91%, 60%);
+    --color-experiencia-xp: hsl(271, 81%, 66%);
+    --color-canal-fondo: hsl(222, 35%, 10%);
+
+    /* Paleta Elemental (Fase 10) */
+    --color-fuego: hsl(12, 88%, 53%);
+    --color-agua: hsl(205, 90%, 53%);
+    --color-natura: hsl(142, 70%, 45%);
+    --color-sombra: hsl(271, 81%, 66%);
+    --color-luz: hsl(43, 96%, 56%);
+    --color-elemento-fuego: hsl(12, 88%, 53%);
+    --color-elemento-agua: hsl(205, 90%, 53%);
+    --color-elemento-natura: hsl(142, 70%, 45%);
+    --color-elemento-sombra: hsl(271, 81%, 66%);
+    --color-elemento-luz: hsl(43, 96%, 56%);
+
+    /* Rareza de Criaturas y Objetos */
+    --color-rareza-comun: hsl(215, 16%, 65%);
+    --color-rareza-poco-comun: hsl(158, 64%, 48%);
+    --color-rareza-raro: hsl(217, 91%, 60%);
+    --color-rareza-epico: hsl(271, 91%, 65%);
+    --color-rareza-legendario: hsl(43, 96%, 56%);
+
+    /* Textos Semánticos de Alto Contraste (WCAG AA/AAA) */
+    --color-texto-primario: hsl(45, 29%, 95%);
+    --color-texto-secundario: hsl(215, 20%, 75%);
+    --color-texto-atenuado: hsl(215, 15%, 60%);
+    --color-texto-alerta: hsl(0, 86%, 68%);
+    --color-texto-exito: hsl(142, 65%, 60%);
+
+    /* Tokens Base de shadcn */
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -72,7 +127,7 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
+    --radius: 0px;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -84,47 +139,244 @@
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --background: hsl(222, 47%, 7%);
+    --foreground: hsl(45, 29%, 95%);
+    --card: hsl(222, 40%, 12%);
+    --card-foreground: hsl(45, 29%, 95%);
+    --popover: hsl(218, 32%, 20%);
+    --popover-foreground: hsl(45, 29%, 95%);
+    --primary: hsl(43, 85%, 55%);
+    --primary-foreground: hsl(222, 47%, 4%);
+    --secondary: hsl(220, 35%, 16%);
+    --secondary-foreground: hsl(45, 29%, 95%);
+    --muted: hsl(220, 35%, 16%);
+    --muted-foreground: hsl(215, 20%, 75%);
+    --accent: hsl(218, 32%, 20%);
+    --accent-foreground: hsl(45, 29%, 95%);
+    --destructive: hsl(0, 84%, 60%);
+    --border: hsl(215, 25%, 35%);
+    --input: hsl(220, 35%, 16%);
+    --ring: hsl(187, 85%, 53%);
+    --chart-1: hsl(217, 91%, 60%);
+    --chart-2: hsl(142, 70%, 45%);
+    --chart-3: hsl(38, 92%, 50%);
+    --chart-4: hsl(271, 81%, 66%);
+    --chart-5: hsl(12, 88%, 53%);
+    --sidebar: hsl(222, 40%, 12%);
+    --sidebar-foreground: hsl(45, 29%, 95%);
+    --sidebar-primary: hsl(43, 85%, 55%);
+    --sidebar-primary-foreground: hsl(222, 47%, 4%);
+    --sidebar-accent: hsl(218, 32%, 20%);
+    --sidebar-accent-foreground: hsl(45, 29%, 95%);
+    --sidebar-border: hsl(215, 25%, 35%);
+    --sidebar-ring: hsl(187, 85%, 53%);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
+}
+
+/* ==========================================================================
+   Utilidades Retro, Tipografía y Pixel-Art (docs/DESIGN.md)
+   ========================================================================== */
+
+.font-pixel,
+.retro {
+  font-family: var(--font-pixel, 'Press Start 2P', monospace);
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ==========================================================================
+   Micro-interacciones y Animaciones Retro - Fase 10
+   ========================================================================== */
+
+/* 1. Sacudidas de impacto en combate */
+@keyframes sacudida {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  60% { transform: translate(-3px, -1px); }
+  80% { transform: translate(3px, 1px); }
+}
+
+@keyframes sacudida-leve {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+
+@keyframes sacudida-critica {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-6px, 4px); }
+  30% { transform: translate(6px, -4px); }
+  45% { transform: translate(-5px, -3px); }
+  60% { transform: translate(5px, 3px); }
+  75% { transform: translate(-3px, 1px); }
+}
+
+/* 2. Parpadeo retro de daño recibido */
+@keyframes parpadeo-dano {
+  0%, 49% { opacity: 1; filter: brightness(1); }
+  50%, 74% { opacity: 0.2; filter: brightness(2) saturate(2); }
+  75%, 100% { opacity: 1; filter: brightness(1); }
+}
+
+/* 3. Pulso sutil de turno activo */
+@keyframes pulso-turno {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(43 85% 55% / 0.7);
+    border-color: hsl(43 85% 55%);
+  }
+  50% {
+    box-shadow: 0 0 6px 2px hsl(43 85% 55% / 0.4);
+    border-color: hsl(43 85% 35%);
+  }
+}
+
+/* 4. Pulso de estado crítico de vitalidad */
+@keyframes pulso-critico {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* 5. Incertidumbre y resolución en tirada de captura */
+@keyframes captura-incertidumbre {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-12deg) scale(1.06); }
+  40% { transform: rotate(12deg) scale(1.06); }
+  60% { transform: rotate(-8deg) scale(1.03); }
+  80% { transform: rotate(8deg) scale(1.03); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes captura-exito {
+  0% { transform: scale(0.9); filter: brightness(1); }
+  50% { transform: scale(1.18); filter: brightness(1.6) drop-shadow(0 0 10px hsl(43, 96%, 56%)); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes captura-fallo {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.85); filter: grayscale(1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+/* 6. Revelación en eventos de exploración */
+@keyframes revelacion-evento {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+    filter: brightness(2) contrast(1.4);
+  }
+  50% {
+    opacity: 0.85;
+    filter: brightness(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: brightness(1) contrast(1);
+  }
+}
+
+/* 7. Restauración de salud en curación */
+@keyframes restauracion-salud {
+  0% {
+    box-shadow: 0 0 0 0 hsl(142 70% 45% / 0.8);
+    filter: drop-shadow(0 0 0px hsl(142 70% 45%));
+  }
+  50% {
+    box-shadow: 0 0 12px 4px hsl(142 70% 45% / 0.6);
+    filter: drop-shadow(0 0 8px hsl(142 70% 45%));
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(142 70% 45% / 0);
+    filter: drop-shadow(0 0 0px transparent);
+  }
+}
+
+/* 8. Cifras flotantes de daño y curación */
+@keyframes flotar-dano {
+  0% { transform: translateY(0px) scale(1); opacity: 1; }
+  50% { transform: translateY(-16px) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-26px) scale(0.9); opacity: 0; }
+}
+
+@keyframes flotar-curacion {
+  0% { transform: translateY(0px) scale(1); opacity: 1; }
+  50% { transform: translateY(-16px) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-26px) scale(0.9); opacity: 0; }
+}
+
+/* Clases utilitarias de animación retro */
+.anim-sacudida {
+  animation: sacudida 300ms ease-in-out;
+}
+
+.anim-sacudida-leve {
+  animation: sacudida-leve 200ms ease-in-out;
+}
+
+.anim-sacudida-critica {
+  animation: sacudida-critica 400ms ease-in-out;
+}
+
+.anim-parpadeo-dano {
+  animation: parpadeo-dano 240ms steps(2, start);
+}
+
+.anim-pulso-turno {
+  animation: pulso-turno 1200ms infinite ease-in-out;
+}
+
+.anim-pulso-critico {
+  animation: pulso-critico 800ms infinite ease-in-out;
+}
+
+.anim-tirada-captura,
+.anim-captura-incertidumbre {
+  animation: captura-incertidumbre 1200ms ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.anim-captura-exito {
+  animation: captura-exito 600ms ease-out;
+}
+
+.anim-captura-fallo {
+  animation: captura-fallo 500ms ease-out;
+}
+
+.anim-revelacion,
+.anim-revelacion-evento {
+  animation: revelacion-evento 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-restauracion-salud,
+.anim-curacion {
+  animation: restauracion-salud 800ms ease-out;
+}
+
+.anim-dano-flotante {
+  animation: flotar-dano 600ms ease-out forwards;
+}
+
+.anim-curacion-flotante {
+  animation: flotar-curacion 700ms ease-out forwards;
 }

@@ -57,7 +57,9 @@ export function manejarErrorImagen(
   tipo: keyof typeof RUTAS_PLACEHOLDERS = 'criatura',
 ) {
   const img = evento.currentTarget;
-  const fallback = RUTAS_PLACEHOLDERS[tipo];
+  const fallback = RUTAS_PLACEHOLDERS[tipo] || RUTAS_PLACEHOLDERS.criatura;
+  // Desconectar el handler para prevenir bucles si el recurso o fallback falla
+  img.onerror = null;
   if (img.src !== fallback && !img.src.endsWith(fallback)) {
     img.src = fallback;
   }

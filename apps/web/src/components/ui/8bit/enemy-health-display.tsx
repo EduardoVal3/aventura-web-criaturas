@@ -59,7 +59,7 @@ export default function EnemyHealthDisplay({
   showLevel = true,
   showHealthText = true,
   healthBarVariant = "retro",
-  healthBarColor = "bg-red-500",
+  healthBarColor,
   enemyNameColor = "text-foreground",
   ...props
 }: EnemyHealthDisplayProps) {
@@ -97,7 +97,7 @@ export default function EnemyHealthDisplay({
           value={healthPercentage}
           variant={healthBarVariant}
           className="w-full"
-          props={{ progressBg: healthBarColor }}
+          props={healthBarColor ? { progressBg: healthBarColor } : undefined}
         />
 
         {/* Health percentage overlay for retro variant */}

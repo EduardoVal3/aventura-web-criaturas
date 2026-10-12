@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
-import { calcularProgresoXp } from '../progreso/progreso.service';
+import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.service';
 
 @Injectable()
 export class EncuentrosService {

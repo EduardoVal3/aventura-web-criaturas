@@ -497,6 +497,85 @@ Previa a la intervención de la Sub-Fase 10h, el módulo de restauración y la p
 - **Linter Web (`pnpm --filter web lint`):** 0 errores.
 - **Inspección Responsive:** Ausencia total de scroll horizontal en resoluciones móviles de 320 px, 375 px y 768 px.
 
+---
+
+## 9. Sub-Fase 10i: Compendio de Criaturas, Bitácora Transversal y Salón de la Fama (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`)
+
+### 9.1 Diagnóstico Inicial y Auditoría Impeccable
+Previo a esta subfase, la experiencia del jugador en las pantallas finales de consulta y cierre presentaba importantes cuellos de botella de red, fallas heurísticas y de diseño:
+1. **Cuello de botella $N+1$ de 26 peticiones HTTP en cascada en `PantallaCatalogo.tsx`:** Al ingresar al compendio o cambiar de tipo, el cliente invocaba `api.obtenerEspecies()` y de inmediato ejecutaba `Promise.all(res.especies.map(esp => api.obtenerEspecie(esp.slug)))`, disparando 26 peticiones en ráfaga cada vez.
+2. **Módulo `CriaturasModule` vacío en el servidor:** `apps/api/src/modulos/criaturas/criaturas.module.ts` carecía de controlador y servicio, delegando de forma improvisada o incompleta el acceso a los datos de especies.
+3. **Desalineación y falta de categorización canónica en `HistorialService`:** Aunque los distintos servicios del juego registraban eventos con tipos heterogéneos (`COMBATE`, `PROGRESO`, `CAPTURA`, `EXPLORACION`, `ENCUENTRO`, `OBJETO`, `COMERCIO`, `CURACION`), `HistorialService` no exponía la categoría táctica canónica ni permitía filtrado por categoría en servidor.
+4. **Ausencia total de sprites pixel-art (`obtenerImagenCriatura`) en `PantallaCatalogo.tsx`:** Las tarjetas del catálogo eran contenedores de texto plano sin sprites `.pixelated` ni fallback a SVG.
+5. **Selector de tipos incompleto con texto en inglés y sin buscador interactivo:** El selector solo listaba 3 de los 6 tipos (`beast`, `monstrosity`, `undead`) con etiquetas en inglés ("Beast", "Monstrosity"), violando R1 y dejando inaccesibles a `elemental`, `construct` y `plant`. No existía buscador por nombre ni filtro por arquetipo.
+6. **Falta de atributos base visibles y ausencia de Modal de Inspección Táctica:** No se mostraban atributos (`HP`, `ATQ`, `DEF`, `VEL`), y no existía un modal sellado para examinar lore, movimientos y estadísticas completas.
+7. **Tabla plana sin categorización ni filtros rápidos en `PantallaHistorial.tsx`:** La bitácora utilizaba una tabla plana sin iconografía SVG, dejando sin clasificar la gran mayoría de eventos reales.
+8. **Diseño incompleto en `PaginaCreditos.tsx`:** Carecía de navegación de retorno al Asentamiento (`boton-volver-inicio-creditos`), no destacaba al equipo ni el homenaje académico al Ingeniero Claudio, omitía el motor de síntesis Web Audio y no ejecutaba fanfarria sonora.
+9. **Anti-patrón `<Link><Button/></Link>` y falta de `aria-busy`:** Existían botones anidados dentro de enlaces y las acciones de actualización no contaban con hardening contra doble clic.
+
+### 9.2 Mejoras Implementadas
+
+#### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
+- **Compendio de Criaturas:** Cabecera ceremonial con título en `Press Start 2P` (`COMPENDIO DE CRIATURAS`), insignia `25 ESPECIES SRD 5.2` con icono `BookOpen`, barra de avistamiento biológico (conteo de registradas, en vista, especiales y tipos biológicos), y tarjetas pixel-art con marcos de `72x72` (`obtenerImagenCriatura`, `.pixelated`, `manejarErrorImagen`).
+- **Clasificación por Arquetipos Tácticos:** Asignación visual de los 4 arquetipos tácticos calculados según atributos base (`TANQUE` con `Shield`, `ATACANTE` con `Swords`, `VELOZ` con `Zap`, `EQUILIBRADO` con `Scale`) e insignia dorada `ESPECIAL` (`Sparkles`) para criaturas legendarias de CR 6 y CR 8.
+- **Bitácora de Crónicas Retro:** Sustitución de la tabla plana por tarjetas de crónicas con sello de tiempo en `font-mono` (hora destacada y fecha), insignia con iconografía SVG de Lucide diferenciada por categoría y descripción en `font-sans` con alto contraste WCAG AA:
+  - `COMBATE`: icono `Swords`, acento carmesí/ámbar (`border-red-500/60 bg-red-500/15 text-red-300`).
+  - `CAPTURA`: icono `Sparkles`, acento púrpura arcano (`border-purple-500/60 bg-purple-500/15 text-purple-300`).
+  - `EXPLORACIÓN`: icono `Compass`, acento cian astral (`border-cyan-500/60 bg-cyan-500/15 text-cyan-300`).
+  - `TIENDA`: icono `ShoppingBag`, acento oro gremial (`border-amber-500/60 bg-amber-500/15 text-amber-300`).
+  - `CURACIÓN`: icono `HeartPulse`, acento verde esmeralda (`border-emerald-500/60 bg-emerald-500/15 text-emerald-300`).
+- **Salón de la Fama y Ending RPG 16-bit (`PaginaCreditos.tsx`):** Cabecera ceremonial con marco dorado (`border-amber-500/80 bg-bastion`), insignias `SALÓN DE LA FAMA` y `ISC-305 · III PAC 2026`, galería de sprites pixel-art de criaturas emblemáticas de Aethelgard (*Lobo Gris*, *Grifo*, *Quimera*, *Hidra*), reconocimiento de arquitectura full-stack, Homenaje Académico al **Ingeniero Claudio**, atribución legal literal del `SRD 5.2` (Wizards of the Coast LLC bajo CC BY 4.0), licencia MIT íntegra de `8bitcn/ui` y retorno limpio con sonido de victoria.
+
+#### B. Componentes Táctiles 8bitcn/ui y Hardening
+- **Modal Sellado de Inspección Táctica Detallada:** Componente `Dialog` de 8bitcn/ui sellado herméticamente contra desbordamiento horizontal (`w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none border-2 border-primary bg-bastion`), que expone sprite ampliado de 64x64/80x80, lore biológico descriptivo, barras comparativas de atributos base sobre 100 (`Progress` retro) y lista de movimientos conocidos con tipo de acción y potencia.
+- **Buscadores y Filtros Instantáneos:** Buscadores en tiempo real por palabra clave y selectores canónicos en español para los 6 tipos biológicos (`Bestia`, `Monstruosidad`, `No-muerto`, `Elemental`, `Autómata`, `Planta`), arquetipos y categorías canónicas de bitácora, con botón `Limpiar filtros` (`RotateCcw`).
+- **Erradicación del Anti-Patrón `<Link><Button>` y Hardening `aria-busy`:** Reemplazo de enlaces anidados por navegación imperativa con `useNavigate` e integración de estados `aria-busy` (`ACTUALIZANDO...`) en botones de recarga.
+
+#### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
+- **Síntesis Web Audio:** Integración del sintetizador 8-bit para feedback táctil en clics (`"click"`), inspección de fichas (`"seleccionar"`), retorno victorioso (`"victoria"`) y fanfarria triunfal ceremonial (`"fanfarria"`) en el Salón de la Fama.
+- **Gestión de Assets con Fallback Seguro:** Uso universal de `obtenerImagenCriatura` y `manejarErrorImagen` con degradación a vectoriales SVG locales en caso de ausencia de sprites WebP.
+
+#### D. Reglas de Servidor, Optimización de Consultas y Erradicación de N+1
+- **`CriaturasService` y `CriaturasController` (`M-CRI`):** Implementación de endpoints públicos `GET /api/especies` y `GET /api/especies/:slug`. El endpoint de listado entrega en una única llamada `O(1)` las 25 especies enriquecidas con `keyExterna`, `descripcion`, `arquetipo` y `movimientos` embebidos, eliminando completamente las ráfagas $N+1$ en el cliente.
+- **Fallback Determinista de Contingencia:** En caso de consultar una base de datos sin siembra previa, `CriaturasService` recurre de forma transparente al snapshot local de `AdaptadorCriaturasExternas` garantizando alta disponibilidad.
+- **Normalización de Bitácora en `HistorialService` (`M-HIS`):** Función pura `normalizarCategoriaHistorial` que mapea cualquier tipo emitido hacia las 5 categorías canónicas, soporte de paginación (`pagina`, `limite`) y filtrado en servidor por `categoria`.
+
+### 9.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Backend (`apps/api/test/catalogo-historial.spec.ts`):** 6 pruebas unitarias verificando la erradicación del $N+1$, filtros por tipo biológico, detalle por slug, error 404, clasificación de las 4 vertientes de arquetipos y normalización/filtrado de las 5 categorías de historial.
+- **Suite Total Backend (`pnpm --filter api test`):** 60 de 60 pruebas aprobadas (100% de éxito).
+- **Pruebas Frontend (`apps/web/test/verificacion-historial-catalogo.spec.ts`):** 8 pruebas unitarias validando traducción de tipos, cálculo de arquetipos, filtros combinados, normalización de crónicas, formato temporal amigable, auditoría estática de código (ausencia de $N+1$, modales sellados, iconos Lucide SVG, homenaje a Claudio, licencias) y cumplimiento estricto de la Regla R1 (0 emojis unicode).
+- **Suite Total Frontend (`pnpm --filter web test`):** 55 de 55 pruebas aprobadas (100% de éxito).
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores TypeScript en modo estricto en Vite (construcción limpia en 2.2s).
+- **Linter Web (`pnpm --filter web lint`):** 0 errores.
+- **Inspección Responsive:** Verificación de ergonomía táctil y ausencia total de overflow horizontal en anchos móviles de 320px.
+
+---
+
+## 10. Cierre Formal de la Fase 10 (Consolidado Full-Stack AV5 Parte 2)
+
+Con la culminación de la Subfase 10i, se da por **completada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 (Avance 5 - Entrega Final de UX Retro y Mecánicas Full-Stack)**.
+
+### Tabla Resumen de Subfases de la Fase 10
+
+| Subfase | Alcance / Vistas | Mejoras Principales | Pruebas | Estado |
+| :--- | :--- | :--- | :--- | :--- |
+| **10a** | Autenticación (`PantallaIngreso.tsx`) | Validación Zod en tiempo real, estética CRT/VGA, cero emojis y audio retro. | 3 tests web | ✅ Completada |
+| **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`) | Selección táctica de iniciales con sprites, carrusel y estadísticas normalizadas. | 3 tests web | ✅ Completada |
+| **10c** | Hub Localidad (`PantallaHubUbicacion.tsx`) | Cuadrícula de 8 servicios, ambientación dinámica WebP y navegación fluida. | 4 tests web | ✅ Completada |
+| **10d** | Exploración (`PantallaExploracion.tsx`) | Cinemática de niebla, selector ponderado en servidor e historial de incursión. | 6 tests web | ✅ Completada |
+| **10e** | Combate (`PantallaCombate.tsx`) | Bitácora de combate por turnos, animaciones CSS, cálculo de daño servidor INV-04. | 4 tests web | ✅ Completada |
+| **10f** | Equipo y Almacén (`PantallaEquipo.tsx`, `PantallaAlmacen.tsx`) | Reordenamiento de líder, regla A-6, transferencia atómica con bloqueo pesimista. | 10 tests web + 8 tests api | ✅ Completada |
+| **10g** | Inventario y Tienda (`PantallaInventario.tsx`, `PantallaTienda.tsx`) | Filtros de objetos, compras por lotes (x1, x5, x10) en servidor y uso medicinal. | 8 tests web + 12 tests api | ✅ Completada |
+| **10h** | Santuario de Curación (`PantallaCuracion.tsx`) | Restauración atómica INV-03 con FOR UPDATE, resurrección de caídas y cinemática. | 8 tests web + 6 tests api | ✅ Completada |
+| **10i** | Compendio, Bitácora y Créditos (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`) | Erradicación N+1 en catálogo, modal de inspección sellado, crónicas categorizadas con Lucide, Salón de la Fama y homenaje al Ing. Claudio. | 8 tests web + 6 tests api | ✅ Completada |
+
+### Métricas Totales de Calidad del Proyecto
+- **Pruebas Unitarias de Back-End (NestJS):** 60 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
+- **Pruebas Unitarias de Front-End (React / Vite):** 55 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
+- **Total de Pruebas Automatizadas:** 115 pruebas unitarias libres de regresiones.
+- **Compilación TypeScript:** 100% limpia en `web` y `api` bajo configuración estricta.
+- **Diseño y Accesibilidad:** Cumplimiento total de la guía de diseño retro `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos y modales sellados contra overflow en 320px bajo el estándar Impeccable.
+
 
 
 

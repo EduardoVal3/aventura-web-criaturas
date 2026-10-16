@@ -193,4 +193,7 @@ export const apiHttp = {
   obtenerHistorial(): Promise<RespuestaHistorial> {
     return solicitar<RespuestaHistorial>("GET", "/historial");
   },
+  actualizarOrdenEquipo(peticion: { criaturaIds: string[] }): Promise<{ mensaje: string }> {
+    return solicitar<{ mensaje: string }>("PATCH", "/equipo/orden", peticion);
+  },
 } satisfies ApiJuego;

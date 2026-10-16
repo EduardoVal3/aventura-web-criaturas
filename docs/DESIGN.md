@@ -1,7 +1,7 @@
 ---
 name: Aethelgard: Sendas y Criaturas
 description: Sistema visual retro global, tokens estéticos y guía interactiva 8-bit/16-bit para Aethelgard (ISC-305)
-version: 1.0.0
+version: 1.1.0
 colors:
   superficies:
     fondo-abismo: "hsl(222, 47%, 7%)"
@@ -21,6 +21,12 @@ colors:
     energia-mp: "hsl(217, 91%, 60%)"
     experiencia-xp: "hsl(271, 81%, 66%)"
     canal-fondo: "hsl(222, 35%, 10%)"
+  elementos:
+    fuego: "hsl(12, 88%, 53%)"
+    agua: "hsl(205, 90%, 53%)"
+    natura: "hsl(142, 70%, 45%)"
+    sombra: "hsl(271, 81%, 66%)"
+    luz: "hsl(43, 96%, 56%)"
   rareza:
     comun: "hsl(215, 16%, 65%)"
     poco-comun: "hsl(158, 64%, 48%)"
@@ -66,10 +72,17 @@ elevation:
   sombra-pixel-md: "4px 4px 0px 0px hsl(222, 47%, 4%)"
   sombra-pixel-lg: "6px 6px 0px 0px hsl(222, 47%, 4%)"
 motion:
+  sacudida-combate: "300ms ease-in-out"
   sacudida-combate-leve: "200ms ease-in-out"
   sacudida-combate-critica: "400ms ease-in-out"
-  pulso-accion: "1200ms infinite ease-in-out"
   parpadeo-dano: "240ms steps(2, start)"
+  pulso-accion: "1200ms infinite ease-in-out"
+  pulso-critico: "800ms infinite ease-in-out"
+  tirada-captura: "1200ms infinite ease-in-out"
+  captura-exito: "600ms ease-out"
+  revelacion-evento: "500ms cubic-bezier(0.16, 1, 0.3, 1)"
+  restauracion-salud: "800ms ease-out"
+  dano-flotante: "600ms ease-out"
   transicion-pantalla: "250ms ease-out"
 ---
 
@@ -87,10 +100,10 @@ El sistema equilibra con rigor dos prioridades técnicas fundamentales:
 
 ### Características Clave
 - **Superficies Temáticas de Fantasía Oscura:** Capas cromáticas escalonadas en HSL desde el *Abismo Astral* (fondo base) hasta el *Bastión* (tarjetas) y *Pérgamo* (diálogos).
-- **Jerarquía Tipográfica Bimodal:** Fusión armónica entre `Press Start 2P` (identidad 8-bit) y `Geist Sans` (ergonomía de lectura extendida).
-- **Componentes Táctiles 8bitcn/ui:** Botones con bisel de sombra y feedback físico al presionar (`active:translate-y-1`), barras segmentadas de vitalidad y marcos con esquinas pixeladas.
-- **Dinamismo Retro Reactivo:** Sacudidas de pantalla ante impactos de combate, parpadeos de daño, pulsos de turno activo y cifras flotantes.
-- **Consumo Multimedia Centralizado:** Arquitectura desacoplada en `apps/web/src/lib/assets.ts` con placeholders SVG de respaldo garantizado.
+- **Jerarquía Tipográfica Bimodal:** Fusión armónica entre `Press Start 2P` (identidad 8-bit conectada en `index.html` y `@theme inline`) y `Geist Sans` (ergonomía de lectura extendida).
+- **Componentes Táctiles 8bitcn/ui:** Botones con bisel de sombra y feedback físico al presionar (`active:translate-y-1`), barras segmentadas y reactivas de vitalidad/experiencia y marcos con esquinas pixeladas.
+- **Dinamismo Retro Reactivo (Fase 10):** Sacudidas de impacto al asestar/recibir daño (`anim-sacudida`), parpadeos de daño (`anim-parpadeo-dano`), pulsos de turno activo (`anim-pulso-turno`), balanceo de tirada de captura con incertidumbre (`anim-tirada-captura`), revelación en exploración (`anim-revelacion`) y restauración de salud (`anim-restauracion-salud`).
+- **Consumo Multimedia Centralizado:** Arquitectura desacoplada en `apps/web/src/lib/assets.ts` con placeholders SVG vectoriales locales como fallback garantizado.
 
 ---
 
@@ -110,48 +123,62 @@ La paleta se formula íntegramente mediante el modelo **HSL (Hue, Saturation, Li
 |  hsl(142, 70%, 45%)  hsl(38, 92%, 50%)     hsl(0, 84%, 60%)     (217,91,60) |
 |  [#22C55E]           [#F59E0B]             [#EF4444]            [#3B82F6]   |
 +-----------------------------------------------------------------------------+
+|  FUEGO               AGUA                  NATURA       SOMBRA       LUZ    |
+|  hsl(12, 88%, 53%)   hsl(205, 90%, 53%)    (142,70,45)  (271,81,66)  (43,96)|
++-----------------------------------------------------------------------------+
 |  COMÚN               POCO COMÚN            RARO         ÉPICO    LEGENDARIO |
 |  (215, 16%, 65%)     (158, 64%, 48%)       (217,91,60)  (271)    (43,96,56) |
 +-----------------------------------------------------------------------------+
 ```
 
 ### 2.1 Superficies y Fondos de Fantasía Oscura
-- **Fondo Abismo (`--color-fondo-abismo` / `hsl(222, 47%, 7%)` / `#090D16`):**
-  Lienzo global de la aplicación. Representa la noche de Aethelgard y la inmensidad del Velo Astral. Proporciona una base oscura que absorbe reflejos y hace resaltar las criaturas y los efectos de magia.
-- **Fondo Bastión (`--color-fondo-bastion` / `hsl(222, 40%, 12%)` / `#121927`):**
-  Superficie de tarjetas (`Card`), inventario, ranuras de equipo y contenedores de combate. Genera una elevación visual sutil respecto al fondo abismo sin recurrir a sombras suaves.
-- **Fondo Panel (`--color-fondo-panel` / `hsl(220, 35%, 16%)` / `#1A2332`):**
-  Contenedores de diálogo de PNJs, bitácora del gremio, desplegables de selección y pestañas activas.
-- **Fondo Flotante (`--color-fondo-flotante` / `hsl(218, 32%, 20%)` / `#232D3F`):**
-  Ventanas emergentes de confirmación (`Dialog`, `AlertDialog`), tooltips de estadísticas y popovers de inspección.
-- **Superposición Oscura (`--color-fondo-superposicion` / `hsla(222, 47%, 5%, 0.85)`):**
-  Fondo translúcido para modales y bloqueos de pantalla durante transiciones de combate.
+- **Fondo Abismo (`--color-abismo` / `hsl(222, 47%, 7%)` / `#090D16`):**
+  Lienzo global de la aplicación. Representa la noche de Aethelgard y la inmensidad del Velo Astral. Proporciona una base oscura que absorbe reflejos y hace resaltar las criaturas y los efectos de magia. Clase utilitaria: `bg-abismo`.
+- **Fondo Bastión (`--color-bastion` / `hsl(222, 40%, 12%)` / `#121927`):**
+  Superficie de tarjetas (`Card`), inventario, ranuras de equipo y contenedores de combate. Genera una elevación visual sutil respecto al fondo abismo sin recurrir a sombras suaves. Clase utilitaria: `bg-bastion`.
+- **Fondo Panel (`--color-panel` / `hsl(220, 35%, 16%)` / `#1A2332`):**
+  Contenedores de diálogo de PNJs, bitácora del gremio, desplegables de selección y pestañas activas. Clase utilitaria: `bg-panel`.
+- **Fondo Flotante (`--color-flotante` / `hsl(218, 32%, 20%)` / `#232D3F`):**
+  Ventanas emergentes de confirmación (`Dialog`, `AlertDialog`), tooltips de estadísticas y popovers de inspección. Clase utilitaria: `bg-flotante`.
+- **Superposición Oscura (`--color-superposicion` / `hsla(222, 47%, 5%, 0.85)`):**
+  Fondo translúcido para modales y bloqueos de pantalla durante transiciones de combate. Clase utilitaria: `bg-superposicion`.
 
 ### 2.2 Bordes y Biseles Estilo Pixel-Art
-- **Borde Pixel Negro (`--color-borde-negro` / `hsl(222, 47%, 4%)` / `#05070B`):**
-  Contorno exterior obligatorio de 2px, 4px o 6px que delimita cada elemento con la firmeza del trazo pixel-art clásico.
-- **Borde Bisel Plateado (`--color-borde-bisel` / `hsl(215, 25%, 35%)` / `#43526D`):**
-  Línea de luz interior que simula el relieve esculpido en piedra o metal de los marcos retro.
-- **Borde Dorado Gremial (`--color-borde-dorado` / `hsl(43, 85%, 55%)` / `#F5B724`):**
-  Marco ceremonial reservado para recompensas de misión, rangos de veterano, zonas desbloqueadas y criaturas legendarias.
-- **Borde Resonante Cian (`--color-borde-cian` / `hsl(187, 85%, 53%)` / `#14D1E8`):**
-  Foco interactivo de teclado y selección activa de objetivos en combate por turnos.
+- **Borde Pixel Negro (`--color-pixel` / `--color-borde-pixel` / `hsl(222, 47%, 4%)` / `#05070B`):**
+  Contorno exterior obligatorio de 2px, 4px o 6px que delimita cada elemento con la firmeza del trazo pixel-art clásico. Clase utilitaria: `border-pixel`.
+- **Borde Bisel Plateado (`--color-pixel-bisel` / `--color-borde-bisel` / `hsl(215, 25%, 35%)` / `#43526D`):**
+  Línea de luz interior que simula el relieve esculpido en piedra o metal de los marcos retro. Clase utilitaria: `border-pixel-bisel`.
+- **Borde Dorado Gremial (`--color-pixel-dorado` / `--color-borde-dorado` / `hsl(43, 85%, 55%)` / `#F5B724`):**
+  Marco ceremonial reservado para recompensas de misión, rangos de veterano, zonas desbloqueadas y criaturas legendarias. Clase utilitaria: `border-pixel-dorado`.
+- **Borde Resonante Cian (`--color-pixel-cian` / `--color-borde-cian` / `hsl(187, 85%, 53%)` / `#14D1E8`):**
+  Foco interactivo de teclado y selección activa de objetivos en combate por turnos. Clase utilitaria: `border-pixel-cian`.
 
 ### 2.3 Barras de Estado (Salud, Energía y Experiencia)
-- **Salud Alta (> 50% HP) (`hsl(142, 70%, 45%)` / `#22C55E`):**
-  Verde esmeralda vibrante. Transmite vitalidad óptima y estabilidad del equipo.
-- **Salud Media (20% – 50% HP) (`hsl(38, 92%, 50%)` / `#F59E0B`):**
-  Ámbar dorado. Señal de alerta táctica preventiva antes del estado crítico.
-- **Salud Crítica (< 20% HP) (`hsl(0, 84%, 60%)` / `#EF4444`):**
-  Rojo carmesí pulsante. Alerta de peligro inminente de derrota de la criatura.
-- **Energía / Maná / Puntos de Habilidad (`hsl(217, 91%, 60%)` / `#3B82F6`):**
-  Azul cobalto místico para consumo de habilidades y talismanes en combate.
-- **Experiencia XP (`hsl(271, 81%, 66%)` / `#A855F7`):**
-  Púrpura arcano brillante que llena la barra de progresión de nivel de cada especie.
-- **Canal de Fondo de Barra (`hsl(222, 35%, 10%)` / `#111722`):**
-  Canal oscuro empotrado con sombra interna dura que aloja el medidor.
+- **Salud Alta (> 50% HP) (`--color-salud-alta` / `hsl(142, 70%, 45%)` / `#22C55E`):**
+  Verde esmeralda vibrante. Transmite vitalidad óptima y estabilidad del equipo. Clase utilitaria: `bg-salud-alta`.
+- **Salud Media (20% – 50% HP) (`--color-salud-media` / `hsl(38, 92%, 50%)` / `#F59E0B`):**
+  Ámbar dorado. Señal de alerta táctica preventiva antes del estado crítico. Clase utilitaria: `bg-salud-media`.
+- **Salud Crítica (< 20% HP) (`--color-salud-critica` / `hsl(0, 84%, 60%)` / `#EF4444`):**
+  Rojo carmesí pulsante. Alerta de peligro inminente de derrota de la criatura. Clase utilitaria: `bg-salud-critica`.
+- **Energía / Maná / Puntos de Habilidad (`--color-energia-mp` / `hsl(217, 91%, 60%)` / `#3B82F6`):**
+  Azul cobalto místico para consumo de habilidades y talismanes en combate. Clase utilitaria: `bg-energia-mp`.
+- **Experiencia XP (`--color-experiencia-xp` / `hsl(271, 81%, 66%)` / `#A855F7`):**
+  Púrpura arcano brillante que llena la barra de progresión de nivel de cada especie. Clase utilitaria: `bg-experiencia-xp`.
+- **Canal de Fondo de Barra (`--color-canal-fondo` / `hsl(222, 35%, 10%)` / `#111722`):**
+  Canal oscuro empotrado con sombra interna dura que aloja el medidor. Clase utilitaria: `bg-canal-fondo`.
 
-### 2.4 Acentos de Rareza de Criaturas y Objetos
+### 2.4 Paleta Elemental y Afinidades Místicas (Fase 10)
+Alineada con las criaturas del Velo Astral y los tipos de ataque en combate:
+
+| Elemento | Token HSL | Color Hex | Uso Típico | Contraste vs Abismo | WCAG |
+| :--- | :--- | :--- | :--- | :---: | :---: |
+| **Fuego (`fuego`)** | `hsl(12, 88%, 53%)` | `#EF4423` | Ataques ígneos, criaturas de magma, daño por quemadura. | **5.2:1** | ✅ AA |
+| **Agua (`agua`)** | `hsl(205, 90%, 53%)` | `#1CA0F2` | Magia glacial, especies acuáticas, purificación de estados. | **6.1:1** | ✅ AA |
+| **Natura (`natura`)** | `hsl(142, 70%, 45%)` | `#22C55E` | Bestias del bosque, curación natural, toxinas venenosas. | **8.1:1** | ✅ AAA |
+| **Sombra (`sombra`)** | `hsl(271, 81%, 66%)` | `#A855F7` | Criaturas abisales, magia nocturna, sigilo y desvío. | **5.8:1** | ✅ AA |
+| **Luz (`luz`)** | `hsl(43, 96%, 56%)` | `#FBBF24` | Guardianes celestiales, talismanes supremos, bendiciones. | **9.6:1** | ✅ AAA |
+
+### 2.5 Acentos de Rareza de Criaturas y Objetos
 Alineados con el catálogo de criaturas y el modelo de datos del servidor:
 
 | Rareza | Token HSL | Color Hex | Uso Típico |
@@ -162,10 +189,10 @@ Alineados con el catálogo de criaturas y el modelo de datos del servidor:
 | **Épico (`EPICO`)** | `hsl(271, 91%, 65%)` | `#A855F7` | Bestias de cumbres y riscos con altos atributos base. |
 | **Legendario (`LEGENDARIO`)** | `hsl(43, 96%, 56%)` | `#FBBF24` | Guardianes ancestrales del Velo Astral y talismanes supremos. |
 
-### 2.5 Matriz de Contraste y Cumplimiento WCAG AA
+### 2.6 Matriz de Contraste y Cumplimiento WCAG AA
 Para satisfacer las directrices de accesibilidad sin comprometer la identidad retro, todos los pares de color de texto y superficie cumplen con los ratios de contraste establecidos por WCAG 2.1 AA (mínimo 4.5:1 para texto estándar y 3.0:1 para elementos de interfaz y texto grande):
 
-| Elemento de Texto | Color / Token | Fondo de Aplicación | Ratio Calculado | Nivel WCAG |
+| Elemento de Texto / Indicador | Color / Token | Fondo de Aplicación | Ratio Calculado | Nivel WCAG |
 | :--- | :--- | :--- | :---: | :---: |
 | **Texto Primario** | Pergamino Claro (`hsl(45, 29%, 95%)`) | Fondo Abismo (`#090D16`) | **15.8:1** | ✅ AAA (>7:1) |
 | **Texto Primario** | Pergamino Claro (`hsl(45, 29%, 95%)`) | Fondo Bastión (`#121927`) | **13.5:1** | ✅ AAA (>7:1) |
@@ -175,8 +202,12 @@ Para satisfacer las directrices de accesibilidad sin comprometer la identidad re
 | **Texto Alerta / Error** | Rojo Fuego (`hsl(0, 86%, 68%)`) | Fondo Abismo (`#090D16`) | **6.4:1** | ✅ AA (>4.5:1) |
 | **Texto Éxito** | Verde Hoja (`hsl(142, 65%, 60%)`) | Fondo Abismo (`#090D16`) | **8.1:1** | ✅ AAA (>7:1) |
 | **Insignia Legendaria** | Oro Solar (`hsl(43, 96%, 56%)`) | Fondo Bastión (`#121927`) | **9.6:1** | ✅ AAA (>7:1) |
+| **Afinidad Fuego** | Bermellón (`hsl(12, 88%, 53%)`) | Fondo Bastión (`#121927`) | **4.8:1** | ✅ AA (>4.5:1) |
+| **Afinidad Agua** | Turquesa Astral (`hsl(205, 90%, 53%)`)| Fondo Bastión (`#121927`) | **5.6:1** | ✅ AA (>4.5:1) |
+| **Afinidad Natura** | Verde Esmeralda (`hsl(142, 70%, 45%)`)| Fondo Bastión (`#121927`) | **7.4:1** | ✅ AAA (>7:1) |
+| **Afinidad Sombra** | Violeta Arcano (`hsl(271, 81%, 66%)`)| Fondo Bastión (`#121927`) | **5.3:1** | ✅ AA (>4.5:1) |
 
-### 2.6 Reglas Cromáticas con Nombre
+### 2.7 Reglas Cromáticas con Nombre
 - **La Regla del 10% Dorado:** El color dorado (`hsl(43, 85%, 55%)`) se reserva estrictamente para elementos de gloria, rangos de gremio y rareza legendaria. Ocupa como máximo el 10% del área de cualquier pantalla para conservar su impacto e intención.
 - **La Regla del Semáforo de Supervivencia:** La salud de una criatura cambia automáticamente de verde a ámbar a rojo según su porcentaje en el servidor. Nunca se muestra una barra de vida roja si la criatura tiene más de 20% de HP.
 - **La Regla del Fondo Neutro Puro:** Los fondos nunca son negro absoluto (`#000000`) salvo en la capa de borde exterior de píxel. Esto evita el efecto de "mancha vacía" y genera la atmósfera azulada del Velo Astral.
@@ -189,9 +220,11 @@ Para satisfacer las directrices de accesibilidad sin comprometer la identidad re
 La autenticidad retro exige fuentes pixel-art, pero las fuentes tipo `Press Start 2P` tienen baja densidad de caracteres por píxel, provocando fatiga extrema si se emplean en párrafos largos o tablas técnicas. *Aethelgard* implementa una **estrategia bimodal:**
 
 1. **Tipografía Display Retro (`"Press Start 2P", monospace`):**
+   - Conectada con prefetch en `apps/web/index.html` y declarada como token `--font-pixel` en `@theme inline` de `apps/web/src/index.css`.
    - Utilizada exclusivamente en: encabezados H1/H2, nombres de criaturas, valores de daño flotante, botones de acción retro, insignias de nivel y etiquetas breves.
-   - Definida bajo la clase utilitaria `.retro` en `apps/web/src/components/ui/8bit/styles/retro.css`.
+   - Acceso vía clase utilitaria `.font-pixel` o `.retro`.
 2. **Tipografía de Contenido y Lectura (`"Geist Variable", system-ui, sans-serif`):**
+   - Token `--font-sans` en `@theme inline`.
    - Utilizada en: descripciones de misiones, bitácoras narrativas, tablas de inventario, formularios de autenticación, mensajes de validación y diálogos extensos.
    - Asegura lectura fluida y renderizado perfecto en cualquier dispositivo y resolución.
 3. **Tipografía Monospace de Datos (`"Geist Mono", monospace`):**
@@ -274,20 +307,23 @@ Todos los componentes residen en `apps/web/src/components/ui/` y su variante ret
 
 ### 5.2 Tarjetas (`Card` / `BitCard`)
 - **Estructura:** Contenedor con `border-y-6` y pseudo-marcos laterales `border-x-6` que generan las 4 esquinas recortadas de estilo pixel-art.
-- **Fondo:** `--color-fondo-bastion` (`hsl(222, 40%, 12%)`).
+- **Fondo:** `--color-bastion` (`hsl(222, 40%, 12%)`).
 - **Cabecera (`CardHeader`):** Título en `Press Start 2P` de 12px a 14px, centrado o alineado a la izquierda según contexto.
 - **Cuerpo (`CardContent`):** Contenido descriptivo en `Geist Sans` para máxima legibilidad.
 
-### 5.3 Barras de Vitalidad y Progreso (`HealthBar`, `ManaBar`, `XpBar`)
+### 5.3 Barras de Vitalidad y Progreso Reactivas (`HealthBar`, `EnemyHealthDisplay`, `XpBar`)
 - **Estructura:** Canales rectangulares con borde de 2px negro y fondo de canal oscuro (`hsl(222, 35%, 10%)`).
-- **Segmentación:** Relleno de color plano sin degradados, con división visual simulada en bloques de 4px.
-- **Comportamiento Dinámico:**
-  - `HealthBar`: Transiciona suavemente en anchura (`transition-[width] duration-300 ease-out`), cambiando automáticamente a color rojo cuando el valor cae bajo el 20%.
-  - `XpBar`: Relleno púrpura brillante (`hsl(271, 81%, 66%)`) con indicador numérico `XP: [actual]/[meta]`.
+- **Comportamiento Dinámico y Reactivo:**
+  - `HealthBar`: Transiciona suavemente en anchura (`transition-all duration-300 ease-out`). Aplica automáticamente el *Semáforo de Supervivencia*:
+    * `> 50% HP`: `bg-salud-alta` (verde esmeralda).
+    * `20% – 50% HP`: `bg-salud-media` (ámbar dorado).
+    * `< 20% HP`: `bg-salud-critica` (rojo carmesí) acompañado de pulso crítico automático (`anim-pulso-critico`).
+  - `EnemyHealthDisplay`: Integra `HealthBar` reactiva y expone el indicador numérico y nivel del rival con contraste WCAG garantizado. Si no se fija un color rígido, adopta el semáforo orgánico del jugador.
+  - `XpBar`: Relleno púrpura brillante (`bg-experiencia-xp` / `hsl(271, 81%, 66%)`). Al alcanzar el 100% de experiencia para subida de nivel, despliega el banner parpadeante `¡SUBIÓ DE NIVEL!` en oro solar con pulso de turno activo.
 
 ### 5.4 Insignias de Rareza y Estado (`Badge`)
 - **Estructura:** Rectángulo compacto con borde de 2px, padding horizontal de 8px y vertical de 2px.
-- **Color de Borde y Texto:** Acorde al token de rareza (`COMUN`, `POCO_COMUN`, `RARO`, `EPICO`, `LEGENDARIO`).
+- **Color de Borde y Texto:** Acorde al token de rareza (`COMUN`, `POCO_COMUN`, `RARO`, `EPICO`, `LEGENDARIO`) o elemento místico.
 - **Texto:** Mayúsculas estrictas en `Press Start 2P` de 10px.
 
 ### 5.5 Campos de Entrada (`Input`)
@@ -297,82 +333,51 @@ Todos los componentes residen en `apps/web/src/components/ui/` y su variante ret
 
 ---
 
-## 6. Guía de Micro-interacciones y Dinamismo Retro
+## 6. Guía de Micro-interacciones y Dinamismo Retro (Fase 10)
 
-Para trascender la apariencia estática y dotar al juego de vitalidad táctil, se implementan las siguientes micro-animaciones retro:
+Para dotar al juego de vitalidad táctil e inmersión de consola de 16-bit, se consolidan las siguientes clases y animaciones canónicas en `apps/web/src/index.css`:
 
 ```
 +-----------------------------------------------------------------------------+
 |                     DINAMISMO Y MICRO-INTERACCIONES RETRO                   |
 +-----------------------------------------------------------------------------+
-| 1. SACUDIDA COMBATE: Traslaciones rápidas en X/Y (±3px a ±6px en 200-400ms) |
-| 2. PULSO DE ACCIÓN:  Borde parpadeante suave (1.2s) para guiar el turno     |
-| 3. PARPADEO DE DAÑO: 3 ciclos de opacidad (1 -> 0.2 -> 1) en 240ms          |
-| 4. DAÑO FLOTANTE:    Número salta -16px y se desvanece en 600ms con contorno|
-| 5. TRANSICIÓN ZONA:  Fundido en negro (250ms) con preservación del HUD      |
+| 1. SACUDIDA COMBATE:       Traslaciones rápidas ortogonales (anim-sacudida)  |
+| 2. PARPADEO DE DAÑO:       Ciclos de opacidad por pasos (anim-parpadeo-dano)|
+| 3. PULSO DE TURNO ACTIVO:  Resonancia dorada de turno (anim-pulso-turno)    |
+| 4. TIRADA DE CAPTURA:      Incertidumbre visual y balanceo (anim-tirada-capt)|
+| 5. REVELACIÓN EXPLORACIÓN: Entrada destellante en eventos (anim-revelacion)  |
+| 6. RESTAURACIÓN DE SALUD:  Resplandor esmeralda regenerativo (anim-curacion)|
+| 7. CIFRAS FLOTANTES:       Salto vertical con contorno duro (anim-dano-flot)|
 +-----------------------------------------------------------------------------+
 ```
 
-### 6.1 Sacudida de Combate (Screen Shake)
-Al recibir daño una criatura o al impactar un ataque crítico en combate:
-- **Sacudida Leve (Ataque Normal):**
-  Desplazamiento horizontal y vertical rápido de ±3px durante 200ms.
-  ```css
-  @keyframes sacudida-leve {
-    0%, 100% { transform: translate(0, 0); }
-    20% { transform: translate(-3px, 2px); }
-    40% { transform: translate(3px, -2px); }
-    60% { transform: translate(-2px, -1px); }
-    80% { transform: translate(2px, 1px); }
-  }
-  .anim-sacudida-leve {
-    animation: sacudida-leve 200ms ease-in-out;
-  }
-  ```
-- **Sacudida Crítica (Golpe Crítico o Derrota):**
-  Desplazamiento de ±6px a ±8px durante 400ms, acompañado de un destello rojo perimetral momentáneo.
+### 6.1 Sacudida de Impacto en Combate (`anim-sacudida`)
+Al asestar un golpe decisivo o recibir daño en combate, el marco o sprite experimenta un desplazamiento físico ortogonal:
+- `anim-sacudida`: Impacto estándar de combate (300ms, ±4px).
+- `anim-sacudida-leve`: Ataque leve o roce (200ms, ±2px).
+- `anim-sacudida-critica`: Golpe crítico demoledor o derrota (400ms, ±6px con quiebre).
 
-### 6.2 Parpadeo de Daño en Sprite (Damage Blink)
-Cuando una criatura recibe un impacto, su sprite no se distorsiona; parpadea en ciclos rápidos de visibilidad (emulando la limitación de sprites por scanline de consolas clásicas):
-```css
-@keyframes parpadeo-dano {
-  0%, 49% { opacity: 1; }
-  50%, 74% { opacity: 0.2; }
-  75%, 100% { opacity: 1; }
-}
-.anim-parpadeo-dano {
-  animation: parpadeo-dano 240ms steps(2, start);
-}
-```
+### 6.2 Parpadeo Retro de Daño Recibido (`anim-parpadeo-dano`)
+Cuando una criatura recibe impacto, su sprite titila en 3 ciclos rápidos por pasos (`steps(2, start)`) durante 240ms, simulando la sobrecarga de scanlines de hardware de 16-bit.
 
-### 6.3 Pulso de Acción Disponible (Turn Pulse)
-En turnos de combate o en botones de exploración disponibles, un pulso rítmico alerta al jugador sin estridencias:
-```css
-@keyframes pulso-retro {
-  0%, 100% { border-color: hsl(43, 85%, 55%); }
-  50% { border-color: hsl(43, 85%, 25%); }
-}
-.anim-pulso-turno {
-  animation: pulso-retro 1200ms infinite ease-in-out;
-}
-```
+### 6.3 Pulso Sutil de Turno Activo (`anim-pulso-turno`)
+En el turno del jugador o en botones de acción prioritarios, un pulso rítmico dorado (`hsl(43, 85%, 55%)`) de 1200ms guía la atención del jugador sin perturbar la lectura.
 
-### 6.4 Cifras Flotantes de Daño (Floating Combat Text)
-Los números de daño, curación o captura saltan desde el objetivo hacia arriba:
-```css
-@keyframes flotar-dano {
-  0% { transform: translateY(0px) scale(1); opacity: 1; }
-  50% { transform: translateY(-16px) scale(1.15); opacity: 1; }
-  100% { transform: translateY(-24px) scale(0.9); opacity: 0; }
-}
-.anim-dano-flotante {
-  animation: flotar-dano 600ms ease-out forwards;
-}
-```
+### 6.4 Animación de Tirada de Captura (`anim-tirada-captura` / `anim-captura-incertidumbre`)
+Durante el lanzamiento de un talismán de captura, el orbe o tarjeta oscila de lado a lado con tensión creciente (`anim-captura-incertidumbre` a 1200ms en ciclo infinito), resolviendo en `anim-captura-exito` (destello dorado ascendente) o `anim-captura-fallo` (atenuación y desvanecimiento).
 
-### 6.5 Prevención de Doble Clic y Estados de Carga (Harden)
-- Todo botón que despache una mutación hacia el servidor (`POST /api/combate/accion`, `POST /api/exploracion`, etc.) debe pasar inmediatamente a estado deshabilitado (`disabled`) con `aria-busy="true"`.
-- Mientras dura la solicitud, el texto de la acción se reemplaza por el componente `Spinner` de 8bitcn/ui o el texto animado `PROCESANDO...` en `Press Start 2P`.
+### 6.5 Revelación en Eventos de Exploración (`anim-revelacion` / `anim-revelacion-evento`)
+Al descubrir un cofre, monumento o encuentro silvestre en `PantallaExploracion.tsx`, el contenedor emerge con un destello inicial de contraste y escalado suave de 500ms (`anim-revelacion`).
+
+### 6.6 Restauración de Salud en Curación (`anim-restauracion-salud` / `anim-curacion`)
+Al utilizar una poción o descansar en `PantallaCuracion.tsx`, la barra y avatar de la criatura emiten un resplandor esmeralda reparador (`anim-restauracion-salud`, 800ms) acompañado de números flotantes de vitalidad (`anim-curacion-flotante`).
+
+### 6.7 Cifras Flotantes de Combate (`anim-dano-flotante` / `anim-curacion-flotante`)
+Los valores de daño o curación saltan 16px hacia arriba desvaneciéndose en 600ms con contorno ortogonal de 2px para legibilidad absoluta.
+
+### 6.8 Prevención de Doble Clic y Estados de Carga (Harden)
+- Todo botón que despache una mutación hacia el servidor (`POST /api/combate/accion`, `POST /api/exploracion`, etc.) pasa inmediatamente a estado deshabilitado (`disabled`) con `aria-busy="true"`.
+- Mientras dura la solicitud, el texto de la acción se reemplaza por el componente `Spinner` de 8bitcn/ui o el texto retro `PROCESANDO...` en `Press Start 2P`.
 
 ---
 
@@ -388,8 +393,8 @@ El módulo `apps/web/src/lib/assets.ts` es la única fuente de verdad para resol
 | `obtenerImagenCriatura(slug)` | Sprite de criatura | `/assets/criaturas/${slug}.webp` | `/assets/placeholder-criatura.svg` |
 | `obtenerImagenZona(slug)` | Paisaje de ruta/zona | `/assets/zonas/${slug}.webp` | `/assets/placeholder-zona.svg` |
 | `obtenerImagenObjeto(slug)` | Icono de ítem/objeto | `/assets/objetos/${slug}.webp` | `/assets/placeholder-objeto.svg` |
-| `reproducirSonido(nombre, vol)` | Audio retro | `/assets/sonidos/${nombre}.mp3` | Silencio silencioso controlado |
-| `manejarErrorImagen(evento, tipo)` | Manejador `onError` | Asigna fallback SVG | Previene bucles infinitos de 404 |
+| `reproducirSonido(nombre, vol)` | Audio retro | `/assets/sonidos/${nombre}.mp3` | Síntesis retro Web Audio API |
+| `manejarErrorImagen(evento, tipo)` | Manejador `onError` | Asigna fallback SVG | Previene bucles infinitos desconectando `img.onerror` |
 
 ### 7.2 Estructura en `apps/web/public/assets/`
 ```text
@@ -405,7 +410,7 @@ apps/web/public/assets/
 ```
 
 ### 7.3 Renderizado Nítido de Píxeles (`.pixelated`)
-Los navegadores modernos aplican interpolación bilineal suave a las imágenes escaladas, lo que destruye el pixel-art. Es obligatorio aplicar la clase utilitaria `.pixelated` a todos los elementos `<img>` de criaturas y objetos:
+Los navegadores modernos aplican interpolación bilineal suave a las imágenes escaladas, lo que destruye el pixel-art. Es obligatorio aplicar la clase utilitaria `.pixelated` a todos los elementos gráficos `img` de criaturas y objetos:
 ```css
 .pixelated {
   image-rendering: pixelated;
@@ -413,8 +418,8 @@ Los navegadores modernos aplican interpolación bilineal suave a las imágenes e
 }
 ```
 
-### 7.4 Patrón Estándar de Implementación en Vistas (React 19)
-Toda pantalla que renderice criaturas, zonas u objetos debe implementar el siguiente patrón canónico:
+### 7.4 Patrón Canónico de Implementación en Vistas (React 19)
+Toda pantalla que renderice criaturas, zonas u objetos implementa el siguiente patrón canónico blindado:
 
 ```tsx
 import {
@@ -425,14 +430,14 @@ import {
 
 export function TarjetaCriaturaCombate({ criatura }: { criatura: Criatura }) {
   return (
-    <div className="relative border-4 border-foreground bg-card p-3">
+    <div className="relative border-4 border-foreground bg-bastion p-3">
       <img
         src={obtenerImagenCriatura(criatura.especie.slug)}
         alt={criatura.especie.nombre}
         onError={(e) => manejarErrorImagen(e, "criatura")}
         className="pixelated mx-auto h-32 w-32 object-contain"
       />
-      <p className="retro mt-2 text-center text-xs">
+      <p className="retro mt-2 text-center text-xs text-foreground">
         {criatura.especie.nombre}
       </p>
     </div>
@@ -445,13 +450,14 @@ export function TarjetaCriaturaCombate({ criatura }: { criatura: Criatura }) {
 ## 8. Qué Hacer y Qué No Hacer (Do's and Don'ts)
 
 ### ✅ Qué Hacer (Do):
-1. **Usar siempre variables de color en HSL o Tailwind semántico:** Emplear `bg-background`, `border-foreground`, o variables CSS semánticas para garantizar compatibilidad con temas y contraste.
+1. **Usar siempre variables de color en HSL o Tailwind semántico:** Emplear `bg-abismo`, `bg-bastion`, `border-pixel`, o variables semánticas (`bg-background`, `text-foreground`).
 2. **Aplicar la clase `.pixelated` a todo sprite:** Mantener los bordes de los píxeles nítidos sin desenfoque de escalado.
 3. **Utilizar `Geist Sans` para párrafos y tablas:** Reservar `Press Start 2P` exclusivamente para encabezados breves, botones y valores de combate.
 4. **Incluir `onError={(e) => manejarErrorImagen(e, 'tipo')}` en cada imagen:** Garantizar que ninguna imagen rota arruine la experiencia si el archivo WebP aún no existe.
 5. **Verificar el ratio de contraste WCAG AA (≥ 4.5:1):** Comprobar que cualquier texto informativo sea legible contra su fondo.
 6. **Usar `rounded-none` en todo componente nuevo:** La curvatura geométrica es 0px en todo el juego.
 7. **Proteger botones contra doble clic:** Deshabilitar la interfaz y mostrar spinner retro durante operaciones asíncronas con el servidor.
+8. **Utilizar componentes reactivos de 8bitcn/ui:** `HealthBar` adapta automáticamente el color por supervivencia (verde > 50%, ámbar 20-50%, rojo <= 20% con pulso).
 
 ### ❌ Qué No Hacer (Don't):
 1. **No usar bordes redondeados (`rounded-md`, `rounded-full`):** Destruyen la coherencia estética retro de consola 8-bit.

@@ -227,5 +227,75 @@ La pantalla de exploración inicial requería elevar su nivel de inmersión y ro
 - **Auditoría Mecánica Impeccable (`detect.mjs`):** 0 hallazgos o defectos en `PantallaExploracion.tsx`.
 - **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
 
+---
+
+## 5. Sub-Fase 10e: Combate Táctico y Captura de Criaturas (`PantallaCombate.tsx`)
+
+### 5.1 Diagnóstico Inicial y Auditoría Impeccable
+La versión preliminar del sistema de combate presentaba serias debilidades de experiencia, lógica de progresión y fidelidad visual:
+1. **Disposición Espacial Plana y Sin Profundidad:** El combate se mostraba mediante dos tarjetas estáticas colocadas una al lado de la otra, careciendo de la emoción y perspectiva clásica de los RPG por turnos de 16-bit.
+2. **Reanudación Débil de Encuentros Activos:** Al recargar la pantalla o regresar a `/combate`, el turno se reiniciaba arbitrariamente en 1, no se proveían movimientos y la bitácora anterior se perdía.
+3. **Botonera Táctica Rudimentaria:** Solo existían acciones básicas sin opciones para seleccionar movimientos específicos, consumir pociones de vitalidad en combate, relevar el liderazgo de criaturas o seleccionar talismanes específicos de captura.
+4. **Cálculo de Progresión Incoherente (Riesgo de Invariante §2.4):** Existía riesgo de duplicidad de fórmulas matemáticas de nivel y experiencia en el front-end, violando la regla de servidor autoritativo (A-8).
+5. **Desbordamientos Horizontales en Modales:** Los modales de resolución (Victoria, Captura y Derrota) causaban scroll horizontal no deseado al apilar botones largos con tipografía pixelada `Press Start 2P`.
+6. **Ausencia de Acústica Táctica:** Las acciones críticas (impacto de ataques y éxito de captura) carecían de efectos de sonido sintetizados.
+
+---
+
+### 5.2 Mejoras Implementadas
+
+#### A. Arena de Batalla Diagonal 16-Bit y Perspectiva Retro (`docs/DESIGN.md` §2)
+- **Disposición Espacial Clásica:** Rediseño completo de la arena con perspectiva diagonal:
+  - *Rival Hostil:* Situado en el cuadrante superior derecho sobre un pedestal circular de sombra (`bg-black/30`), exhibiendo su sprite pixelado, barra de salud segmentada y badge de nivel.
+  - *Criatura Aliada:* Posicionada en el primer plano inferior izquierdo encarando diagonalmente al oponente, con tarjeta de estado persistente, medidor numérico de vitalidad (HP actual / HP total) y barra de experiencia porcentual.
+- **Micro-animaciones Físicas de Combate:**
+  - `anim-sacudida` y `anim-parpadeo-dano` ante impactos físicos.
+  - Indicadores numéricos de daño flotante con código de color dinámico (carmesí para daño recibido, esmeralda para curación).
+  - Secuencia de incertidumbre en captura (`anim-captura-incertidumbre`) con balanceo de talismán antes de revelar el veredicto del servidor.
+
+#### B. Panel Táctil Extendido de 5 Comandos RPG y Prevención de Doble Acción (Hardening S-5)
+- **Comandos Tácticos Accesibles:**
+  1. *Atacar:* Selector interactivo de movimientos con indicación de poder base y tipo de ataque.
+  2. *Usar Objeto:* Modal retro con filtrado exclusivo de ítems curativos del inventario, restaurando vitalidad con animación esmeralda y feedback flotante inmediato.
+  3. *Cambiar Criatura:* Selector táctico de miembros del equipo con HP disponible y XP individual para relevar el liderazgo de combate mediante `PATCH /equipo/orden`.
+  4. *Capturar:* Selector interactivo de talismanes disponibles con animación de incertidumbre y balanceo antes de revelar éxito o contraataque.
+  5. *Huir:* Diálogo modal retro de confirmación con probabilidad probabilística acotada. Ante fallo en huir, el contraataque rival se anima y refleja inmediatamente en la barra de salud sin requerir recargar la página.
+- **Hardening contra Acciones Dobles (S-5):**
+  - Guarda reactiva de cadencia visual (~800 ms) entre turnos.
+  - Botones con `disabled={enAccion}`, `aria-busy={enAccion}` y spinners retro que imposibilitan enviar paquetes concurrentes fuera de turno al servidor.
+
+#### C. Reanudación Fiel de Encuentros y Preservación de Estado
+- **Enriquecimiento del Backend (`GET /encuentros/activo`):**
+  - Devuelve la especie aliada con sus movimientos reales registrados en catálogo.
+  - Preserva el turno cronológico real alcanzado.
+  - Reconstruye la bitácora cronológica histórica completa desde los registros de combate en base de datos PostgreSQL, garantizando continuidad ininterrumpida ante recargas de página o reconexiones.
+
+#### D. Centralización Absoluta de Progresión en el Servidor (A-8 / S-6 / §2.4)
+- **Cálculo Determinista de Experiencia:** Todo cálculo de puntos de experiencia, nivel, umbral de subida y porcentaje de barra se ejecuta exclusivamente en el servidor mediante `ProgresoService.calcularProgresoXp`.
+- **Cliente Front-End Ligero:** La vista React actúa como cliente presentacional puro, consumiendo los campos `experiencia`, `porcentajeXp` y límites devueltos por la API sin formular cálculos locales de balance.
+
+#### E. Sellado de Modales contra Desbordamiento Tipográfico (`Press Start 2P`)
+- **Adaptación Responsiva sin Overflow:** Contenedor `DialogContent` y `AlertDialogContent` ajustados con `w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden`.
+- **Apilado Vertical Inteligente:** Botones de acción en el pie de los modales estructurados con `flex flex-col gap-2.5 w-full`, eliminando colisiones horizontales y asegurando legibilidad total en resoluciones móviles (320px–425px).
+- **Sanitización de Glifos:** Supresión de caracteres acentuados mayúsculos incompatibles en la tipografía pixelada.
+
+#### F. Audio Retro Sintetizado Nativo Web Audio API
+- Incorporación en `apps/web/src/lib/assets.ts` de sintetizadores nativos mediante osciladores Web Audio API:
+  - `'golpe'`: Onda diente de sierra (`sawtooth`) con curva de caída de frecuencia percusiva.
+  - `'captura'`: Arpegio ascendente de onda cuadrada (`square`) para fanfarria de domesticación exitosa.
+
+---
+
+### 5.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-combate.spec.ts`):** 4 pruebas unitarias exhaustivas validando:
+  1. Contrato enriquecido de combate y reanudación fiel de encuentros.
+  2. Lógica del panel táctico de 5 comandos.
+  3. Respuestas de huida con contraataque inmediato.
+  4. Síntesis acústica nativa para efectos de combate.
+- **Suite Total Web (`pnpm --filter web test`):** 20 de 20 pruebas aprobadas (100% éxito).
+- **Pruebas Backend y Balance (`pnpm --filter api test`):** 36 de 36 pruebas aprobadas, incluyendo la prueba unitaria `apps/api/test/progreso-tienda.spec.ts` que valida el cálculo de progresión en servidor.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación limpia sin errores TypeScript en Vite.
+- **Linter Web (`oxlint`):** 0 errores.
+
 
 

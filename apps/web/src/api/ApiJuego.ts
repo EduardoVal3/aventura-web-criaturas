@@ -156,12 +156,28 @@ export interface CriaturaCombateRival {
   velocidad?: number;
 }
 
+export interface MovimientoCombate {
+  nombre: string;
+  poder: number;
+  tipoAccion?: string;
+}
+
 export interface CriaturaCombateAliada {
   criaturaId: string;
   nombre: string;
+  slug?: string;
+  nombreEspecie?: string;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  ataque?: number;
+  defensa?: number;
+  velocidad?: number;
+  movimientos?: MovimientoCombate[];
 }
 
 export interface EncuentroActivo {
@@ -171,6 +187,7 @@ export interface EncuentroActivo {
   esTurnoJugador: boolean;
   criaturaRival: CriaturaCombateRival;
   criaturaAliada: CriaturaCombateAliada;
+  bitacora?: string[];
 }
 
 export interface PeticionAtacar {
@@ -185,14 +202,37 @@ export interface AccionCombate {
   hpRestanteAliado?: number;
 }
 
+export interface ProgresoVictoria {
+  xpGanada: number;
+  monedasGanadas: number;
+  subioNivel: boolean;
+  nivelAnterior?: number;
+  nivelNuevo: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  saldoMonedas?: number;
+}
+
 export interface RespuestaAtacar {
   encuentroId: string;
   estado: "EN_CURSO" | "VICTORIA" | "DERROTA";
   turno: number;
   accionJugador: AccionCombate;
   accionRival?: AccionCombate | null;
-  resultadoFinal?: {
+  resultadoFinal?:
+    | string
+    | {
+        experienciaGanada?: number;
+        subioNivel?: boolean;
+        nivelNuevo?: number;
+        monedasGanadas?: number;
+      }
+    | null;
+  progreso?: ProgresoVictoria | null;
+  recompensas?: {
     experienciaGanada?: number;
+    monedasGanadas?: number;
     subioNivel?: boolean;
     nivelNuevo?: number;
   } | null;
@@ -228,19 +268,25 @@ export interface PeticionHuir {
 export interface RespuestaHuir {
   exito: boolean;
   mensaje: string;
-  estado: "HUIDO";
+  estado: string;
+  contraataqueRival?: AccionCombate | null;
 }
 
 export interface CriaturaEquipo {
   criaturaId: string;
   slug: string;
   nombre: string;
+  apodo?: string | null;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
   ataque: number;
   defensa: number;
   velocidad: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
   orden: number;
 }
 
@@ -400,4 +446,5 @@ export interface ApiJuego {
   obtenerEspecies(tipo?: string): Promise<RespuestaEspecies>;
   obtenerEspecie(slug: string): Promise<EspecieDetalle>;
   obtenerHistorial(): Promise<RespuestaHistorial>;
+  actualizarOrdenEquipo(peticion: { criaturaIds: string[] }): Promise<{ mensaje: string }>;
 }

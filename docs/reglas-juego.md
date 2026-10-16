@@ -114,6 +114,11 @@ Determina la cantidad total de XP necesaria para que una criatura alcance un niv
   - Nivel 4: $\lfloor 50 \times 3^{1.8} + 100 \times 3 \rfloor = \lfloor 50 \times 7.2246 + 300 \rfloor = \lfloor 361.23 + 300 \rfloor = 661\text{ XP}$.
   - Nivel 5: $\lfloor 50 \times 4^{1.8} + 100 \times 4 \rfloor = \lfloor 50 \times 12.1257 + 400 \rfloor = \lfloor 606.28 + 400 \rfloor = 1006\text{ XP}$.
 
+- **Piso de experiencia canónica y persistencia:**
+  Toda criatura creada o capturada en un nivel $n$ retiene como cimiento de experiencia acumulada $\text{experienciaBase}(n) = \text{xpRequerida}(n)$. Cualquier XP ganada en combate se incrementa acumulativamente sobre dicho valor en la columna `criatura.experiencia`.
+- **Aislamiento por Personaje y Multitenancy:**
+  La entrega de experiencia y actualización de nivel en `ProgresoService` valida estrictamente la pertenencia `criatura.personajeId === personajeId`, asegurando que el progreso se guarde y conserve única y exclusivamente en la criatura del usuario/personaje en sesión, impidiendo fuga de datos hacia otros jugadores.
+
 ### 2.5 Probabilidad de huida de combate
 Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje.
 

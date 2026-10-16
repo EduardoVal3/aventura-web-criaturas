@@ -57,7 +57,9 @@ export function manejarErrorImagen(
   tipo: keyof typeof RUTAS_PLACEHOLDERS = 'criatura',
 ) {
   const img = evento.currentTarget;
-  const fallback = RUTAS_PLACEHOLDERS[tipo];
+  const fallback = RUTAS_PLACEHOLDERS[tipo] || RUTAS_PLACEHOLDERS.criatura;
+  // Desconectar el handler para prevenir bucles si el recurso o fallback falla
+  img.onerror = null;
   if (img.src !== fallback && !img.src.endsWith(fallback)) {
     img.src = fallback;
   }
@@ -137,6 +139,28 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.3);
+    } else if (nombre === "golpe" || nombre === "ataque" || nombre === "dano") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.12);
+      ganancia.gain.setValueAtTime(Math.min(0.3, volumen * 0.3), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } else if (nombre === "captura" || nombre === "atrapado") {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(349.23, ctx.currentTime);
+      osc.frequency.setValueAtTime(440.0, ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime + 0.16);
+      osc.frequency.setValueAtTime(698.46, ctx.currentTime + 0.24);
+      ganancia.gain.setValueAtTime(Math.min(0.25, volumen * 0.25), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
     }
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.

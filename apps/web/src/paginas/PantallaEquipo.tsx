@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Skeleton } from "@/components/ui/8bit/skeleton";
 import HealthBar from "@/components/ui/8bit/health-bar";
+import XpBar from "@/components/ui/8bit/xp-bar";
 import { api, type CriaturaEquipo, ErrorApi } from "@/api";
 
 export function PantallaEquipo() {
@@ -132,9 +133,14 @@ export function PantallaEquipo() {
                         Posición #{criatura.orden}
                       </CardDescription>
                     </div>
-                    <Badge variant="default" className="text-[10px]">
-                      Nv. {criatura.nivel}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                      <Badge variant="default" className="text-[10px]">
+                        Nv. {criatura.nivel}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] font-mono text-accent border-accent/40">
+                        {criatura.porcentajeXp ?? 0}% EXP
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -150,6 +156,20 @@ export function PantallaEquipo() {
                       value={porcentajeHp}
                       variant="retro"
                       className="h-3"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-muted-foreground">Progreso EXP</span>
+                      <span className="font-mono text-[11px] text-accent">
+                        {criatura.porcentajeXp ?? 0}%
+                      </span>
+                    </div>
+                    <XpBar
+                      value={criatura.porcentajeXp ?? 0}
+                      variant="retro"
+                      className="h-2.5"
                     />
                   </div>
 

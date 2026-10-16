@@ -15,7 +15,15 @@
   image-rendering: crisp-edges;
 }
 
-/* Micro-interacciones y Dinamismo Retro (docs/DESIGN.md) */
+/* Micro-interacciones y Dinamismo Retro - Fase 10 (docs/DESIGN.md) */
+@keyframes sacudida {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  60% { transform: translate(-3px, -1px); }
+  80% { transform: translate(3px, 1px); }
+}
+
 @keyframes sacudida-leve {
   0%, 100% { transform: translate(0, 0); }
   20% { transform: translate(-3px, 2px); }
@@ -34,20 +42,88 @@
 }
 
 @keyframes parpadeo-dano {
-  0%, 49% { opacity: 1; }
-  50%, 74% { opacity: 0.2; }
-  75%, 100% { opacity: 1; }
+  0%, 49% { opacity: 1; filter: brightness(1); }
+  50%, 74% { opacity: 0.2; filter: brightness(2) saturate(2); }
+  75%, 100% { opacity: 1; filter: brightness(1); }
 }
 
 @keyframes pulso-retro {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); }
-  50% { opacity: 0.75; filter: drop-shadow(0 0 2px hsl(43, 85%, 55%)); }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 0 transparent); border-color: hsl(43, 85%, 55%); }
+  50% { opacity: 0.75; filter: drop-shadow(0 0 2px hsl(43, 85%, 55%)); border-color: hsl(43, 85%, 35%); }
+}
+
+@keyframes pulso-critico {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes captura-incertidumbre {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-12deg) scale(1.06); }
+  40% { transform: rotate(12deg) scale(1.06); }
+  60% { transform: rotate(-8deg) scale(1.03); }
+  80% { transform: rotate(8deg) scale(1.03); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes captura-exito {
+  0% { transform: scale(0.9); filter: brightness(1); }
+  50% { transform: scale(1.18); filter: brightness(1.6) drop-shadow(0 0 10px hsl(43, 96%, 56%)); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes captura-fallo {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.85); filter: grayscale(1); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+@keyframes revelacion-evento {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+    filter: brightness(2) contrast(1.4);
+  }
+  50% {
+    opacity: 0.85;
+    filter: brightness(1.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: brightness(1) contrast(1);
+  }
+}
+
+@keyframes restauracion-salud {
+  0% {
+    box-shadow: 0 0 0 0 hsl(142 70% 45% / 0.8);
+    filter: drop-shadow(0 0 0px hsl(142 70% 45%));
+  }
+  50% {
+    box-shadow: 0 0 12px 4px hsl(142 70% 45% / 0.6);
+    filter: drop-shadow(0 0 8px hsl(142 70% 45%));
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(142 70% 45% / 0);
+    filter: drop-shadow(0 0 0px transparent);
+  }
 }
 
 @keyframes flotar-dano {
   0% { transform: translateY(0px) scale(1); opacity: 1; }
   50% { transform: translateY(-16px) scale(1.15); opacity: 1; }
   100% { transform: translateY(-24px) scale(0.9); opacity: 0; }
+}
+
+@keyframes flotar-curacion {
+  0% { transform: translateY(0px) scale(1); opacity: 1; }
+  50% { transform: translateY(-16px) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-24px) scale(0.9); opacity: 0; }
+}
+
+.anim-sacudida {
+  animation: sacudida 300ms ease-in-out;
 }
 
 .anim-sacudida-leve {
@@ -66,6 +142,38 @@
   animation: pulso-retro 1200ms infinite ease-in-out;
 }
 
+.anim-pulso-critico {
+  animation: pulso-critico 800ms infinite ease-in-out;
+}
+
+.anim-tirada-captura,
+.anim-captura-incertidumbre {
+  animation: captura-incertidumbre 1200ms ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.anim-captura-exito {
+  animation: captura-exito 600ms ease-out;
+}
+
+.anim-captura-fallo {
+  animation: captura-fallo 500ms ease-out;
+}
+
+.anim-revelacion,
+.anim-revelacion-evento {
+  animation: revelacion-evento 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-restauracion-salud,
+.anim-curacion {
+  animation: restauracion-salud 800ms ease-out;
+}
+
 .anim-dano-flotante {
   animation: flotar-dano 600ms ease-out forwards;
+}
+
+.anim-curacion-flotante {
+  animation: flotar-curacion 700ms ease-out forwards;
 }

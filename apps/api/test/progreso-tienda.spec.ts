@@ -11,6 +11,7 @@ import {
   calcularXpRequerida,
   calcularMonedasVictoria,
   calcularNivelDesdeXp,
+  calcularProgresoXp,
   ProgresoService,
 } from '../src/modulos/progreso/progreso.service';
 import { CuracionService } from '../src/modulos/curacion/curacion.service';
@@ -57,6 +58,27 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       assert.strictEqual(calcularNivelDesdeXp(1, 149), 1);
       assert.strictEqual(calcularNivelDesdeXp(1, 150), 2);
       assert.strictEqual(calcularNivelDesdeXp(1, 400), 3);
+    });
+
+    it('debe calcular el porcentaje de progreso de XP exactamente en el servidor (§2.4)', () => {
+      // Nivel 1 (0 a 150 XP)
+      const inicio = calcularProgresoXp(1, 0);
+      assert.strictEqual(inicio.porcentajeXp, 0);
+      assert.strictEqual(inicio.xpNivelActual, 0);
+      assert.strictEqual(inicio.xpSiguienteNivel, 150);
+
+      const medio = calcularProgresoXp(1, 75);
+      assert.strictEqual(medio.porcentajeXp, 50);
+
+      // Nivel 2 (150 a 374 XP, rango 224 XP)
+      const justoSubido = calcularProgresoXp(2, 150);
+      assert.strictEqual(justoSubido.porcentajeXp, 0);
+      assert.strictEqual(justoSubido.xpNivelActual, 150);
+      assert.strictEqual(justoSubido.xpSiguienteNivel, 374);
+
+      // Nivel 50 (máximo nivel del juego)
+      const nivelMaximo = calcularProgresoXp(50, 999999);
+      assert.strictEqual(nivelMaximo.porcentajeXp, 100);
     });
   });
 
@@ -259,6 +281,100 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
           return true;
         },
       );
+    });
+  });
+
+  describe('Aislamiento por Personaje y entrega de recompensas (§2.4)', () => {
+    it('debe rechazar otorgar XP a una criatura que pertenece a otro personaje con ForbiddenException', async () => {
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-otra',
+            personajeId: 'personaje-ajeno', // Pertenencia ajena
+            nivel: 2,
+            experiencia: 150,
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40 },
+          }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      await assert.rejects(
+        async () => {
+          await servicio.aplicarRecompensaVictoria(
+            mockPrisma,
+            'mi-personaje-autenticado',
+            'cri-otra',
+            {
+              nivel: 2,
+              especie: {
+                challengeRating: 0.5,
+                nombre: 'Lobo',
+                hpBase: 30,
+                ataqueBase: 40,
+                defensaBase: 40,
+                velocidadBase: 40,
+              },
+            },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof ForbiddenException, true);
+          return true;
+        },
+      );
+    });
+
+    it('debe otorgar XP y acumular sobre la base canónica del nivel a la criatura propia', async () => {
+      let datosActualizados: any = null;
+      let monedasActualizadas: any = null;
+
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'mi-criatura',
+            personajeId: 'mi-personaje',
+            nivel: 3,
+            experiencia: 10, // Desfasada previamente, base de nivel 3 es 374
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40, nombre: 'Lobo' },
+          }),
+          update: async ({ data }: any) => {
+            datosActualizados = data;
+            return { id: 'mi-criatura', ...data };
+          },
+        },
+        personaje: {
+          update: async ({ data }: any) => {
+            monedasActualizadas = data;
+            return { id: 'mi-personaje', monedas: 150 };
+          },
+        },
+        historial: {
+          create: async () => ({ id: 'his-1' }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      const resultado = await servicio.aplicarRecompensaVictoria(
+        mockPrisma,
+        'mi-personaje',
+        'mi-criatura',
+        {
+          nivel: 2,
+          especie: {
+            challengeRating: 0.5,
+            nombre: 'Lobo',
+            hpBase: 30,
+            ataqueBase: 40,
+            defensaBase: 40,
+            velocidadBase: 40,
+          },
+        },
+      );
+
+      // 374 (base nivel 3) + 10 (previa) + 46 (xpGanada para rival nv 2 con cr 0.5) = 430
+      assert.strictEqual(datosActualizados.experiencia >= 374, true);
+      assert.strictEqual(resultado.porcentajeXp > 0, true);
     });
   });
 });

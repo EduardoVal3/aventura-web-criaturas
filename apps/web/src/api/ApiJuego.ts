@@ -404,9 +404,24 @@ export interface RespuestaUsarItem {
   cantidadRestante: number;
 }
 
+export interface DetalleCriaturaRestaurada {
+  criaturaId: string;
+  nombre: string;
+  hpPrevio: number;
+  hpNuevo: number;
+  hpMaximo: number;
+  hpRestaurado: number;
+  fueRevivida: boolean;
+}
+
 export interface RespuestaRestaurar {
   mensaje: string;
   criaturasRestauradas: number;
+  criaturasCuradas?: number;
+  criaturasRevividas?: number;
+  hpTotalRestaurado?: number;
+  ubicacionNombre?: string;
+  detalles?: DetalleCriaturaRestaurada[];
 }
 
 export interface ZonaProgreso {

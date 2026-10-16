@@ -40,6 +40,8 @@ import {
   type UbicacionActual,
 } from "./ApiJuego";
 
+export type { DetalleCriaturaRestaurada } from "./ApiJuego";
+
 let tokenActual: string | null = null;
 
 async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {

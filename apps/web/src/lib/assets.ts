@@ -183,6 +183,18 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.26);
+    } else if (nombre === "santuario" || nombre === "bendicion") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.09);
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.18);
+      osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.27);
+      ganancia.gain.setValueAtTime(Math.min(0.25, volumen * 0.25), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.42);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.42);
     }
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.

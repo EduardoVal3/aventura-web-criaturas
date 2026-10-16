@@ -174,6 +174,25 @@ Estos cinco invariantes actúan como contratos inquebrantables de la lógica del
 | --- | --- | --- | --- |
 | **INV-01** | Suma de pesos positiva | $\sum_{i=1}^{k} \text{peso}_i > 0$ para toda tabla de aparición o eventos de zona. Ninguna tabla puede estar vacía o tener suma cero. | Fase 5 (Seed) y Fase 6 |
 | **INV-02** | Rango de captura acotado | $0.05 \le \text{probFinal} \le 0.95$. Toda tirada de captura retiene un riesgo mínimo ($5\,\%$) y una oportunidad mínima ($5\,\%$). | Fase 7 (Combate) |
-| **INV-03** | Rango de puntos de golpe | $0 \le \text{hpActual} \le \text{hpMaximo}$. Ningún cálculo de daño permite HP negativo ni curación por encima del máximo. | Fase 7 (Combate/Curación) |
+| **INV-03** | Rango de puntos de golpe | $0 \le \text{hpActual} \le \text{hpMaximo}$. Ningún cálculo de daño permite HP negativo ni curación por encima del máximo. En curación fuera de combate (`POST /api/inventario/usar`), si $\text{hpActual} \ge \text{hpMaximo}$ la acción es rechazada con `400 SALUD_COMPLETA` sin consumir el objeto ni descontar stock. | Fase 7 (Combate/Curación) y Fase 10g |
 | **INV-04** | Daño mínimo no nulo | $\text{danoFinal} \ge 1$. Todo ataque ejecutado que impacte inflige al menos 1 punto de daño, sin importar la defensa del rival. | Fase 7 (Combate) |
 | **INV-05** | Progresión monótona creciente | $\text{xpRequerida}(n+1) > \text{xpRequerida}(n)$ para todo $n \ge 1$. Cada nivel exige estrictamente más XP acumulada que el anterior. | Fase 7 (Progresión) |
+
+---
+
+### 2.7 Catálogo canónico de consumibles y reglas de inventario (`INV-03`, `S-4`, `S-6`)
+
+Los objetos de curación y talismanes de captura poseen precios y efectos canónicos normalizados en PostgreSQL (`prisma/seed.ts`).
+
+| Código | Nombre | Tipo | Precio de Compra | Efecto Canónico | Regla Operativa |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `pocion-menor` | Poción de Curación Menor | `CURACION` | 30 oro | Restaura +20 HP | Acotada a $\min(\text{hpMaximo}, \text{hpActual} + 20)$. Rechazada si HP está lleno. |
+| `pocion-mayor` | Poción de Curación Mayor | `CURACION` | 80 oro | Restaura +50 HP | Acotada a $\min(\text{hpMaximo}, \text{hpActual} + 50)$. Rechazada si HP está lleno. |
+| `talisman-basico` | Talismán Básico de Captura | `CAPTURA` | 50 oro | Bono Captura Nv.1 (x1.0) | Solo aplicable durante combate activo. Rechazado con `OBJETO_NO_CONSUMIBLE` en inventario. |
+| `talisman-avanzado`| Talismán Avanzado de Captura| `CAPTURA` | 150 oro | Bono Captura Nv.2 (x1.5) | Solo aplicable durante combate activo. Rechazado con `OBJETO_NO_CONSUMIBLE` en inventario. |
+
+**Reglas de Capacidad e Invariante de Inventario:**
+- Capacidad estándar de bolsa: $C = 20$ ranuras distintas.
+- Lotes de compra rápida en bazar: $x1$, $x5$, $x10$ (acotados estrictamente a $[1, 99]$ en DTO).
+- Costo total calculado unilateralmente en servidor ($S\text{-6}$): $\text{costoTotal} = \text{precioCompra} \times \text{cantidad}$.
+- Invariante de saldo ($S\text{-4}$): $\text{saldoMonedas} \ge \text{costoTotal}$, validado bajo bloqueo de concurrencia pesimista (`FOR UPDATE`).

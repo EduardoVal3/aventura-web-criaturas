@@ -248,6 +248,152 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
         },
       );
     });
+
+    it('debe rechazar curación si la ubicación tiene el servicio pero no es una localidad segura (esSegura: false)', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            ubicacionActual: {
+              id: 'ZON-02',
+              esSegura: false,
+              servicios: ['CURACION'],
+            },
+          }),
+        },
+      };
+
+      const servicio = new CuracionService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.restaurarEquipo('usr-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof ForbiddenException, true);
+          assert.strictEqual(error.getResponse().codigo, 'SERVICIO_NO_DISPONIBLE');
+          return true;
+        },
+      );
+    });
+
+    it('debe restaurar atómicamente criaturas heridas y revivir criaturas caídas (HP=0) al 100% sin exceder hpMaximo (INV-03)', async () => {
+      const criaturasActualizadas: any[] = [];
+      let historialCreado: any = null;
+
+      const criaturasMock = [
+        {
+          id: 'cri-sana',
+          hpActual: 30,
+          hpMaximo: 30,
+          apodo: 'Lobo Alfa',
+          ordenEquipo: 1,
+          especie: { nombre: 'Lobo' },
+        },
+        {
+          id: 'cri-herida',
+          hpActual: 12,
+          hpMaximo: 30,
+          apodo: 'Águila Veloz',
+          ordenEquipo: 2,
+          especie: { nombre: 'Águila' },
+        },
+        {
+          id: 'cri-debilitada',
+          hpActual: 0,
+          hpMaximo: 35,
+          apodo: 'Oso Pardo',
+          ordenEquipo: 3,
+          especie: { nombre: 'Oso' },
+        },
+      ];
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-serena',
+            ubicacionActual: {
+              id: 'LOC-01',
+              nombre: 'Villa Serena',
+              esSegura: true,
+              servicios: ['CURACION'],
+            },
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            $queryRaw: async () => [{ id: 'pj-serena' }],
+            criatura: {
+              findMany: async () => criaturasMock,
+              update: async ({ where, data }: any) => {
+                criaturasActualizadas.push({ id: where.id, ...data });
+                return { id: where.id, ...data };
+              },
+            },
+            historial: {
+              create: async ({ data }: any) => {
+                historialCreado = data;
+                return { id: 'hist-1', ...data };
+              },
+            },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new CuracionService(prismaMock);
+      const resultado = await servicio.restaurarEquipo('usr-1');
+
+      // Validaciones cuantitativas globales
+      assert.strictEqual(resultado.criaturasRestauradas, 3);
+      assert.strictEqual(resultado.criaturasCuradas, 2);
+      assert.strictEqual(resultado.criaturasRevividas, 1);
+      assert.strictEqual(resultado.hpTotalRestaurado, 53); // (30 - 12) + (35 - 0) = 18 + 35 = 53
+      assert.strictEqual(resultado.ubicacionNombre, 'Villa Serena');
+
+      // Solo se actualizan cri-herida y cri-debilitada en base de datos
+      assert.strictEqual(criaturasActualizadas.length, 2);
+      assert.deepStrictEqual(criaturasActualizadas[0], { id: 'cri-herida', hpActual: 30 });
+      assert.deepStrictEqual(criaturasActualizadas[1], { id: 'cri-debilitada', hpActual: 35 });
+
+      // Verificación de detalles tácticos individuales acotados por INV-03
+      assert.strictEqual(resultado.detalles.length, 3);
+
+      assert.deepStrictEqual(resultado.detalles[0], {
+        criaturaId: 'cri-sana',
+        nombre: 'Lobo Alfa',
+        hpPrevio: 30,
+        hpNuevo: 30,
+        hpMaximo: 30,
+        hpRestaurado: 0,
+        fueRevivida: false,
+      });
+
+      assert.deepStrictEqual(resultado.detalles[1], {
+        criaturaId: 'cri-herida',
+        nombre: 'Águila Veloz',
+        hpPrevio: 12,
+        hpNuevo: 30,
+        hpMaximo: 30,
+        hpRestaurado: 18,
+        fueRevivida: false,
+      });
+
+      assert.deepStrictEqual(resultado.detalles[2], {
+        criaturaId: 'cri-debilitada',
+        nombre: 'Oso Pardo',
+        hpPrevio: 0,
+        hpNuevo: 35,
+        hpMaximo: 35,
+        hpRestaurado: 35,
+        fueRevivida: true,
+      });
+
+      // Verificación del historial transaccional
+      assert.strictEqual(historialCreado.tipo, 'CURACION');
+      assert.strictEqual(historialCreado.datosJson.criaturasCuradas, 2);
+      assert.strictEqual(historialCreado.datosJson.criaturasRevividas, 1);
+      assert.strictEqual(historialCreado.datosJson.hpTotalRestaurado, 53);
+    });
   });
 
   describe('Seguridad S-4: Control de saldo en tienda', () => {

@@ -746,17 +746,51 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/curacion/restaurar`
 - **Módulo:** `M-CUR`.
-- **Descripción:** Restaura por completo los puntos de golpe de todas las criaturas del equipo en un centro de curación autorizado.
+- **Descripción:** Restaura por completo los puntos de golpe de todas las criaturas del equipo en un centro o santuario de curación autorizado (`esSegura: true` y servicio `CURACION` o `CENTRO_CURACION`). Serializa la transacción mediante bloqueo pesimista `FOR UPDATE` por fila de personaje, revive a criaturas caídas (`hpActual = 0 -> hpMaximo`) bajo el invariante `INV-03`, actualiza en base de datos exclusivamente las criaturas con déficit de salud y registra un evento en el historial con el consolidado del ritual.
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "mensaje": "Todas las criaturas de tu equipo han sido completamente restauradas.",
-    "criaturasRestauradas": 3
+    "criaturasRestauradas": 3,
+    "criaturasCuradas": 2,
+    "criaturasRevividas": 1,
+    "hpTotalRestaurado": 53,
+    "ubicacionNombre": "Villa Serena",
+    "detalles": [
+      {
+        "criaturaId": "cri-301",
+        "nombre": "Lobo Alfa",
+        "hpPrevio": 30,
+        "hpNuevo": 30,
+        "hpMaximo": 30,
+        "hpRestaurado": 0,
+        "fueRevivida": false
+      },
+      {
+        "criaturaId": "cri-302",
+        "nombre": "Águila Veloz",
+        "hpPrevio": 12,
+        "hpNuevo": 30,
+        "hpMaximo": 30,
+        "hpRestaurado": 18,
+        "fueRevivida": false
+      },
+      {
+        "criaturaId": "cri-303",
+        "nombre": "Oso Pardo",
+        "hpPrevio": 0,
+        "hpNuevo": 35,
+        "hpMaximo": 35,
+        "hpRestaurado": 35,
+        "fueRevivida": true
+      }
+    ]
   }
   ```
 - **Errores posibles:**
-  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no cuenta con centro de curación).
+  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no es una localidad segura o no cuenta con servicio de curación autorizado).
+  - `404 PERSONAJE_NO_ENCONTRADO` (no se encontró el personaje activo del explorador).
 
 ---
 

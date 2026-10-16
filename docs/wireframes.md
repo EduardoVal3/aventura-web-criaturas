@@ -283,28 +283,43 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 ---
 
 ## 8. PantallaCuracion
-- **Módulos cubiertos:** `M-CUR` (Curación).
-- **Propósito:** Restaurar la vitalidad del equipo activo en centros de servicio.
+- **Módulos cubiertos:** `M-CUR` (Curación y Santuario).
+- **Propósito:** Restaurar la vitalidad del equipo activo y revivir compañeros caídos en centros de servicio seguros.
 
 ```text
 +-----------------------------------------------------------------------+
-| SANTUARIO DE RECUPERACIÓN - VILLA SERENA                              |
+| [img-paisaje-villa-serena .pixelated opacity-40]                      |
+| [SANTUARIO ANCESTRAL]                             [SERVICIO GRATUITO] |
+|                                                                       |
+|                       SANTUARIO DE CURACIÓN                           |
+| "Las aguas místicas del manantial sagrado en Villa Serena restauran   |
+| la vitalidad, alivian la fatiga y reviven a las criaturas caídas."    |
 +-----------------------------------------------------------------------+
-| Estado de tu Equipo:                                                  |
-| 1. Lobo Gris      Nv. 2 | HP Actual: 12/30 [====------] Herido        |
-| 2. Oso Negro      Nv. 2 | HP Actual: 0/33  [----------] Debilitado    |
-| 3. Pico de Hacha  Nv. 1 | HP Actual: 19/19 [==========] Saludable     |
+| TOTAL: 3/6 | PLENA SALUD: 1 | HERIDAS: 1 | CAÍDAS: 1 | DÉFICIT: +51 HP|
++-----------------------------------------------------------------------+
+| [RESTAURAR TODO EL EQUIPO]                     [Volver al Asentamiento|
+| (aria-busy / CANALIZANDO BENDICIÓN...)                                |
++-----------------------------------------------------------------------+
+| DESGLOSE TÁCTICO DEL EQUIPO:                                          |
 |                                                                       |
-| "Las aguas termales del santuario restauran la fuerza vital de tus    |
-| compañeros de viaje sin coste alguno."                                |
-|                                                                       |
-| [boton-sanar-equipo-completo]                 [boton-volver-santuario]|
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Lobo Alfa           [LÍDER] | | [img] Oso Pardo               | |
+| | Nv. 3 • Posición #1     [HERIDA]  | | Nv. 2 • Posición #2 [CAÍDA]   | |
+| | Vitalidad: 12/30 HP (40%)         | | Vitalidad: 0/35 HP (0%)       | |
+| | [====------]        (+18 HP ^)    | | [----------] (¡REVIVIDA!+35HP^| |
+| +-----------------------------------+ +-------------------------------+ |
+| +-----------------------------------+                                 |
+| | [img] Pico de Hacha               |                                 |
+| | Nv. 1 • Posición #3 [PLENA SALUD] |                                 |
+| | Vitalidad: 19/19 HP (100%)        |                                 |
+| | [==========]                      |                                 |
+| +-----------------------------------+                                 |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-sanar-equipo-completo`: Ejecuta `POST /api/curacion/restaurar`; restaura el HP de todas las criaturas activas a su `hpMaximo` y actualiza las barras de estado.
-  - `boton-volver-santuario`: Retorna a `PantallaHubUbicacion`.
+  - `RESTAURAR TODO EL EQUIPO`: Dispara `POST /api/curacion/restaurar`; previene doble clic con `aria-busy` y estado `CANALIZANDO BENDICIÓN...`, activa secuencia cinemática esmeralda (`anim-curacion`), despliega cifras flotantes `+XX HP` / `¡REVIVIDA! +XX HP` (`anim-curacion-flotante`) y reproduce fanfarria de 8-bit sintetizada en Web Audio (`santuario`).
+  - `Volver al Asentamiento`: Navegación directa con `useNavigate("/hub")` sin anidar controles interactivos.
 
 ---
 

@@ -430,6 +430,74 @@ Previa a la intervención de la Sub-Fase 10g, la gestión de objetos poseídos y
 - **Linter Web (`pnpm --filter web lint`):** 0 errores.
 - **Inspección Responsive y Anti-Overflow:** 0 overflow horizontal en resoluciones móviles de 320 px, 375 px y tablets de 768 px.
 
+---
+
+## 8. Sub-Fase 10h: Santuario de Curación (`PantallaCuracion.tsx`)
+
+### 8.1 Diagnóstico Inicial y Auditoría Impeccable
+Previa a la intervención de la Sub-Fase 10h, el módulo de restauración y la pantalla del Santuario de Curación presentaban 10 carencias críticas de lógica en servidor, arquitectura de datos y experiencia de usuario retro:
+1. **Condición de Carrera (TOCTOU) y Escrituras Redundantes en `CuracionService.restaurarEquipo`:** La transacción interactiva no serializaba la fila del personaje mediante bloqueo pesimista (`FOR UPDATE`), permitiendo que dobles clics concurrentes ejecutaran actualizaciones dobles y crearan entradas duplicadas en la tabla `historial`. Además, actualizaba indiscriminadamente a todas las criaturas aunque ya tuvieran salud completa.
+2. **Respuesta Empobrecida en `POST /api/curacion/restaurar`:** El endpoint devolvía únicamente `{ mensaje, criaturasRestauradas: criaturasEquipo.length }`, informando el tamaño del equipo y no las criaturas sanadas. Omitía métricas cruciales como `criaturasCuradas`, `criaturasRevividas`, `hpTotalRestaurado`, `ubicacionNombre` y el arreglo `detalles: [{ criaturaId, nombre, hpPrevio, hpNuevo, hpMaximo, hpRestaurado, fueRevivida }]`.
+3. **Ausencia de Orden Canónico e Inclusión de Especie:** `tx.criatura.findMany` omitía `orderBy: { ordenEquipo: 'asc' }` e `include: { especie: true }`, impidiendo conocer el nombre canónico de cada criatura restaurada en el servidor.
+4. **Documentación Swagger Incompleta:** `CuracionController` declaraba únicamente `@ApiResponse({ status: 200 })`, omitiendo las respuestas de error de negocio `403 SERVICIO_NO_DISPONIBLE` y `404 PERSONAJE_NO_ENCONTRADO`.
+5. **Ausencia de Atmósfera del Santuario y Desconocimiento de Ubicación Actual:** `PantallaCuracion.tsx` solo consultaba `api.obtenerEquipo()`, ignorando `api.obtenerUbicacionActual()`. No desplegaba el paisaje retro del manantial (`obtenerImagenZona` con fallback SVG y clase `.pixelated`), ni las insignias retro canónicas `SANTUARIO ANCESTRAL` y `SERVICIO GRATUITO`, ni advertía si el jugador se encontraba en una ruta hostil sin servicio.
+6. **Ausencia Total de Sprites Pixel-Art y Metadatos Tácticos:** Las tarjetas de criaturas eran cajas de texto plano que no invocaban `obtenerImagenCriatura(criatura.slug)` ni `manejarErrorImagen(e, "criatura")`. No exhibían nivel (`Nv. X`), apodo, porcentaje numérico de salud ni destacaban al Líder del Equipo (`orden === 1`).
+7. **Semáforo de Estado Incompleto:** La insignia alternaba únicamente entre "Saludable" y "Herida". Una criatura caída (`hpActual === 0`) se marcaba erróneamente como "Herida", sin diferenciar los 3 estados tácticos canónicos: `PLENA VITALIDAD`, `HERIDA` y `DEBILITADA / CAÍDA`.
+8. **Carencia de Secuencia Cinemática de Bendición y Cifras Flotantes:** Al pulsar restaurar, la salud conmutaba instantáneamente en seco sin animación. No se aplicaban las clases de micro-interacción `anim-curacion` ni las cifras flotantes `anim-curacion-flotante` (`+XX HP` / `¡REVIVIDA! +XX HP`).
+9. **Ausencia de Fanfarria Auditiva en Web Audio:** No se invocaba `reproducirSonido` y `sintetizarTonoRetro` en `assets.ts` carecía de una fanfarria solemne específica para la bendición grupal del santuario (`"santuario"` / `"bendicion"`).
+10. **Anti-Patrón `<Link><Button/></Link>`, Tipografía Genérica y Falta de `aria-busy`:** Enlaces con botones anidados dentro de etiquetas `<a>` (HTML inválido), fuentes sans en títulos y ausencia de `aria-busy={restaurando}` con texto retro en mayúsculas `CANALIZANDO BENDICIÓN...`.
+
+---
+
+### 8.2 Mejoras Implementadas
+
+#### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
+- **Cabecera Inmersiva con Paisaje del Manantial:** Integración de banner panorámico ortogonal que resuelve dinámicamente la imagen de la localidad (`obtenerImagenZona`) con clase `.pixelated`, degradado de atmósfera sagrada y fallback SVG sin fisuras.
+- **Insignias Temáticas 8-Bit:** Inclusión de distintivos superiores retro con tipografía `Press Start 2P`: `SANTUARIO ANCESTRAL` (icono `Sparkles`) y `SERVICIO GRATUITO` (icono `ShieldCheck`).
+- **Tipografía Bimodal Estricta:** Título principal del santuario, insignias y estados renderizados en `Press Start 2P` (`.retro`), combinados con `Geist Mono` para métricas numéricas y `Geist Sans` para narrativa inmersiva.
+- **Sprites Pixelados de 64x64 y Distinción del Líder:** Cada miembro del equipo cuenta con un marco pixel-art de 64x64 con `obtenerImagenCriatura`, `.pixelated` y atenuación en escala de grises (`grayscale`) si se encuentra debilitada. La primera posición (`orden === 1`) exhibe borde ámbar reforzado e insignia distintiva `LÍDER` con corona (`Crown`).
+- **Semáforo Táctico de 3 Niveles:**
+  - `PLENA VITALIDAD`: Borde y fondo esmeralda con icono `ShieldCheck` (`hpActual >= hpMaximo`).
+  - `HERIDA`: Borde y fondo ámbar con icono `HeartPulse` (`0 < hpActual < hpMaximo`).
+  - `DEBILITADA / CAÍDA`: Borde y fondo carmesí con icono `AlertCircle` (`hpActual <= 0`).
+
+#### B. Componentes Táctiles 8bitcn/ui y Hardening
+- **Barra de Resumen Táctico del Equipo:** Cuadrícula ortogonal de 5 columnas con métricas en tiempo real: `TOTAL EQUIPO`, `PLENA SALUD`, `HERIDAS`, `DEBILITADAS` y `DÉFICIT TOTAL` (`+{deficitTotalHp} HP`).
+- **Secuencia Cinemática de Bendición y Números Flotantes:**
+  - Al completar el ritual, las tarjetas de criaturas que recibieron restauración activan el resplandor esmeralda `anim-curacion`.
+  - En la esquina superior derecha se disparan cifras flotantes `anim-curacion-flotante` con contorno ortogonal negro de 2px (`+XX HP` o `¡REVIVIDA! +XX HP` si la criatura fue levantada desde 0 HP).
+- **Hardening contra Doble Clic:** Botón de acción con deshabilitación estricta durante la mutación, `aria-busy={restaurando}`, spinner pixelado y texto en mayúsculas `CANALIZANDO BENDICIÓN...`.
+- **Eliminación del Anti-Patrón `<Link><Button>` y Regla R1:** Navegación hacia el Hub mediante `useNavigate` en un botón nativo retro. Cero emojis unicode en toda la pantalla (inspeccionado en pruebas automatizadas), sustituidos por iconos SVG de Lucide (`Heart`, `Sparkles`, `ShieldCheck`, `ArrowLeft`, `AlertCircle`, `Crown`, `HeartPulse`).
+
+#### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
+- **Síntesis Web Audio para Santuario (`santuario` / `bendicion`):** Fanfarria solemne ascendente de 4 notas en onda triangular cristalina (`triangle`: 523.25 Hz -> 659.25 Hz -> 783.99 Hz -> 1046.50 Hz con duración de 0.42 s), libre de fugas de `AudioContext` gracias a `osc.onended = () => void ctx.close()`.
+- **Sonidos Complementarios:** Efecto `click` en pulsaciones y `error` ante fallas o bloqueos por localidad no autorizada.
+
+#### D. Reglas de Servidor, Seguridad y Restauración Atómica (`INV-03`)
+- **Bloqueo Pesimista por Fila de Personaje (`FOR UPDATE`):** `CuracionService.restaurarEquipo` ejecuta `SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE` en PostgreSQL, serializando invocaciones concurrentes y evitando duplicación de registros en `historial`.
+- **Validación Estricta de Localidad Segura y Servicio:** Rechazo inmediato con `403 SERVICIO_NO_DISPONIBLE` si la ubicación no es segura (`!esSegura`) o no cuenta con `CURACION` o `CENTRO_CURACION`.
+- **Resurrección y Cumplimiento de `INV-03`:** Todo el equipo activo se restablece al 100 % de su salud ($\text{hpActual} = \text{hpMaximo}$), levantando criaturas caídas desde 0 HP sin posibilidad matemática de sobrecuración. Solo se ejecutan sentencias de actualización en BD sobre criaturas con salud incompleta.
+- **Payload Enriquecido:** El endpoint retorna métricas consolidadas (`criaturasRestauradas`, `criaturasCuradas`, `criaturasRevividas`, `hpTotalRestaurado`, `ubicacionNombre`, `detalles`).
+
+---
+
+### 8.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-curacion.spec.ts`):** 8 pruebas unitarias exhaustivas validando:
+  1. Clasificación estricta de los 3 estados vitales y etiquetas en español.
+  2. Cálculo de deltas bajo `INV-03` y resurrección de criaturas caídas.
+  3. Contratos tipados de `RespuestaRestaurar` y `DetalleCriaturaRestaurada`.
+  4. Resolución de rutas WebP y placeholders para criaturas y zonas.
+  5. Síntesis de fanfarria de santuario en `assets.ts`.
+  6. Regla R1: 0 emojis unicode en `PantallaCuracion.tsx`.
+  7. Accesibilidad: ausencia del anti-patrón `<Link><Button>`.
+  8. Presencia de `aria-busy`, texto retro `CANALIZANDO BENDICIÓN...`, sprites y animaciones `anim-curacion`.
+- **Suite Total Web (`pnpm --filter web test`):** 46 de 46 pruebas aprobadas (100% éxito).
+- **Pruebas Backend y Reglas de Servidor (`pnpm --filter api test`):** 54 de 54 pruebas aprobadas (100% éxito), incluyendo validaciones de restauración atómica, resurrección, desglose de salud y rechazo en localidades no seguras en `apps/api/test/progreso-tienda.spec.ts`.
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores TypeScript en Vite, empaquetado exitoso en 2.19s.
+- **Linter Web (`pnpm --filter web lint`):** 0 errores.
+- **Inspección Responsive:** Ausencia total de scroll horizontal en resoluciones móviles de 320 px, 375 px y 768 px.
+
+
 
 
 

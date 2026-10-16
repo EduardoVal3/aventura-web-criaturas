@@ -20,3 +20,6 @@ docs/workflows/
 .DS_Store
 Thumbs.db
 
+# Knowledge graph de graphify
+graphify-out/
+

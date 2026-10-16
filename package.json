@@ -8,7 +8,10 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "dev": "docker compose up -d postgres && pnpm -r --parallel run dev",
-    "test": "pnpm --filter api test"
+    "test": "pnpm --filter api test",
+    "graphify": "py -m graphify extract . --code-only && py -m graphify export html && py -m graphify tree",
+    "graphify:update": "py -m graphify update .",
+    "graphify:mcp": "py -m graphify.serve graphify-out/graph.json"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

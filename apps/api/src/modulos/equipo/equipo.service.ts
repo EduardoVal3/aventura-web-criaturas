@@ -125,30 +125,57 @@ export class EquipoService {
     }
 
     const criaturaIds = paresOrden.map((p) => p.criaturaId);
-
-    const criaturasEnEquipo = await this.prisma.criatura.findMany({
-      where: {
-        id: { in: criaturaIds },
-        personajeId: personaje.id,
-        enEquipo: true,
-      },
-    });
-
-    if (criaturasEnEquipo.length !== criaturaIds.length) {
+    const setIds = new Set(criaturaIds);
+    if (setIds.size !== criaturaIds.length) {
       throw new BadRequestException({
-        codigo: 'CRIATURA_NO_ENCONTRADA',
-        mensaje: 'Una o más criaturas no pertenecen al equipo activo de tu personaje.',
+        codigo: 'ORDEN_INVALIDO',
+        mensaje: 'Hay IDs de criatura duplicados en la lista de orden.',
       });
     }
 
-    await this.prisma.$transaction(
-      paresOrden.map((p) =>
-        this.prisma.criatura.update({
+    await this.prisma.$transaction(async (tx) => {
+      // simplificacion: bloqueo pesimista por fila de personaje; serializa toda la gestión de equipo de un mismo jugador. Suficiente con un jugador por sesión; si crece la concurrencia, migrar a aislamiento Serializable con reintentos (P2034).
+      await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE`;
+
+      const criaturasEnEquipo = await tx.criatura.findMany({
+        where: {
+          personajeId: personaje.id,
+          enEquipo: true,
+        },
+      });
+
+      if (paresOrden.length !== criaturasEnEquipo.length) {
+        throw new BadRequestException({
+          codigo: 'ORDEN_INVALIDO',
+          mensaje: 'La lista de orden debe incluir a todas las criaturas del equipo activo.',
+        });
+      }
+
+      const idsEquipo = new Set(criaturasEnEquipo.map((c) => c.id));
+      const todasPertenecen = criaturaIds.every((id) => idsEquipo.has(id));
+      if (!todasPertenecen) {
+        throw new BadRequestException({
+          codigo: 'ORDEN_INVALIDO',
+          mensaje: 'Una o más criaturas no pertenecen al equipo activo de tu personaje.',
+        });
+      }
+
+      const ordenes = paresOrden.map((p) => p.orden).sort((a, b) => a - b);
+      const esPermutacionValida = ordenes.every((val, idx) => val === idx + 1);
+      if (!esPermutacionValida) {
+        throw new BadRequestException({
+          codigo: 'ORDEN_INVALIDO',
+          mensaje: `Los valores de orden deben ser consecutivos de 1 a ${criaturasEnEquipo.length} sin repetir.`,
+        });
+      }
+
+      for (const p of paresOrden) {
+        await tx.criatura.update({
           where: { id: p.criaturaId },
           data: { ordenEquipo: p.orden },
-        }),
-      ),
-    );
+        });
+      }
+    });
 
     return this.obtenerEquipo(usuarioId);
   }

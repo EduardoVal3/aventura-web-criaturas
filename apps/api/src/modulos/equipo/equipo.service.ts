@@ -10,6 +10,8 @@ import { MoverCriaturaEquipoDto } from './dto/mover-criatura-equipo.dto';
 import { ActualizarOrdenEquipoDto } from './dto/actualizar-orden-equipo.dto';
 import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.service';
 
+export const LIMITE_EQUIPO = 6;
+
 @Injectable()
 export class EquipoService {
   constructor(private readonly prisma: PrismaService) {}
@@ -33,7 +35,7 @@ export class EquipoService {
       },
       include: { especie: true },
       orderBy: { ordenEquipo: 'asc' },
-      take: 6,
+      take: LIMITE_EQUIPO,
     });
 
     return {
@@ -201,21 +203,89 @@ export class EquipoService {
       });
     }
 
-    const criatura = await this.prisma.criatura.findFirst({
-      where: {
-        id: dto.criaturaId,
-        personajeId: personaje.id,
-      },
-    });
-
-    if (!criatura) {
-      throw new NotFoundException({
-        codigo: 'CRIATURA_NO_ENCONTRADA',
-        mensaje: 'No se encontró la criatura especificada en tus posesiones.',
-      });
-    }
-
     return this.prisma.$transaction(async (tx) => {
+      // simplificacion: bloqueo pesimista por fila de personaje; serializa toda la gestión de equipo de un mismo jugador. Suficiente con un jugador por sesión; si crece la concurrencia, migrar a aislamiento Serializable con reintentos (P2034).
+      await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE`;
+
+      const criatura = await tx.criatura.findFirst({
+        where: {
+          id: dto.criaturaId,
+          personajeId: personaje.id,
+        },
+        include: { especie: true },
+      });
+
+      if (!criatura) {
+        throw new NotFoundException({
+          codigo: 'CRIATURA_NO_ENCONTRADA',
+          mensaje: 'No se encontró la criatura especificada en tus posesiones.',
+        });
+      }
+
+      // Intercambio atómico directo entre almacén y equipo activo
+      if (dto.haciaEquipo && dto.intercambiarConId) {
+        if (dto.intercambiarConId === dto.criaturaId) {
+          throw new BadRequestException({
+            codigo: 'DATOS_INVALIDOS',
+            mensaje: 'No puedes intercambiar una criatura consigo misma.',
+          });
+        }
+
+        if (criatura.enEquipo) {
+          throw new BadRequestException({
+            codigo: 'ACCION_NO_PERMITIDA',
+            mensaje: 'La criatura ya se encuentra en el equipo activo.',
+          });
+        }
+
+        const saliente = await tx.criatura.findFirst({
+          where: {
+            id: dto.intercambiarConId,
+            personajeId: personaje.id,
+            enEquipo: true,
+          },
+          include: { especie: true },
+        });
+
+        if (!saliente) {
+          throw new NotFoundException({
+            codigo: 'CRIATURA_NO_ENCONTRADA',
+            mensaje: 'No se encontró la criatura del equipo a intercambiar.',
+          });
+        }
+
+        const ordenSaliente = saliente.ordenEquipo ?? 1;
+
+        await tx.criatura.update({
+          where: { id: saliente.id },
+          data: {
+            enEquipo: false,
+            ordenEquipo: null,
+          },
+        });
+
+        await tx.criatura.update({
+          where: { id: criatura.id },
+          data: {
+            enEquipo: true,
+            ordenEquipo: ordenSaliente,
+          },
+        });
+
+        const totalFinalEquipo = await tx.criatura.count({
+          where: { personajeId: personaje.id, enEquipo: true },
+        });
+        const totalFinalAlmacen = await tx.criatura.count({
+          where: { personajeId: personaje.id, enEquipo: false },
+        });
+
+        return {
+          mensaje: `Intercambio completado: ${criatura.especie.nombre} ocupa el puesto de ${saliente.especie.nombre}.`,
+          totalEnEquipo: totalFinalEquipo,
+          totalEnAlmacen: totalFinalAlmacen,
+        };
+      }
+
       const totalEnEquipo = await tx.criatura.count({
         where: {
           personajeId: personaje.id,
@@ -237,10 +307,10 @@ export class EquipoService {
         }
 
         // Regla A-6: Invariable máximo de 6 criaturas en equipo
-        if (totalEnEquipo >= 6) {
+        if (totalEnEquipo >= LIMITE_EQUIPO) {
           throw new ConflictException({
             codigo: 'EQUIPO_COMPLETO',
-            mensaje: 'El equipo ya cuenta con el límite máximo de 6 criaturas.',
+            mensaje: `El equipo ya cuenta con el límite máximo de ${LIMITE_EQUIPO} criaturas.`,
           });
         }
 

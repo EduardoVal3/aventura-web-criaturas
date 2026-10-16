@@ -12,6 +12,9 @@ import {
   Scale,
   Sparkles,
   Eye,
+  RotateCcw,
+  X,
+  Filter,
 } from "lucide-react";
 
 import {
@@ -63,6 +66,15 @@ import {
   filtrarEspeciesCatalogo,
 } from "@/lib/catalogo-historial";
 
+const ARQUETIPOS_FILTRO = [
+  { id: "TODOS", etiqueta: "TODOS", icono: BookOpen },
+  { id: "ATACANTE", etiqueta: "ATACANTE", icono: Swords },
+  { id: "TANQUE", etiqueta: "TANQUE", icono: Shield },
+  { id: "VELOZ", etiqueta: "VELOZ", icono: Zap },
+  { id: "EQUILIBRADO", etiqueta: "EQUILIBRADO", icono: Scale },
+  { id: "ESPECIALES", etiqueta: "ESPECIALES", icono: Sparkles },
+] as const;
+
 export function PantallaCatalogo() {
   const navigate = useNavigate();
   const [especies, setEspecies] = useState<EspecieCatalogo[]>([]);
@@ -113,6 +125,8 @@ export function PantallaCatalogo() {
     const tipos = new Set(especies.map((e) => e.tipo)).size;
     return { especiales, tipos };
   }, [especies]);
+
+  const hayFiltrosActivos = busqueda.trim() !== "" || tipoFiltro !== "todos" || arquetipoFiltro !== "TODOS";
 
   const abrirInspeccion = (especie: EspecieCatalogo) => {
     reproducirSonido("seleccionar");
@@ -205,24 +219,51 @@ export function PantallaCatalogo() {
       </div>
 
       {/* Panel de Control: Buscador y Filtros Interactivos */}
-      <div className="p-3 bg-bastion border-2 border-border/80 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="p-3 sm:p-4 bg-bastion border-2 border-border/80 space-y-3">
+        {/* Fila 1: Buscador y Selector de Tipo */}
+        <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
           {/* Buscador Interactivo */}
-          <div className="relative sm:col-span-2">
-            <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+              aria-hidden="true"
+            />
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar especie por nombre o rasgo..."
               aria-label="Buscar especie"
-              className="pl-8 text-xs rounded-none bg-background"
+              font="normal"
+              className="pl-9 pr-8 h-10 w-full rounded-none bg-background border-2 border-border text-xs text-foreground placeholder:text-muted-foreground font-sans focus:outline-none focus:border-primary"
             />
+            {busqueda.trim() !== "" && (
+              <button
+                type="button"
+                aria-label="Borrar búsqueda"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-colors"
+                onClick={() => {
+                  reproducirSonido("click");
+                  setBusqueda("");
+                }}
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            )}
           </div>
 
           {/* Selector de los 6 tipos biológicos en español */}
-          <div>
-            <Select value={tipoFiltro} onValueChange={(val) => { reproducirSonido("click"); setTipoFiltro(val); }}>
-              <SelectTrigger className="text-xs h-9 rounded-none bg-background">
+          <div className="w-full sm:w-56 shrink-0">
+            <Select
+              value={tipoFiltro}
+              onValueChange={(val) => {
+                reproducirSonido("click");
+                setTipoFiltro(val);
+              }}
+            >
+              <SelectTrigger
+                font="normal"
+                className="text-xs h-10 rounded-none bg-background border-2 border-border px-3 font-sans w-full"
+              >
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
               <SelectContent className="rounded-none">
@@ -238,25 +279,54 @@ export function PantallaCatalogo() {
           </div>
         </div>
 
-        {/* Botones rápidos de filtro por Arquetipo / Rareza */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-border/40 text-[11px]">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase mr-1">
-            Arquetipo:
-          </span>
-          {(["TODOS", "ATACANTE", "TANQUE", "VELOZ", "EQUILIBRADO", "ESPECIALES"] as const).map((arq) => (
+        {/* Fila 2: Botones rápidos de filtro por Arquetipo y Acción de Limpiar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-mono font-semibold text-muted-foreground uppercase mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3" aria-hidden="true" />
+              Arquetipo:
+            </span>
+            {ARQUETIPOS_FILTRO.map((item) => {
+              const Icono = item.icono;
+              const activo = arquetipoFiltro === item.id;
+              return (
+                <Button
+                  key={item.id}
+                  size="sm"
+                  variant={activo ? "default" : "outline"}
+                  className={`text-[11px] h-8 px-2.5 rounded-none font-mono flex items-center gap-1.5 transition-colors ${
+                    activo
+                      ? "bg-primary text-primary-foreground border-primary font-bold shadow-[2px_2px_0_0_#000]"
+                      : "bg-background text-muted-foreground border-border hover:text-foreground hover:bg-muted/40"
+                  }`}
+                  onClick={() => {
+                    reproducirSonido("click");
+                    setArquetipoFiltro(item.id);
+                  }}
+                >
+                  <Icono className="w-3 h-3" aria-hidden="true" />
+                  <span>{item.etiqueta}</span>
+                </Button>
+              );
+            })}
+          </div>
+
+          {hayFiltrosActivos && (
             <Button
-              key={arq}
+              variant="ghost"
               size="sm"
-              variant={arquetipoFiltro === arq ? "default" : "outline"}
-              className="text-[10px] h-7 px-2.5 rounded-none"
+              className="h-8 text-[11px] text-muted-foreground hover:text-foreground rounded-none flex items-center gap-1 font-mono hover:bg-muted/30"
               onClick={() => {
                 reproducirSonido("click");
-                setArquetipoFiltro(arq);
+                setTipoFiltro("todos");
+                setArquetipoFiltro("TODOS");
+                setBusqueda("");
               }}
             >
-              {arq}
+              <RotateCcw className="w-3 h-3" aria-hidden="true" />
+              <span>Limpiar filtros</span>
             </Button>
-          ))}
+          )}
         </div>
       </div>
 
@@ -264,20 +334,20 @@ export function PantallaCatalogo() {
       {cargando ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 w-full rounded-none" />
+            <Skeleton key={i} className="h-72 w-full rounded-none" />
           ))}
         </div>
       ) : especiesFiltradas.length === 0 ? (
-        <Card className="text-center p-8 bg-bastion border-2 rounded-none">
-          <CardTitle className="text-base text-muted-foreground mb-2">
-            No se encontraron criaturas con los filtros seleccionados
+        <Card className="text-center p-8 bg-bastion border-2 rounded-none space-y-3">
+          <CardTitle className="text-base text-muted-foreground retro">
+            No se encontraron criaturas
           </CardTitle>
-          <p className="text-xs text-muted-foreground mb-4">
-            Prueba ajustando el término de búsqueda, el selector de tipo o el arquetipo.
+          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+            No hay ninguna especie en el compendio que coincida con los criterios de búsqueda, tipo biológico o arquetipo seleccionados.
           </p>
           <Button
             size="sm"
-            className="rounded-none"
+            className="rounded-none font-mono text-xs"
             onClick={() => {
               reproducirSonido("click");
               setTipoFiltro("todos");
@@ -285,6 +355,7 @@ export function PantallaCatalogo() {
               setBusqueda("");
             }}
           >
+            <RotateCcw className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
             Restablecer todos los filtros
           </Button>
         </Card>
@@ -297,53 +368,61 @@ export function PantallaCatalogo() {
             return (
               <Card
                 key={especie.slug}
-                className={`border-2 rounded-none bg-bastion flex flex-col justify-between transition-colors ${
-                  especie.esEspecial ? "border-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.2)]" : "border-border"
+                className={`border-2 rounded-none bg-bastion flex flex-col justify-between transition-all duration-200 hover:border-primary/80 ${
+                  especie.esEspecial
+                    ? "border-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+                    : "border-border"
                 }`}
               >
-                <CardHeader className="p-3 pb-2">
-                  <div className="flex items-start gap-3">
-                    {/* Marco de Sprite Pixel-Art */}
-                    <div className="bg-abismo/90 border-2 border-border p-1.5 rounded-none shrink-0 w-[72px] h-[72px] flex items-center justify-center">
-                      <img
-                        src={obtenerImagenCriatura(especie.slug)}
-                        alt={especie.nombre}
-                        onError={(e) => manejarErrorImagen(e, "criatura")}
-                        className="pixelated h-14 w-14 object-contain"
-                      />
-                    </div>
-
+                {/* Cabecera de la Tarjeta */}
+                <CardHeader className="p-3 pb-2 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <CardTitle className="text-sm font-bold text-foreground truncate retro">
-                          {especie.nombre}
-                        </CardTitle>
-                        {especie.esEspecial && (
-                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/70 text-[9px] px-1 py-0 flex items-center gap-0.5">
-                            <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
-                            ESPECIAL
-                          </Badge>
-                        )}
-                      </div>
-
+                      <CardTitle className="text-sm font-bold text-foreground truncate retro tracking-wide">
+                        {especie.nombre}
+                      </CardTitle>
                       <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
                         {especie.keyExterna || `srd-2024_${especie.slug}`}
                       </p>
-
-                      <div className="flex items-center gap-1 flex-wrap mt-1.5">
-                        <Badge variant="secondary" className="text-[9px] uppercase px-1.5 py-0">
-                          {tipoEspanol}
-                        </Badge>
-                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 flex items-center gap-1">
-                          {renderIconoArquetipo(arquetipo)}
-                          <span>{arquetipo}</span>
-                        </Badge>
-                      </div>
                     </div>
+
+                    {especie.esEspecial && (
+                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none shrink-0 flex items-center gap-1 font-mono">
+                        <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
+                        <span>ESPECIAL</span>
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Badges de Tipo y Arquetipo */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge variant="secondary" className="text-[10px] uppercase px-1.5 py-0 rounded-none font-mono">
+                      {tipoEspanol}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-none flex items-center gap-1 font-mono">
+                      {renderIconoArquetipo(arquetipo)}
+                      <span>{arquetipo}</span>
+                    </Badge>
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-3 pt-1 space-y-2.5">
+                {/* Vitrina Central de la Criatura con Sprite Pixel-Art */}
+                <div className="relative w-full h-36 sm:h-40 bg-abismo/90 border-y-2 border-border/70 flex items-center justify-center p-3 overflow-hidden group">
+                  <div
+                    className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <img
+                    src={obtenerImagenCriatura(especie.slug)}
+                    alt={`Sprite de ${especie.nombre}`}
+                    onError={(e) => manejarErrorImagen(e, "criatura")}
+                    className="pixelated h-28 w-28 sm:h-32 sm:w-32 object-contain transition-transform duration-200 group-hover:scale-110 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Contenido: Atributos y Acciones */}
+                <CardContent className="p-3 pt-2.5 space-y-2.5">
                   {/* Resumen de Atributos Base */}
                   <div className="grid grid-cols-4 gap-1 p-1.5 bg-background border border-border/60 text-center font-mono text-[11px]">
                     <div>
@@ -373,7 +452,7 @@ export function PantallaCatalogo() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full text-xs rounded-none flex items-center justify-center gap-1.5"
+                    className="w-full text-xs rounded-none flex items-center justify-center gap-1.5 h-8 font-mono hover:bg-primary hover:text-primary-foreground transition-colors"
                     onClick={() => abrirInspeccion(especie)}
                   >
                     <Eye className="w-3.5 h-3.5" aria-hidden="true" />
@@ -388,55 +467,62 @@ export function PantallaCatalogo() {
 
       {/* Modal Sellado de Inspección Táctica Detallada */}
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none border-2 border-primary bg-bastion p-4">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-none border-2 border-primary bg-bastion p-4">
           {especieSeleccionada && (
             <div className="space-y-4">
-              <DialogHeader>
-                <div className="flex items-start gap-3">
-                  <div className="bg-abismo/90 border-2 border-border p-1.5 rounded-none shrink-0 w-20 h-20 flex items-center justify-center">
-                    <img
-                      src={obtenerImagenCriatura(especieSeleccionada.slug)}
-                      alt={especieSeleccionada.nombre}
-                      onError={(e) => manejarErrorImagen(e, "criatura")}
-                      className="pixelated h-16 w-16 object-contain"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <DialogTitle className="text-sm sm:text-base font-bold text-primary tracking-wide retro">
-                      {especieSeleccionada.nombre}
-                    </DialogTitle>
-                    <DialogDescription className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
-                      {especieSeleccionada.keyExterna || `srd-2024_${especieSeleccionada.slug}`}
-                    </DialogDescription>
-                    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                      <Badge variant="secondary" className="text-[9px] uppercase">
-                        {TRADUCCION_TIPOS_ESPECIE[especieSeleccionada.tipo.toLowerCase()] || especieSeleccionada.tipo}
-                      </Badge>
-                      <Badge variant="outline" className="text-[9px] flex items-center gap-1">
-                        {renderIconoArquetipo(calcularArquetipoCriatura(especieSeleccionada))}
-                        <span>{calcularArquetipoCriatura(especieSeleccionada)}</span>
-                      </Badge>
-                      {especieSeleccionada.esEspecial && (
-                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/80 text-[9px] flex items-center gap-0.5">
-                          <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
-                          ESPECIAL
-                        </Badge>
-                      )}
-                    </div>
+              <DialogHeader className="space-y-2">
+                {/* Vitrina Ampliada en Modal */}
+                <div className="relative w-full h-36 bg-abismo/95 border-2 border-border/80 flex items-center justify-center p-3 overflow-hidden">
+                  <div
+                    className="absolute inset-0 opacity-15 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  <img
+                    src={obtenerImagenCriatura(especieSeleccionada.slug)}
+                    alt={especieSeleccionada.nombre}
+                    onError={(e) => manejarErrorImagen(e, "criatura")}
+                    className="pixelated h-28 w-28 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]"
+                  />
+                  {especieSeleccionada.esEspecial && (
+                    <Badge className="absolute top-2 right-2 bg-amber-500/20 text-amber-300 border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none flex items-center gap-1 font-mono">
+                      <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span>ESPECIAL</span>
+                    </Badge>
+                  )}
+                </div>
+
+                <div>
+                  <DialogTitle className="text-sm sm:text-base font-bold text-primary tracking-wide retro">
+                    {especieSeleccionada.nombre}
+                  </DialogTitle>
+                  <DialogDescription className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+                    {especieSeleccionada.keyExterna || `srd-2024_${especieSeleccionada.slug}`}
+                  </DialogDescription>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                    <Badge variant="secondary" className="text-[9px] uppercase rounded-none font-mono">
+                      {TRADUCCION_TIPOS_ESPECIE[especieSeleccionada.tipo.toLowerCase()] || especieSeleccionada.tipo}
+                    </Badge>
+                    <Badge variant="outline" className="text-[9px] rounded-none flex items-center gap-1 font-mono">
+                      {renderIconoArquetipo(calcularArquetipoCriatura(especieSeleccionada))}
+                      <span>{calcularArquetipoCriatura(especieSeleccionada)}</span>
+                    </Badge>
+                    <Badge variant="outline" className="text-[9px] rounded-none font-mono text-muted-foreground">
+                      CR {especieSeleccionada.challengeRating}
+                    </Badge>
                   </div>
                 </div>
               </DialogHeader>
 
               {/* Lore Biológico */}
               {especieSeleccionada.descripcion && (
-                <div className="p-2.5 bg-background border border-border/70 text-xs leading-relaxed text-muted-foreground">
+                <div className="p-2.5 bg-background border border-border/70 text-xs leading-relaxed text-muted-foreground font-sans">
                   {especieSeleccionada.descripcion}
                 </div>
               )}
 
               {/* Atributos Base con Barras Comparativas sobre 100 */}
               <div className="p-3 bg-background border border-border/70 space-y-2">
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-primary uppercase tracking-wider block font-mono">
                   Atributos Base (Escala 100)
                 </span>
                 <div className="space-y-1.5 text-xs">
@@ -478,7 +564,7 @@ export function PantallaCatalogo() {
 
               {/* Lista de Movimientos Conocidos */}
               <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-mono">
                   Movimientos Conocidos
                 </span>
                 <div className="space-y-1">
@@ -488,7 +574,7 @@ export function PantallaCatalogo() {
                       className="p-2 bg-background border border-border/60 text-xs flex items-center justify-between"
                     >
                       <div>
-                        <span className="font-semibold text-foreground block">{mov.nombre}</span>
+                        <span className="font-semibold text-foreground block font-sans">{mov.nombre}</span>
                         <span className="text-[10px] text-muted-foreground font-mono">
                           {mov.tipoAccion || "Ataque melé"} · {mov.nombreOriginal}
                         </span>
@@ -505,7 +591,7 @@ export function PantallaCatalogo() {
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs rounded-none"
+                className="w-full text-xs rounded-none font-mono"
                 onClick={() => setModalAbierto(false)}
               >
                 Cerrar Ficha Táctica

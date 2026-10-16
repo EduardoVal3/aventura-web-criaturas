@@ -77,6 +77,7 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
     if (!ventanaAudio) return;
     const ctx = new ventanaAudio();
     const osc = ctx.createOscillator();
+    osc.onended = () => void ctx.close();
     const ganancia = ctx.createGain();
     osc.type = "square";
     ganancia.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);

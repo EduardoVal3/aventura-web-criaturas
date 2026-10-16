@@ -292,24 +292,39 @@ export interface CriaturaEquipo {
 
 export interface RespuestaEquipo {
   criaturas: CriaturaEquipo[];
+  limiteEquipo: number;
+  enLocalidadSegura: boolean;
 }
 
 export interface CriaturaAlmacen {
   criaturaId: string;
   slug: string;
   nombre: string;
+  apodo?: string | null;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  ataque: number;
+  defensa: number;
+  velocidad: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  orden?: number | null;
 }
 
 export interface RespuestaAlmacen {
   criaturas: CriaturaAlmacen[];
+  limiteEquipo: number;
+  enLocalidadSegura: boolean;
+  totalEnEquipo: number;
 }
 
 export interface PeticionTransferirCriatura {
   criaturaId: string;
   haciaEquipo: boolean;
+  intercambiarConId?: string;
 }
 
 export interface RespuestaTransferirCriatura {
@@ -446,5 +461,8 @@ export interface ApiJuego {
   obtenerEspecies(tipo?: string): Promise<RespuestaEspecies>;
   obtenerEspecie(slug: string): Promise<EspecieDetalle>;
   obtenerHistorial(): Promise<RespuestaHistorial>;
-  actualizarOrdenEquipo(peticion: { criaturaIds: string[] }): Promise<{ mensaje: string }>;
+  actualizarOrdenEquipo(peticion: {
+    criaturaIds?: string[];
+    orden?: { criaturaId: string; orden: number }[];
+  }): Promise<RespuestaEquipo>;
 }

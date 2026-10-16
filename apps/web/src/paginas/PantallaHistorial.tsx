@@ -31,113 +31,16 @@ import {
 } from "@/api";
 import { reproducirSonido } from "@/lib/assets";
 
-/**
- * Resuelve la categoría canónica de un evento del historial.
- */
-export function resolverCategoriaEvento(evento: EventoHistorial): CategoriaHistorial {
-  if (evento.categoria) {
-    return evento.categoria;
-  }
-
-  const tipoUpper = (evento.tipo || "").toUpperCase().trim();
-
-  if (tipoUpper === "CAPTURA") {
-    return "CAPTURA";
-  }
-  if (["COMERCIO", "TIENDA", "COMPRA"].includes(tipoUpper)) {
-    return "TIENDA";
-  }
-  if (["CURACION", "SANTUARIO"].includes(tipoUpper)) {
-    return "CURACION";
-  }
-  if (
-    ["COMBATE", "VICTORIA_COMBATE", "DERROTA_COMBATE", "HUIDA", "PROGRESO"].includes(tipoUpper)
-  ) {
-    return "COMBATE";
-  }
-  return "EXPLORACION";
-}
-
-/**
- * Formatea una marca de tiempo ISO en componentes amigables de fecha y hora.
- */
-export function formatearFechaAmigable(marcaTiempo: string): {
-  hora: string;
-  fecha: string;
-  textoCompleto: string;
-} {
-  try {
-    const d = new Date(marcaTiempo);
-    if (isNaN(d.getTime())) {
-      return {
-        hora: "--:--",
-        fecha: marcaTiempo,
-        textoCompleto: marcaTiempo,
-      };
-    }
-    const dia = String(d.getDate()).padStart(2, "0");
-    const mes = String(d.getMonth() + 1).padStart(2, "0");
-    const anio = d.getFullYear();
-    const hora = String(d.getHours()).padStart(2, "0");
-    const min = String(d.getMinutes()).padStart(2, "0");
-
-    const horaStr = `${hora}:${min}`;
-    const fechaStr = `${dia}/${mes}/${anio}`;
-    return {
-      hora: horaStr,
-      fecha: fechaStr,
-      textoCompleto: `${fechaStr} · ${horaStr}`,
-    };
-  } catch {
-    return {
-      hora: "--:--",
-      fecha: marcaTiempo,
-      textoCompleto: marcaTiempo,
-    };
-  }
-}
-
-/**
- * Filtra los eventos de la bitácora por categoría canónica y texto en la descripción.
- */
-export function filtrarEventosHistorial(
-  eventos: EventoHistorial[],
-  categoriaActiva: string,
-  busqueda: string,
-): EventoHistorial[] {
-  const catUpper = (categoriaActiva || "TODOS").toUpperCase().trim();
-  const busquedaNorm = (busqueda || "")
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  return eventos.filter((ev) => {
-    if (catUpper !== "TODOS") {
-      const catEv = resolverCategoriaEvento(ev);
-      if (catEv !== catUpper) {
-        return false;
-      }
-    }
-
-    if (busquedaNorm) {
-      const desc = (ev.descripcion || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      const tipo = (ev.tipo || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-
-      if (!desc.includes(busquedaNorm) && !tipo.includes(busquedaNorm)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}
+export {
+  resolverCategoriaEvento,
+  formatearFechaAmigable,
+  filtrarEventosHistorial,
+} from "@/lib/catalogo-historial";
+import {
+  resolverCategoriaEvento,
+  formatearFechaAmigable,
+  filtrarEventosHistorial,
+} from "@/lib/catalogo-historial";
 
 export function PantallaHistorial() {
   const navigate = useNavigate();

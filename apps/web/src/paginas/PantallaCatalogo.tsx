@@ -51,118 +51,17 @@ import {
   reproducirSonido,
 } from "@/lib/assets";
 
-/**
- * Mapeo canónico en español de los 6 tipos biológicos del SRD 5.2 (Open5e).
- */
-export const TRADUCCION_TIPOS_ESPECIE: Record<string, string> = {
-  beast: "Bestia",
-  monstrosity: "Monstruosidad",
-  undead: "No-muerto",
-  elemental: "Elemental",
-  construct: "Autómata",
-  plant: "Planta",
-};
-
-/**
- * Determina el arquetipo táctico de una especie basándose en sus atributos o valor precalculado.
- */
-export function calcularArquetipoCriatura(especie: {
-  hpBase?: number;
-  ataqueBase?: number;
-  defensaBase?: number;
-  velocidadBase?: number;
-  arquetipo?: ArquetipoEspecie;
-}): ArquetipoEspecie {
-  if (especie.arquetipo) {
-    return especie.arquetipo;
-  }
-
-  const hp = especie.hpBase ?? 30;
-  const atq = especie.ataqueBase ?? 30;
-  const def = especie.defensaBase ?? 30;
-  const vel = especie.velocidadBase ?? 30;
-  const maximo = Math.max(hp, atq, def, vel);
-
-  if ((def >= 75 || hp >= 65) && (def === maximo || hp === maximo)) {
-    return "TANQUE";
-  }
-  if (atq >= 70 && atq >= def && atq >= vel) {
-    return "ATACANTE";
-  }
-  if (vel >= 70 && vel > atq) {
-    return "VELOZ";
-  }
-  return "EQUILIBRADO";
-}
-
-export interface CriteriosFiltroCatalogo {
-  tipo?: string;
-  arquetipo?: string;
-  busqueda?: string;
-}
-
-/**
- * Filtra en cliente de forma instantánea por tipo biológico, arquetipo/rareza y término de búsqueda.
- */
-export function filtrarEspeciesCatalogo(
-  especies: EspecieCatalogo[],
-  filtros: CriteriosFiltroCatalogo,
-): EspecieCatalogo[] {
-  const tipoFiltro = (filtros.tipo || "todos").toLowerCase().trim();
-  const arquetipoFiltro = (filtros.arquetipo || "todos").toUpperCase().trim();
-  const busquedaNormalizada = (filtros.busqueda || "")
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  return especies.filter((esp) => {
-    // Filtro por tipo biológico
-    if (tipoFiltro !== "todos" && esp.tipo.toLowerCase() !== tipoFiltro) {
-      return false;
-    }
-
-    // Filtro por arquetipo o rareza especial
-    if (arquetipoFiltro !== "TODOS") {
-      if (arquetipoFiltro === "ESPECIAL" || arquetipoFiltro === "ESPECIALES") {
-        if (!esp.esEspecial) return false;
-      } else {
-        const arq = esp.arquetipo || calcularArquetipoCriatura(esp);
-        if (arq !== arquetipoFiltro) return false;
-      }
-    }
-
-    // Filtro por término de búsqueda (nombre, slug, descripción o keyExterna)
-    if (busquedaNormalizada) {
-      const textoNombre = (esp.nombre || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      const textoSlug = (esp.slug || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      const textoDesc = (esp.descripcion || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-      const textoKey = (esp.keyExterna || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-
-      const coincide =
-        textoNombre.includes(busquedaNormalizada) ||
-        textoSlug.includes(busquedaNormalizada) ||
-        textoDesc.includes(busquedaNormalizada) ||
-        textoKey.includes(busquedaNormalizada);
-
-      if (!coincide) return false;
-    }
-
-    return true;
-  });
-}
+export {
+  TRADUCCION_TIPOS_ESPECIE,
+  calcularArquetipoCriatura,
+  type CriteriosFiltroCatalogo,
+  filtrarEspeciesCatalogo,
+} from "@/lib/catalogo-historial";
+import {
+  TRADUCCION_TIPOS_ESPECIE,
+  calcularArquetipoCriatura,
+  filtrarEspeciesCatalogo,
+} from "@/lib/catalogo-historial";
 
 export function PantallaCatalogo() {
   const navigate = useNavigate();

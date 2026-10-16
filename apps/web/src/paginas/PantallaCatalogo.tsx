@@ -15,6 +15,7 @@ import {
   RotateCcw,
   X,
   Filter,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -26,19 +27,10 @@ import {
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Skeleton } from "@/components/ui/8bit/skeleton";
-import { Input } from "@/components/ui/8bit/input";
 import { Progress } from "@/components/ui/8bit/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/8bit/select";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/8bit/dialog";
@@ -228,13 +220,13 @@ export function PantallaCatalogo() {
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
               aria-hidden="true"
             />
-            <Input
+            <input
+              type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar especie por nombre o rasgo..."
               aria-label="Buscar especie"
-              font="normal"
-              className="pl-9 pr-8 h-10 w-full rounded-none bg-background border-2 border-border text-xs text-foreground placeholder:text-muted-foreground font-sans focus:outline-none focus:border-primary"
+              className="w-full h-10 pl-9 pr-8 bg-background border-2 border-border text-xs text-foreground placeholder:text-muted-foreground font-sans focus:outline-none focus:border-primary rounded-none transition-colors"
             />
             {busqueda.trim() !== "" && (
               <button
@@ -252,35 +244,30 @@ export function PantallaCatalogo() {
           </div>
 
           {/* Selector de los 6 tipos biológicos en español */}
-          <div className="w-full sm:w-56 shrink-0">
-            <Select
+          <div className="w-full sm:w-56 shrink-0 relative">
+            <select
               value={tipoFiltro}
-              onValueChange={(val) => {
+              onChange={(e) => {
                 reproducirSonido("click");
-                setTipoFiltro(val);
+                setTipoFiltro(e.target.value);
               }}
+              aria-label="Filtrar por tipo biológico"
+              className="w-full h-10 px-3 pr-8 bg-background border-2 border-border text-xs text-foreground font-sans rounded-none focus:outline-none focus:border-primary cursor-pointer appearance-none"
             >
-              <SelectTrigger
-                font="normal"
-                className="text-xs h-10 rounded-none bg-background border-2 border-border px-3 font-sans w-full"
-              >
-                <SelectValue placeholder="Seleccionar tipo" />
-              </SelectTrigger>
-              <SelectContent className="rounded-none">
-                <SelectItem value="todos">Todos los tipos</SelectItem>
-                <SelectItem value="beast">Bestia</SelectItem>
-                <SelectItem value="monstrosity">Monstruosidad</SelectItem>
-                <SelectItem value="undead">No-muerto</SelectItem>
-                <SelectItem value="elemental">Elemental</SelectItem>
-                <SelectItem value="construct">Autómata</SelectItem>
-                <SelectItem value="plant">Planta</SelectItem>
-              </SelectContent>
-            </Select>
+              <option value="todos">Todos los tipos</option>
+              <option value="beast">Bestia</option>
+              <option value="monstrosity">Monstruosidad</option>
+              <option value="undead">No-muerto</option>
+              <option value="elemental">Elemental</option>
+              <option value="construct">Autómata</option>
+              <option value="plant">Planta</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
           </div>
         </div>
 
         {/* Fila 2: Botones rápidos de filtro por Arquetipo y Acción de Limpiar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-border/40">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[10px] font-mono font-semibold text-muted-foreground uppercase mr-1 flex items-center gap-1">
               <Filter className="w-3 h-3" aria-hidden="true" />
@@ -290,11 +277,10 @@ export function PantallaCatalogo() {
               const Icono = item.icono;
               const activo = arquetipoFiltro === item.id;
               return (
-                <Button
+                <button
+                  type="button"
                   key={item.id}
-                  size="sm"
-                  variant={activo ? "default" : "outline"}
-                  className={`text-[11px] h-8 px-2.5 rounded-none font-mono flex items-center gap-1.5 transition-colors ${
+                  className={`text-[11px] h-7 sm:h-8 px-2 sm:px-2.5 rounded-none font-mono flex items-center gap-1.5 border-2 transition-colors ${
                     activo
                       ? "bg-primary text-primary-foreground border-primary font-bold shadow-[2px_2px_0_0_#000]"
                       : "bg-background text-muted-foreground border-border hover:text-foreground hover:bg-muted/40"
@@ -306,16 +292,15 @@ export function PantallaCatalogo() {
                 >
                   <Icono className="w-3 h-3" aria-hidden="true" />
                   <span>{item.etiqueta}</span>
-                </Button>
+                </button>
               );
             })}
           </div>
 
           {hayFiltrosActivos && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-[11px] text-muted-foreground hover:text-foreground rounded-none flex items-center gap-1 font-mono hover:bg-muted/30"
+            <button
+              type="button"
+              className="h-7 sm:h-8 px-2.5 text-[11px] font-mono text-amber-300 hover:text-amber-200 border border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 rounded-none flex items-center gap-1.5 transition-colors self-end sm:self-auto shrink-0"
               onClick={() => {
                 reproducirSonido("click");
                 setTipoFiltro("todos");
@@ -325,7 +310,7 @@ export function PantallaCatalogo() {
             >
               <RotateCcw className="w-3 h-3" aria-hidden="true" />
               <span>Limpiar filtros</span>
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -342,7 +327,7 @@ export function PantallaCatalogo() {
           <CardTitle className="text-base text-muted-foreground retro">
             No se encontraron criaturas
           </CardTitle>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed font-sans">
             No hay ninguna especie en el compendio que coincida con los criterios de búsqueda, tipo biológico o arquetipo seleccionados.
           </p>
           <Button
@@ -375,34 +360,24 @@ export function PantallaCatalogo() {
                 }`}
               >
                 {/* Cabecera de la Tarjeta */}
-                <CardHeader className="p-3 pb-2 space-y-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <CardTitle className="text-sm font-bold text-foreground truncate retro tracking-wide">
-                        {especie.nombre}
-                      </CardTitle>
-                      <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-                        {especie.keyExterna || `srd-2024_${especie.slug}`}
-                      </p>
-                    </div>
+                <CardHeader className="p-3 pb-2 space-y-1">
+                  {/* Título de la Criatura a ancho completo: sin truncate forzado que corte nombres largos */}
+                  <CardTitle className="text-xs sm:text-[13px] font-bold text-foreground leading-snug retro tracking-tight break-words line-clamp-2 min-h-[2rem]">
+                    {especie.nombre}
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground font-mono truncate">
+                    {especie.keyExterna || `srd-2024_${especie.slug}`}
+                  </p>
 
-                    {especie.esEspecial && (
-                      <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none shrink-0 flex items-center gap-1 font-mono">
-                        <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
-                        <span>ESPECIAL</span>
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Badges de Tipo y Arquetipo */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Badge variant="secondary" className="text-[10px] uppercase px-1.5 py-0 rounded-none font-mono">
+                  {/* Badges de Tipo y Arquetipo limpios sin pseudo-bordes laterales desbordados */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase bg-secondary text-secondary-foreground border border-border rounded-none">
                       {tipoEspanol}
-                    </Badge>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-none flex items-center gap-1 font-mono">
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
                       {renderIconoArquetipo(arquetipo)}
                       <span>{arquetipo}</span>
-                    </Badge>
+                    </span>
                   </div>
                 </CardHeader>
 
@@ -412,6 +387,15 @@ export function PantallaCatalogo() {
                     className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
                     aria-hidden="true"
                   />
+
+                  {/* Badge ESPECIAL ubicado como sello flotante en la vitrina para nunca recortarse ni competir con el título */}
+                  {especie.esEspecial && (
+                    <span className="absolute top-2 right-2 z-10 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
+                      <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span>ESPECIAL</span>
+                    </span>
+                  )}
+
                   <img
                     src={obtenerImagenCriatura(especie.slug)}
                     alt={`Sprite de ${especie.nombre}`}
@@ -467,12 +451,36 @@ export function PantallaCatalogo() {
 
       {/* Modal Sellado de Inspección Táctica Detallada */}
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-none border-2 border-primary bg-bastion p-4">
+        <DialogContent
+          font="normal"
+          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden rounded-none border-2 border-primary bg-bastion p-0 flex flex-col"
+        >
           {especieSeleccionada && (
-            <div className="space-y-4">
-              <DialogHeader className="space-y-2">
+            <div className="flex flex-col max-h-[85vh] overflow-hidden">
+              {/* Cabecera del Modal con Título y Botón Cerrar */}
+              <div className="p-3 bg-bastion border-b-2 border-border/80 flex items-center justify-between gap-2 shrink-0">
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="text-xs sm:text-sm font-bold text-primary tracking-wide retro truncate">
+                    {especieSeleccionada.nombre}
+                  </DialogTitle>
+                  <DialogDescription className="text-[10px] text-muted-foreground font-mono truncate">
+                    {especieSeleccionada.keyExterna || `srd-2024_${especieSeleccionada.slug}`}
+                  </DialogDescription>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Cerrar ficha táctica"
+                  className="text-muted-foreground hover:text-foreground p-1 transition-colors border border-border/60 hover:bg-muted/40 rounded-none shrink-0"
+                  onClick={() => setModalAbierto(false)}
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              {/* Cuerpo del Modal con Scroll Interno Limpio */}
+              <div className="overflow-y-auto p-4 space-y-4 font-sans text-xs flex-1">
                 {/* Vitrina Ampliada en Modal */}
-                <div className="relative w-full h-36 bg-abismo/95 border-2 border-border/80 flex items-center justify-center p-3 overflow-hidden">
+                <div className="relative w-full h-36 bg-abismo border-2 border-border/80 flex items-center justify-center p-3 overflow-hidden shrink-0">
                   <div
                     className="absolute inset-0 opacity-15 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
                     aria-hidden="true"
@@ -484,118 +492,111 @@ export function PantallaCatalogo() {
                     className="pixelated h-28 w-28 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]"
                   />
                   {especieSeleccionada.esEspecial && (
-                    <Badge className="absolute top-2 right-2 bg-amber-500/20 text-amber-300 border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none flex items-center gap-1 font-mono">
+                    <span className="absolute top-2 right-2 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
                       <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
                       <span>ESPECIAL</span>
-                    </Badge>
+                    </span>
                   )}
                 </div>
 
-                <div>
-                  <DialogTitle className="text-sm sm:text-base font-bold text-primary tracking-wide retro">
-                    {especieSeleccionada.nombre}
-                  </DialogTitle>
-                  <DialogDescription className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
-                    {especieSeleccionada.keyExterna || `srd-2024_${especieSeleccionada.slug}`}
-                  </DialogDescription>
-                  <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                    <Badge variant="secondary" className="text-[9px] uppercase rounded-none font-mono">
-                      {TRADUCCION_TIPOS_ESPECIE[especieSeleccionada.tipo.toLowerCase()] || especieSeleccionada.tipo}
-                    </Badge>
-                    <Badge variant="outline" className="text-[9px] rounded-none flex items-center gap-1 font-mono">
-                      {renderIconoArquetipo(calcularArquetipoCriatura(especieSeleccionada))}
-                      <span>{calcularArquetipoCriatura(especieSeleccionada)}</span>
-                    </Badge>
-                    <Badge variant="outline" className="text-[9px] rounded-none font-mono text-muted-foreground">
-                      CR {especieSeleccionada.challengeRating}
-                    </Badge>
-                  </div>
+                {/* Fila de Badges */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase font-mono font-semibold bg-secondary text-secondary-foreground border border-border rounded-none">
+                    {TRADUCCION_TIPOS_ESPECIE[especieSeleccionada.tipo.toLowerCase()] || especieSeleccionada.tipo}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
+                    {renderIconoArquetipo(calcularArquetipoCriatura(especieSeleccionada))}
+                    <span>{calcularArquetipoCriatura(especieSeleccionada)}</span>
+                  </span>
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono border border-border text-muted-foreground rounded-none">
+                    CR {especieSeleccionada.challengeRating}
+                  </span>
                 </div>
-              </DialogHeader>
 
-              {/* Lore Biológico */}
-              {especieSeleccionada.descripcion && (
-                <div className="p-2.5 bg-background border border-border/70 text-xs leading-relaxed text-muted-foreground font-sans">
-                  {especieSeleccionada.descripcion}
-                </div>
-              )}
+                {/* Lore Biológico */}
+                {especieSeleccionada.descripcion && (
+                  <div className="p-2.5 bg-background border border-border/70 text-xs leading-relaxed text-muted-foreground font-sans">
+                    {especieSeleccionada.descripcion}
+                  </div>
+                )}
 
-              {/* Atributos Base con Barras Comparativas sobre 100 */}
-              <div className="p-3 bg-background border border-border/70 space-y-2">
-                <span className="text-[10px] font-bold text-primary uppercase tracking-wider block font-mono">
-                  Atributos Base (Escala 100)
-                </span>
-                <div className="space-y-1.5 text-xs">
-                  <div className="space-y-0.5">
-                    <div className="flex justify-between text-[11px] font-mono">
-                      <span>Puntos de Salud (HP)</span>
-                      <span className="font-semibold">{especieSeleccionada.hpBase}</span>
+                {/* Atributos Base con Barras Comparativas sobre 100 */}
+                <div className="p-3 bg-background border border-border/70 space-y-2">
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block font-mono">
+                    Atributos Base (Escala 100)
+                  </span>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span>Puntos de Salud (HP)</span>
+                        <span className="font-semibold">{especieSeleccionada.hpBase}</span>
+                      </div>
+                      <Progress value={especieSeleccionada.hpBase} className="h-2 rounded-none" />
                     </div>
-                    <Progress value={especieSeleccionada.hpBase} className="h-2 rounded-none" />
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span>Ataque</span>
+                        <span className="font-semibold text-red-400">{especieSeleccionada.ataqueBase}</span>
+                      </div>
+                      <Progress value={especieSeleccionada.ataqueBase} className="h-2 rounded-none" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span>Defensa</span>
+                        <span className="font-semibold text-blue-400">{especieSeleccionada.defensaBase}</span>
+                      </div>
+                      <Progress value={especieSeleccionada.defensaBase} className="h-2 rounded-none" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex justify-between text-[11px] font-mono">
+                        <span>Velocidad</span>
+                        <span className="font-semibold text-emerald-400">{especieSeleccionada.velocidadBase}</span>
+                      </div>
+                      <Progress value={especieSeleccionada.velocidadBase} className="h-2 rounded-none" />
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
-                    <div className="flex justify-between text-[11px] font-mono">
-                      <span>Ataque</span>
-                      <span className="font-semibold text-red-400">{especieSeleccionada.ataqueBase}</span>
-                    </div>
-                    <Progress value={especieSeleccionada.ataqueBase} className="h-2 rounded-none" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex justify-between text-[11px] font-mono">
-                      <span>Defensa</span>
-                      <span className="font-semibold text-blue-400">{especieSeleccionada.defensaBase}</span>
-                    </div>
-                    <Progress value={especieSeleccionada.defensaBase} className="h-2 rounded-none" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <div className="flex justify-between text-[11px] font-mono">
-                      <span>Velocidad</span>
-                      <span className="font-semibold text-emerald-400">{especieSeleccionada.velocidadBase}</span>
-                    </div>
-                    <Progress value={especieSeleccionada.velocidadBase} className="h-2 rounded-none" />
+
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/40 text-[10px] font-mono">
+                    <div>CR: <strong className="text-primary">{especieSeleccionada.challengeRating}</strong></div>
+                    <div>Tasa Captura: <strong className="text-amber-400">{Math.round(especieSeleccionada.tasaCaptura * 100)}%</strong></div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/40 text-[10px] font-mono">
-                  <div>CR: <strong className="text-primary">{especieSeleccionada.challengeRating}</strong></div>
-                  <div>Tasa Captura: <strong className="text-amber-400">{Math.round(especieSeleccionada.tasaCaptura * 100)}%</strong></div>
-                </div>
-              </div>
-
-              {/* Lista de Movimientos Conocidos */}
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-mono">
-                  Movimientos Conocidos
-                </span>
-                <div className="space-y-1">
-                  {(especieSeleccionada.movimientos || []).slice(0, 3).map((mov, i) => (
-                    <div
-                      key={i}
-                      className="p-2 bg-background border border-border/60 text-xs flex items-center justify-between"
-                    >
-                      <div>
-                        <span className="font-semibold text-foreground block font-sans">{mov.nombre}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {mov.tipoAccion || "Ataque melé"} · {mov.nombreOriginal}
+                {/* Lista de Movimientos Conocidos */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-mono">
+                    Movimientos Conocidos
+                  </span>
+                  <div className="space-y-1">
+                    {(especieSeleccionada.movimientos || []).slice(0, 3).map((mov, i) => (
+                      <div
+                        key={i}
+                        className="p-2 bg-background border border-border/60 text-xs flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="font-semibold text-foreground block font-sans">{mov.nombre}</span>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {mov.tipoAccion || "Ataque melé"} · {mov.nombreOriginal}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 border border-border rounded-none">
+                          Pot. {mov.poder}
                         </span>
                       </div>
-                      <Badge variant="outline" className="font-mono text-[10px] rounded-none">
-                        Pot. {mov.poder}
-                      </Badge>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Botón de Cierre */}
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs rounded-none font-mono"
-                onClick={() => setModalAbierto(false)}
-              >
-                Cerrar Ficha Táctica
-              </Button>
+                {/* Botón de Cierre */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs rounded-none font-mono"
+                  onClick={() => setModalAbierto(false)}
+                >
+                  Cerrar Ficha Táctica
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

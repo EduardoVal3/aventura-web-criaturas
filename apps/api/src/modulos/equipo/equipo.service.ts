@@ -12,6 +12,29 @@ import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.se
 
 export const LIMITE_EQUIPO = 6;
 
+function mapearCriatura(c: any, ordenPorDefecto: number | null = null) {
+  const xpBase = calcularXpRequerida(c.nivel);
+  const xpReal = c.experiencia < xpBase ? xpBase + c.experiencia : c.experiencia;
+  const progreso = calcularProgresoXp(c.nivel, xpReal);
+  return {
+    criaturaId: c.id,
+    slug: c.especie.slug,
+    nombre: c.especie.nombre,
+    apodo: c.apodo,
+    nivel: c.nivel,
+    hpActual: c.hpActual,
+    hpMaximo: c.hpMaximo,
+    ataque: c.ataque,
+    defensa: c.defensa,
+    velocidad: c.velocidad,
+    experiencia: xpReal,
+    porcentajeXp: progreso.porcentajeXp,
+    xpSiguienteNivel: progreso.xpSiguienteNivel,
+    xpNivelActual: progreso.xpNivelActual,
+    orden: c.ordenEquipo ?? ordenPorDefecto,
+  };
+}
+
 @Injectable()
 export class EquipoService {
   constructor(private readonly prisma: PrismaService) {}
@@ -19,6 +42,7 @@ export class EquipoService {
   async obtenerEquipo(usuarioId: string) {
     const personaje = await this.prisma.personaje.findUnique({
       where: { usuarioId },
+      include: { ubicacionActual: true },
     });
 
     if (!personaje) {
@@ -39,34 +63,16 @@ export class EquipoService {
     });
 
     return {
-      criaturas: criaturas.map((c) => {
-        const xpBase = calcularXpRequerida(c.nivel);
-        const xpReal = c.experiencia < xpBase ? xpBase + c.experiencia : c.experiencia;
-        const progreso = calcularProgresoXp(c.nivel, xpReal);
-        return {
-          criaturaId: c.id,
-          slug: c.especie.slug,
-          nombre: c.especie.nombre,
-          apodo: c.apodo,
-          nivel: c.nivel,
-          hpActual: c.hpActual,
-          hpMaximo: c.hpMaximo,
-          ataque: c.ataque,
-          defensa: c.defensa,
-          velocidad: c.velocidad,
-          experiencia: xpReal,
-          porcentajeXp: progreso.porcentajeXp,
-          xpSiguienteNivel: progreso.xpSiguienteNivel,
-          xpNivelActual: progreso.xpNivelActual,
-          orden: c.ordenEquipo ?? 1,
-        };
-      }),
+      criaturas: criaturas.map((c) => mapearCriatura(c, 1)),
+      limiteEquipo: LIMITE_EQUIPO,
+      enLocalidadSegura: !!personaje.ubicacionActual?.esSegura,
     };
   }
 
   async obtenerAlmacen(usuarioId: string) {
     const personaje = await this.prisma.personaje.findUnique({
       where: { usuarioId },
+      include: { ubicacionActual: true },
     });
 
     if (!personaje) {
@@ -76,25 +82,28 @@ export class EquipoService {
       });
     }
 
-    const criaturas = await this.prisma.criatura.findMany({
-      where: {
-        personajeId: personaje.id,
-        enEquipo: false,
-      },
-      include: { especie: true },
-      orderBy: { fechaCaptura: 'asc' },
-    });
+    const [criaturas, totalEnEquipo] = await Promise.all([
+      this.prisma.criatura.findMany({
+        where: {
+          personajeId: personaje.id,
+          enEquipo: false,
+        },
+        include: { especie: true },
+        orderBy: { fechaCaptura: 'asc' },
+      }),
+      this.prisma.criatura.count({
+        where: {
+          personajeId: personaje.id,
+          enEquipo: true,
+        },
+      }),
+    ]);
 
     return {
-      criaturas: criaturas.map((c) => ({
-        criaturaId: c.id,
-        slug: c.especie.slug,
-        nombre: c.especie.nombre,
-        apodo: c.apodo,
-        nivel: c.nivel,
-        hpActual: c.hpActual,
-        hpMaximo: c.hpMaximo,
-      })),
+      criaturas: criaturas.map((c) => mapearCriatura(c, null)),
+      limiteEquipo: LIMITE_EQUIPO,
+      enLocalidadSegura: !!personaje.ubicacionActual?.esSegura,
+      totalEnEquipo,
     };
   }
 

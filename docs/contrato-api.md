@@ -839,8 +839,8 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Lista las 25 especies del catálogo almacenadas en la base de datos (con soporte para filtro por tipo).
-- **Parámetros de consulta opcionales:** `?tipo=beast`
+- **Descripción:** Lista las 25 especies del compendio biológico en una sola llamada `O(1)` erradicando el cuello de botella $N+1$, enriquecidas con arquetipo táctico (`TANQUE`, `ATACANTE`, `VELOZ`, `EQUILIBRADO`), lore descriptivo y sus movimientos conocidos.
+- **Parámetros de consulta opcionales:** `?tipo=beast` (soporta los 6 tipos biológicos: `beast`, `monstrosity`, `undead`, `elemental`, `construct`, `plant`).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -848,6 +848,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "especies": [
       {
         "slug": "lobo-gris",
+        "keyExterna": "srd-2024_wolf",
         "nombre": "Lobo Gris",
         "tipo": "beast",
         "challengeRating": 0.25,
@@ -856,7 +857,17 @@ Este documento define la especificación técnica de la API REST que comunica el
         "defensaBase": 58,
         "velocidadBase": 50,
         "tasaCaptura": 0.88,
-        "esEspecial": false
+        "esEspecial": false,
+        "descripcion": "Cazador en manada ágil y coordinado que habita en llanuras y bosques.",
+        "arquetipo": "EQUILIBRADO",
+        "movimientos": [
+          {
+            "nombre": "Mordisco Feroz",
+            "nombreOriginal": "Bite",
+            "tipoAccion": "Ataque melé",
+            "poder": 5.5
+          }
+        ]
       }
     ]
   }
@@ -864,7 +875,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies/:slug`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Ficha técnica detallada de una especie con sus movimientos disponibles.
+- **Descripción:** Ficha técnica táctica y detallada de una especie específica identificada por su slug.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -878,15 +889,21 @@ Este documento define la especificación técnica de la API REST que comunica el
     "defensaBase": 58,
     "velocidadBase": 50,
     "tasaCaptura": 0.88,
+    "esEspecial": false,
+    "descripcion": "Cazador en manada ágil y coordinado que habita en llanuras y bosques.",
+    "arquetipo": "EQUILIBRADO",
     "movimientos": [
       {
         "nombre": "Mordisco Feroz",
         "nombreOriginal": "Bite",
+        "tipoAccion": "Ataque melé",
         "poder": 5.5
       }
     ]
   }
   ```
+- **Errores posibles:**
+  - `404 ESPECIE_NO_ENCONTRADA` ("No se encontró la especie solicitada en el compendio.").
 
 ---
 
@@ -894,23 +911,37 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/historial`
 - **Módulo:** `M-HIS`.
-- **Descripción:** Consulta la lista cronológica de eventos relevantes del explorador.
+- **Descripción:** Consulta la bitácora transversal cronológica de crónicas del explorador autenticado, normalizada a 5 categorías canónicas (`COMBATE`, `CAPTURA`, `EXPLORACION`, `TIENDA`, `CURACION`), con soporte de paginación y filtrado por categoría en servidor.
+- **Parámetros de consulta opcionales:**
+  - `pagina`: Número de página (por defecto `1`).
+  - `limite`: Elementos por página (por defecto `20`, máximo `100`).
+  - `categoria`: Filtro por categoría canónica (`COMBATE`, `CAPTURA`, `EXPLORACION`, `TIENDA`, `CURACION`).
+  - `tipo`: Alias o filtro directo por tipo de evento registrado.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
+    "total": 45,
+    "pagina": 1,
+    "limite": 20,
     "eventos": [
       {
         "eventoId": "his-501",
         "tipo": "VICTORIA_COMBATE",
+        "categoria": "COMBATE",
         "descripcion": "Victoria contra Pico de Hacha (Nv. 2) en Praderas del Amanecer (+45 XP)",
-        "marcaTiempo": "2026-10-07T12:45:00.000Z"
+        "marcaTiempo": "2026-10-07T12:45:00.000Z",
+        "datosJson": { "monedas": 25, "xp": 45 }
       },
       {
         "eventoId": "his-502",
         "tipo": "CAPTURA",
+        "categoria": "CAPTURA",
         "descripcion": "Captura exitosa de Lobo Gris con Talismán Básico",
-        "marcaTiempo": "2026-10-07T12:42:00.000Z"
+        "marcaTiempo": "2026-10-07T12:42:00.000Z",
+        "datosJson": { "criaturaId": "cri-101" }
       }
     ]
   }
   ```
+- **Errores posibles:**
+  - `404 PERSONAJE_NO_ENCONTRADO` ("No se encontró un personaje activo para el usuario autenticado.").

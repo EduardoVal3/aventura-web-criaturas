@@ -18,6 +18,7 @@ import {
   type RespuestaAlmacen,
   type RespuestaAtacar,
   type RespuestaCapturar,
+  type RespuestaCatalogoTienda,
   type RespuestaComprarTienda,
   type RespuestaCrearPersonaje,
   type RespuestaDesbloqueos,
@@ -159,6 +160,10 @@ export const apiHttp = {
 
   obtenerInventario(): Promise<RespuestaInventario> {
     return solicitar<RespuestaInventario>("GET", "/inventario");
+  },
+
+  obtenerCatalogoTienda(): Promise<RespuestaCatalogoTienda> {
+    return solicitar<RespuestaCatalogoTienda>("GET", "/tienda");
   },
 
   comprarEnTienda(peticion: PeticionComprarTienda): Promise<RespuestaComprarTienda> {

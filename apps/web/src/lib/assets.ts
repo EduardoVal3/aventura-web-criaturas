@@ -162,6 +162,27 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.35);
+    } else if (nombre === "monedas" || nombre === "compra") {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(987.77, ctx.currentTime);
+      osc.frequency.setValueAtTime(1318.51, ctx.currentTime + 0.07);
+      ganancia.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.22);
+    } else if (nombre === "curar" || nombre === "pocion") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
+      ganancia.gain.setValueAtTime(Math.min(0.22, volumen * 0.22), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.26);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.26);
     }
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.

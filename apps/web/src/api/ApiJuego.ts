@@ -333,16 +333,45 @@ export interface RespuestaTransferirCriatura {
   totalEnAlmacen: number;
 }
 
+export type CategoriaObjeto = "CURACION" | "CAPTURA" | "ESPECIAL";
+
 export interface ItemInventario {
   codigo: string;
   nombre: string;
-  tipo: "CAPTURA" | "CURACION";
+  descripcion?: string;
+  tipo: CategoriaObjeto;
+  efectoValor?: number;
+  precioCompra?: number;
   cantidad: number;
 }
 
 export interface RespuestaInventario {
   monedas: number;
+  capacidadMaxima?: number;
+  ranurasOcupadas?: number;
+  totalUnidades?: number;
   items: ItemInventario[];
+}
+
+export interface ArticuloCatalogoTienda {
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  tipo: CategoriaObjeto;
+  precioCompra: number;
+  efectoValor: number;
+  cantidadEnInventario: number;
+}
+
+export interface RespuestaCatalogoTienda {
+  saldoMonedas: number;
+  servicioDisponible: boolean;
+  ubicacionActual: {
+    id: string;
+    nombre: string;
+    esSegura: boolean;
+  };
+  items: ArticuloCatalogoTienda[];
 }
 
 export interface PeticionComprarTienda {
@@ -352,9 +381,12 @@ export interface PeticionComprarTienda {
 
 export interface RespuestaComprarTienda {
   itemCodigo: string;
+  nombre?: string;
   cantidadComprada: number;
+  precioUnitario?: number;
   costoTotal: number;
   saldoRestante: number;
+  cantidadEnInventario?: number;
 }
 
 export interface PeticionUsarItem {
@@ -364,8 +396,11 @@ export interface PeticionUsarItem {
 
 export interface RespuestaUsarItem {
   criaturaId: string;
+  criaturaNombre?: string;
   hpPrevio: number;
   hpNuevo: number;
+  hpMaximo?: number;
+  curacionAplicada?: number;
   cantidadRestante: number;
 }
 
@@ -453,6 +488,7 @@ export interface ApiJuego {
   obtenerAlmacen(): Promise<RespuestaAlmacen>;
   transferirCriatura(peticion: PeticionTransferirCriatura): Promise<RespuestaTransferirCriatura>;
   obtenerInventario(): Promise<RespuestaInventario>;
+  obtenerCatalogoTienda(): Promise<RespuestaCatalogoTienda>;
   comprarEnTienda(peticion: PeticionComprarTienda): Promise<RespuestaComprarTienda>;
   usarItem(peticion: PeticionUsarItem): Promise<RespuestaUsarItem>;
   restaurarEquipo(): Promise<RespuestaRestaurar>;

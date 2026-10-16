@@ -186,30 +186,45 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 
 ## 6. PantallaEquipo y PantallaAlmacen
 - **Módulos cubiertos:** `M-EQU` (Equipo y Almacén).
-- **Propósito:** Administración de criaturas activas (máximo 6) y reserva en almacén.
+- **Propósito:** Administración de criaturas activas (máximo 6), relevo táctico del líder de combate, ranuras libres e intercambio atómico directo con el almacén.
 
 ```text
 +-----------------------------------------------------------------------+
-| GESTIÓN DE CRIATURAS: EQUIPO ACTIVO Y ALMACÉN                         |
+| EQUIPO ACTIVO (3/6)                   [Ir al Almacén] [Asentamiento] |
+| Localidad Segura: Activa (Transferencias autorizadas)                 |
 +-----------------------------------------------------------------------+
-| EQUIPO ACTIVO (Máximo 6 criaturas):                                   |
-| 1. [Lobo Gris]    Nv. 2 | HP: 25/30 | ATK: 42 | [boton-enviar-almacen]|
-| 2. [Oso Negro]    Nv. 2 | HP: 33/33 | ATK: 42 | [boton-enviar-almacen]|
-| 3. [Pico Hacha]   Nv. 1 | HP: 19/19 | ATK: 42 | [boton-enviar-almacen]|
-| (Espacios 4, 5 y 6 vacíos)                                            |
-+-----------------------------------------------------------------------+
-| ALMACÉN CENTRAL (Villa Serena):                                       |
-| - [Araña Lobo]    Nv. 1 | HP: 11/11 | [boton-mover-equipo-1]          |
-| - [Cocatriza]     Nv. 2 | HP: 22/22 | [boton-mover-equipo-2]          |
+| 1. [Lobo Alfa] [LÍDER] Nv.5 | HP: 45/45 | ATK:14 DEF:10 VEL:12        |
+|    Sprite 8-bit | [Subir ^ (off)] [Bajar v] | [boton-enviar-almacen]  |
 |                                                                       |
-| [boton-ordenar-equipo]                    [boton-volver-hub]          |
+| 2. [Gólem Roca]        Nv.4 | HP: 60/60 | ATK:16 DEF:20 VEL:6         |
+|    Sprite 8-bit | [Subir ^] [Bajar v] [Designar Líder] | [almacén]    |
+|                                                                       |
+| 3. [Fénix Menor]       Nv.3 | HP:  0/35 | [DEBILITADA] (omite combate)|
+|    Sprite 8-bit | [Subir ^] [Bajar v (off)] [Líder (off)] | [almacén] |
+|                                                                       |
+| [ RANURA LIBRE 4 de 6 ]   [ RANURA LIBRE 5 de 6 ]   [ RANURA LIBRE 6] |
++-----------------------------------------------------------------------+
+| ALMACÉN DE CRIATURAS (2 en reserva)   [Ver Equipo (3/6)] [Asentamiento|
++-----------------------------------------------------------------------+
+| - [Araña Lobo]  Nv.1 | HP:11/11 | ATK:35 DEF:40 VEL:48 | [Mover Equipo]|
+| - [Cocatriza]   Nv.2 | HP:22/22 | ATK:40 DEF:30 VEL:52 | [Mover Equipo]|
+| (Si equipo está lleno 6/6: Botón muta a [Intercambiar] -> Modal)      |
++-----------------------------------------------------------------------+
+| MODAL TÁCTICO: "Elegir relevo" (Dialog sellado sin scroll horizontal) |
+| "Cocatriza ocupará el puesto de la criatura que elijas:"              |
+| [o] Lobo Alfa [LÍDER] (Nv. 5 • 45/45 HP)                             |
+| ( ) Gólem Roca        (Nv. 4 • 60/60 HP)                             |
+| [ Confirmar intercambio (PROCESANDO...) ] [ Cancelar ]                |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-enviar-almacen`: Transfiere criatura del equipo al almacén (deshabilitado si solo queda 1 criatura activa).
-  - `boton-mover-equipo-1`, `boton-mover-equipo-2`: Pasa criatura del almacén al equipo (deshabilitado si el equipo tiene 6).
-  - `boton-volver-hub`: Regresa a `PantallaHubUbicacion`.
+  - `Subir ^` / `Bajar v`: Reordena interactivamente la criatura en la formación activa invocando `PATCH /api/equipo/orden`.
+  - `Designar Líder`: Coloca a la criatura en la posición 1 (`orden === 1`), convirtiéndola en quien abre el combate.
+  - `boton-enviar-almacen`: Transfiere criatura al almacén si el equipo cuenta con más de 1 integrante y está en localidad segura.
+  - `Mover al equipo`: Pasa la criatura al equipo si hay ranuras libres ($< 6$).
+  - `Intercambiar`: Despliega el modal "Elegir relevo" cuando el equipo está completo ($6/6$), realizando una sustitución atómica directa que preserva la posición táctica original.
+  - `[Ir al Almacén]`, `[Ver Equipo]`, `[Asentamiento]`: Navegación accesible con `Button asChild` hacia `/almacen`, `/equipo` y `/hub`.
 
 ---
 

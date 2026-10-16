@@ -36,50 +36,15 @@ import {
   reproducirSonido,
 } from "@/lib/assets";
 import { cn } from "@/lib/utils";
+import {
+  type EstadoVitalCriatura,
+  clasificarEstadoVital,
+  etiquetaEstadoVital,
+  calcularDeltaCuracion,
+} from "@/lib/curacion-santuario";
 
-export type EstadoVitalCriatura = "PLENA_VITALIDAD" | "HERIDA" | "DEBILITADA";
-
-/**
- * Clasifica de forma pura el estado de vitalidad táctica de una criatura.
- */
-export function clasificarEstadoVital(
-  hpActual: number,
-  hpMaximo: number,
-): EstadoVitalCriatura {
-  if (hpActual <= 0) {
-    return "DEBILITADA";
-  }
-  if (hpActual >= hpMaximo) {
-    return "PLENA_VITALIDAD";
-  }
-  return "HERIDA";
-}
-
-/**
- * Devuelve la etiqueta de texto en español estricto para cada estado vital.
- */
-export function etiquetaEstadoVital(estado: EstadoVitalCriatura): string {
-  switch (estado) {
-    case "PLENA_VITALIDAD":
-      return "PLENA VITALIDAD";
-    case "HERIDA":
-      return "HERIDA";
-    case "DEBILITADA":
-      return "DEBILITADA / CAÍDA";
-  }
-}
-
-/**
- * Calcula el déficit de puntos de vitalidad bajo el invariante INV-03.
- */
-export function calcularDeltaCuracion(
-  hpActual: number,
-  hpMaximo: number,
-): number {
-  const hpBase = Math.max(0, hpActual);
-  const hpTope = Math.max(1, hpMaximo);
-  return Math.max(0, hpTope - hpBase);
-}
+export type { EstadoVitalCriatura };
+export { clasificarEstadoVital, etiquetaEstadoVital, calcularDeltaCuracion };
 
 export function PantallaCuracion() {
   const navigate = useNavigate();

@@ -478,7 +478,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/equipo`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Obtiene la lista de hasta 6 criaturas activas del equipo.
+- **Descripción:** Obtiene la lista de hasta 6 criaturas activas del equipo, capacidad máxima y condición de localidad segura.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -487,6 +487,7 @@ Este documento define la especificación técnica de la API REST que comunica el
         "criaturaId": "cri-301",
         "slug": "lobo-gris",
         "nombre": "Lobo Gris",
+        "apodo": "Colmillo",
         "nivel": 2,
         "hpActual": 25,
         "hpMaximo": 30,
@@ -499,13 +500,15 @@ Este documento define la especificación técnica de la API REST que comunica el
         "xpNivelActual": 0,
         "orden": 1
       }
-    ]
+    ],
+    "limiteEquipo": 6,
+    "enLocalidadSegura": true
   }
   ```
 
 #### `GET /api/almacen`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Lista las criaturas resguardadas en el almacén de reserva.
+- **Descripción:** Lista las criaturas resguardadas en el almacén de reserva con estadísticas completas, capacidad máxima, localidad segura y conteo del equipo.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -514,35 +517,81 @@ Este documento define la especificación técnica de la API REST que comunica el
         "criaturaId": "cri-303",
         "slug": "arana-lobo-gigante",
         "nombre": "Araña Lobo Gigante",
+        "apodo": null,
         "nivel": 1,
         "hpActual": 11,
-        "hpMaximo": 11
+        "hpMaximo": 11,
+        "ataque": 35,
+        "defensa": 40,
+        "velocidad": 48,
+        "experiencia": 0,
+        "porcentajeXp": 0,
+        "xpSiguienteNivel": 150,
+        "xpNivelActual": 0,
+        "orden": null
       }
-    ]
+    ],
+    "limiteEquipo": 6,
+    "enLocalidadSegura": true,
+    "totalEnEquipo": 2
   }
   ```
 
-#### `POST /api/equipo/transferir`
+#### `PATCH /api/equipo/orden`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Mueve una criatura entre el equipo activo y el almacén (solo en localidades autorizadas).
-- **Cuerpo de petición:**
+- **Descripción:** Actualiza el orden táctico de las criaturas del equipo mediante una permutación íntegra y serializada por personaje (`FOR UPDATE`). El líder de combate es siempre la criatura en la posición 1. Puede invocarse en cualquier zona (incluyendo combate o zonas hostiles).
+- **Cuerpo de petición (Variante lista ordenada de IDs):**
+  ```json
+  {
+    "criaturaIds": ["cri-302", "cri-301"]
+  }
+  ```
+- **Cuerpo de petición (Variante pares de posición):**
+  ```json
+  {
+    "orden": [
+      { "criaturaId": "cri-302", "orden": 1 },
+      { "criaturaId": "cri-301", "orden": 2 }
+    ]
+  }
+  ```
+- **Respuesta exitosa (`200 OK`):** Retorna la estructura de `RespuestaEquipo` con el orden actualizado.
+- **Errores posibles:**
+  - `400 ORDEN_INVALIDO` (lista parcial, IDs repetidos, posiciones no consecutivas de 1 a n o criaturas no pertenecientes al equipo activo).
+  - `400 DATOS_INVALIDOS` (cuerpo vacío o sin listas válidas).
+
+#### `POST /api/equipo/transferir` (o `/api/equipo/mover`)
+- **Módulo:** `M-EQU`.
+- **Descripción:** Mueve una criatura entre el equipo activo y el almacén, o efectúa un intercambio atómico directo (`intercambiarConId`) cuando el equipo está completo (6/6). La criatura entrante hereda la posición táctica de la saliente. Requiere estar en una localidad segura.
+- **Cuerpo de petición - Transferencia regular:**
   ```json
   {
     "criaturaId": "cri-303",
     "haciaEquipo": true
   }
   ```
+- **Cuerpo de petición - Intercambio atómico (Equipo lleno):**
+  ```json
+  {
+    "criaturaId": "cri-303",
+    "haciaEquipo": true,
+    "intercambiarConId": "cri-301"
+  }
+  ```
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "mensaje": "Criatura transferida exitosamente.",
-    "totalEnEquipo": 2,
-    "totalEnAlmacen": 0
+    "mensaje": "Intercambio completado: Araña Lobo Gigante ocupa el puesto de Lobo Gris.",
+    "totalEnEquipo": 6,
+    "totalEnAlmacen": 4
   }
   ```
 - **Errores posibles:**
-  - `409 EQUIPO_COMPLETO` (no se puede transferir al equipo porque ya cuenta con 6 criaturas, regla `A-6`).
+  - `403 ACCION_NO_PERMITIDA` (la ubicación actual del explorador no es una localidad segura).
+  - `404 CRIATURA_NO_ENCONTRADA` (criatura no encontrada o no pertenece al jugador).
+  - `409 EQUIPO_COMPLETO` (se intentó mover al equipo sin intercambio teniendo 6 criaturas, regla `A-6`).
   - `400 EQUIPO_MINIMO_REQUERIDO` (no se puede enviar al almacén la última criatura del equipo).
+  - `400 DATOS_INVALIDOS` (se especificó el mismo ID para entrar y salir).
 
 ---
 

@@ -599,23 +599,86 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/inventario`
 - **Módulo:** `M-INV`.
-- **Descripción:** Obtiene los objetos y cantidades pertenecientes al explorador.
+- **Descripción:** Obtiene los objetos, existencias, desglose de ranuras y capacidad máxima del inventario del personaje activo.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "monedas": 120,
+    "capacidadMaxima": 20,
+    "ranurasOcupadas": 2,
+    "totalUnidades": 5,
     "items": [
       {
         "codigo": "talisman-basico",
         "nombre": "Talismán Básico de Captura",
+        "descripcion": "Talismán estándar para sintonizar y capturar criaturas salvajes.",
         "tipo": "CAPTURA",
+        "efectoValor": 1,
+        "precioCompra": 50,
         "cantidad": 3
       },
       {
         "codigo": "pocion-menor",
         "nombre": "Poción de Curación Menor",
+        "descripcion": "Brebaje medicinal que restaura 20 puntos de salud.",
         "tipo": "CURACION",
+        "efectoValor": 20,
+        "precioCompra": 30,
         "cantidad": 2
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/tienda`
+- **Módulo:** `M-INV`.
+- **Descripción:** Consulta el catálogo oficial del bazar en la localidad activa, informando la disponibilidad del servicio mercantil (`servicioDisponible`), el saldo actual en monedas y las existencias que el jugador ya posee de cada artículo (`cantidadEnInventario`).
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "saldoMonedas": 120,
+    "servicioDisponible": true,
+    "ubicacionActual": {
+      "id": "LOC-02",
+      "nombre": "Puesto Fronterizo del Río",
+      "esSegura": true
+    },
+    "items": [
+      {
+        "codigo": "pocion-menor",
+        "nombre": "Poción de Curación Menor",
+        "descripcion": "Brebaje medicinal que restaura 20 puntos de salud.",
+        "tipo": "CURACION",
+        "precioCompra": 30,
+        "efectoValor": 20,
+        "cantidadEnInventario": 2
+      },
+      {
+        "codigo": "talisman-basico",
+        "nombre": "Talismán Básico de Captura",
+        "descripcion": "Talismán estándar para sintonizar y capturar criaturas salvajes.",
+        "tipo": "CAPTURA",
+        "precioCompra": 50,
+        "efectoValor": 1,
+        "cantidadEnInventario": 3
+      },
+      {
+        "codigo": "pocion-mayor",
+        "nombre": "Poción de Curación Mayor",
+        "descripcion": "Elixir reconstituyente que restaura 50 puntos de salud.",
+        "tipo": "CURACION",
+        "precioCompra": 80,
+        "efectoValor": 50,
+        "cantidadEnInventario": 0
+      },
+      {
+        "codigo": "talisman-avanzado",
+        "nombre": "Talismán Avanzado de Captura",
+        "descripcion": "Talismán reforzado con mayor resonancia para criaturas de alto desafío.",
+        "tipo": "CAPTURA",
+        "precioCompra": 150,
+        "efectoValor": 2,
+        "cantidadEnInventario": 0
       }
     ]
   }
@@ -623,30 +686,35 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/tienda/comprar`
 - **Módulo:** `M-INV`.
-- **Descripción:** Compra un artículo en la tienda de la localidad descontando monedas.
+- **Descripción:** Ejecuta una compra atómica en el bazar mercantil. El servidor valida unilateralmente el precio oficial (`S-6`), acota la cantidad a `[1, 99]` (`ComprarDto`), serializa la operación mediante bloqueo de fila de personaje (`S-4`), descuenta las monedas y acredita los objetos en inventario mediante upsert aditivo.
 - **Cuerpo de petición:**
   ```json
   {
-    "itemCodigo": "talisman-basico",
-    "cantidad": 1
+    "itemCodigo": "pocion-menor",
+    "cantidad": 5
   }
   ```
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "itemCodigo": "talisman-basico",
-    "cantidadComprada": 1,
-    "costoTotal": 50,
-    "saldoRestante": 70
+    "itemCodigo": "pocion-menor",
+    "nombre": "Poción de Curación Menor",
+    "cantidadComprada": 5,
+    "precioUnitario": 30,
+    "costoTotal": 150,
+    "saldoRestante": 50,
+    "cantidadEnInventario": 7
   }
   ```
 - **Errores posibles:**
-  - `400 MONEDAS_INSUFICIENTES`.
-  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no posee tienda).
+  - `400 MONEDAS_INSUFICIENTES` (saldo menor a `costoTotal`).
+  - `400 Bad Request` (si se inyectan campos adicionales como `costoTotal` vía `forbidNonWhitelisted` o cantidad fuera de rango `1..99`).
+  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no cuenta con el servicio `TIENDA`).
+  - `404 OBJETO_NO_ENCONTRADO` (el código no existe o no tiene precio de compra positivo en catálogo).
 
 #### `POST /api/inventario/usar`
 - **Módulo:** `M-INV`, `M-CUR`.
-- **Descripción:** Aplica un consumible de curación sobre una criatura aliada.
+- **Descripción:** Aplica un consumible de curación sobre una criatura aliada fuera de combate. Serializa concurrentemente la fila del personaje (`FOR UPDATE`), valida que el objeto sea de tipo `CURACION`, rechaza si la criatura ya tiene salud completa (`INV-03`), descuenta la unidad de inventario y registra el evento en el historial.
 - **Cuerpo de petición:**
   ```json
   {
@@ -658,11 +726,19 @@ Este documento define la especificación técnica de la API REST que comunica el
   ```json
   {
     "criaturaId": "cri-301",
+    "criaturaNombre": "Ignis",
     "hpPrevio": 10,
     "hpNuevo": 30,
+    "hpMaximo": 30,
+    "curacionAplicada": 20,
     "cantidadRestante": 1
   }
   ```
+- **Errores posibles:**
+  - `400 OBJETO_NO_CONSUMIBLE` (el objeto no es de tipo `CURACION`, p. ej. talismán de captura).
+  - `400 SALUD_COMPLETA` (la criatura seleccionada ya cuenta con sus puntos de vida al máximo).
+  - `400 ITEM_NO_DISPONIBLE` (el jugador no posee el objeto en su bolsa o su cantidad es 0).
+  - `404 CRIATURA_NO_ENCONTRADA` (la criatura no pertenece al personaje o no existe).
 
 ---
 

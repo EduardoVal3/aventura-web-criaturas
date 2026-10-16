@@ -197,8 +197,9 @@ export const apiHttp = {
     return solicitar<EspecieDetalle>("GET", `/especies/${encodeURIComponent(slug)}`);
   },
 
-  obtenerHistorial(): Promise<RespuestaHistorial> {
-    return solicitar<RespuestaHistorial>("GET", "/historial");
+  obtenerHistorial(categoria?: string): Promise<RespuestaHistorial> {
+    const sufijo = categoria ? `?categoria=${encodeURIComponent(categoria)}` : "";
+    return solicitar<RespuestaHistorial>("GET", `/historial${sufijo}`);
   },
   actualizarOrdenEquipo(peticion: {
     criaturaIds?: string[];

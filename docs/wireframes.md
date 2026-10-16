@@ -336,24 +336,28 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 +-----------------------------------------------------------------------+
 | [Buscar especie por nombre...]                [Tipo: Todos los tipos v]|
 | Arquetipo: [TODOS] [ATACANTE] [TANQUE] [VELOZ] [EQUILIBRADO] [ESPECIAL]|
+|                                                       [Limpiar filtros]|
 +-----------------------------------------------------------------------+
 | TARJETAS DE CRIATURA (Grid 3 columnas):                               |
 | +-----------------------------------+ +-------------------------------+ |
-| | [img 72x72] Lobo Gris             | | [img 72x72] Armadura Animada  | |
-| | srd-2024_wolf                     | | srd-2024_animated-armor       | |
-| | [Bestia] [EQUILIBRADO]            | | [Autómata] [TANQUE]           | |
+| | Lobo Gris       [Bestia][EQUILIB] | | Armadura Animada  [Autómata]  | |
+| | srd-2024_wolf                     | | srd-2024_animated-armor[TANQUE| |
+| | ================================= | | ============================= | |
+| |       [ VITRINA SPRITE 128x128 ]  | |    [ VITRINA SPRITE 128x128 ] | |
+| | ================================= | | ============================= | |
 | | HP: 30 | ATQ: 42 | DEF: 58|VEL: 50| | HP: 40 | ATQ: 42 | DEF:100|VEL:41| |
 | | CR: 0.25      Captura: 88%        | | CR: 1.00      Captura: 83%    | |
 | | [INSPECCIONAR FICHA]              | | [INSPECCIONAR FICHA]          | |
 | +-----------------------------------+ +-------------------------------+ |
 +-----------------------------------------------------------------------+
-| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado overflow-hidden):  |
+| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado max-h-[90vh]):     |
 | +-------------------------------------------------------------------+ |
-| | [img 80x80] Quimera Tricéfala                   [CR 6.00][ESPECIAL]| |
-| | srd-2024_chimera · [Monstruosidad] [ATACANTE]     Captura: 48%    | |
+| | [ VITRINA HEROICA SPRITE 112x112 pixelated ]         [ESPECIAL]   | |
+| | Quimera Tricéfala · CR: 6.00 · Tasa Captura: 48%                  | |
+| | srd-2024_chimera · [Monstruosidad] [ATACANTE]                     | |
 | | Lore: Monstruosidad alada con cabezas de león, cabra y dragón.    | |
-| | HP Base:   70 [=======---]  | Ataque Base: 85 [========--]        | |
-| | Def Base:  70 [=======---]  | Vel Base:    60 [======----]        | |
+| | HP Base:   72 [=======---]  | Ataque Base: 76 [========--]        | |
+| | Def Base:  72 [=======---]  | Vel Base:    70 [=======---]        | |
 | | Movimientos:                                                      | |
 | | - Aliento Flamígero (Ataque distancia · Fire Breath · Pot. 15.0)  | |
 | | - Garras Desgarradoras (Ataque melé · Claws · Pot. 10.5)          | |

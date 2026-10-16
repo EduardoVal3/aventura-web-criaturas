@@ -53,12 +53,17 @@ export const dialogContentVariants = cva("", {
   },
 });
 
+export interface BitDialogContentProps
+  extends React.ComponentProps<typeof ShadcnDialogContent>,
+    VariantProps<typeof dialogContentVariants> {}
+
 function DialogContent({
   className,
   children,
   font,
+  showCloseButton = true,
   ...props
-}: BitDialogProps) {
+}: BitDialogContentProps) {
   return (
     <ShadcnDialogContent
       className={cn(
@@ -66,6 +71,7 @@ function DialogContent({
         font !== "normal" && "retro",
         className
       )}
+      showCloseButton={showCloseButton}
       {...props}
     >
       {children}

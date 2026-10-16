@@ -453,6 +453,7 @@ export function PantallaCatalogo() {
       <Dialog open={modalAbierto} onOpenChange={setModalAbierto}>
         <DialogContent
           font="normal"
+          showCloseButton={false}
           className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden rounded-none border-2 border-primary bg-bastion p-0 flex flex-col"
         >
           {especieSeleccionada && (

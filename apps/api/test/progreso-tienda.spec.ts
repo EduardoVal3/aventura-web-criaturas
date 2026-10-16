@@ -136,6 +136,92 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       assert.strictEqual(resultado.cantidadRestante, 1);
     });
 
+    it('debe rechazar usarObjeto si el objeto no es de tipo CURACION (OBJETO_NO_CONSUMIBLE)', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-1',
+            personajeId: 'pj-1',
+            hpActual: 10,
+            hpMaximo: 30,
+            especie: { nombre: 'Lobo' },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-talisman',
+            codigo: 'talisman-basico',
+            nombre: 'Talismán Básico',
+            tipo: 'CAPTURA',
+            efectoValor: 1,
+          }),
+        },
+      };
+
+      const servicio = new InventarioService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.usarObjeto('usr-1', 'talisman-basico', 'cri-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'OBJETO_NO_CONSUMIBLE');
+          return true;
+        },
+      );
+    });
+
+    it('debe rechazar curación si la criatura ya tiene la salud al máximo (SALUD_COMPLETA)', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-1',
+            personajeId: 'pj-1',
+            hpActual: 30,
+            hpMaximo: 30,
+            especie: { nombre: 'Lobo' },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-pocion',
+            codigo: 'pocion-menor',
+            nombre: 'Poción Menor',
+            tipo: 'CURACION',
+            efectoValor: 20,
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            criatura: {
+              findUnique: async () => ({
+                id: 'cri-1',
+                personajeId: 'pj-1',
+                hpActual: 30,
+                hpMaximo: 30,
+                especie: { nombre: 'Lobo' },
+              }),
+            },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new InventarioService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.usarObjeto('usr-1', 'pocion-menor', 'cri-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'SALUD_COMPLETA');
+          return true;
+        },
+      );
+    });
+
     it('debe rechazar curación en zona no autorizada con SERVICIO_NO_DISPONIBLE', async () => {
       const prismaMock: any = {
         personaje: {
@@ -207,12 +293,138 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
         },
       );
     });
+
+    it('debe calcular compra por lotes (x5 y x10) en el servidor y actualizar saldo e inventario', async () => {
+      let saldoPersistido = 500;
+      let cantidadInventarioPersistida = 0;
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            monedas: saldoPersistido,
+            ubicacionActual: { id: 'LOC-02', servicios: ['TIENDA'] },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-pocion',
+            codigo: 'pocion-menor',
+            nombre: 'Poción Menor',
+            precioCompra: 30,
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            personaje: {
+              findUnique: async () => ({ id: 'pj-1', monedas: saldoPersistido }),
+              update: async ({ data }: any) => {
+                saldoPersistido -= data.monedas.decrement;
+                return { id: 'pj-1', monedas: saldoPersistido };
+              },
+            },
+            inventarioPersonaje: {
+              upsert: async ({ update }: any) => {
+                cantidadInventarioPersistida += update.cantidad.increment;
+                return { id: 'inv-1', cantidad: cantidadInventarioPersistida };
+              },
+            },
+            historial: { create: async () => ({ id: 'h-1' }) },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new TiendaService(prismaMock);
+
+      // Compra lote x5: 5 * 30 = 150 monedas
+      const res5 = await servicio.comprar('usr-1', 'pocion-menor', 5);
+      assert.strictEqual(res5.cantidadComprada, 5);
+      assert.strictEqual(res5.precioUnitario, 30);
+      assert.strictEqual(res5.costoTotal, 150);
+      assert.strictEqual(res5.saldoRestante, 350);
+      assert.strictEqual(res5.cantidadEnInventario, 5);
+
+      // Compra lote x10: 10 * 30 = 300 monedas
+      const res10 = await servicio.comprar('usr-1', 'pocion-menor', 10);
+      assert.strictEqual(res10.cantidadComprada, 10);
+      assert.strictEqual(res10.precioUnitario, 30);
+      assert.strictEqual(res10.costoTotal, 300);
+      assert.strictEqual(res10.saldoRestante, 50);
+      assert.strictEqual(res10.cantidadEnInventario, 15);
+    });
+
+    it('debe exponer catálogo oficial con servicioDisponible y existencias en bolsa', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            monedas: 250,
+            ubicacionActual: { id: 'LOC-01', nombre: 'Villa Serena', esSegura: true, servicios: ['POSADA'] },
+          }),
+        },
+        objeto: {
+          findMany: async () => [
+            { id: 'o-1', codigo: 'pocion-menor', nombre: 'Poción Menor', descripcion: 'Cura 20 HP', tipo: 'CURACION', precioCompra: 30, efectoValor: 20 },
+          ],
+        },
+        inventarioPersonaje: {
+          findMany: async () => [
+            { objetoId: 'o-1', cantidad: 3 },
+          ],
+        },
+      };
+
+      const servicio = new TiendaService(prismaMock);
+      const catalogo = await servicio.obtenerCatalogo('usr-1');
+
+      assert.strictEqual(catalogo.saldoMonedas, 250);
+      assert.strictEqual(catalogo.servicioDisponible, false); // Villa Serena no tiene TIENDA
+      assert.strictEqual(catalogo.ubicacionActual.nombre, 'Villa Serena');
+      assert.strictEqual(catalogo.items.length, 1);
+      assert.strictEqual(catalogo.items[0].cantidadEnInventario, 3);
+      assert.strictEqual(catalogo.items[0].efectoValor, 20);
+    });
   });
 
   describe('Seguridad S-6: Integridad de datos y rechazo de campos inyectados', () => {
     const pipe = new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+    });
+
+    it('debe rechazar cantidad fuera de rango en ComprarDto (cantidad: 100 y cantidad: 0)', async () => {
+      // Intento con cantidad > 99
+      await assert.rejects(
+        async () => {
+          await pipe.transform(
+            { itemCodigo: 'pocion-menor', cantidad: 100 },
+            { type: 'body', metatype: ComprarDto },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          const msg = JSON.stringify(error.getResponse());
+          assert.strictEqual(msg.includes('cantidad'), true);
+          return true;
+        },
+      );
+
+      // Intento con cantidad < 1
+      await assert.rejects(
+        async () => {
+          await pipe.transform(
+            { itemCodigo: 'pocion-menor', cantidad: 0 },
+            { type: 'body', metatype: ComprarDto },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          const msg = JSON.stringify(error.getResponse());
+          assert.strictEqual(msg.includes('cantidad'), true);
+          return true;
+        },
+      );
     });
 
     it('debe rechazar campos manipulados en ComprarDto (ej. costoTotal o precio)', async () => {

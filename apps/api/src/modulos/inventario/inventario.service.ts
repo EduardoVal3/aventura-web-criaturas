@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
 
+export const CAPACIDAD_INVENTARIO = 20;
+
 @Injectable()
 export class InventarioService {
   constructor(private readonly prisma: PrismaService) {}
@@ -27,14 +29,22 @@ export class InventarioService {
       orderBy: { objeto: { codigo: 'asc' } },
     });
 
+    const items = posesiones.map((p) => ({
+      codigo: p.objeto.codigo,
+      nombre: p.objeto.nombre,
+      descripcion: p.objeto.descripcion,
+      tipo: p.objeto.tipo,
+      efectoValor: p.objeto.efectoValor,
+      precioCompra: p.objeto.precioCompra,
+      cantidad: p.cantidad,
+    }));
+
     return {
       monedas: personaje.monedas,
-      items: posesiones.map((p) => ({
-        codigo: p.objeto.codigo,
-        nombre: p.objeto.nombre,
-        tipo: p.objeto.tipo,
-        cantidad: p.cantidad,
-      })),
+      capacidadMaxima: CAPACIDAD_INVENTARIO,
+      ranurasOcupadas: items.length,
+      totalUnidades: items.reduce((acc, i) => acc + i.cantidad, 0),
+      items,
     };
   }
 
@@ -55,6 +65,7 @@ export class InventarioService {
 
     const criatura = await this.prisma.criatura.findUnique({
       where: { id: criaturaId },
+      include: { especie: true },
     });
 
     if (!criatura || criatura.personajeId !== personaje.id) {
@@ -75,7 +86,32 @@ export class InventarioService {
       });
     }
 
+    if (objeto.tipo && objeto.tipo !== 'CURACION') {
+      throw new BadRequestException({
+        codigo: 'OBJETO_NO_CONSUMIBLE',
+        mensaje: 'Este objeto no puede aplicarse directamente fuera de combate.',
+      });
+    }
+
     return this.prisma.$transaction(async (tx) => {
+      // simplificacion: bloqueo pesimista por fila de personaje para serializar consumo de objetos y curacion; suficiente para sesiones individuales sin migrar a aislamiento Serializable.
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE`;
+      }
+
+      const criaturaActual =
+        (await tx.criatura.findUnique?.({
+          where: { id: criaturaId },
+          include: { especie: true },
+        })) ?? criatura;
+
+      if (criaturaActual.hpActual >= criaturaActual.hpMaximo) {
+        throw new BadRequestException({
+          codigo: 'SALUD_COMPLETA',
+          mensaje: 'La criatura seleccionada ya tiene sus puntos de golpe al máximo.',
+        });
+      }
+
       const itemInventario = await tx.inventarioPersonaje.findUnique({
         where: {
           personajeId_objetoId: {
@@ -106,22 +142,28 @@ export class InventarioService {
       }
 
       // Curar respetando invariante INV-03: hpNuevo = min(hpMaximo, hpActual + efectoValor)
-      const hpPrevio = criatura.hpActual;
-      const hpNuevo = Math.min(criatura.hpMaximo, hpPrevio + objeto.efectoValor);
+      const hpPrevio = criaturaActual.hpActual;
+      const hpNuevo = Math.min(criaturaActual.hpMaximo, hpPrevio + objeto.efectoValor);
+      const curacionAplicada = hpNuevo - hpPrevio;
 
       await tx.criatura.update({
-        where: { id: criatura.id },
+        where: { id: criaturaActual.id },
         data: { hpActual: hpNuevo },
       });
+
+      const criaturaNombre =
+        criaturaActual.apodo ||
+        ('especie' in criaturaActual && criaturaActual.especie?.nombre) ||
+        'criatura';
 
       await tx.historial.create({
         data: {
           personajeId: personaje.id,
           tipo: 'OBJETO',
-          descripcion: `Uso de ${objeto.nombre} en ${criatura.apodo || 'criatura'} (+${hpNuevo - hpPrevio} HP).`,
+          descripcion: `Uso de ${objeto.nombre} en ${criaturaNombre} (+${curacionAplicada} HP).`,
           datosJson: {
             objetoCodigo: itemCodigo,
-            criaturaId: criatura.id,
+            criaturaId: criaturaActual.id,
             hpPrevio,
             hpNuevo,
             cantidadRestante,
@@ -130,9 +172,12 @@ export class InventarioService {
       });
 
       return {
-        criaturaId: criatura.id,
+        criaturaId: criaturaActual.id,
+        criaturaNombre,
         hpPrevio,
         hpNuevo,
+        hpMaximo: criaturaActual.hpMaximo,
+        curacionAplicada,
         cantidadRestante,
       };
     });

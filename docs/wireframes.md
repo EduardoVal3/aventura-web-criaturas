@@ -229,31 +229,56 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 ---
 
 ## 7. PantallaInventario y PantallaTienda
-- **Módulos cubiertos:** `M-INV` (Inventario y Comercio).
-- **Propósito:** Consulta de objetos poseídos y adquisición de consumibles en localidades.
+- **Módulos cubiertos:** `M-INV` (Inventario y Comercio), `M-CUR` (Curación fuera de combate).
+- **Propósito:** Gestión táctica de la bolsa por categorías con capacidad de ranuras, y comercio mercantil con lotes autoritativo desde servidor.
 
 ```text
 +-----------------------------------------------------------------------+
-| BAZAR DE PROVISIONES: PUESTO FRONTERIZO | Monedas: [texto-oro-tienda] |
+| BAZAR DE PROVISIONES | Oro: 120 G | Ubicación: Puesto Fronterizo      |
+| [boton-ir-inventario]                             [boton-ir-asentamiento] |
 +-----------------------------------------------------------------------+
-| Artículos en Venta:                                                   |
-| 1. Talismán Básico de Captura   | 50 Monedas  | [boton-comprar-tal-bas] |
-| 2. Talismán Resonante Captura   | 150 Monedas | [boton-comprar-tal-res] |
-| 3. Poción de Curación Menor     | 40 Monedas  | [boton-comprar-poc-men] |
-| 4. Poción de Curación Mayor     | 100 Monedas | [boton-comprar-poc-may] |
-+-----------------------------------------------------------------------+
-| Tu Inventario Actual:                                                 |
-| - Talismán Básico: 3 unidades                 [boton-usar-item-1]     |
-| - Poción de Curación Menor: 2 unidades        [boton-usar-item-2]     |
+| CATÁLOGO MERCANTIL (Precios oficiales desde servidor):                |
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Poción Menor (+20 HP)       | | [img] Talismán Básico (Nv.1)  | |
+| | 30 Oro | En bolsa: x2             | | 50 Oro | En bolsa: x3         | |
+| | Lote: [x1] [x5] [x10]  [-] 1x [+] | | Lote: [x1] [x5] [x10]  [-]1x[+] |
+| | Costo: 30 Oro                     | | Costo: 50 Oro                 | |
+| | [boton-adquirir-lote-poc-menor]   | | [boton-adquirir-lote-tal-bas] | |
+| +-----------------------------------+ +-------------------------------+ |
 |                                                                       |
-| [boton-volver-hub-tienda]                                             |
+| >> MODAL SELLADO DE CONFIRMACIÓN DE COMPRA [overflow-hidden]:        |
+|    "Confirmar adquisición de 5x Poción Menor por 150 Oro"             |
+|    Saldo actual: 200 Oro -> Saldo proyectado: 50 Oro                  |
+|    [BOTON-CONFIRMAR-ADQUISICION]   [BOTON-CANCELAR]                   |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| BOLSA E INVENTARIO | Oro: 120 G | Ranuras: 2/20 (10%) • 5 uds.       |
+| Barra de carga: [==------------------] 10% de ocupación               |
+| [boton-ir-bazar]                                  [boton-ir-asentamiento] |
++-----------------------------------------------------------------------+
+| Filtros: [TODOS (2)] [CURACIÓN (1)] [CAPTURA (1)] [ESPECIAL (0)]      |
+|                                                                       |
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Poción de Curación Menor    | | [img] Talismán Básico Captura | |
+| | Cód: pocion-menor | Restaura +20HP| | Cód: talisman-basico | Bono x1| |
+| | Cantidad en bolsa: x2 unidades    | | Cantidad en bolsa: x3 unidades| |
+| | [BOTON-APLICAR-A-CRIATURA]        | | [BOTON-USO-EN-COMBATE]        | |
+| +-----------------------------------+ +-------------------------------+ |
+|                                                                       |
+| >> MODAL SELLADO DE CURACIÓN REACTIVA [INV-03, overflow-hidden]:      |
+|    Poción Menor (+20 HP) | Disponibles: x2                            |
+|    - Lobo Alfa Nv.3 | [====------] 15/30 HP (+15 HP) -> [SANAR +15 HP]|
+|    - Oso Pardo Nv.2 | [==========] 33/33 HP ---------> [SALUD COMPLETA|
+|    [BOTON-CERRAR-MODAL]                                               |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-comprar-tal-bas`, `boton-comprar-tal-res`, etc.: Descuenta monedas y añade el ítem al inventario.
-  - `boton-usar-item-2`: Permite consumir poción fuera de combate para sanar al equipo.
-  - `boton-volver-hub-tienda`: Regresa a `PantallaHubUbicacion`.
+  - `boton-adquirir-lote`: Despliega el modal sellado de confirmación con desglose de saldo actual y proyectado; previene dobles clics con `aria-busy`.
+  - `BOTON-APLICAR-A-CRIATURA`: Abre el modal reactivo de equipo con vista previa de incremento de HP (`INV-03`) y animación `anim-restauracion-salud`.
+  - `BOTON-USO-EN-COMBATE`: Notifica al explorador que los talismanes de captura solo se aplican durante los encuentros tácticos de combate.
+  - `boton-ir-bazar` / `boton-ir-inventario` / `boton-ir-asentamiento`: Enlaces accesibles mediante `<Button asChild>`.
 
 ---
 

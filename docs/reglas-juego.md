@@ -4,9 +4,13 @@ Este documento establece las especificaciones matemáticas y los invariantes que
 
 ---
 
-## 1. Normalización de estadísticas (Anexo A.3)
+## 1. Normalización y Soberanía Interna de Atributos (Subfase 10j)
 
-Las estadísticas de D&D provistas por Open5e (`srd-2024`) manejan órdenes de magnitud dispares. Para integrarlas al motor del juego, cada atributo base se normaliza a una escala común en el intervalo **[30, 100]**:
+A partir de la Subfase 10j, rige el principio de **Soberanía Interna de Atributos**: las 30 criaturas canónicas poseen estadísticas base inmutables definidas en el servidor de juego (`apps/api/src/modulos/externo/bestiario-canonico.ts`), garantizando una progresión estricta por bioma regional y presupuesto total:
+$$\text{Presupuesto} = \text{hpBase} + \text{ataqueBase} + \text{defensaBase} + \text{velocidadBase}$$
+Donde cada estadística individual se acota rigurosamente en $[30, 100]$.
+
+La fórmula matemática de normalización original del Anexo A.3 se conserva como base de referencia metodológica sobre el SRD 5.2 de Open5e:
 
 $$\text{valorJuego} = 30 + 70 \times \frac{\text{valor} - \text{minimo}}{\text{maximo} - \text{minimo}}$$
 
@@ -196,3 +200,26 @@ Los objetos de curación y talismanes de captura poseen precios y efectos canón
 - Lotes de compra rápida en bazar: $x1$, $x5$, $x10$ (acotados estrictamente a $[1, 99]$ en DTO).
 - Costo total calculado unilateralmente en servidor ($S\text{-6}$): $\text{costoTotal} = \text{precioCompra} \times \text{cantidad}$.
 - Invariante de saldo ($S\text{-4}$): $\text{saldoMonedas} \ge \text{costoTotal}$, validado bajo bloqueo de concurrencia pesimista (`FOR UPDATE`).
+
+---
+
+### 2.8 Jerarquía de 4 slots de movimientos y bloqueo de Furia (Subfase 10j, D-4)
+
+Cada criatura posee exactamente 4 movimientos tácticos ordenados por slot (`1..4`):
+1. **Slot 1 (M1 - Básico):** Ataque elemental o físico estándar sin costo adicional.
+2. **Slot 2 (M2 - Táctico):** Ataque con efecto secundario de estado, debilitamiento o ventaja.
+3. **Slot 3 (M3 - Cobertura):** Movimiento de defensa, barrera, drenaje o potencia superior.
+4. **Slot 4 (M4 - Furia/Especial):** Técnica definitiva de devastación elemental ($24 - 40$ de poder).
+
+**Regla de bloqueo en servidor (Decisión D-4):**
+- Durante la Subfase 10j, el jugador solo puede invocar en combate los slots 1 a 3 (`movimientoIndice: 0, 1, 2`).
+- El Slot 4 (`movimientoIndice: 3`, slot 4) está formalmente bloqueado en el servidor bajo código de error `400 MOVIMIENTO_BLOQUEADO` («El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.») hasta que se implemente la mecánica de medidor de Resonancia.
+- Los rivales salvajes seleccionan aleatoriamente su contraataque exclusivamente entre los slots 1 y 3 (el rival nunca ejecuta el slot 4 de Furia).
+
+---
+
+### 2.9 Tablas de aparición canónicas e invariante INV-01
+
+En las 6 zonas del mundo, cada tabla de aparición cuenta con exactamente 5 especies autóctonas distribuidas con una suma estricta del **100 %** ($\sum_{i=1}^5 \text{peso}_i = 100$):
+$$\text{Distribución: } 35\,\% \text{ (Común 1)} + 35\,\% \text{ (Común 2)} + 15\,\% \text{ (Frecuente)} + 10\,\% \text{ (Rara)} + 5\,\% \text{ (Especial / Legendaria)} = 100\,\%$$
+Esta parametrización garantiza matemáticamente el cumplimiento del invariante **INV-01** en todo momento.

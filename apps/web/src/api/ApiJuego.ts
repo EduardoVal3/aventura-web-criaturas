@@ -160,6 +160,8 @@ export interface MovimientoCombate {
   nombre: string;
   poder: number;
   tipoAccion?: string;
+  slot?: number;
+  efecto?: string | null;
 }
 
 export interface CriaturaCombateAliada {
@@ -451,6 +453,7 @@ export interface EspecieCatalogo {
   slug: string;
   nombre: string;
   tipo: string;
+  elemento?: string;
   challengeRating: number;
   hpBase: number;
   ataqueBase: number;
@@ -458,6 +461,7 @@ export interface EspecieCatalogo {
   velocidadBase: number;
   tasaCaptura: number;
   esEspecial: boolean;
+  esLegendaria?: boolean;
   keyExterna?: string;
   descripcion?: string;
   arquetipo?: ArquetipoEspecie;
@@ -474,6 +478,8 @@ export interface MovimientoEspecie {
   nombreOriginal: string;
   tipoAccion?: string;
   poder: number;
+  slot?: number;
+  efecto?: string | null;
 }
 
 export interface EspecieDetalle extends EspecieCatalogo {

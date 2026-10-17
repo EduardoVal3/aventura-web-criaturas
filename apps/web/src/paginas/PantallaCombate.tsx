@@ -865,21 +865,66 @@ export function PantallaCombate() {
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {movimientosAliados.map((mov, idx) => (
-                      <Button
-                        key={idx}
-                        variant="secondary"
-                        size="sm"
-                        disabled={procesandoAccion}
-                        onClick={() => handleAtacar(idx)}
-                        className="flex items-center justify-between text-xs h-9 px-3 border border-pixel"
-                      >
-                        <span className="font-semibold">{mov.nombre}</span>
-                        <Badge variant="outline" className="text-[10px] font-mono">
-                          Poder {mov.poder}
-                        </Badge>
-                      </Button>
-                    ))}
+                    {movimientosAliados.map((mov, idx) => {
+                      const numSlot = mov.slot ?? idx + 1;
+                      const esFuriaSlot4 = numSlot === 4 || idx === 3;
+                      const estaBloqueado = esFuriaSlot4; // simplificacion: Furia bloqueada en servidor hasta tener Resonancia 100%
+
+                      return (
+                        <Button
+                          key={idx}
+                          variant={estaBloqueado ? "outline" : "secondary"}
+                          size="sm"
+                          disabled={procesandoAccion || estaBloqueado}
+                          aria-disabled={estaBloqueado}
+                          aria-busy={procesandoAccion}
+                          onClick={() => !estaBloqueado && handleAtacar(idx)}
+                          title={
+                            estaBloqueado
+                              ? "Furia táctica bloqueada: requiere 100% de Resonancia en combate"
+                              : undefined
+                          }
+                          className={`flex items-center justify-between text-xs h-9 px-2.5 sm:px-3 border border-pixel transition-all ${
+                            estaBloqueado
+                              ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed border-border/80 text-muted-foreground"
+                              : "hover:border-primary active:scale-[0.98]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0 truncate">
+                            <Badge
+                              variant="outline"
+                              className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
+                                estaBloqueado
+                                  ? "border-amber-500/50 text-amber-300 bg-amber-500/10"
+                                  : "border-border text-foreground"
+                              }`}
+                            >
+                              M{numSlot}
+                            </Badge>
+                            <span className="font-semibold truncate">{mov.nombre}</span>
+                            {mov.efecto && !estaBloqueado && (
+                              <span className="text-[8px] font-mono uppercase px-1 py-0 text-primary hidden sm:inline">
+                                {mov.efecto}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            {estaBloqueado ? (
+                              <Badge
+                                variant="secondary"
+                                className="text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/40 px-1 py-0"
+                              >
+                                Furia (Bloqueado)
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] font-mono px-1 py-0">
+                                Pot. {mov.poder}
+                              </Badge>
+                            )}
+                          </div>
+                        </Button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

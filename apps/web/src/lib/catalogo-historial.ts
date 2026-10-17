@@ -15,6 +15,19 @@ export const TRADUCCION_TIPOS_ESPECIE: Record<string, string> = {
   elemental: "Elemental",
   construct: "Autómata",
   plant: "Planta",
+  dragon: "Dragón",
+};
+
+/**
+ * Mapeo canónico de afinidades elementales retro de Aethelgard.
+ */
+export const TRADUCCION_ELEMENTOS: Record<string, { nombre: string; clase: string }> = {
+  fisico: { nombre: "Físico", clase: "border-stone-500/80 bg-stone-500/15 text-stone-300" },
+  fuego: { nombre: "Fuego", clase: "border-red-500/80 bg-red-500/15 text-red-300" },
+  agua: { nombre: "Agua", clase: "border-blue-500/80 bg-blue-500/15 text-blue-300" },
+  natura: { nombre: "Natura", clase: "border-emerald-500/80 bg-emerald-500/15 text-emerald-300" },
+  sombra: { nombre: "Sombra", clase: "border-purple-500/80 bg-purple-500/15 text-purple-300" },
+  luz: { nombre: "Luz", clase: "border-yellow-400/80 bg-yellow-400/15 text-yellow-200" },
 };
 
 /**
@@ -76,9 +89,11 @@ export function filtrarEspeciesCatalogo(
       return false;
     }
 
-    // Filtro por arquetipo o rareza especial
+    // Filtro por arquetipo o rareza especial/legendaria
     if (arquetipoFiltro !== "TODOS") {
-      if (arquetipoFiltro === "ESPECIAL" || arquetipoFiltro === "ESPECIALES") {
+      if (arquetipoFiltro === "LEGENDARIAS" || arquetipoFiltro === "LEGENDARIO") {
+        if (!esp.esLegendaria) return false;
+      } else if (arquetipoFiltro === "ESPECIAL" || arquetipoFiltro === "ESPECIALES") {
         if (!esp.esEspecial) return false;
       } else {
         const arq = esp.arquetipo || calcularArquetipoCriatura(esp);

@@ -11,6 +11,7 @@ import {
   Zap,
   Scale,
   Sparkles,
+  Crown,
   Eye,
   RotateCcw,
   X,
@@ -48,12 +49,14 @@ import {
 
 export {
   TRADUCCION_TIPOS_ESPECIE,
+  TRADUCCION_ELEMENTOS,
   calcularArquetipoCriatura,
   type CriteriosFiltroCatalogo,
   filtrarEspeciesCatalogo,
 } from "@/lib/catalogo-historial";
 import {
   TRADUCCION_TIPOS_ESPECIE,
+  TRADUCCION_ELEMENTOS,
   calcularArquetipoCriatura,
   filtrarEspeciesCatalogo,
 } from "@/lib/catalogo-historial";
@@ -65,6 +68,7 @@ const ARQUETIPOS_FILTRO = [
   { id: "VELOZ", etiqueta: "VELOZ", icono: Zap },
   { id: "EQUILIBRADO", etiqueta: "EQUILIBRADO", icono: Scale },
   { id: "ESPECIALES", etiqueta: "ESPECIALES", icono: Sparkles },
+  { id: "LEGENDARIAS", etiqueta: "LEGENDARIAS", icono: Crown },
 ] as const;
 
 export function PantallaCatalogo() {
@@ -114,8 +118,9 @@ export function PantallaCatalogo() {
   // Métricas para la barra de avistamiento
   const metricas = useMemo(() => {
     const especiales = especies.filter((e) => e.esEspecial).length;
+    const legendarias = especies.filter((e) => e.esLegendaria).length;
     const tipos = new Set(especies.map((e) => e.tipo)).size;
-    return { especiales, tipos };
+    return { especiales, legendarias, tipos };
   }, [especies]);
 
   const hayFiltrosActivos = busqueda.trim() !== "" || tipoFiltro !== "todos" || arquetipoFiltro !== "TODOS";
@@ -151,7 +156,7 @@ export function PantallaCatalogo() {
             </h1>
             <Badge variant="secondary" className="font-mono text-xs flex items-center gap-1">
               <BookOpen className="w-3 h-3" aria-hidden="true" />
-              25 ESPECIES SRD 5.2
+              30 ESPECIES SRD 5.2
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -191,7 +196,7 @@ export function PantallaCatalogo() {
       </div>
 
       {/* Barra de Resumen de Avistamiento Biológico */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-bastion border-2 border-border/80 text-center font-mono text-xs">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-bastion border-2 border-border/80 text-center font-mono text-xs">
         <div>
           <span className="text-[10px] text-muted-foreground block uppercase">Registradas</span>
           <span className="font-bold text-primary">{totalEspecies || especies.length}</span>
@@ -199,6 +204,13 @@ export function PantallaCatalogo() {
         <div>
           <span className="text-[10px] text-muted-foreground block uppercase">En Vista</span>
           <span className="font-bold text-foreground">{especiesFiltradas.length}</span>
+        </div>
+        <div>
+          <span className="text-[10px] text-muted-foreground block uppercase">Legendarias</span>
+          <span className="font-bold text-amber-300 flex items-center justify-center gap-1">
+            <Crown className="w-3 h-3 inline" aria-hidden="true" />
+            {metricas.legendarias}
+          </span>
         </div>
         <div>
           <span className="text-[10px] text-muted-foreground block uppercase">Especiales</span>
@@ -354,7 +366,9 @@ export function PantallaCatalogo() {
               <Card
                 key={especie.slug}
                 className={`border-2 rounded-none bg-bastion flex flex-col justify-between transition-all duration-200 hover:border-primary/80 ${
-                  especie.esEspecial
+                  especie.esLegendaria
+                    ? "border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.4)]"
+                    : especie.esEspecial
                     ? "border-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
                     : "border-border"
                 }`}
@@ -369,11 +383,20 @@ export function PantallaCatalogo() {
                     {especie.keyExterna || `srd-2024_${especie.slug}`}
                   </p>
 
-                  {/* Badges de Tipo y Arquetipo limpios sin pseudo-bordes laterales desbordados */}
+                  {/* Badges de Tipo, Afinidad Elemental y Arquetipo limpios sin pseudo-bordes laterales desbordados */}
                   <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                     <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase bg-secondary text-secondary-foreground border border-border rounded-none">
                       {tipoEspanol}
                     </span>
+                    {especie.elemento && TRADUCCION_ELEMENTOS[especie.elemento] && (
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase border rounded-none ${
+                          TRADUCCION_ELEMENTOS[especie.elemento].clase
+                        }`}
+                      >
+                        {TRADUCCION_ELEMENTOS[especie.elemento].nombre}
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
                       {renderIconoArquetipo(arquetipo)}
                       <span>{arquetipo}</span>
@@ -388,13 +411,18 @@ export function PantallaCatalogo() {
                     aria-hidden="true"
                   />
 
-                  {/* Badge ESPECIAL ubicado como sello flotante en la vitrina para nunca recortarse ni competir con el título */}
-                  {especie.esEspecial && (
+                  {/* Badge flotante de LEGENDARIO o ESPECIAL */}
+                  {especie.esLegendaria ? (
+                    <span className="absolute top-2 right-2 z-10 bg-amber-400/25 text-amber-200 border-2 border-amber-400 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
+                      <Crown className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span>LEGENDARIO</span>
+                    </span>
+                  ) : especie.esEspecial ? (
                     <span className="absolute top-2 right-2 z-10 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
                       <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
                       <span>ESPECIAL</span>
                     </span>
-                  )}
+                  ) : null}
 
                   <img
                     src={obtenerImagenCriatura(especie.slug)}
@@ -492,12 +520,17 @@ export function PantallaCatalogo() {
                     onError={(e) => manejarErrorImagen(e, "criatura")}
                     className="pixelated h-28 w-28 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.7)]"
                   />
-                  {especieSeleccionada.esEspecial && (
+                  {especieSeleccionada.esLegendaria ? (
+                    <span className="absolute top-2 right-2 bg-amber-400/25 text-amber-200 border-2 border-amber-400 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
+                      <Crown className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span>LEGENDARIO</span>
+                    </span>
+                  ) : especieSeleccionada.esEspecial ? (
                     <span className="absolute top-2 right-2 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
                       <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
                       <span>ESPECIAL</span>
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Fila de Badges */}
@@ -505,6 +538,15 @@ export function PantallaCatalogo() {
                   <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase font-mono font-semibold bg-secondary text-secondary-foreground border border-border rounded-none">
                     {TRADUCCION_TIPOS_ESPECIE[especieSeleccionada.tipo.toLowerCase()] || especieSeleccionada.tipo}
                   </span>
+                  {especieSeleccionada.elemento && TRADUCCION_ELEMENTOS[especieSeleccionada.elemento] && (
+                    <span
+                      className={`inline-flex items-center px-1.5 py-0.5 text-[9px] uppercase font-mono font-semibold border rounded-none ${
+                        TRADUCCION_ELEMENTOS[especieSeleccionada.elemento].clase
+                      }`}
+                    >
+                      {TRADUCCION_ELEMENTOS[especieSeleccionada.elemento].nombre}
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
                     {renderIconoArquetipo(calcularArquetipoCriatura(especieSeleccionada))}
                     <span>{calcularArquetipoCriatura(especieSeleccionada)}</span>
@@ -563,28 +605,55 @@ export function PantallaCatalogo() {
                   </div>
                 </div>
 
-                {/* Lista de Movimientos Conocidos */}
+                {/* Lista de Movimientos Conocidos (4 Slots Canónicos) */}
                 <div className="space-y-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-mono">
-                    Movimientos Conocidos
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block font-mono">
+                      Movimientos Tácticos (4 Slots)
+                    </span>
+                    <span className="text-[9px] font-mono text-muted-foreground">
+                      M1..M3 Combate · M4 Furia
+                    </span>
+                  </div>
                   <div className="space-y-1">
-                    {(especieSeleccionada.movimientos || []).slice(0, 3).map((mov, i) => (
-                      <div
-                        key={i}
-                        className="p-2 bg-background border border-border/60 text-xs flex items-center justify-between"
-                      >
-                        <div>
-                          <span className="font-semibold text-foreground block font-sans">{mov.nombre}</span>
-                          <span className="text-[10px] text-muted-foreground font-mono">
-                            {mov.tipoAccion || "Ataque melé"} · {mov.nombreOriginal}
+                    {(especieSeleccionada.movimientos || []).map((mov, i) => {
+                      const numSlot = mov.slot ?? (i + 1);
+                      const esSlot4 = numSlot === 4;
+                      return (
+                        <div
+                          key={i}
+                          className={`p-2 bg-background border text-xs flex items-center justify-between gap-2 ${
+                            esSlot4 ? "border-amber-500/50 bg-amber-500/5" : "border-border/60"
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`font-mono text-[9px] px-1 py-0.2 border rounded-none font-bold ${
+                                  esSlot4
+                                    ? "border-amber-400 text-amber-300 bg-amber-400/20"
+                                    : "border-border text-foreground bg-muted/30"
+                                }`}
+                              >
+                                M{numSlot}
+                              </span>
+                              <span className="font-semibold text-foreground font-sans truncate">{mov.nombre}</span>
+                              {mov.efecto && (
+                                <span className="text-[8px] font-mono uppercase px-1 py-0.2 border border-primary/40 bg-primary/10 text-primary">
+                                  {mov.efecto}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono block truncate">
+                              {mov.tipoAccion || "Ataque melé"} {mov.nombreOriginal ? `· ${mov.nombreOriginal}` : ""}
+                            </span>
+                          </div>
+                          <span className="font-mono text-[10px] px-1.5 py-0.5 border border-border rounded-none shrink-0">
+                            Pot. {mov.poder}
                           </span>
                         </div>
-                        <span className="font-mono text-[10px] px-1.5 py-0.5 border border-border rounded-none">
-                          Pot. {mov.poder}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

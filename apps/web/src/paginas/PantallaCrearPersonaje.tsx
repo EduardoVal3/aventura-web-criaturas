@@ -3,7 +3,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Heart, Swords, Shield, Zap, AlertCircle } from "lucide-react";
+import { Heart, Swords, Shield, Zap, AlertCircle, LogOut, Sparkles } from "lucide-react";
+
+
 
 import {
   Card,
@@ -34,7 +36,7 @@ import { OPCIONES_CRIATURAS } from "@/lib/criaturas-iniciales";
 
 export function PantallaCrearPersonaje() {
   const navigate = useNavigate();
-  const { actualizarPersonajeActivo, establecerPersonajeActivo } =
+  const { actualizarPersonajeActivo, establecerPersonajeActivo, cerrarSesion } =
     useAutenticacion();
   const [enviando, setEnviando] = useState(false);
 
@@ -87,6 +89,13 @@ export function PantallaCrearPersonaje() {
     } catch (error) {
       reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
+        // simplificacion: si la sesión no existe en el servidor o expiró, se limpia y remite al ingreso
+        if (error.estado === 401 || error.codigo === "USUARIO_NO_ENCONTRADO") {
+          toast.error("Sesión inválida o expirada. Por favor regístrate o inicia sesión de nuevo.");
+          await cerrarSesion();
+          navigate("/ingreso");
+          return;
+        }
         toast.error(error.message);
       } else {
         toast.error("Ocurrió un error al crear el personaje.");
@@ -105,13 +114,29 @@ export function PantallaCrearPersonaje() {
       <div className="w-full max-w-4xl">
         <Card className="shadow-2xl border-4">
           <CardHeader className="text-center space-y-2 pb-4">
-            <div className="flex justify-center mb-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
               <Badge
                 variant="outline"
-                className="retro text-[10px] tracking-wider text-primary border-primary bg-primary/10 px-2 py-0.5"
+                className="retro text-[10px] tracking-wider text-primary border-primary bg-primary/10 px-2 py-0.5 flex items-center gap-1"
               >
-                🐾 COMPAÑERO INICIAL
+                <Sparkles className="size-3 text-primary" />
+                <span>COMPAÑERO INICIAL</span>
               </Badge>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  reproducirSonido("click", 0.4);
+                  await cerrarSesion();
+                  navigate("/ingreso");
+                }}
+                className="retro text-[10px] tracking-wider flex items-center gap-1.5 h-7 px-2.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                title="Cerrar sesión y volver al portal de ingreso"
+              >
+                <LogOut className="size-3.5" />
+                <span>SALIR AL INGRESO</span>
+              </Button>
             </div>
             <CardTitle className="retro text-base sm:text-xl text-primary tracking-wide leading-relaxed">
               Crea tu Explorador
@@ -358,13 +383,27 @@ export function PantallaCrearPersonaje() {
             </CardContent>
 
             <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border">
-              <div className="text-xs text-muted-foreground text-center sm:text-left">
-                <span className="font-semibold text-foreground">
-                  Compañero seleccionado:
-                </span>{" "}
-                <span className="font-mono text-primary font-bold">
-                  {criaturaActiva?.nombre} ({criaturaActiva?.arquetipo})
-                </span>
+              <div className="flex flex-col gap-1 text-center sm:text-left">
+                <div className="text-xs text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    Compañero seleccionado:
+                  </span>{" "}
+                  <span className="font-mono text-primary font-bold">
+                    {criaturaActiva?.nombre} ({criaturaActiva?.arquetipo})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    reproducirSonido("click", 0.4);
+                    await cerrarSesion();
+                    navigate("/ingreso");
+                  }}
+                  className="text-[11px] text-muted-foreground hover:text-primary transition-colors underline underline-offset-2 flex items-center justify-center sm:justify-start gap-1 cursor-pointer"
+                >
+                  <LogOut className="size-3" />
+                  <span>¿Deseas ingresar con otra cuenta? Cerrar sesión</span>
+                </button>
               </div>
 
               <Button
@@ -381,9 +420,12 @@ export function PantallaCrearPersonaje() {
                     </span>
                   </>
                 ) : (
-                  <span className="retro text-xs tracking-wider">
-                    COMENZAR EN VILLA SERENA ⚔️
-                  </span>
+                  <>
+                    <Swords className="size-4 mr-1 text-primary-foreground" />
+                    <span className="retro text-xs tracking-wider">
+                      COMENZAR EN VILLA SERENA
+                    </span>
+                  </>
                 )}
               </Button>
             </CardFooter>

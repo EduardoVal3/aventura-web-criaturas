@@ -50,12 +50,12 @@ export function RutaPublica({ children }: { children: ReactNode }) {
     );
   }
 
-  if (token) {
-    if (personajeActivo) {
-      return <Navigate to="/hub" replace />;
-    }
-    return <Navigate to="/crear-personaje" replace />;
+  // simplificacion: si ya está completamente autenticado con personaje activo, se le remite al hub.
+  // Si no posee personaje o desea iniciar sesión/registrarse con otra cuenta, se le permite acceder a la vista pública.
+  if (token && personajeActivo) {
+    return <Navigate to="/hub" replace />;
   }
 
   return <>{children}</>;
 }
+

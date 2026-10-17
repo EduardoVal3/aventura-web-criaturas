@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
 
@@ -32,13 +33,14 @@ export class AccionCombateDto {
   tipoAccion: TipoAccionCombate;
 
   @ApiPropertyOptional({
-    description: 'Índice del movimiento a ejecutar (si tipoAccion es ATACAR)',
+    description: 'Índice del movimiento a ejecutar (si tipoAccion es ATACAR, 0 a 3)',
     example: 0,
     default: 0,
   })
   @IsOptional()
   @IsInt({ message: 'El índice del movimiento debe ser un número entero.' })
   @Min(0, { message: 'El índice del movimiento no puede ser negativo.' })
+  @Max(3, { message: 'El índice del movimiento no puede ser mayor a 3.' })
   movimientoIndice?: number;
 
   @ApiPropertyOptional({

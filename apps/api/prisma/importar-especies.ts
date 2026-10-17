@@ -1,170 +1,152 @@
 import { PrismaClient } from '@prisma/client';
 import { AdaptadorCriaturasExternas } from '../src/modulos/externo/adaptador-criaturas-externas.service';
 import {
-  calcularHpBase,
-  calcularAtaqueBase,
-  calcularDefensaBase,
-  calcularVelocidadBase,
+  BESTIARIO,
+  TABLAS_APARICION,
+  EspecieCanonica,
+} from '../src/modulos/externo/bestiario-canonico';
+import {
   calcularTasaCaptura,
   CATALOGO_ESPECIES_PROPENSO,
-  TRADUCCION_MOVIMIENTOS,
 } from '../src/modulos/externo/normalizador-criaturas.util';
 
 const prisma = new PrismaClient();
 const adaptador = new AdaptadorCriaturasExternas();
 
-const TABLAS_APARICION = [
-  // ZON-01: Praderas del Amanecer (Nivel 1–3)
-  { zonaId: 'ZON-01', slug: 'lobo-gris', peso: 40, nivelMinimo: 1, nivelMaximo: 2 },
-  { zonaId: 'ZON-01', slug: 'pico-de-hacha', peso: 35, nivelMinimo: 1, nivelMaximo: 3 },
-  { zonaId: 'ZON-01', slug: 'arana-lobo-gigante', peso: 20, nivelMinimo: 1, nivelMaximo: 2 },
-  { zonaId: 'ZON-01', slug: 'lobo-huargo', peso: 5, nivelMinimo: 3, nivelMaximo: 4 },
-
-  // ZON-02: Bosque Susurrante (Nivel 2–4)
-  { zonaId: 'ZON-02', slug: 'oso-negro', peso: 40, nivelMinimo: 2, nivelMaximo: 3 },
-  { zonaId: 'ZON-02', slug: 'cocatriza', peso: 35, nivelMinimo: 2, nivelMaximo: 4 },
-  { zonaId: 'ZON-02', slug: 'arbol-despierto', peso: 20, nivelMinimo: 3, nivelMaximo: 4 },
-  { zonaId: 'ZON-02', slug: 'osobuho', peso: 5, nivelMinimo: 4, nivelMaximo: 5 },
-
-  // ZON-03: Riberas del Lago Espejo (Nivel 3–5)
-  { zonaId: 'ZON-03', slug: 'oso-pardo', peso: 40, nivelMinimo: 3, nivelMaximo: 4 },
-  { zonaId: 'ZON-03', slug: 'tigre-dientes-de-sable', peso: 35, nivelMinimo: 3, nivelMaximo: 5 },
-  { zonaId: 'ZON-03', slug: 'alosaurio', peso: 20, nivelMinimo: 4, nivelMaximo: 5 },
-  { zonaId: 'ZON-03', slug: 'hidra-de-las-marismas', peso: 5, nivelMinimo: 5, nivelMaximo: 6 },
-
-  // ZON-04: Paso de los Riscos (Nivel 5–7)
-  { zonaId: 'ZON-04', slug: 'grifo', peso: 40, nivelMinimo: 5, nivelMaximo: 6 },
-  { zonaId: 'ZON-04', slug: 'gargola', peso: 35, nivelMinimo: 5, nivelMaximo: 6 },
-  { zonaId: 'ZON-04', slug: 'manticora', peso: 20, nivelMinimo: 6, nivelMaximo: 7 },
-  { zonaId: 'ZON-04', slug: 'quimera-tricefala', peso: 5, nivelMinimo: 7, nivelMaximo: 8 },
-
-  // ZON-05: Cueva Umbría (Nivel 7–10)
-  { zonaId: 'ZON-05', slug: 'esqueleto-guerrero', peso: 35, nivelMinimo: 7, nivelMaximo: 8 },
-  { zonaId: 'ZON-05', slug: 'zombi-putrefacto', peso: 30, nivelMinimo: 7, nivelMaximo: 8 },
-  { zonaId: 'ZON-05', slug: 'necrofago', peso: 20, nivelMinimo: 8, nivelMaximo: 9 },
-  { zonaId: 'ZON-05', slug: 'basilisco', peso: 10, nivelMinimo: 8, nivelMaximo: 10 },
-  { zonaId: 'ZON-05', slug: 'hombre-lobo', peso: 5, nivelMinimo: 9, nivelMaximo: 10 },
-
-  // ZON-06: Pico de la Cumbre (Nivel 8–12)
-  { zonaId: 'ZON-06', slug: 'lobo-invernal', peso: 35, nivelMinimo: 8, nivelMaximo: 10 },
-  { zonaId: 'ZON-06', slug: 'armadura-animada', peso: 30, nivelMinimo: 8, nivelMaximo: 10 },
-  { zonaId: 'ZON-06', slug: 'elemental-de-fuego', peso: 18, nivelMinimo: 9, nivelMaximo: 11 },
-  { zonaId: 'ZON-06', slug: 'elemental-de-aire', peso: 12, nivelMinimo: 9, nivelMaximo: 11 },
-  { zonaId: 'ZON-06', slug: 'quimera-tricefala', peso: 5, nivelMinimo: 11, nivelMaximo: 12 },
-];
-
 async function importarEspecies() {
-  console.log('Iniciando importación batch de especies desde proveedor externo...');
+  console.log('Iniciando importación soberana de bestiario e idempotencia (Subfase 10j)...');
+
+  // 1. Validar invariante INV-01 en memoria antes de tocar la base de datos
+  const zonasMap = new Map<string, number>();
+  for (const aparicion of TABLAS_APARICION) {
+    const actual = zonasMap.get(aparicion.zonaId) ?? 0;
+    zonasMap.set(aparicion.zonaId, actual + aparicion.peso);
+  }
+
+  for (const [zonaId, sumaPesos] of zonasMap.entries()) {
+    if (sumaPesos !== 100) {
+      throw new Error(
+        `Violación de invariante INV-01: La zona ${zonaId} suma ${sumaPesos}%, debe sumar exactamente 100%`,
+      );
+    }
+  }
+
+  // 2. Obtener datos externos de Open5e (referencia de dados y lore)
   const claves = Object.keys(CATALOGO_ESPECIES_PROPENSO);
   const criaturasExternas = await adaptador.obtenerEspeciesSeleccionadas(claves);
+  console.log(`Se obtuvieron ${criaturasExternas.length} criaturas del adaptador externo / snapshot.`);
 
-  console.log(`Se obtuvieron ${criaturasExternas.length} criaturas externas.`);
-
+  const mapaExterno = new Map(criaturasExternas.map((c) => [c.idExterno, c]));
   const mapaEspeciesPorSlug = new Map<string, string>();
 
-  for (const c of criaturasExternas) {
-    const meta = CATALOGO_ESPECIES_PROPENSO[c.idExterno];
-    if (!meta) {
-      console.warn(`Sin metadatos para la clave ${c.idExterno}`);
-      continue;
-    }
-
-    // Mejor ataque (poder máximo entre sus ataques)
-    const mejorAtaque =
-      c.ataques.length > 0 ? Math.max(...c.ataques.map((a) => a.poder)) : 3.5;
-
-    const hpBase = calcularHpBase(c.hitPoints);
-    const ataqueBase = calcularAtaqueBase(mejorAtaque);
-    const defensaBase = calcularDefensaBase(c.armorClass);
-    const velocidadBase = calcularVelocidadBase(c.speedMax);
-    const tasaCaptura = calcularTasaCaptura(c.challengeRating);
+  // 3. Sembrar o actualizar las 30 especies canónicas con upsert por idExterno
+  for (const canonica of BESTIARIO) {
+    const ext = mapaExterno.get(canonica.idExterno);
+    const challengeRating = ext ? ext.challengeRating : 1.0;
+    const tipo = ext?.tipoExterno || canonica.tipo;
+    const tasaCaptura = calcularTasaCaptura(challengeRating);
 
     const especieDb = await prisma.especie.upsert({
-      where: { slug: meta.slug },
+      where: { idExterno: canonica.idExterno },
       update: {
-        idExterno: c.idExterno,
-        nombre: meta.nombre,
-        tipo: c.tipoExterno,
-        challengeRating: c.challengeRating,
-        hpBase,
-        ataqueBase,
-        defensaBase,
-        velocidadBase,
+        nombre: canonica.nombre,
+        slug: canonica.slug,
+        tipo,
+        elemento: canonica.elemento,
+        challengeRating,
+        hpBase: canonica.statsBase.hpBase,
+        ataqueBase: canonica.statsBase.ataqueBase,
+        defensaBase: canonica.statsBase.defensaBase,
+        velocidadBase: canonica.statsBase.velocidadBase,
         tasaCaptura,
-        esEspecial: meta.esEspecial,
-        descripcion: meta.descripcion,
+        esEspecial: canonica.esEspecial,
+        esLegendaria: canonica.esLegendaria,
+        descripcion: canonica.descripcion,
       },
       create: {
-        idExterno: c.idExterno,
-        nombre: meta.nombre,
-        slug: meta.slug,
-        tipo: c.tipoExterno,
-        challengeRating: c.challengeRating,
-        hpBase,
-        ataqueBase,
-        defensaBase,
-        velocidadBase,
+        idExterno: canonica.idExterno,
+        nombre: canonica.nombre,
+        slug: canonica.slug,
+        tipo,
+        elemento: canonica.elemento,
+        challengeRating,
+        hpBase: canonica.statsBase.hpBase,
+        ataqueBase: canonica.statsBase.ataqueBase,
+        defensaBase: canonica.statsBase.defensaBase,
+        velocidadBase: canonica.statsBase.velocidadBase,
         tasaCaptura,
-        esEspecial: meta.esEspecial,
-        descripcion: meta.descripcion,
+        esEspecial: canonica.esEspecial,
+        esLegendaria: canonica.esLegendaria,
+        descripcion: canonica.descripcion,
       },
     });
 
-    mapaEspeciesPorSlug.set(meta.slug, especieDb.id);
+    mapaEspeciesPorSlug.set(canonica.slug, especieDb.id);
 
-    // Movimientos: eliminar existentes y recrear para garantizar consistencia e idempotencia
+    // Movimientos soberanos: eliminar existentes y recrear exactamente los 4 slots tácticos
     await prisma.movimiento.deleteMany({
       where: { especieId: especieDb.id },
     });
 
-    for (const atk of c.ataques) {
-      const traduccion = TRADUCCION_MOVIMIENTOS[meta.slug]?.[atk.nombreOriginal];
-      const nombreEnEspanol = traduccion ? traduccion.nombre : atk.nombreOriginal;
-      const tipoAccion = traduccion ? traduccion.tipoAccion : atk.tipoAccion;
-
+    for (const mov of canonica.movimientos) {
       await prisma.movimiento.create({
         data: {
           especieId: especieDb.id,
-          nombreOriginal: atk.nombreOriginal,
-          nombre: nombreEnEspanol,
-          tipoAccion,
-          poder: atk.poder,
+          nombreOriginal: mov.nombreOriginal,
+          nombre: mov.nombre,
+          tipoAccion: mov.tipoAccion,
+          poder: mov.poder,
+          slot: mov.slot,
+          efecto: mov.efecto,
         },
       });
     }
   }
 
-  console.log('Sembrando tablas de aparición por zona (AparicionZona)...');
-  for (const aparicion of TABLAS_APARICION) {
-    const especieId = mapaEspeciesPorSlug.get(aparicion.slug);
-    if (!especieId) {
-      console.warn(`Especie no encontrada para slug: ${aparicion.slug}`);
-      continue;
-    }
+  // 4. Limpieza de especies obsoletas sin criaturas asociadas
+  const idsCanonicos = new Set(BESTIARIO.map((b) => b.idExterno));
+  const especiesObsoletas = await prisma.especie.findMany({
+    where: { idExterno: { notIn: Array.from(idsCanonicos) } },
+    include: { criaturas: true },
+  });
 
-    await prisma.aparicionZona.upsert({
-      where: {
-        zonaId_especieId: {
-          zonaId: aparicion.zonaId,
-          especieId,
-        },
-      },
-      update: {
-        peso: aparicion.peso,
-        nivelMinimo: aparicion.nivelMinimo,
-        nivelMaximo: aparicion.nivelMaximo,
-      },
-      create: {
-        zonaId: aparicion.zonaId,
-        especieId,
-        peso: aparicion.peso,
-        nivelMinimo: aparicion.nivelMinimo,
-        nivelMaximo: aparicion.nivelMaximo,
-      },
-    });
+  for (const obsoleta of especiesObsoletas) {
+    if (obsoleta.criaturas.length === 0) {
+      console.log(`Eliminando especie obsoleta sin criaturas: ${obsoleta.slug} (${obsoleta.idExterno})`);
+      await prisma.aparicionZona.deleteMany({ where: { especieId: obsoleta.id } });
+      await prisma.movimiento.deleteMany({ where: { especieId: obsoleta.id } });
+      await prisma.especie.delete({ where: { id: obsoleta.id } });
+    } else {
+      console.warn(
+        `Atención: No se eliminó la especie obsoleta ${obsoleta.slug} debido a ${obsoleta.criaturas.length} criaturas activas vinculadas.`,
+      );
+    }
   }
 
-  console.log('Importación batch y tablas de aparición completadas exitosamente.');
+  // 5. Sembrado transaccional atómico de tablas de aparición (AparicionZona)
+  await prisma.$transaction(async (tx) => {
+    // Borrado previo para garantizar idempotencia estricta
+    await tx.aparicionZona.deleteMany({});
+
+    for (const aparicion of TABLAS_APARICION) {
+      const especieId = mapaEspeciesPorSlug.get(aparicion.especieSlug);
+      if (!especieId) {
+        throw new Error(`Especie no encontrada para slug: ${aparicion.especieSlug}`);
+      }
+
+      await tx.aparicionZona.create({
+        data: {
+          zonaId: aparicion.zonaId,
+          especieId,
+          peso: aparicion.peso,
+          nivelMinimo: aparicion.nivelMinimo,
+          nivelMaximo: aparicion.nivelMaximo,
+        },
+      });
+    }
+  });
+
+  console.log('Importación soberana y tablas de aparición completadas exitosamente.');
 }
 
 importarEspecies()

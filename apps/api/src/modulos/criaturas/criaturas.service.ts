@@ -2,12 +2,11 @@ import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
 import { AdaptadorCriaturasExternas } from '../externo/adaptador-criaturas-externas.service';
 import {
+  BESTIARIO,
+  EspecieCanonica,
+} from '../externo/bestiario-canonico';
+import {
   CATALOGO_ESPECIES_PROPENSO,
-  TRADUCCION_MOVIMIENTOS,
-  calcularHpBase,
-  calcularAtaqueBase,
-  calcularDefensaBase,
-  calcularVelocidadBase,
   calcularTasaCaptura,
 } from '../externo/normalizador-criaturas.util';
 
@@ -18,6 +17,8 @@ export interface MovimientoEnriquecidoDto {
   nombreOriginal: string;
   tipoAccion: string;
   poder: number;
+  slot: number;
+  efecto?: string | null;
 }
 
 export interface EspecieEnriquecidaDto {
@@ -25,6 +26,7 @@ export interface EspecieEnriquecidaDto {
   keyExterna: string;
   nombre: string;
   tipo: string;
+  elemento: string;
   challengeRating: number;
   hpBase: number;
   ataqueBase: number;
@@ -32,6 +34,7 @@ export interface EspecieEnriquecidaDto {
   velocidadBase: number;
   tasaCaptura: number;
   esEspecial: boolean;
+  esLegendaria: boolean;
   descripcion: string;
   arquetipo: ArquetipoEspecie;
   movimientos: MovimientoEnriquecidoDto[];
@@ -78,7 +81,7 @@ export class CriaturasService {
   ) {}
 
   /**
-   * simplificacion: genera el catálogo normalizado de contingencia desde el snapshot local
+   * simplificacion: genera el catálogo normalizado de contingencia desde BESTIARIO y snapshot local
    * si la base de datos aún no ha sido sembrada o en pruebas unitarias aisladas.
    */
   public cargarCatalogoFallback(): EspecieEnriquecidaDto[] {
@@ -87,44 +90,47 @@ export class CriaturasService {
     }
 
     const adaptador = this.adaptadorExterno ?? new AdaptadorCriaturasExternas();
-    const crudos = adaptador.cargarSnapshotLocal();
+    let mapaCrudos: Map<string, { challenge_rating?: number; type?: any }> = new Map();
+    try {
+      const crudos = adaptador.cargarSnapshotLocal();
+      mapaCrudos = new Map(crudos.map((c) => [c.key, c]));
+    } catch {
+      // Si no existe snapshot en la ruta de ejecución, se usan valores por defecto canónicos
+    }
 
-    const resultado: EspecieEnriquecidaDto[] = crudos.map((c) => {
-      const meta = CATALOGO_ESPECIES_PROPENSO[c.key];
-      const dto = adaptador.mapearACriaturaExternaDto(c);
-      const mejorAtaque = dto.ataques.reduce((max, a) => Math.max(max, a.poder), 3.5);
-
-      const hpBase = calcularHpBase(dto.hitPoints);
-      const ataqueBase = calcularAtaqueBase(mejorAtaque);
-      const defensaBase = calcularDefensaBase(dto.armorClass);
-      const velocidadBase = calcularVelocidadBase(dto.speedMax);
-      const tasaCaptura = calcularTasaCaptura(dto.challengeRating);
-
-      const movimientos: MovimientoEnriquecidoDto[] = dto.ataques.map((a) => {
-        const traduccion = TRADUCCION_MOVIMIENTOS[meta?.slug ?? '']?.[a.nombreOriginal];
-        return {
-          nombre: traduccion?.nombre ?? a.nombreOriginal,
-          nombreOriginal: a.nombreOriginal,
-          tipoAccion: a.tipoAccion,
-          poder: a.poder,
-        };
-      });
+    const resultado: EspecieEnriquecidaDto[] = BESTIARIO.map((esp) => {
+      const crudo = mapaCrudos.get(esp.idExterno);
+      const challengeRating =
+        crudo?.challenge_rating ??
+        (esp.esLegendaria ? 11 : esp.esEspecial ? 5 : 1);
+      const tipo =
+        (typeof crudo?.type === 'object' ? crudo.type.key : crudo?.type) || esp.tipo;
+      const tasaCaptura = calcularTasaCaptura(challengeRating);
 
       return {
-        slug: meta ? meta.slug : c.key,
-        keyExterna: c.key,
-        nombre: meta ? meta.nombre : c.name,
-        tipo: dto.tipoExterno,
-        challengeRating: dto.challengeRating,
-        hpBase,
-        ataqueBase,
-        defensaBase,
-        velocidadBase,
+        slug: esp.slug,
+        keyExterna: esp.idExterno,
+        nombre: esp.nombre,
+        tipo,
+        elemento: esp.elemento,
+        challengeRating,
+        hpBase: esp.statsBase.hpBase,
+        ataqueBase: esp.statsBase.ataqueBase,
+        defensaBase: esp.statsBase.defensaBase,
+        velocidadBase: esp.statsBase.velocidadBase,
         tasaCaptura,
-        esEspecial: meta?.esEspecial ?? false,
-        descripcion: meta?.descripcion ?? '',
-        arquetipo: determinarArquetipoEspecie({ hpBase, ataqueBase, defensaBase, velocidadBase }),
-        movimientos,
+        esEspecial: esp.esEspecial,
+        esLegendaria: esp.esLegendaria,
+        descripcion: esp.descripcion,
+        arquetipo: determinarArquetipoEspecie(esp.statsBase),
+        movimientos: esp.movimientos.map((m) => ({
+          nombre: m.nombre,
+          nombreOriginal: m.nombreOriginal,
+          tipoAccion: m.tipoAccion,
+          poder: m.poder,
+          slot: m.slot,
+          efecto: m.efecto,
+        })),
       };
     });
 
@@ -140,13 +146,17 @@ export class CriaturasService {
   }
 
   /**
-   * Consulta las especies del compendio con sus movimientos embebidos en una sola llamada O(1),
+   * Consulta las 30 especies del compendio con sus movimientos embebidos en una sola llamada O(1),
    * erradicando el problema de ráfagas N+1 en el cliente.
    */
   async obtenerEspecies(tipo?: string): Promise<{ total: number; especies: EspecieEnriquecidaDto[] }> {
     let especiesDb = await this.prisma.especie.findMany({
       where: tipo ? { tipo: { equals: tipo, mode: 'insensitive' } } : undefined,
-      include: { movimientos: true },
+      include: {
+        movimientos: {
+          orderBy: { slot: 'asc' },
+        },
+      },
       orderBy: [{ challengeRating: 'asc' }, { nombre: 'asc' }],
     });
 
@@ -169,6 +179,7 @@ export class CriaturasService {
       keyExterna: esp.idExterno,
       nombre: esp.nombre,
       tipo: esp.tipo,
+      elemento: esp.elemento,
       challengeRating: esp.challengeRating,
       hpBase: esp.hpBase,
       ataqueBase: esp.ataqueBase,
@@ -176,6 +187,7 @@ export class CriaturasService {
       velocidadBase: esp.velocidadBase,
       tasaCaptura: esp.tasaCaptura,
       esEspecial: esp.esEspecial,
+      esLegendaria: esp.esLegendaria,
       descripcion:
         esp.descripcion || CATALOGO_ESPECIES_PROPENSO[esp.idExterno]?.descripcion || '',
       arquetipo: determinarArquetipoEspecie(esp),
@@ -184,6 +196,8 @@ export class CriaturasService {
         nombreOriginal: m.nombreOriginal,
         tipoAccion: m.tipoAccion,
         poder: m.poder,
+        slot: m.slot,
+        efecto: m.efecto,
       })),
     }));
 
@@ -199,7 +213,11 @@ export class CriaturasService {
   async obtenerEspeciePorSlug(slug: string): Promise<EspecieEnriquecidaDto> {
     const esp = await this.prisma.especie.findUnique({
       where: { slug },
-      include: { movimientos: true },
+      include: {
+        movimientos: {
+          orderBy: { slot: 'asc' },
+        },
+      },
     });
 
     if (!esp) {
@@ -223,6 +241,7 @@ export class CriaturasService {
       keyExterna: esp.idExterno,
       nombre: esp.nombre,
       tipo: esp.tipo,
+      elemento: esp.elemento,
       challengeRating: esp.challengeRating,
       hpBase: esp.hpBase,
       ataqueBase: esp.ataqueBase,
@@ -230,6 +249,7 @@ export class CriaturasService {
       velocidadBase: esp.velocidadBase,
       tasaCaptura: esp.tasaCaptura,
       esEspecial: esp.esEspecial,
+      esLegendaria: esp.esLegendaria,
       descripcion:
         esp.descripcion || CATALOGO_ESPECIES_PROPENSO[esp.idExterno]?.descripcion || '',
       arquetipo: determinarArquetipoEspecie(esp),
@@ -238,6 +258,8 @@ export class CriaturasService {
         nombreOriginal: m.nombreOriginal,
         tipoAccion: m.tipoAccion,
         poder: m.poder,
+        slot: m.slot,
+        efecto: m.efecto,
       })),
     };
   }

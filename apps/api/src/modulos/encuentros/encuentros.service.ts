@@ -15,7 +15,11 @@ export class EncuentrosService {
           orderBy: { ordenEquipo: 'asc' },
           include: {
             especie: {
-              include: { movimientos: true },
+              include: {
+                movimientos: {
+                  orderBy: { slot: 'asc' },
+                },
+              },
             },
           },
         },
@@ -136,8 +140,10 @@ export class EncuentrosService {
                   nombre: m.nombre,
                   poder: m.poder,
                   tipoAccion: m.tipoAccion,
+                  slot: m.slot,
+                  efecto: m.efecto,
                 }))
-              : [{ nombre: 'Golpe Firme', poder: 12, tipoAccion: 'ATAQUE' }],
+              : [{ nombre: 'Golpe Firme', poder: 12, tipoAccion: 'ATAQUE', slot: 1, efecto: null }],
           }
         : null,
       bitacora,

@@ -325,50 +325,52 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 
 ## 9. PantallaCatalogo y Modal de Inspección Táctica
 - **Módulos cubiertos:** `M-CRI` (Criaturas).
-- **Propósito:** Compendio biológico de las 25 especies del juego sin ráfagas N+1, clasificación de arquetipos tácticos y modal de inspección detallada.
+- **Propósito:** Compendio biológico de las 30 especies del juego sin ráfagas N+1, clasificación de arquetipos, afinidad elemental retro, consagración de criaturas legendarias con corona dorada y modal de inspección con 4 slots tácticos.
 
 ```text
 +-----------------------------------------------------------------------+
 | COMPENDIO DE CRIATURAS                 [ACTUALIZAR] [Asentamiento]    |
-| [BookOpen] 25 ESPECIES SRD 5.2                                        |
+| [BookOpen] 30 ESPECIES SRD 5.2                                        |
 +-----------------------------------------------------------------------+
-| AVISTAMIENTO: Registradas: 25 | En Vista: 25 | Especiales: 2 | Tipos: 6|
+| AVISTAMIENTO: Registradas: 30 | En Vista: 30 | Legendarias: 2 | Tipos:6|
 +-----------------------------------------------------------------------+
 | [Buscar especie por nombre...]                [Tipo: Todos los tipos v]|
 | Arquetipo: [TODOS] [ATACANTE] [TANQUE] [VELOZ] [EQUILIBRADO] [ESPECIAL]|
-|                                                       [Limpiar filtros]|
+|            [Crown LEGENDARIAS]                        [Limpiar filtros]|
 +-----------------------------------------------------------------------+
 | TARJETAS DE CRIATURA (Grid 3 columnas):                               |
 | +-----------------------------------+ +-------------------------------+ |
-| | Lobo Gris       [Bestia][EQUILIB] | | Armadura Animada  [Autómata]  | |
-| | srd-2024_wolf                     | | srd-2024_animated-armor[TANQUE| |
+| | Lobo Estepario  [Bestia][FÍSICO]  | | Behir del Abismo [Crown LEGEND] |
+| | srd-2024_wolf           [VELOZ]   | | srd-2024_behir [SOMBRA][ATAC] | |
 | | ================================= | | ============================= | |
-| |       [ VITRINA SPRITE 128x128 ]  | |    [ VITRINA SPRITE 128x128 ] | |
+| |       [ VITRINA SPRITE 128x128 ]  | |    [ VITRINA SPRITE DORADA ]  | |
 | | ================================= | | ============================= | |
-| | HP: 30 | ATQ: 42 | DEF: 58|VEL: 50| | HP: 40 | ATQ: 42 | DEF:100|VEL:41| |
-| | CR: 0.25      Captura: 88%        | | CR: 1.00      Captura: 83%    | |
+| | HP: 38 | ATQ: 44 | DEF: 38|VEL: 52| | HP: 94 | ATQ: 94 | DEF: 88|VEL:79| |
+| | CR: 0.25      Captura: 88%        | | CR: 11.00     Captura: 15%    | |
 | | [INSPECCIONAR FICHA]              | | [INSPECCIONAR FICHA]          | |
 | +-----------------------------------+ +-------------------------------+ |
 +-----------------------------------------------------------------------+
-| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado max-h-[90vh]):     |
+| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado max-h-[85vh]):     |
 | +-------------------------------------------------------------------+ |
-| | [ VITRINA HEROICA SPRITE 112x112 pixelated ]         [ESPECIAL]   | |
-| | Quimera Tricéfala · CR: 6.00 · Tasa Captura: 48%                  | |
-| | srd-2024_chimera · [Monstruosidad] [ATACANTE]                     | |
-| | Lore: Monstruosidad alada con cabezas de león, cabra y dragón.    | |
-| | HP Base:   72 [=======---]  | Ataque Base: 76 [========--]        | |
-| | Def Base:  72 [=======---]  | Vel Base:    70 [=======---]        | |
-| | Movimientos:                                                      | |
-| | - Aliento Flamígero (Ataque distancia · Fire Breath · Pot. 15.0)  | |
-| | - Garras Desgarradoras (Ataque melé · Claws · Pot. 10.5)          | |
+| | [ VITRINA HEROICA SPRITE 112x112 pixelated ]  [Crown LEGENDARIO]  | |
+| | Behir del Abismo · CR: 11.00 · Tasa Captura: 15%                  | |
+| | srd-2024_behir · [Monstruosidad] [Sombra] [ATACANTE]              | |
+| | Lore: Serpentina criatura colosal que domina las profundidades.   | |
+| | HP Base:   94 [=========--]  | Ataque Base: 94 [=========--]      | |
+| | Def Base:  88 [========---]  | Vel Base:    79 [=======----]      | |
+| | Movimientos Tácticos (4 Slots Canónicos):                         | |
+| | - M1 Descarga Eléctrica (Ataque elemental · Pot. 20 · PARALISIS)  | |
+| | - M2 Mordedura Titánica (Ataque melé · Pot. 24 · CRITICO)         | |
+| | - M3 Constricción Relámpago (Control · Pot. 22 · ATURDIMIENTO)    | |
+| | - M4 Relámpago del Abismo (Furia · Pot. 38 · SOBRECARGA_LEGEND)   | |
 | | [Cerrar Ficha Táctica]                                            | |
 | +-------------------------------------------------------------------+ |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `campo-buscar-especie`, `selector-tipo`, botones de arquetipo: Filtrado instantáneo en cliente.
-  - `INSPECCIONAR FICHA`: Abre modal retro sellado (`w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none`) con lore, barras comparativas sobre 100 y lista de movimientos.
+  - `campo-buscar-especie`, `selector-tipo`, botones de arquetipo y filtro `LEGENDARIAS`: Filtrado instantáneo en cliente.
+  - `INSPECCIONAR FICHA`: Abre modal retro sellado (`w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none`) con lore, barras comparativas sobre 100, badges de afinidad elemental y lista completa de los 4 movimientos tácticos con slots M1..M4.
   - `ACTUALIZAR`: Recarga el compendio en una única petición O(1) con hardening `aria-busy`.
   - `Asentamiento`: Navegación con `useNavigate("/hub")`.
 

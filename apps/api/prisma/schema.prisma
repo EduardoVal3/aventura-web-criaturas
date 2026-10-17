@@ -105,6 +105,7 @@ model Especie {
   nombre          String
   slug            String          @unique
   tipo            String
+  elemento        String          @default("fisico")
   challengeRating Float           @map("challenge_rating")
   hpBase          Int             @map("hp_base")
   ataqueBase      Int             @map("ataque_base")
@@ -112,6 +113,7 @@ model Especie {
   velocidadBase   Int             @map("velocidad_base")
   tasaCaptura     Float           @map("tasa_captura")
   esEspecial      Boolean         @default(false) @map("es_especial")
+  esLegendaria    Boolean         @default(false) @map("es_legendaria")
   descripcion     String?
 
   movimientos     Movimiento[]
@@ -128,9 +130,12 @@ model Movimiento {
   nombre         String
   tipoAccion     String  @map("tipo_accion")
   poder          Float
+  slot           Int     @default(1)
+  efecto         String?
 
   especie        Especie @relation(fields: [especieId], references: [id], onDelete: Cascade)
 
+  @@unique([especieId, slot])
   @@map("movimiento")
 }
 

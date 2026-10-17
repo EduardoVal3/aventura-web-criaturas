@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class AtacarDto {
   @ApiProperty({
@@ -11,12 +11,13 @@ export class AtacarDto {
   encuentroId: string;
 
   @ApiPropertyOptional({
-    description: 'Índice del movimiento a utilizar por la criatura activa',
+    description: 'Índice del movimiento a utilizar por la criatura activa (0 a 3)',
     example: 0,
     default: 0,
   })
   @IsOptional()
   @IsInt({ message: 'El índice del movimiento debe ser un número entero.' })
   @Min(0, { message: 'El índice del movimiento no puede ser negativo.' })
+  @Max(3, { message: 'El índice del movimiento no puede ser mayor a 3.' })
   movimientoIndice?: number = 0;
 }

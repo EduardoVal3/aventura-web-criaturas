@@ -338,7 +338,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/combate/atacar`
 - **Módulo:** `M-COM`.
-- **Descripción:** Ejecuta el movimiento seleccionado por el jugador y resuelve el contraataque rival. En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas.
+- **Descripción:** Ejecuta el movimiento seleccionado por el jugador (`movimientoIndice: 0..2` correspondiente a los slots 1, 2 y 3) y resuelve el contraataque rival (sorteado exclusivamente entre sus slots 1 a 3). En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas.
 - **Cuerpo de petición:**
   ```json
   {
@@ -353,12 +353,12 @@ Este documento define la especificación técnica de la API REST que comunica el
     "estado": "EN_CURSO",
     "turno": 2,
     "accionJugador": {
-      "movimiento": "Mordisco Feroz",
+      "movimiento": "Mordisco",
       "danoCausado": 5,
       "hpRestanteRival": 9
     },
     "accionRival": {
-      "movimiento": "Picotazo Cortante",
+      "movimiento": "Picotazo",
       "danoCausado": 4,
       "hpRestanteAliado": 21
     },
@@ -373,7 +373,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "estado": "VICTORIA",
     "turno": 3,
     "accionJugador": {
-      "movimiento": "Mordisco Feroz",
+      "movimiento": "Mordisco",
       "danoCausado": 12,
       "hpRestanteRival": 0
     },
@@ -393,6 +393,8 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
+  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.") si se envía `movimientoIndice: 3` (Slot 4 de Furia, Decisión D-4).
+  - `400 Bad Request` ("movimientoIndice must not be greater than 3") ante índices inválidos.
   - `400 ACCION_FUERA_DE_TURNO` (regla `S-5`).
   - `404 ENCUENTRO_NO_ENCONTRADO`.
 
@@ -839,33 +841,61 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Lista las 25 especies del compendio biológico en una sola llamada `O(1)` erradicando el cuello de botella $N+1$, enriquecidas con arquetipo táctico (`TANQUE`, `ATACANTE`, `VELOZ`, `EQUILIBRADO`), lore descriptivo y sus movimientos conocidos.
+- **Descripción:** Lista las 30 especies del compendio biológico en una sola llamada `O(1)` erradicando el cuello de botella $N+1$, enriquecidas con afinidad elemental (`fisico`, `fuego`, `agua`, `natura`, `sombra`, `luz`), indicador de criatura legendaria (`esLegendaria`), arquetipo táctico (`TANQUE`, `ATACANTE`, `VELOZ`, `EQUILIBRADO`), lore descriptivo y sus 4 movimientos tácticos ordenados por slot (`1..4`).
 - **Parámetros de consulta opcionales:** `?tipo=beast` (soporta los 6 tipos biológicos: `beast`, `monstrosity`, `undead`, `elemental`, `construct`, `plant`).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "total": 25,
+    "total": 30,
     "especies": [
       {
-        "slug": "lobo-gris",
+        "slug": "lobo-estepario",
         "keyExterna": "srd-2024_wolf",
-        "nombre": "Lobo Gris",
+        "nombre": "Lobo Estepario",
         "tipo": "beast",
+        "elemento": "fisico",
         "challengeRating": 0.25,
-        "hpBase": 30,
-        "ataqueBase": 42,
-        "defensaBase": 58,
-        "velocidadBase": 50,
+        "hpBase": 38,
+        "ataqueBase": 44,
+        "defensaBase": 38,
+        "velocidadBase": 52,
         "tasaCaptura": 0.88,
         "esEspecial": false,
-        "descripcion": "Cazador en manada ágil y coordinado que habita en llanuras y bosques.",
-        "arquetipo": "EQUILIBRADO",
+        "esLegendaria": false,
+        "descripcion": "Cazador en manada ágil y coordinado que recorre las praderas abiertas.",
+        "arquetipo": "VELOZ",
         "movimientos": [
           {
-            "nombre": "Mordisco Feroz",
+            "slot": 1,
+            "nombre": "Mordisco",
             "nombreOriginal": "Bite",
             "tipoAccion": "Ataque melé",
-            "poder": 5.5
+            "poder": 12,
+            "efecto": null
+          },
+          {
+            "slot": 2,
+            "nombre": "Acometida Ágil",
+            "nombreOriginal": null,
+            "tipoAccion": "Ataque veloz",
+            "poder": 14,
+            "efecto": "VEL_UP"
+          },
+          {
+            "slot": 3,
+            "nombre": "Aullido Estepario",
+            "nombreOriginal": null,
+            "tipoAccion": "Técnica de apoyo",
+            "poder": 10,
+            "efecto": "DEF_DOWN"
+          },
+          {
+            "slot": 4,
+            "nombre": "Furia de Manada",
+            "nombreOriginal": null,
+            "tipoAccion": "Furia táctica",
+            "poder": 24,
+            "efecto": "CRITICO"
           }
         ]
       }
@@ -875,29 +905,57 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies/:slug`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Ficha técnica táctica y detallada de una especie específica identificada por su slug.
+- **Descripción:** Ficha técnica táctica y detallada de una especie específica identificada por su slug (ej. `behir-abismo`, `remorhaz-glaciar`).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "slug": "lobo-gris",
-    "keyExterna": "srd-2024_wolf",
-    "nombre": "Lobo Gris",
-    "tipo": "beast",
-    "challengeRating": 0.25,
-    "hpBase": 30,
-    "ataqueBase": 42,
-    "defensaBase": 58,
-    "velocidadBase": 50,
-    "tasaCaptura": 0.88,
-    "esEspecial": false,
-    "descripcion": "Cazador en manada ágil y coordinado que habita en llanuras y bosques.",
-    "arquetipo": "EQUILIBRADO",
+    "slug": "behir-abismo",
+    "keyExterna": "srd-2024_behir",
+    "nombre": "Behir del Abismo",
+    "tipo": "monstrosity",
+    "elemento": "sombra",
+    "challengeRating": 11,
+    "hpBase": 94,
+    "ataqueBase": 94,
+    "defensaBase": 88,
+    "velocidadBase": 79,
+    "tasaCaptura": 0.15,
+    "esEspecial": true,
+    "esLegendaria": true,
+    "descripcion": "Serpentina criatura colosal que domina las profundidades del abismo.",
+    "arquetipo": "ATACANTE",
     "movimientos": [
       {
-        "nombre": "Mordisco Feroz",
+        "slot": 1,
+        "nombre": "Descarga Eléctrica",
+        "nombreOriginal": "Lightning Breath",
+        "tipoAccion": "Ataque elemental",
+        "poder": 20,
+        "efecto": "PARALISIS"
+      },
+      {
+        "slot": 2,
+        "nombre": "Mordedura Titánica",
         "nombreOriginal": "Bite",
         "tipoAccion": "Ataque melé",
-        "poder": 5.5
+        "poder": 24,
+        "efecto": "CRITICO"
+      },
+      {
+        "slot": 3,
+        "nombre": "Constricción Relámpago",
+        "nombreOriginal": "Constrict",
+        "tipoAccion": "Control físico",
+        "poder": 22,
+        "efecto": "ATURDIMIENTO"
+      },
+      {
+        "slot": 4,
+        "nombre": "Relámpago del Abismo",
+        "nombreOriginal": null,
+        "tipoAccion": "Furia legendaria",
+        "poder": 38,
+        "efecto": "SOBRECARGA_LEGENDARIA"
       }
     ]
   }

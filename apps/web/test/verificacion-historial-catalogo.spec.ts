@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   TRADUCCION_TIPOS_ESPECIE,
+  TRADUCCION_ELEMENTOS,
   calcularArquetipoCriatura,
   filtrarEspeciesCatalogo,
   resolverCategoriaEvento,
@@ -18,13 +19,22 @@ import type { EspecieCatalogo, EventoHistorial } from '../src/api/ApiJuego.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-test('Compendio: TRADUCCION_TIPOS_ESPECIE cubre los 6 tipos biológicos del SRD 5.2 en español', () => {
+test('Compendio: TRADUCCION_TIPOS_ESPECIE cubre los tipos biológicos del SRD 5.2 en español', () => {
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['beast'], 'Bestia');
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['monstrosity'], 'Monstruosidad');
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['undead'], 'No-muerto');
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['elemental'], 'Elemental');
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['construct'], 'Autómata');
   assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['plant'], 'Planta');
+  assert.strictEqual(TRADUCCION_TIPOS_ESPECIE['dragon'], 'Dragón');
+});
+
+test('Compendio: TRADUCCION_ELEMENTOS cubre las 6 afinidades elementales de Aethelgard', () => {
+  const claves = Object.keys(TRADUCCION_ELEMENTOS);
+  assert.deepStrictEqual(claves, ['fisico', 'fuego', 'agua', 'natura', 'sombra', 'luz']);
+  assert.strictEqual(TRADUCCION_ELEMENTOS['fuego'].nombre, 'Fuego');
+  assert.strictEqual(TRADUCCION_ELEMENTOS['agua'].nombre, 'Agua');
+  assert.strictEqual(TRADUCCION_ELEMENTOS['sombra'].nombre, 'Sombra');
 });
 
 test('Compendio: calcularArquetipoCriatura clasifica fielmente las 4 vertientes tácticas', () => {
@@ -119,6 +129,21 @@ test('Compendio: filtrarEspeciesCatalogo combina tipo, arquetipo, rareza especia
       esEspecial: false,
       descripcion: 'Vórtice de viento huracanado.',
     },
+    {
+      slug: 'behir-abismo',
+      nombre: 'Behir del Abismo',
+      tipo: 'monstrosity',
+      challengeRating: 11,
+      hpBase: 85,
+      ataqueBase: 95,
+      defensaBase: 90,
+      velocidadBase: 85,
+      tasaCaptura: 0.15,
+      esEspecial: true,
+      esLegendaria: true,
+      elemento: 'sombra',
+      descripcion: 'Serpentina criatura colosal de relámpagos oscuros.',
+    },
   ];
 
   // Filtro por tipo
@@ -132,8 +157,12 @@ test('Compendio: filtrarEspeciesCatalogo combina tipo, arquetipo, rareza especia
 
   // Filtro por criaturas especiales
   const soloEspeciales = filtrarEspeciesCatalogo(listaPrueba, { arquetipo: 'ESPECIALES' });
-  assert.strictEqual(soloEspeciales.length, 1);
-  assert.strictEqual(soloEspeciales[0].slug, 'hidra-de-las-marismas');
+  assert.strictEqual(soloEspeciales.length, 2);
+
+  // Filtro por criaturas legendarias
+  const soloLegendarias = filtrarEspeciesCatalogo(listaPrueba, { arquetipo: 'LEGENDARIAS' });
+  assert.strictEqual(soloLegendarias.length, 1);
+  assert.strictEqual(soloLegendarias[0].slug, 'behir-abismo');
 
   // Filtro por búsqueda textual insensible a acentos
   const busquedaHura = filtrarEspeciesCatalogo(listaPrueba, { busqueda: 'huracanado' });
@@ -189,7 +218,7 @@ test('Bitácora: formatearFechaAmigable y filtrarEventosHistorial operan con rob
   assert.strictEqual(busquedaGrifo[0].eventoId, 'e-2');
 });
 
-test('Auditoría estática de código: PantallaCatalogo erradica N+1, usa sprites y modales sellados', () => {
+test('Auditoría estática de código: PantallaCatalogo erradica N+1, usa sprites, 30 especies, legendarias y 4 slots', () => {
   const rutaCatalogo = join(__dirname, '../src/paginas/PantallaCatalogo.tsx');
   const codigo = readFileSync(rutaCatalogo, 'utf-8');
 
@@ -211,6 +240,24 @@ test('Auditoría estática de código: PantallaCatalogo erradica N+1, usa sprite
   // 4. Hardening y accesibilidad
   assert.ok(codigo.includes('aria-busy={cargando}'), 'Botón de actualización debe tener aria-busy');
   assert.ok(!codigo.includes('<Link to') || !codigo.includes('<Button'), 'No debe anidar Button dentro de Link');
+
+  // 5. Soporte de 30 especies canónicas, insignia Crown y 4 slots tácticos sin .slice(0, 3)
+  assert.ok(codigo.includes('30 ESPECIES SRD 5.2'), 'Debe reflejar 30 especies canónicas');
+  assert.ok(codigo.includes('Crown'), 'Debe importar y utilizar el icono Crown para legendarias');
+  assert.ok(codigo.includes('LEGENDARIO'), 'Debe desplegar badge de LEGENDARIO');
+  assert.ok(!codigo.includes('.slice(0, 3)'), 'No debe recortar movimientos con slice(0, 3), debe mostrar los 4 slots');
+  assert.ok(codigo.includes('M{numSlot}'), 'Debe identificar los slots M1..M4');
+});
+
+test('Auditoría estática de código: PantallaCombate gestiona 4 slots con Furia bloqueada y hardening', () => {
+  const rutaCombate = join(__dirname, '../src/paginas/PantallaCombate.tsx');
+  const codigo = readFileSync(rutaCombate, 'utf-8');
+
+  // 1. Despliegue de los 4 movimientos y slot de Furia bloqueado
+  assert.ok(codigo.includes('esFuriaSlot4'), 'Debe identificar el slot 4 de Furia');
+  assert.ok(codigo.includes('Furia (Bloqueado)'), 'Debe mostrar badge de Furia bloqueada');
+  assert.ok(codigo.includes('aria-disabled={estaBloqueado}'), 'Debe incluir aria-disabled para accesibilidad');
+  assert.ok(codigo.includes('aria-busy={procesandoAccion}'), 'Debe incluir aria-busy contra doble clic');
 });
 
 test('Auditoría estática de código: PantallaHistorial cuenta con iconos SVG, filtros y hardening', () => {

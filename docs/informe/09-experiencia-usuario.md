@@ -551,13 +551,71 @@ Previo a esta subfase, la experiencia del jugador en las pantallas finales de co
 
 ---
 
-## 10. Cierre Formal de la Fase 10 (Consolidado Full-Stack AV5 Parte 2)
+## 10. Sub-Fase 10j: Bestiario Canónico, Jerarquía de Atributos, Sets Tácticos de Movimientos y Tablas de Aparición (30 Criaturas)
 
-Con la culminación de la Subfase 10i, se da por **completada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 (Avance 5 - Entrega Final de UX Retro y Mecánicas Full-Stack)**.
+### 10.1 Diagnóstico Inicial y Auditoría Impeccable
+Previo a esta intervención, el ecosistema de criaturas presentaba importantes asimetrías de diseño, inconsistencias numéricas y problemas de balance competitivo:
+1. **Asimetría de Cobertura Regional (25 vs 30 criaturas):** El catálogo original contaba con 25 especies distribuidas desigualmente entre las 6 zonas (Z1 a Z4 con 4 especies, Z5 con 5 y Z6 con 4), generando ecosistemas incompletos y saltos arbitrarios de probabilidad.
+2. **Volatilidad de Atributos y Dependencia del SRD Externo:** Las estadísticas de juego se calculaban dinámicamente mediante fórmulas de normalización al vuelo basadas en el snapshot de Open5e, lo que provocaba anomalías estadísticas (p. ej. criaturas de zonas avanzadas con atributos inferiores a las de zonas iniciales) y carecía de progresión controlada.
+3. **Truncamiento Arbitrario de Movimientos a 3 Slots:** En la base de datos y la interfaz de usuario, los movimientos se recortaban mediante `.slice(0, 3)` sin una jerarquía táctica clara, omitiendo la distinción fundamental entre ataque básico, técnica táctica, movimiento de cobertura y técnica definitiva de Furia.
+4. **Disparidad de Probabilidades en Tablas de Aparición:** Varias tablas de aparición acumulaban ponderaciones dispares o con saltos bruscos (`40/35/20/5`), alejándose de una progresión predecible y balanceada entre especies comunes, frecuentes, raras y especiales.
+5. **Carencia de Criaturas Legendarias Canónicas:** Las especies ápice de las zonas finales carecían de una consagración formal como Criaturas Legendarias tanto a nivel de modelo relacional como de distinción visual e iconográfica en el compendio.
+6. **Vulnerabilidad de Furia Desbloqueada:** El cuarto movimiento (Furia) no contaba con salvaguarda ni bloqueo en el servidor, permitiendo su uso indiscriminado sin requerir la mecánica de Resonancia.
 
-### Tabla Resumen de Subfases de la Fase 10
+---
 
-| Subfase | Alcance / Vistas | Mejoras Principales | Pruebas | Estado |
+### 10.2 Mejoras Implementadas
+
+#### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
+- **Consagración de Criaturas Legendarias (`Crown` de Lucide):** Se consagraron formalmente `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380) como **Criaturas Legendarias** (`esLegendaria: true`). En `PantallaCatalogo.tsx`, se destacan con un marco dorado retro (`border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.4)]`), una vitrina heroica con fondo abismo pixelado y una insignia flotante dorada `LEGENDARIO` acompañada del icono `Crown` de Lucide.
+- **Paleta Canónica de Afinidades Elementales:** Asignación visual y textual de las 6 afinidades elementales retro de Aethelgard: Físico (`stone`), Fuego (`red`), Agua (`blue`), Natura (`emerald`), Sombra (`purple`) y Luz (`yellow`), desplegadas en badges retro biselados tanto en las tarjetas del catálogo como en el modal de inspección táctica.
+- **Compendio de 30 Especies SRD 5.2:** Actualización de la cabecera a `30 ESPECIES SRD 5.2` y expansión de la barra de avistamiento biológico a 5 columnas, incorporando la métrica en tiempo real de Criaturas Legendarias (`metricas.legendarias`) con texto dorado e icono `Crown`.
+- **Filtro de Rareza Legendaria:** Se añadió el filtro directo `LEGENDARIAS` a la barra de controles de arquetipos, permitiendo aislar instantáneamente a las criaturas ápice del mundo.
+- **Despliegue Integral de los 4 Slots Tácticos:** Se erradicó el truncamiento `.slice(0, 3)` en el modal de inspección táctica, renderizando los 4 movimientos canónicos con su identificador de slot (`M1`, `M2`, `M3`, `M4`), nombre, tipo de acción, potencia entera y badges de efectos secundarios (`PARALISIS`, `BASTION`, `DEF_DOWN`, `VENENO`, etc.).
+
+#### B. Componentes Táctiles 8bitcn/ui y Hardening en Combate
+- **Modal Sellado contra Overflow:** El modal de inspección mantiene la directriz Impeccable de acotamiento responsive (`w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden rounded-none border-2 border-primary bg-bastion`), previniendo desbordes horizontales en pantallas móviles de 320 px a 360 px.
+- **Panel Táctico de 4 Movimientos en `PantallaCombate.tsx`:** El desplegable de ataques de la criatura aliada renderiza ahora los 4 movimientos canónicos. El slot 4 (`mov.slot === 4` o índice 3) se muestra deshabilitado de forma reactiva con el badge retro `Furia (Bloqueado)`, borde punteado tenue, tooltip explicativo y protección `aria-disabled`, impidiendo su activación hasta que el explorador acumule el 100% de Resonancia en combate.
+- **Hardening contra Doble Clic:** Protección estricta con `aria-busy={procesandoAccion}` y desactivación de todos los botones de ataque durante la resolución de turnos.
+
+#### C. Integración Multimedia y Web Audio (`assets.ts`)
+- **Retroalimentación Acústica de Inspección y Combate:** Utilización del sintetizador nativo de ondas cuadradas de `assets.ts` para clics de navegación (`"click"`), apertura del modal de inspección (`"seleccionar"`), impactos de combate (`"golpe"`) y fanfarria de victoria (`"victoria"`).
+
+#### D. Reglas de Servidor, Prisma y Soberanía Interna de Atributos
+- **Migración Relacional de Prisma (`20261017050700_bestiario_canonico`):**
+  - Modelo `Especie`: Incorporación de columnas `elemento TEXT NOT NULL DEFAULT 'fisico'` y `esLegendaria BOOLEAN NOT NULL DEFAULT false`.
+  - Modelo `Movimiento`: Incorporación de `slot INTEGER NOT NULL DEFAULT 1` y `efecto TEXT`, con restricción de unicidad compuesta `@@unique([especieId, slot])` que garantiza que ninguna especie posea dos movimientos en la misma posición.
+- **Bestiario Canónico Soberano (`bestiario-canonico.ts`):** Definición inmutable de las 30 criaturas (5 por zona, Z1..Z6) con atributos progresivos monótonos divididos en 4 escalones de presupuesto: J-1 Aprendiz (160–210), J-2 Aventurero (210–280), J-3 Veterano (270–320) y J-4 Maestro Legendario (310–380), garantizando que cada atributo individual se mantenga estrictamente en el intervalo $[30, 100]$.
+- **Siembra Idempotente y Depuración de Huérfanos (`importar-especies.ts`):** El importador ejecuta un upsert transaccional por `idExterno`, asigna los 4 movimientos por especie y depura de forma transaccional cualquier especie obsoleta no canónica (`brown-bear`, `werewolf`, etc.), resembrando limpiamente `AparicionZona` y `Movimiento`.
+- **Invariante INV-01 en las 6 Tablas de Aparición:** Normalización matemática de las tablas de aparición a exactamente 5 especies por zona con pesos $35\% + 35\% + 15\% + 10\% + 5\% = 100\%$, asegurando que la suma de pesos sea idénticamente 100 en todas las regiones del mundo.
+- **Bloqueo en Servidor del Slot 4 (`MOVIMIENTO_BLOQUEADO`):** En `CombateService.atacar`, si el jugador intenta ejecutar el índice 3 (Slot 4), la acción es rechazada inmediatamente con la excepción `BadRequestException(MOVIMIENTO_BLOQUEADO)` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse."). Los DTOs de combate incorporan `@Max(3)` en `movimientoIndice`. Asimismo, la IA rival sortea su contraataque exclusivamente entre los slots 1 y 3 (`sortearIndiceMovimientoRival(0, 2)`), impidiendo que las criaturas salvajes disparen la Furia antes de tiempo.
+
+---
+
+### 10.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas de Invariantes del Bestiario (`apps/api/test/bestiario-canonico.spec.ts`):** Suite creada con 8 pruebas unitarias aprobadas que verifican:
+  1. Existencia exacta de 30 especies y 5 especies por cada una de las 6 zonas.
+  2. Cumplimiento de INV-01 con suma de pesos exactamente igual a 100 en las 6 zonas.
+  3. Estricta monotonía creciente del presupuesto medio por zona ($Z_1 < Z_2 < Z_3 < Z_4 < Z_5 < Z_6$).
+  4. Acotamiento de atributos individuales en $[30, 100]$ y presupuesto en $[160, 380]$.
+  5. Exactamente 4 movimientos por especie con slots $1..4$ y poderes en $[10, 40]$.
+  6. Existencia de exactamente 2 criaturas legendarias (`behir-abismo` y `remorhaz-glaciar`).
+- **Pruebas de Jerarquía y Bloqueo en Combate (`apps/api/test/combate.spec.ts`):** 3 nuevas pruebas unitarias verificando el rechazo con `MOVIMIENTO_BLOQUEADO`, exclusión del slot 4 en el contraataque rival y rechazo de índices $>3$ en ValidationPipe.
+- **Suite Total Backend (`pnpm --filter api test`):** **71 de 71 pruebas aprobadas** (100% de éxito).
+- **Pruebas Frontend (`apps/web/test/verificacion-historial-catalogo.spec.ts`):** Pruebas actualizadas con 57 pruebas aprobadas validando la traducción de elementos, filtro de criaturas legendarias, auditoría estática de 30 especies, insignia `Crown`, 4 slots sin `.slice(0, 3)` en `PantallaCatalogo.tsx` y slot 4 de Furia deshabilitado en `PantallaCombate.tsx`.
+- **Suite Total Frontend (`pnpm --filter web test`):** **57 de 57 pruebas aprobadas** (100% de éxito).
+- **Compilación de Producción (`pnpm --filter web build`):** 0 errores TypeScript en modo estricto en Vite (construcción limpia en 7.1s).
+- **Regla R1 Estricta:** Cero emojis unicode en toda la interfaz de usuario.
+
+---
+
+## 11. Cierre Formal de la Fase 10 (Consolidado Full-Stack AV5 Definitivo)
+
+Con la culminación de la Subfase 10j, se da por **completada y auditada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 Definitivo (Entrega Final de UX Retro, Bestiario Canónico y Mecánicas Full-Stack)**.
+
+### Tabla Resumen Consolidada de Subfases de la Fase 10
+
+| Subfase | Alcance / Vistas | Mejoras Principales | Pruebas Automatizadas | Estado |
 | :--- | :--- | :--- | :--- | :--- |
 | **10a** | Autenticación (`PantallaIngreso.tsx`) | Validación Zod en tiempo real, estética CRT/VGA, cero emojis y audio retro. | 3 tests web | ✅ Completada |
 | **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`) | Selección táctica de iniciales con sprites, carrusel y estadísticas normalizadas. | 3 tests web | ✅ Completada |
@@ -568,13 +626,15 @@ Con la culminación de la Subfase 10i, se da por **completada en su totalidad la
 | **10g** | Inventario y Tienda (`PantallaInventario.tsx`, `PantallaTienda.tsx`) | Filtros de objetos, compras por lotes (x1, x5, x10) en servidor y uso medicinal. | 8 tests web + 12 tests api | ✅ Completada |
 | **10h** | Santuario de Curación (`PantallaCuracion.tsx`) | Restauración atómica INV-03 con FOR UPDATE, resurrección de caídas y cinemática. | 8 tests web + 6 tests api | ✅ Completada |
 | **10i** | Compendio, Bitácora y Créditos (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`) | Erradicación N+1 en catálogo, modal de inspección sellado, crónicas categorizadas con Lucide, Salón de la Fama y homenaje al Ing. Claudio. | 8 tests web + 6 tests api | ✅ Completada |
+| **10j** | Bestiario Canónico y Legendarias (`bestiario-canonico.ts`, `PantallaCatalogo.tsx`, `PantallaCombate.tsx`) | 30 especies canónicas soberanas, jerarquía J-1 a J-4, consagración de Behir y Remorhaz como Legendarias, sets de 4 movimientos M1..M4, bloqueo de Furia y tablas INV-01 al 100%. | 8 tests web + 11 tests api | ✅ Completada |
 
-### Métricas Totales de Calidad del Proyecto
-- **Pruebas Unitarias de Back-End (NestJS):** 60 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
-- **Pruebas Unitarias de Front-End (React / Vite):** 55 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
-- **Total de Pruebas Automatizadas:** 115 pruebas unitarias libres de regresiones.
+### Métricas Finales de Calidad del Proyecto
+- **Pruebas Unitarias de Back-End (NestJS):** 71 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
+- **Pruebas Unitarias de Front-End (React / Vite):** 57 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
+- **Total de Pruebas Automatizadas:** **128 pruebas unitarias libres de regresiones**.
 - **Compilación TypeScript:** 100% limpia en `web` y `api` bajo configuración estricta.
-- **Diseño y Accesibilidad:** Cumplimiento total de la guía de diseño retro `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos y modales sellados contra overflow en 320px bajo el estándar Impeccable.
+- **Diseño y Ergonomía:** Cumplimiento riguroso de la guía `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos, modales sellados contra overflow en 320px–360px bajo el estándar Impeccable y audio retro sintetizado en Web Audio API.
+
 
 
 

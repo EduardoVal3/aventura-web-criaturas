@@ -61,13 +61,14 @@ test("Flujo de autenticación y navegación: RutaPublica permite salir de crear-
   );
 });
 
-test("Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y LayoutPrincipal incluyen escape hatch con LogOut", async () => {
+test("Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y PantallaHubUbicacion incluyen escape hatch con LogOut, y LayoutPrincipal es responsive", async () => {
   const { readFileSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
   const crearPersonajeCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaCrearPersonaje.tsx"), "utf-8");
+  const hubCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaHubUbicacion.tsx"), "utf-8");
   const layoutCodigo = readFileSync(join(__dirname, "../src/components/LayoutPrincipal.tsx"), "utf-8");
 
   // PantallaCrearPersonaje debe ofrecer salida al ingreso
@@ -78,11 +79,16 @@ test("Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y LayoutPrincipal
     "PantallaCrearPersonaje debe incluir botón de salida visible",
   );
 
-  // LayoutPrincipal debe ofrecer controles de sesión
-  assert.ok(layoutCodigo.includes("LogOut"), "LayoutPrincipal debe importar LogOut");
-  assert.ok(layoutCodigo.includes("LogIn"), "LayoutPrincipal debe importar LogIn");
-  assert.ok(layoutCodigo.includes("useAutenticacion"), "LayoutPrincipal debe consumir useAutenticacion");
+  // PantallaHubUbicacion debe ofrecer salida de la localidad
+  assert.ok(hubCodigo.includes("LogOut"), "PantallaHubUbicacion debe importar LogOut");
+  assert.ok(hubCodigo.includes("handleCerrarSesion"), "PantallaHubUbicacion debe proveer función para cerrar sesión");
+
+  // LayoutPrincipal debe ser responsive sin flex-wrap, sin botón de logout y con Kit de interfaz accesible en móvil
+  assert.ok(!layoutCodigo.includes("flex-wrap"), "LayoutPrincipal no debe usar flex-wrap en el header para evitar apilamiento vertical");
+  assert.ok(!layoutCodigo.includes("LogOut"), "LayoutPrincipal no debe incluir botón de salir para no saturar la cabecera");
+  assert.ok(layoutCodigo.includes('to="/kit-ui"'), "LayoutPrincipal debe incluir enlace a Kit de interfaz accesible desde celular");
 });
+
 
 test("Regla R1: Cero emojis unicode en PantallaCrearPersonaje.tsx y LayoutPrincipal.tsx", async () => {
   const { readFileSync } = await import("node:fs");

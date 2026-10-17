@@ -340,8 +340,9 @@ describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (S
     }
 
     // CATALOGO_ESPECIES_PROPENSO contiene exactamente 30 claves
+    const clavesPropensas = Object.keys(CATALOGO_ESPECIES_PROPENSO);
     assert.strictEqual(
-      CATALOGO_ESPECIES_PROPENSO.length,
+      clavesPropensas.length,
       30,
       'CATALOGO_ESPECIES_PROPENSO debe contener exactamente 30 claves',
     );
@@ -350,11 +351,12 @@ describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (S
     const rutaSnapshot = path.resolve(__dirname, '../../../datos/open5e-srd-2024-seleccion.json');
     assert.ok(fs.existsSync(rutaSnapshot), `Snapshot no encontrado en ${rutaSnapshot}`);
     const snapshotRaw = fs.readFileSync(rutaSnapshot, 'utf-8');
-    const snapshot = JSON.parse(snapshotRaw);
+    const snapshot = JSON.parse(snapshotRaw) as Array<{ key: string }>;
+    const snapshotMap = new Set(snapshot.map((c) => c.key));
 
-    for (const clave of CATALOGO_ESPECIES_PROPENSO) {
+    for (const clave of clavesPropensas) {
       assert.ok(
-        snapshot[clave] !== undefined,
+        snapshotMap.has(clave),
         `La clave ${clave} de CATALOGO_ESPECIES_PROPENSO no existe en el snapshot local`,
       );
     }

@@ -1,0 +1,227 @@
+import type {
+  EspecieCatalogo,
+  ArquetipoEspecie,
+  EventoHistorial,
+  CategoriaHistorial,
+} from "../api/ApiJuego";
+
+/**
+ * Mapeo canónico en español de los 6 tipos biológicos del SRD 5.2 (Open5e).
+ */
+export const TRADUCCION_TIPOS_ESPECIE: Record<string, string> = {
+  beast: "Bestia",
+  monstrosity: "Monstruosidad",
+  undead: "No-muerto",
+  elemental: "Elemental",
+  construct: "Autómata",
+  plant: "Planta",
+};
+
+/**
+ * Determina el arquetipo táctico de una especie basándose en sus atributos o valor precalculado.
+ */
+export function calcularArquetipoCriatura(especie: {
+  hpBase?: number;
+  ataqueBase?: number;
+  defensaBase?: number;
+  velocidadBase?: number;
+  arquetipo?: ArquetipoEspecie;
+}): ArquetipoEspecie {
+  if (especie.arquetipo) {
+    return especie.arquetipo;
+  }
+
+  const hp = especie.hpBase ?? 30;
+  const atq = especie.ataqueBase ?? 30;
+  const def = especie.defensaBase ?? 30;
+  const vel = especie.velocidadBase ?? 30;
+  const maximo = Math.max(hp, atq, def, vel);
+
+  if ((def >= 75 || hp >= 65) && (def === maximo || hp === maximo)) {
+    return "TANQUE";
+  }
+  if (atq >= 70 && atq >= def && atq >= vel) {
+    return "ATACANTE";
+  }
+  if (vel >= 70 && vel > atq) {
+    return "VELOZ";
+  }
+  return "EQUILIBRADO";
+}
+
+export interface CriteriosFiltroCatalogo {
+  tipo?: string;
+  arquetipo?: string;
+  busqueda?: string;
+}
+
+/**
+ * Filtra en cliente de forma instantánea por tipo biológico, arquetipo/rareza y término de búsqueda.
+ */
+export function filtrarEspeciesCatalogo(
+  especies: EspecieCatalogo[],
+  filtros: CriteriosFiltroCatalogo,
+): EspecieCatalogo[] {
+  const tipoFiltro = (filtros.tipo || "todos").toLowerCase().trim();
+  const arquetipoFiltro = (filtros.arquetipo || "todos").toUpperCase().trim();
+  const busquedaNormalizada = (filtros.busqueda || "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return especies.filter((esp) => {
+    // Filtro por tipo biológico
+    if (tipoFiltro !== "todos" && esp.tipo.toLowerCase() !== tipoFiltro) {
+      return false;
+    }
+
+    // Filtro por arquetipo o rareza especial
+    if (arquetipoFiltro !== "TODOS") {
+      if (arquetipoFiltro === "ESPECIAL" || arquetipoFiltro === "ESPECIALES") {
+        if (!esp.esEspecial) return false;
+      } else {
+        const arq = esp.arquetipo || calcularArquetipoCriatura(esp);
+        if (arq !== arquetipoFiltro) return false;
+      }
+    }
+
+    // Filtro por término de búsqueda (nombre, slug, descripción o keyExterna)
+    if (busquedaNormalizada) {
+      const textoNombre = (esp.nombre || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const textoSlug = (esp.slug || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const textoDesc = (esp.descripcion || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const textoKey = (esp.keyExterna || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      const coincide =
+        textoNombre.includes(busquedaNormalizada) ||
+        textoSlug.includes(busquedaNormalizada) ||
+        textoDesc.includes(busquedaNormalizada) ||
+        textoKey.includes(busquedaNormalizada);
+
+      if (!coincide) return false;
+    }
+
+    return true;
+  });
+}
+
+/**
+ * Resuelve la categoría canónica de un evento del historial.
+ */
+export function resolverCategoriaEvento(evento: EventoHistorial): CategoriaHistorial {
+  if (evento.categoria) {
+    return evento.categoria;
+  }
+
+  const tipoUpper = (evento.tipo || "").toUpperCase().trim();
+
+  if (tipoUpper === "CAPTURA") {
+    return "CAPTURA";
+  }
+  if (["COMERCIO", "TIENDA", "COMPRA"].includes(tipoUpper)) {
+    return "TIENDA";
+  }
+  if (["CURACION", "SANTUARIO"].includes(tipoUpper)) {
+    return "CURACION";
+  }
+  if (
+    ["COMBATE", "VICTORIA_COMBATE", "DERROTA_COMBATE", "HUIDA", "PROGRESO"].includes(tipoUpper)
+  ) {
+    return "COMBATE";
+  }
+  return "EXPLORACION";
+}
+
+/**
+ * Formatea una marca de tiempo ISO en componentes amigables de fecha y hora.
+ */
+export function formatearFechaAmigable(marcaTiempo: string): {
+  hora: string;
+  fecha: string;
+  textoCompleto: string;
+} {
+  try {
+    const d = new Date(marcaTiempo);
+    if (isNaN(d.getTime())) {
+      return {
+        hora: "--:--",
+        fecha: marcaTiempo,
+        textoCompleto: marcaTiempo,
+      };
+    }
+    const dia = String(d.getDate()).padStart(2, "0");
+    const mes = String(d.getMonth() + 1).padStart(2, "0");
+    const anio = d.getFullYear();
+    const hora = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+
+    const horaStr = `${hora}:${min}`;
+    const fechaStr = `${dia}/${mes}/${anio}`;
+    return {
+      hora: horaStr,
+      fecha: fechaStr,
+      textoCompleto: `${fechaStr} · ${horaStr}`,
+    };
+  } catch {
+    return {
+      hora: "--:--",
+      fecha: marcaTiempo,
+      textoCompleto: marcaTiempo,
+    };
+  }
+}
+
+/**
+ * Filtra los eventos de la bitácora por categoría canónica y texto en la descripción.
+ */
+export function filtrarEventosHistorial(
+  eventos: EventoHistorial[],
+  categoriaActiva: string,
+  busqueda: string,
+): EventoHistorial[] {
+  const catUpper = (categoriaActiva || "TODOS").toUpperCase().trim();
+  const busquedaNorm = (busqueda || "")
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return eventos.filter((ev) => {
+    if (catUpper !== "TODOS") {
+      const catEv = resolverCategoriaEvento(ev);
+      if (catEv !== catUpper) {
+        return false;
+      }
+    }
+
+    if (busquedaNorm) {
+      const desc = (ev.descripcion || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const tipo = (ev.tipo || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (!desc.includes(busquedaNorm) && !tipo.includes(busquedaNorm)) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}

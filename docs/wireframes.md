@@ -323,88 +323,122 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 
 ---
 
-## 9. PantallaCatalogo y PantallaFichaCriatura
+## 9. PantallaCatalogo y Modal de Inspección Táctica
 - **Módulos cubiertos:** `M-CRI` (Criaturas).
-- **Propósito:** Enciclopedia de las 25 especies del juego y visualización de atributos detallados.
+- **Propósito:** Compendio biológico de las 25 especies del juego sin ráfagas N+1, clasificación de arquetipos tácticos y modal de inspección detallada.
 
 ```text
 +-----------------------------------------------------------------------+
-| COMPENDIO DE CRIATURAS DE AETHELGARD (25 Especies Registradas)        |
+| COMPENDIO DE CRIATURAS                 [ACTUALIZAR] [Asentamiento]    |
+| [BookOpen] 25 ESPECIES SRD 5.2                                        |
 +-----------------------------------------------------------------------+
-| Filtro Tipo: [selector-tipo: Todos v] | Buscar: [campo-buscar-especie]|
-|                                                                       |
+| AVISTAMIENTO: Registradas: 25 | En Vista: 25 | Especiales: 2 | Tipos: 6|
++-----------------------------------------------------------------------+
+| [Buscar especie por nombre...]                [Tipo: Todos los tipos v]|
+| Arquetipo: [TODOS] [ATACANTE] [TANQUE] [VELOZ] [EQUILIBRADO] [ESPECIAL]|
+|                                                       [Limpiar filtros]|
++-----------------------------------------------------------------------+
+| TARJETAS DE CRIATURA (Grid 3 columnas):                               |
+| +-----------------------------------+ +-------------------------------+ |
+| | Lobo Gris       [Bestia][EQUILIB] | | Armadura Animada  [Autómata]  | |
+| | srd-2024_wolf                     | | srd-2024_animated-armor[TANQUE| |
+| | ================================= | | ============================= | |
+| |       [ VITRINA SPRITE 128x128 ]  | |    [ VITRINA SPRITE 128x128 ] | |
+| | ================================= | | ============================= | |
+| | HP: 30 | ATQ: 42 | DEF: 58|VEL: 50| | HP: 40 | ATQ: 42 | DEF:100|VEL:41| |
+| | CR: 0.25      Captura: 88%        | | CR: 1.00      Captura: 83%    | |
+| | [INSPECCIONAR FICHA]              | | [INSPECCIONAR FICHA]          | |
+| +-----------------------------------+ +-------------------------------+ |
++-----------------------------------------------------------------------+
+| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado max-h-[90vh]):     |
 | +-------------------------------------------------------------------+ |
-| | [Lobo Gris]        | Bestia       | CR: 0.25 | [boton-ver-ficha-1]| |
-| | [Lobo Huargo]      | Bestia       | CR: 1.00 | [boton-ver-ficha-2]| |
-| | [Cocatriza]        | Monstruosidad| CR: 0.50 | [boton-ver-ficha-3]| |
-| | [Quimera Tricéfala]| Monstruosidad| CR: 6.00 | [boton-ver-ficha-4]| |
+| | [ VITRINA HEROICA SPRITE 112x112 pixelated ]         [ESPECIAL]   | |
+| | Quimera Tricéfala · CR: 6.00 · Tasa Captura: 48%                  | |
+| | srd-2024_chimera · [Monstruosidad] [ATACANTE]                     | |
+| | Lore: Monstruosidad alada con cabezas de león, cabra y dragón.    | |
+| | HP Base:   72 [=======---]  | Ataque Base: 76 [========--]        | |
+| | Def Base:  72 [=======---]  | Vel Base:    70 [=======---]        | |
+| | Movimientos:                                                      | |
+| | - Aliento Flamígero (Ataque distancia · Fire Breath · Pot. 15.0)  | |
+| | - Garras Desgarradoras (Ataque melé · Claws · Pot. 10.5)          | |
+| | [Cerrar Ficha Táctica]                                            | |
 | +-------------------------------------------------------------------+ |
-|                                                                       |
-| [boton-volver-hub-compendio]                                          |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `selector-tipo`, `campo-buscar-especie`: Filtros en cliente.
-  - `boton-ver-ficha-1`: Abre modal/vista de detalle con las estadísticas normalizadas (`hpBase`, `ataqueBase`, etc.) y movimientos.
-  - `boton-volver-hub-compendio`: Retorna a `PantallaHubUbicacion`.
+  - `campo-buscar-especie`, `selector-tipo`, botones de arquetipo: Filtrado instantáneo en cliente.
+  - `INSPECCIONAR FICHA`: Abre modal retro sellado (`w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none`) con lore, barras comparativas sobre 100 y lista de movimientos.
+  - `ACTUALIZAR`: Recarga el compendio en una única petición O(1) con hardening `aria-busy`.
+  - `Asentamiento`: Navegación con `useNavigate("/hub")`.
 
 ---
 
 ## 10. PantallaHistorial
 - **Módulos cubiertos:** `M-HIS` (Historial).
-- **Propósito:** Bitácora cronológica de eventos de exploración, capturas y combates.
+- **Propósito:** Bitácora transversal categorizada por iconografía Lucide SVG y filtros rápidos.
 
 ```text
 +-----------------------------------------------------------------------+
-| BITÁCORA DE EXPEDICIONES DEL EXPLORADOR                               |
+| BITÁCORA DE EXPEDICIONES               [ACTUALIZAR] [Asentamiento]    |
+| [BookOpen] 45 CRÓNICAS REGISTRADAS                                    |
 +-----------------------------------------------------------------------+
-| Registro de Eventos Recientes:                                        |
+| FILTROS RÁPIDOS POR CATEGORÍA:                                        |
+| [TODOS (45)] [COMBATE (20)] [CAPTURA (8)] [EXPLORACIÓN (10)]          |
+| [TIENDA (5)] [CURACIÓN (2)]                                           |
+| [Buscar crónica por palabra clave...]              [Limpiar filtros]  |
++-----------------------------------------------------------------------+
+| CRÓNICAS CRONOLÓGICAS (Estilo retro):                                 |
 | +-------------------------------------------------------------------+ |
-| | 12:45 | Victoria contra Pico de Hacha (Nv. 2) en Praderas (+45 XP)| |
-| | 12:42 | Captura exitosa de Lobo Gris con Talismán Básico          | |
-| | 12:40 | Descubrimiento de 25 monedas en Bosque Susurrante         | |
-| | 12:35 | Huida exitosa de encuentro hostil con Oso Pardo           | |
+| | [12:45 | 16/10] [Swords COMBATE]                                  | |
+| | Victoria frente a Pico de Hacha en Praderas del Amanecer (+45 XP) | |
 | +-------------------------------------------------------------------+ |
-|                                                                       |
-| [boton-limpiar-filtros]                       [boton-volver-bitacora] |
+| | [12:42 | 16/10] [Sparkles CAPTURA]                                | |
+| | Capturaste un Lobo Gris con Talismán Básico (Nv. 1)                | |
+| +-------------------------------------------------------------------+ |
+| | [12:30 | 16/10] [ShoppingBag TIENDA]                              | |
+| | Compraste Poción de Curación Mayor x5 en Puesto Ribereño (-200 O) | |
+| +-------------------------------------------------------------------+ |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-volver-bitacora`: Retorna a `PantallaHubUbicacion`.
+  - Botones de categoría: Filtro instantáneo por `COMBATE`, `CAPTURA`, `EXPLORACIÓN`, `TIENDA` y `CURACIÓN`.
+  - `Limpiar filtros`: Restablece categoría y buscador a sus valores por defecto.
+  - `ACTUALIZAR`: Refresca la bitácora con protección `aria-busy`.
+  - `Asentamiento`: Retorna al Hub mediante `useNavigate("/hub")`.
 
 ---
 
-## 11. PantallaCreditos
+## 11. PantallaCreditos (Salón de la Fama 16-bit)
 - **Módulos cubiertos:** Requisito legal y académico (Anexo A.4).
-- **Propósito:** Atribución obligatoria de la API Open5e (`srd-2024` bajo CC BY 4.0) y licencias de dependencias.
+- **Propósito:** Salón de la Fama retro 16-bit, homenaje académico al Ingeniero Claudio y atribución obligatoria de Open5e, SRD 5.2 y 8bitcn/ui.
 
 ```text
 +-----------------------------------------------------------------------+
-|                     CRÉDITOS Y ATRIBUCIONES LEGALES                   |
+| [Crown SALÓN DE LA FAMA] [Trophy ISC-305 · III PAC 2026]              |
+| AETHELGARD: CRÉDITOS Y HONOR           [CELEBRAR FANFARRIA]           |
+|                                        [boton-volver-inicio-creditos] |
+| Bestiario Victorioso: [Lobo] [Grifo] [Quimera] [Hidra]                |
 +-----------------------------------------------------------------------+
-| PROYECTO: Aethelgard: Sendas y Criaturas                              |
-| ASIGNATURA: ISC-305 Programación Web · III PAC 2026                   |
-|                                                                       |
-| DATOS EXTERNOS Y REGLAS DE CRIATURAS:                                 |
-| "This work includes material taken from the System Reference          |
-|  Document 5.2 (“SRD 5.2”) by Wizards of the Coast LLC, available at   |
-|  https://dnd.wizards.com/resources/systems-reference-document,        |
-|  and licensed under the Creative Commons Attribution 4.0              |
-|  International License available at                                   |
-|  https://creativecommons.org/licenses/by/4.0/legalcode."              |
-|                                                                       |
-| API CONSUMIDA:                                                        |
-| Open5e API v2 (https://open5e.com)                                    |
-|                                                                       |
-| SISTEMA DE DISEÑO E INTERFAZ:                                         |
-| 8bitcn/ui (shadcn/ui pixel art components)                            |
-| Licencia MIT (Copyright (c) 2024 8bitcn)                              |
-|                                                                       |
-| [boton-volver-inicio-creditos]                                        |
+| [GraduationCap] HOMENAJE ACADÉMICO — INGENIERO CLAUDIO                 |
+| Cátedra de Programación Web y Arquitectura de Sistemas de Información |
+| Reconocimiento al rigor metodológico, erradicación de N+1,             |
+| validación en servidor y trazabilidad en ISC-305.                     |
++-----------------------------------------------------------------------+
+| [Code2] EQUIPO DE DESARROLLO Y ARQUITECTURA FULL-STACK (FASE 10 · AV5)|
+| React 19 + Tailwind CSS v4 + NestJS 11 + Prisma + PostgreSQL          |
+| Salvaguarda de invariantes estocásticas y seguridad S-1 a S-7.        |
++-----------------------------------------------------------------------+
+| [BookOpen] CATÁLOGO DE CRIATURAS: OPEN5E Y SRD 5.2 (CC BY 4.0)        |
+| Atribución literal obligatoria a Wizards of the Coast LLC.            |
++-----------------------------------------------------------------------+
+| [Sparkles] SISTEMA DE DISEÑO 8BITCN/UI (MIT) Y WEB AUDIO API          |
+| Licencia MIT completa y motor nativo de síntesis 8-bit.               |
+|                                        [Regresar al Asentamiento]     |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-volver-inicio-creditos`: Retorna a `PantallaIngreso` o `PantallaHubUbicacion`.
+  - `CELEBRAR FANFARRIA`: Dispara síntesis Web Audio retro (`assets.ts`).
+  - `boton-volver-inicio-creditos` / `Regresar al Asentamiento`: Retorna a `PantallaHubUbicacion` con sonido de victoria.

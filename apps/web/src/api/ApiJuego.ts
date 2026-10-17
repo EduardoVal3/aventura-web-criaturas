@@ -444,6 +444,9 @@ export interface RespuestaVerificarZona {
   mensaje: string;
 }
 
+export type ArquetipoEspecie = "TANQUE" | "ATACANTE" | "VELOZ" | "EQUILIBRADO";
+export type CategoriaHistorial = "COMBATE" | "CAPTURA" | "EXPLORACION" | "TIENDA" | "CURACION";
+
 export interface EspecieCatalogo {
   slug: string;
   nombre: string;
@@ -455,6 +458,10 @@ export interface EspecieCatalogo {
   velocidadBase: number;
   tasaCaptura: number;
   esEspecial: boolean;
+  keyExterna?: string;
+  descripcion?: string;
+  arquetipo?: ArquetipoEspecie;
+  movimientos?: MovimientoEspecie[];
 }
 
 export interface RespuestaEspecies {
@@ -465,6 +472,7 @@ export interface RespuestaEspecies {
 export interface MovimientoEspecie {
   nombre: string;
   nombreOriginal: string;
+  tipoAccion?: string;
   poder: number;
 }
 
@@ -476,11 +484,16 @@ export interface EspecieDetalle extends EspecieCatalogo {
 export interface EventoHistorial {
   eventoId: string;
   tipo: string;
+  categoria?: CategoriaHistorial;
   descripcion: string;
   marcaTiempo: string;
+  datosJson?: Record<string, unknown>;
 }
 
 export interface RespuestaHistorial {
+  total?: number;
+  pagina?: number;
+  limite?: number;
   eventos: EventoHistorial[];
 }
 
@@ -511,7 +524,7 @@ export interface ApiJuego {
   verificarZona(peticion: PeticionVerificarZona): Promise<RespuestaVerificarZona>;
   obtenerEspecies(tipo?: string): Promise<RespuestaEspecies>;
   obtenerEspecie(slug: string): Promise<EspecieDetalle>;
-  obtenerHistorial(): Promise<RespuestaHistorial>;
+  obtenerHistorial(categoria?: string): Promise<RespuestaHistorial>;
   actualizarOrdenEquipo(peticion: {
     criaturaIds?: string[];
     orden?: { criaturaId: string; orden: number }[];

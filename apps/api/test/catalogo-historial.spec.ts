@@ -75,7 +75,7 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
       assert.strictEqual(loboGris, 'EQUILIBRADO', 'Lobo Gris debe ser EQUILIBRADO');
     });
 
-    it('obtenerEspecies entrega las 25 especies enriquecidas con movimientos y arquetipo en una sola llamada', async () => {
+    it('obtenerEspecies entrega las 30 especies enriquecidas con movimientos y arquetipo en una sola llamada', async () => {
       // Mock de Prisma con especies sembradas
       const prismaMock = {
         especie: {
@@ -138,12 +138,12 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
 
       // Consulta de todas las especies vía fallback
       const todas = await servicio.obtenerEspecies();
-      assert.strictEqual(todas.total, 25, 'Debe cargar las 25 especies del snapshot');
-      assert.strictEqual(todas.especies.length, 25);
+      assert.strictEqual(todas.total, 30, 'Debe cargar las 30 especies del bestiario');
+      assert.strictEqual(todas.especies.length, 30);
 
       // Consulta filtrada por tipo elemental
       const elementales = await servicio.obtenerEspecies('elemental');
-      assert.strictEqual(elementales.total, 3, 'Debe retornar exactamente las 3 especies elementales');
+      assert.strictEqual(elementales.total, 5, 'Debe retornar exactamente las 5 especies elementales');
       for (const e of elementales.especies) {
         assert.strictEqual(e.tipo, 'elemental');
       }

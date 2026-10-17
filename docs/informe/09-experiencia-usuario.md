@@ -87,14 +87,21 @@ La vista previa permitía el flujo básico pero presentaba carencias visuales y 
 - Conexión con `POST /personajes` vía `api.crearPersonaje(...)`.
 - Actualización atómica del contexto de autenticación (`actualizarPersonajeActivo()`), con salvaguarda defensiva mediante `establecerPersonajeActivo(...)` para garantizar consistencia inmediata en la navegación hacia `/hub`.
 
+#### E. Libertad y Control del Usuario (Heurística de Nielsen #3) y Desbloqueo de Navegación
+- **Mitigación de Trampa de Navegación en Creación de Personaje:** Si el explorador no cuenta con una sesión válida (o la base de datos fue reseteada con `prisma migrate reset`), `AutenticacionGuard` emite HTTP 401 `USUARIO_NO_ENCONTRADO`. El cliente captura este estado, purga `localStorage` (`aethelgard_token_acceso`) y redirige limpiamente a `/ingreso`.
+- **Vías de Escape Retro (`LogOut`):** En `PantallaCrearPersonaje.tsx`, se integró un botón retro de salida en la cabecera ("SALIR AL INGRESO") y un enlace secundario en el pie ("¿Deseas ingresar con otra cuenta? Cerrar sesión").
+- **Apertura de `RutaPublica`:** `RutaPublica` se configuró para redirigir al `/hub` únicamente cuando el usuario posee tanto token como personaje activo (`token && personajeActivo`). Si no tiene personaje activo, puede acceder sin trabas a las pantallas de `/ingreso` y `/registro` para alternar de cuenta o registrarse de nuevo.
+- **Navegación Global en `LayoutPrincipal.tsx`:** El encabezado del juego conmuta dinámicamente entre enlaces a `/ingreso` (`LogIn`) y `/registro` (`UserPlus`) en estado no autenticado, y un botón "SALIR" (`LogOut`) en estado autenticado, garantizando que el usuario nunca quede atrapado en una pantalla sin retorno.
+- **Cumplimiento Estricto de Regla R1:** Erradicación de emojis unicode en los controles y botones de `PantallaCrearPersonaje.tsx` y `LayoutPrincipal.tsx`, empleando exclusivamente iconos SVG de Lucide (`Sparkles`, `Swords`, `LogOut`, `LogIn`, `UserPlus`).
+
 ---
 
 ### 2.3 Verificación de Calidad y Cero Regresiones
-- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-crear-personaje.spec.ts`):** 3 pruebas nuevas cubriendo validaciones del esquema Zod, filtrado de espacios (`trim`), rechazo de slugs no autorizados y consistencia de atributos/sprites.
-- **Suite Total Web (`pnpm --filter web test`):** 6 de 6 pruebas aprobadas (100% éxito).
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-crear-personaje.spec.ts` y `verificacion-auth.spec.ts`):** 6 pruebas cubriendo validaciones del esquema Zod, filtrado de espacios (`trim`), rechazo de slugs no autorizados, consistencia de atributos/sprites, auditoría de escape hatch con `LogOut` en creación y layout, desbloqueo de `RutaPublica` y verificación estricta de cero emojis unicode según Regla R1.
+- **Suite Total Web (`pnpm --filter web test`):** 60 de 60 pruebas aprobadas (100% éxito).
 - **Linter Web (`oxlint`):** 0 errores.
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa en TypeScript estricto y Vite.
-- **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas.
+- **Suite Backend (`pnpm --filter api test`):** 71 de 71 pruebas aprobadas.
 
 ---
 
@@ -618,7 +625,7 @@ Con la culminación de la Subfase 10j, se da por **completada y auditada en su t
 | Subfase | Alcance / Vistas | Mejoras Principales | Pruebas Automatizadas | Estado |
 | :--- | :--- | :--- | :--- | :--- |
 | **10a** | Autenticación (`PantallaIngreso.tsx`) | Validación Zod en tiempo real, estética CRT/VGA, cero emojis y audio retro. | 3 tests web | ✅ Completada |
-| **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`) | Selección táctica de iniciales con sprites, carrusel y estadísticas normalizadas. | 3 tests web | ✅ Completada |
+| **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`) | Selección táctica de iniciales con sprites, escape hatch retro con LogOut, desbloqueo de RutaPublica y guard contra tokens huérfanos. | 6 tests web | ✅ Completada |
 | **10c** | Hub Localidad (`PantallaHubUbicacion.tsx`) | Cuadrícula de 8 servicios, ambientación dinámica WebP y navegación fluida. | 4 tests web | ✅ Completada |
 | **10d** | Exploración (`PantallaExploracion.tsx`) | Cinemática de niebla, selector ponderado en servidor e historial de incursión. | 6 tests web | ✅ Completada |
 | **10e** | Combate (`PantallaCombate.tsx`) | Bitácora de combate por turnos, animaciones CSS, cálculo de daño servidor INV-04. | 4 tests web | ✅ Completada |
@@ -630,8 +637,8 @@ Con la culminación de la Subfase 10j, se da por **completada y auditada en su t
 
 ### Métricas Finales de Calidad del Proyecto
 - **Pruebas Unitarias de Back-End (NestJS):** 71 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
-- **Pruebas Unitarias de Front-End (React / Vite):** 57 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
-- **Total de Pruebas Automatizadas:** **128 pruebas unitarias libres de regresiones**.
+- **Pruebas Unitarias de Front-End (React / Vite):** 60 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
+- **Total de Pruebas Automatizadas:** **131 pruebas unitarias libres de regresiones**.
 - **Compilación TypeScript:** 100% limpia en `web` y `api` bajo configuración estricta.
 - **Diseño y Ergonomía:** Cumplimiento riguroso de la guía `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos, modales sellados contra overflow en 320px–360px bajo el estándar Impeccable y audio retro sintetizado en Web Audio API.
 

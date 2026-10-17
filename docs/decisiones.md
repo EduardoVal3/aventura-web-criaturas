@@ -175,5 +175,13 @@
   - **D-8 (Consagración de Criaturas Legendarias):** Se elevan oficialmente a la categoría de **Criaturas Legendarias** a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380), dotándolas de `esLegendaria: true`, insignia `Crown` de Lucide y tratamiento visual dorado retro en el compendio.
   - **Distribución de Aparición Normalizada INV-01:** Las 6 tablas de aparición (`AparicionZona`) cuentan con exactamente 5 especies autóctonas ponderadas como $35\% + 35\% + 15\% + 10\% + 5\% = 100\%$, cumpliendo el invariante **INV-01** de manera estricta y predecible.
 
+---
 
+## 10. Validación de existencia en base de datos para AutenticacionGuard y mitigación de trampas de navegación en Front-End
 
+- **Decisión arquitectónica:**
+  - **Defensa contra Tokens Huérfanos en `AutenticacionGuard`:** Un token JWT que supera la verificación de firma criptográfica no garantiza por sí solo que la entidad de dominio siga existiendo en PostgreSQL (por ejemplo, tras un reseteo de base de datos con `prisma migrate reset` o eliminación de cuentas). Para prevenir que peticiones huérfanas alcancen la capa de servicios y provoquen fallos de clave foránea (`P2003`), `AutenticacionGuard` consulta `prisma.usuario.findUnique({ where: { id: cargaUtil.sub } })`. Si no existe, arroja inmediatamente `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`.
+  - **Desbloqueo de `RutaPublica` sin Personaje Activo:** Previamente, `RutaPublica` redirigía a `/crear-personaje` ante cualquier token presente, impidiendo al usuario acceder a `/ingreso` o `/registro` si requería crear una nueva cuenta o iniciar sesión tras un reseteo. Se ajustó la regla para redirigir al `/hub` exclusivamente cuando `token && personajeActivo`. De este modo, los usuarios sin personaje conservan acceso a las vistas de autenticación para conmutar credenciales libremente.
+  - **Heurística de Control y Libertad del Usuario (Nielsen #3):** Se incorporaron vías de escape retro accesibles mediante el icono `LogOut` de Lucide:
+    1. En `PantallaCrearPersonaje.tsx`: botón "SALIR AL INGRESO" en la cabecera y enlace para conmutar de cuenta en el pie de la tarjeta, con captura preventiva de errores 401 que purgan el almacenamiento local.
+    2. En `LayoutPrincipal.tsx`: conmutación reactiva de la barra de navegación que muestra "Ingreso" (`LogIn`) y "Registro" (`UserPlus`) en estado desautenticado, y botón "SALIR" (`LogOut`) cuando hay un token en memoria.

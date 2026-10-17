@@ -14,7 +14,7 @@ Este documento define la especificación técnica de la API REST que comunica el
    - `200 OK`: Petición procesada exitosamente.
    - `201 Created`: Recurso creado satisfactoriamente.
    - `400 Bad Request`: Parámetros de petición inválidos o malformados.
-   - `401 Unauthorized`: Falta de token de autenticación o sesión inválida.
+   - `401 Unauthorized`: Falta de token de autenticación o sesión inválida (`NO_AUTORIZADO`, `CREDENCIALES_INVALIDAS` o `USUARIO_NO_ENCONTRADO` si el usuario no existe en la base de datos).
    - `403 Forbidden`: Acción no autorizada por reglas de seguridad o estado de juego (ej. moverse a zona bloqueada o actuar fuera de turno).
    - `404 Not Found`: Recurso solicitado no encontrado.
    - `409 Conflict`: Conflicto de estado (ej. nombre de usuario duplicado o equipo completo sin almacén).
@@ -110,8 +110,10 @@ Este documento define la especificación técnica de la API REST que comunica el
     "mensaje": "Sesión cerrada correctamente."
   }
   ```
+- **Salvaguarda de Autenticación Global (`AutenticacionGuard`):** Todas las rutas protegidas validan tanto la firma criptográfica del JWT como la existencia efectiva del usuario en PostgreSQL (`Usuario.id`). Si el registro fue eliminado o la base de datos fue reseteada, el guard arroja `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`, provocando que el Front-End purgue de inmediato `aethelgard_token_acceso` y emita el evento global `aethelgard:no-autorizado`.
 
 ---
+
 
 ### 2.3 Personaje y progreso inicial (`M-PJ`)
 

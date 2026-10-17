@@ -565,4 +565,46 @@ export const BESTIARIO: EspecieCanonica[] = [
   },
 ];
 
-export const TABLAS_APARICION: AparicionCanonica[] = [];
+export const TABLAS_APARICION: AparicionCanonica[] = [
+  // --- ZON-01: Praderas del Amanecer (Nivel 1–3) ---
+  { zonaId: 'ZON-01', especieSlug: 'lobo-gris', peso: 35, nivelMinimo: 1, nivelMaximo: 2 },
+  { zonaId: 'ZON-01', especieSlug: 'pico-de-hacha', peso: 35, nivelMinimo: 1, nivelMaximo: 3 },
+  { zonaId: 'ZON-01', especieSlug: 'arana-lobo-gigante', peso: 15, nivelMinimo: 1, nivelMaximo: 2 },
+  { zonaId: 'ZON-01', especieSlug: 'cocatriza', peso: 10, nivelMinimo: 2, nivelMaximo: 3 },
+  { zonaId: 'ZON-01', especieSlug: 'lobo-huargo', peso: 5, nivelMinimo: 3, nivelMaximo: 4 },
+
+  // --- ZON-02: Bosque Susurrante (Nivel 2–4) ---
+  { zonaId: 'ZON-02', especieSlug: 'oso-negro', peso: 35, nivelMinimo: 2, nivelMaximo: 3 },
+  { zonaId: 'ZON-02', especieSlug: 'jabali-salvaje', peso: 35, nivelMinimo: 2, nivelMaximo: 3 },
+  { zonaId: 'ZON-02', especieSlug: 'arbol-despierto', peso: 15, nivelMinimo: 3, nivelMaximo: 4 },
+  { zonaId: 'ZON-02', especieSlug: 'draco-verde-cria', peso: 10, nivelMinimo: 3, nivelMaximo: 4 },
+  { zonaId: 'ZON-02', especieSlug: 'osobuho', peso: 5, nivelMinimo: 4, nivelMaximo: 5 },
+
+  // --- ZON-03: Riberas del Lago Espejo (Nivel 3–5) ---
+  { zonaId: 'ZON-03', especieSlug: 'quelonio-lacustre', peso: 35, nivelMinimo: 3, nivelMaximo: 4 },
+  { zonaId: 'ZON-03', especieSlug: 'tigre-dientes-sable', peso: 35, nivelMinimo: 3, nivelMaximo: 5 },
+  { zonaId: 'ZON-03', especieSlug: 'alosaurio', peso: 15, nivelMinimo: 4, nivelMaximo: 5 },
+  { zonaId: 'ZON-03', especieSlug: 'elemental-agua', peso: 10, nivelMinimo: 4, nivelMaximo: 5 },
+  { zonaId: 'ZON-03', especieSlug: 'hidra-marismas', peso: 5, nivelMinimo: 5, nivelMaximo: 6 },
+
+  // --- ZON-04: Paso de los Riscos (Nivel 5–7) ---
+  { zonaId: 'ZON-04', especieSlug: 'grifo', peso: 35, nivelMinimo: 5, nivelMaximo: 6 },
+  { zonaId: 'ZON-04', especieSlug: 'gargola', peso: 35, nivelMinimo: 5, nivelMaximo: 6 },
+  { zonaId: 'ZON-04', especieSlug: 'manticora', peso: 15, nivelMinimo: 6, nivelMaximo: 7 },
+  { zonaId: 'ZON-04', especieSlug: 'elemental-tierra', peso: 10, nivelMinimo: 6, nivelMaximo: 7 },
+  { zonaId: 'ZON-04', especieSlug: 'quimera-tricefala', peso: 5, nivelMinimo: 7, nivelMaximo: 8 },
+
+  // --- ZON-05: Cueva Umbría (Nivel 7–10) ---
+  { zonaId: 'ZON-05', especieSlug: 'esqueleto-guerrero', peso: 35, nivelMinimo: 7, nivelMaximo: 8 },
+  { zonaId: 'ZON-05', especieSlug: 'zombi-putrefacto', peso: 35, nivelMinimo: 7, nivelMaximo: 8 },
+  { zonaId: 'ZON-05', especieSlug: 'necrofago', peso: 15, nivelMinimo: 8, nivelMaximo: 9 },
+  { zonaId: 'ZON-05', especieSlug: 'basilisco', peso: 10, nivelMinimo: 8, nivelMaximo: 10 },
+  { zonaId: 'ZON-05', especieSlug: 'behir-abismo', peso: 5, nivelMinimo: 9, nivelMaximo: 10 },
+
+  // --- ZON-06: Pico de la Cumbre (Nivel 8–12) ---
+  { zonaId: 'ZON-06', especieSlug: 'lobo-invernal', peso: 35, nivelMinimo: 8, nivelMaximo: 10 },
+  { zonaId: 'ZON-06', especieSlug: 'armadura-animada', peso: 35, nivelMinimo: 8, nivelMaximo: 10 },
+  { zonaId: 'ZON-06', especieSlug: 'elemental-aire', peso: 15, nivelMinimo: 9, nivelMaximo: 11 },
+  { zonaId: 'ZON-06', especieSlug: 'elemental-fuego', peso: 10, nivelMinimo: 10, nivelMaximo: 11 },
+  { zonaId: 'ZON-06', especieSlug: 'remorhaz-glaciar', peso: 5, nivelMinimo: 11, nivelMaximo: 12 },
+];

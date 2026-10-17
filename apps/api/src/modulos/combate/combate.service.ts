@@ -98,7 +98,11 @@ export class CombateService {
         criaturaRival: {
           include: {
             especie: {
-              include: { movimientos: true },
+              include: {
+                movimientos: {
+                  orderBy: { slot: 'asc' },
+                },
+              },
             },
           },
         },
@@ -165,7 +169,11 @@ export class CombateService {
       orderBy: { ordenEquipo: 'asc' },
       include: {
         especie: {
-          include: { movimientos: true },
+          include: {
+            movimientos: {
+              orderBy: { slot: 'asc' },
+            },
+          },
         },
       },
     });
@@ -174,6 +182,14 @@ export class CombateService {
       throw new BadRequestException({
         codigo: 'EQUIPO_DEBILITADO',
         mensaje: 'No tienes ninguna criatura activa con puntos de golpe disponibles.',
+      });
+    }
+
+    // Bloqueo de slot 4 (Furia) en servidor hasta implementar Resonancia (D-4)
+    if (movimientoIndice === 3) {
+      throw new BadRequestException({
+        codigo: 'MOVIMIENTO_BLOQUEADO',
+        mensaje: 'El movimiento de Furia (slot 4) requiere 100% de Resonancia para ser ejecutado.',
       });
     }
 
@@ -295,12 +311,19 @@ export class CombateService {
       });
     }
 
-    // 2. Si el rival sobrevive: contraataque rival con selección aleatoria y variación
-    const movimientosRivales = encuentro.criaturaRival.especie.movimientos;
-    const indiceRival = movimientosRivales.length > 0
-      ? Math.floor(this.generador.generar() * movimientosRivales.length)
-      : 0;
-    const movimientoRival = movimientosRivales[indiceRival] ?? {
+    // 2. Si el rival sobrevive: contraataque rival con selección aleatoria entre slots 1-3 y variación (D-4)
+    const movimientosRivalesDisponibles = encuentro.criaturaRival.especie.movimientos.filter(
+      (m) => m.slot <= 3,
+    );
+    const poolRivales =
+      movimientosRivalesDisponibles.length > 0
+        ? movimientosRivalesDisponibles
+        : encuentro.criaturaRival.especie.movimientos;
+    const indiceRival =
+      poolRivales.length > 0
+        ? Math.floor(this.generador.generar() * poolRivales.length)
+        : 0;
+    const movimientoRival = poolRivales[indiceRival] ?? {
       nombre: 'Ataque Salvaje',
       poder: 10,
     };
@@ -421,7 +444,11 @@ export class CombateService {
       orderBy: { ordenEquipo: 'asc' },
       include: {
         especie: {
-          include: { movimientos: true },
+          include: {
+            movimientos: {
+              orderBy: { slot: 'asc' },
+            },
+          },
         },
       },
     });
@@ -484,12 +511,19 @@ export class CombateService {
       });
     }
 
-    // Huida fallida: contraataque rival
-    const movimientosRivales = encuentro.criaturaRival.especie.movimientos;
-    const indiceRival = movimientosRivales.length > 0
-      ? Math.floor(this.generador.generar() * movimientosRivales.length)
-      : 0;
-    const movimientoRival = movimientosRivales[indiceRival] ?? {
+    // Huida fallida: contraataque rival (slots 1-3, D-4)
+    const movimientosRivalesDisponibles = encuentro.criaturaRival.especie.movimientos.filter(
+      (m) => m.slot <= 3,
+    );
+    const poolRivales =
+      movimientosRivalesDisponibles.length > 0
+        ? movimientosRivalesDisponibles
+        : encuentro.criaturaRival.especie.movimientos;
+    const indiceRival =
+      poolRivales.length > 0
+        ? Math.floor(this.generador.generar() * poolRivales.length)
+        : 0;
+    const movimientoRival = poolRivales[indiceRival] ?? {
       nombre: 'Ataque Salvaje',
       poder: 10,
     };

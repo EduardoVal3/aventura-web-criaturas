@@ -256,4 +256,146 @@ describe('Motor de combate, daño y huida (Fase 7a)', () => {
       assert.strictEqual(erroresInvalido.length > 0, true);
     });
   });
+
+  describe('Jerarquía táctica de movimientos y bloqueo de Furia (Subfase 10j, D-4)', () => {
+    it('debe rechazar el índice 3 del jugador con MOVIMIENTO_BLOQUEADO hasta tener Resonancia', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              nivel: 2,
+              hpActual: 20,
+              hpMaximo: 20,
+              ataque: 40,
+              defensa: 40,
+              especie: { nombre: 'Rival', movimientos: [] },
+            },
+            combates: [],
+          }),
+        },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliada-1',
+            hpActual: 100,
+            hpMaximo: 100,
+            ataque: 50,
+            defensa: 40,
+            nivel: 5,
+            especie: {
+              movimientos: [
+                { id: 'm1', slot: 1, nombre: 'M1', poder: 5 },
+                { id: 'm2', slot: 2, nombre: 'M2', poder: 10 },
+                { id: 'm3', slot: 3, nombre: 'M3', poder: 4 },
+                { id: 'm4', slot: 4, nombre: 'Furia', poder: 16 },
+              ],
+            },
+          }),
+        },
+      };
+
+      const servicio = new CombateService(prismaMock, { registrar: async () => {} } as any);
+      await assert.rejects(
+        async () => {
+          await servicio.atacar('usr-1', 'enc-1', 3);
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          const respuesta = error.getResponse() as any;
+          assert.strictEqual(respuesta.codigo, 'MOVIMIENTO_BLOQUEADO');
+          assert.ok(respuesta.mensaje.includes('Resonancia'));
+          return true;
+        },
+      );
+    });
+
+    it('el rival nunca debe seleccionar el slot 4 (Furia) en su sorteo de contraataque', async () => {
+      const movimientosRivales = [
+        { id: 'm1', slot: 1, nombre: 'Rival M1', poder: 5 },
+        { id: 'm2', slot: 2, nombre: 'Rival M2', poder: 10 },
+        { id: 'm3', slot: 3, nombre: 'Rival M3', poder: 4 },
+        { id: 'm4', slot: 4, nombre: 'Rival Furia', poder: 20 },
+      ];
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliado-1',
+            personajeId: 'pj-1',
+            nivel: 5,
+            ataque: 10,
+            defensa: 30,
+            hpActual: 100,
+            hpMaximo: 100,
+            velocidad: 30,
+            especie: {
+              movimientos: [{ id: 'm-al', slot: 1, nombre: 'Golpe', poder: 5 }],
+            },
+          }),
+          update: async () => ({}),
+          count: async () => 1,
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            criaturaRivalId: 'rival-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 20,
+              defensa: 20,
+              hpActual: 100,
+              hpMaximo: 100,
+              velocidad: 20,
+              especie: {
+                nombre: 'Fiera',
+                movimientos: movimientosRivales,
+              },
+            },
+            combates: [],
+          }),
+        },
+        combate: {
+          create: async () => ({}),
+        },
+        $transaction: async (cb: any) => cb({
+          criatura: {
+            update: async () => ({}),
+            count: async () => 1,
+          },
+          combate: {
+            create: async () => ({}),
+          },
+        }),
+      };
+
+      // Probar generador en el extremo superior 0.999 (que seleccionaría el último elemento si fueran 4)
+      const genExtremo = new GeneradorAleatorioFijo([0.5, 0.999, 0.5]);
+      const servicio = new CombateService(prismaMock, { registrar: async () => {} } as any, genExtremo);
+
+      const res = await servicio.atacar('usr-1', 'enc-1', 0);
+      assert.strictEqual(res.accionRival?.movimiento, 'Rival M3', 'Debe seleccionar como máximo el slot 3');
+      assert.notStrictEqual(res.accionRival?.movimiento, 'Rival Furia', 'El rival jamás debe sortear el slot 4');
+    });
+
+    it('debe rechazar movimientoIndice mayor a 3 en DTOs con ValidationPipe', async () => {
+      const dto = plainToInstance(AccionCombateDto, {
+        tipoAccion: 'ATACAR',
+        movimientoIndice: 4,
+      });
+      const errores = await validate(dto);
+      assert.strictEqual(errores.length, 1);
+      assert.ok(errores[0].constraints?.max !== undefined);
+    });
+  });
 });

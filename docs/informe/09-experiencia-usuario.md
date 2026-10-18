@@ -661,11 +661,21 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
    - Biblioteca de opciones y esquemas Zod (`apps/web/src/lib/`).
    - Pantalla interactiva de creación de explorador y catálogo de componentes (`apps/web/src/paginas/`).
 4. **Sincronización del Snapshot Externo:** Actualización de `apps/api/src/modulos/externo/snapshot/open5e-srd-2024-seleccion.json` y `datos/open5e-srd-2024-seleccion.json` conteniendo los 30 registros SRD exactos.
+5. **Reset y Siembra Idempotente en PostgreSQL (Decisión D-3):**
+   - Ejecución de `pnpm --filter api exec prisma migrate reset --force` para purgar registros residuales de prototipado temprano y reaplicar las 4 migraciones limpias con `prisma/seed.ts`.
+   - Ejecución verificada de `pnpm --filter api importar:especies` en dos tandas consecutivas para garantizar idempotencia estricta sin duplicidad de registros ni desbordamiento de pesos.
 
 ### 12.3 Verificación de Calidad y Cero Regresiones
-- **Pruebas de Servidor (`pnpm --filter api test`):** **71 de 71 pruebas aprobadas** (100% de éxito), incluyendo la suite exhaustiva de invariantes en `bestiario-canonico.spec.ts` y las pruebas e2e adaptadas (`exploracion.e2e-spec.ts`, `mundo-personaje-equipo.e2e-spec.ts`, `seguridad-s1-s7.e2e-spec.ts`).
-- **Pruebas de Interfaz (`pnpm --filter web test`):** **60 de 60 pruebas aprobadas** (100% de éxito), sin fallos ni regresiones tras la transición de slugs iniciales.
-- **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 2.07 s.
+- **Comprobación Estricta en Base de Datos (MCP PostgreSQL):**
+  - Tabla `especie`: **30 registros soberanos** con slugs y atributos canónicos exactos.
+  - Tabla `movimiento`: **120 registros tácticos** (exactamente 4 movimientos ordenados por slot `1..4` por criatura).
+  - Tabla `aparicion_zona`: **30 registros** (5 especies por cada una de las 6 zonas, cada zona sumando exactamente $100\,\%$ bajo `INV-01`).
+  - Tabla `criatura`: Purga completa de 46 criaturas desfasadas previas al reset; confirmación de 0 especies obsoletas (`lobo-gris`, `arana-lobo-gigante`, etc.).
+  - Especies Legendarias: Confirmadas `behir-abismo` y `remorhaz-glaciar` con `es_legendaria = true` y `es_especial = true`.
+- **Pruebas Unitarias de Servidor (`pnpm --filter api test`):** **71 de 71 pruebas aprobadas** (100% de éxito), incluyendo la suite exhaustiva de invariantes en `bestiario-canonico.spec.ts`.
+- **Pruebas de Integración y Seguridad E2E (`pnpm --filter api test:e2e`):** **24 de 24 pruebas aprobadas** (100% de éxito) interactuando con la base de datos PostgreSQL real (flujos de creación de personaje con `lobo-estepario`, exploración, combates y batería de seguridad S-1 a S-7).
+- **Pruebas de Interfaz (`pnpm --filter web test`):** **60 de 60 pruebas aprobadas** (100% de éxito), validando esquemas Zod, componentes `8bitcn/ui` y compatibilidad con el trío común inicial.
+- **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 2.70 s.
 - **Regla R1 y Estándar Retro:** Cumplimiento estricto de nomenclatura en español, cero emojis unicode en controles interactivos y modales responsive libres de overflow horizontal.
 
 

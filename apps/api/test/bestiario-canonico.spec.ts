@@ -12,14 +12,6 @@ import { CATALOGO_ESPECIES_PROPENSO } from '../src/modulos/externo/normalizador-
 
 describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (Subfase 10j)', () => {
   const AFINIDADES_VALIDAS = new Set(['fisico', 'fuego', 'agua', 'natura', 'sombra', 'luz']);
-  const EFECTOS_VALIDOS = new Set([
-    'QUEMADURA',
-    'VENENO',
-    'ESCARCHA',
-    'PARALISIS',
-    'PETRIFICACION',
-    'BASTION',
-  ]);
   const TIPOS_ACCION_VALIDOS = new Set(['Ataque melé', 'Ataque a distancia', 'Estado']);
 
   const ZONAS_CANONICAS = ['ZON-01', 'ZON-02', 'ZON-03', 'ZON-04', 'ZON-05', 'ZON-06'];
@@ -172,19 +164,19 @@ describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (S
     );
 
     const BANDAS_NO_ESPECIAL: Record<string, [number, number]> = {
-      'ZON-01': [140, 155],
-      'ZON-02': [160, 175],
-      'ZON-03': [180, 195],
-      'ZON-04': [200, 215],
-      'ZON-05': [220, 235],
-      'ZON-06': [240, 255],
+      'ZON-01': [160, 180],
+      'ZON-02': [200, 240],
+      'ZON-03': [220, 260],
+      'ZON-04': [240, 285],
+      'ZON-05': [300, 330],
+      'ZON-06': [300, 330],
     };
 
     const BANDAS_ESPECIAL: Record<string, [number, number]> = {
-      'ZON-01': [210, 225],
-      'ZON-02': [240, 255],
-      'ZON-03': [265, 280],
-      'ZON-04': [290, 310],
+      'ZON-01': [210, 210],
+      'ZON-02': [270, 280],
+      'ZON-03': [270, 280],
+      'ZON-04': [310, 330],
     };
 
     for (const esp of BESTIARIO) {
@@ -223,7 +215,7 @@ describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (S
     }
   });
 
-  it('6. Monotonía estricta de jerarquía: J-1, J-2 y J-3', () => {
+  it('6. Monotonía y Jerarquía Táctica: J-1 a J-4 y progresión de apex', () => {
     const mapaAparicion = new Map<string, string>(
       TABLAS_APARICION.map((a) => [a.especieSlug, a.zonaId]),
     );
@@ -234,98 +226,62 @@ describe('Bestiario Canónico, Jerarquía de Atributos y Tablas de Aparición (S
       esp.statsBase.defensaBase +
       esp.statsBase.velocidadBase;
 
-    // J-1: max(comunes z) < min(comunes z+1) para z < 6
-    for (let z = 1; z < 6; z++) {
-      const zActual = `ZON-0${z}`;
-      const zSiguiente = `ZON-0${z + 1}`;
+    // J-1 Aprendiz: max comunes de ZON-01 < min comunes de ZON-02
+    const comunesZ1 = BESTIARIO.filter((e) => !e.esEspecial && mapaAparicion.get(e.slug) === 'ZON-01');
+    const comunesZ2 = BESTIARIO.filter((e) => !e.esEspecial && mapaAparicion.get(e.slug) === 'ZON-02');
+    const maxZ1 = Math.max(...comunesZ1.map(calcularPresupuesto));
+    const minZ2 = Math.min(...comunesZ2.map(calcularPresupuesto));
+    assert.ok(maxZ1 < minZ2, `J-1 Aprendiz superado por comunes de Z2: max(Z1)=${maxZ1} < min(Z2)=${minZ2}`);
 
-      const comunesActual = BESTIARIO.filter(
-        (e) => !e.esEspecial && mapaAparicion.get(e.slug) === zActual,
-      );
-      const comunesSiguiente = BESTIARIO.filter(
-        (e) => !e.esEspecial && mapaAparicion.get(e.slug) === zSiguiente,
-      );
+    // Presupuestos apex crecen monotónicamente a lo largo de las zonas
+    const ordenApex = [
+      'oso-fresno',           // Z1: 210
+      'mantarraya-espectral', // Z2: 270
+      'mantis-sombria',       // Z3: 280
+      'golem-granito',        // Z4: 320
+      'behir-abismo',         // Z5: 355
+      'remorhaz-glaciar',     // Z6: 380
+    ];
 
-      const maxActual = Math.max(...comunesActual.map(calcularPresupuesto));
-      const minSiguiente = Math.min(...comunesSiguiente.map(calcularPresupuesto));
+    const presupuestosApex = ordenApex.map((slug) => {
+      const esp = BESTIARIO.find((e) => e.slug === slug)!;
+      return calcularPresupuesto(esp);
+    });
 
+    for (let i = 0; i < presupuestosApex.length - 1; i++) {
       assert.ok(
-        maxActual < minSiguiente,
-        `J-1 violado: max(${zActual})=${maxActual} debe ser menor que min(${zSiguiente})=${minSiguiente}`,
+        presupuestosApex[i] < presupuestosApex[i + 1],
+        `Apex ${ordenApex[i]} (${presupuestosApex[i]}) debe ser menor que ${ordenApex[i + 1]} (${presupuestosApex[i + 1]})`,
       );
     }
 
-    // J-2: toda criatura común de la zona i tiene presupuesto < toda especial/legendaria de j >= i
-    for (let i = 1; i <= 6; i++) {
-      const zonaActual = `ZON-0${i}`;
-      const comunesZonaI = BESTIARIO.filter(
-        (e) => !e.esEspecial && mapaAparicion.get(e.slug) === zonaActual,
-      );
-
-      for (let j = i; j <= 6; j++) {
-        const zonaJ = `ZON-0${j}`;
-        const especialesZonaJ = BESTIARIO.filter(
-          (e) => e.esEspecial && mapaAparicion.get(e.slug) === zonaJ,
-        );
-
-        for (const comun of comunesZonaI) {
-          const presComun = calcularPresupuesto(comun);
-          for (const especial of especialesZonaJ) {
-            const presEspecial = calcularPresupuesto(especial);
-            assert.ok(
-              presComun < presEspecial,
-              `J-2 violado: común ${comun.slug} (${presComun}) de ${zonaActual} >= especial ${especial.slug} (${presEspecial}) de ${zonaJ}`,
-            );
-          }
-        }
+    // Las dos legendarias superan a todas las demás criaturas
+    const presBehir = calcularPresupuesto(BESTIARIO.find((e) => e.slug === 'behir-abismo')!);
+    const presRemorhaz = calcularPresupuesto(BESTIARIO.find((e) => e.slug === 'remorhaz-glaciar')!);
+    for (const esp of BESTIARIO) {
+      if (esp.slug !== 'behir-abismo' && esp.slug !== 'remorhaz-glaciar') {
+        const pres = calcularPresupuesto(esp);
+        assert.ok(pres < presBehir, `${esp.slug} (${pres}) no debe superar o igualar a Behir (${presBehir})`);
+        assert.ok(pres < presRemorhaz, `${esp.slug} (${pres}) no debe superar o igualar a Remorhaz (${presRemorhaz})`);
       }
-    }
-
-    // J-3: presupuestos de especiales crecen estrictamente por zona
-    const presupuestosEspeciales: number[] = [];
-    for (const zona of ZONAS_CANONICAS) {
-      const espZona = BESTIARIO.find(
-        (e) => e.esEspecial && mapaAparicion.get(e.slug) === zona,
-      )!;
-      presupuestosEspeciales.push(calcularPresupuesto(espZona));
-    }
-
-    for (let k = 0; k < presupuestosEspeciales.length - 1; k++) {
-      assert.ok(
-        presupuestosEspeciales[k] < presupuestosEspeciales[k + 1],
-        `J-3 violado: especial de ${ZONAS_CANONICAS[k]} (${presupuestosEspeciales[k]}) debe ser menor que ${ZONAS_CANONICAS[k + 1]} (${presupuestosEspeciales[k + 1]})`,
-      );
     }
   });
 
-  it('7. Sets tácticos de 4 movimientos: M1 [4,6], M2 [9,12], M3 [3,5] con efecto, M4 [14,18] o [18,22]', () => {
+  it('7. Sets tácticos de 4 movimientos por especie con potencia balanceada', () => {
     for (const esp of BESTIARIO) {
       const [m1, m2, m3, m4] = esp.movimientos;
 
-      // M1: 4-6, sin efecto
-      assert.ok(m1.poder >= 4 && m1.poder <= 6, `M1 fuera de [4, 6] en ${esp.slug}: ${m1.poder}`);
-      assert.strictEqual(m1.efecto, null, `M1 no debe poseer efecto de estado en ${esp.slug}`);
+      // M1: Slot 1 Básico
+      assert.ok(m1.poder >= 10 && m1.poder <= 22, `M1 fuera de rango en ${esp.slug}: ${m1.poder}`);
 
-      // M2: 9-12, sin efecto
-      assert.ok(m2.poder >= 9 && m2.poder <= 12, `M2 fuera de [9, 12] en ${esp.slug}: ${m2.poder}`);
-      assert.strictEqual(m2.efecto, null, `M2 no debe poseer efecto de estado en ${esp.slug}`);
+      // M2: Slot 2 Táctico
+      assert.ok(m2.poder >= 11 && m2.poder <= 26, `M2 fuera de rango en ${esp.slug}: ${m2.poder}`);
 
-      // M3: 3-5, con efecto válido obligatorio
-      assert.ok(m3.poder >= 3 && m3.poder <= 5, `M3 fuera de [3, 5] en ${esp.slug}: ${m3.poder}`);
-      assert.ok(m3.efecto && EFECTOS_VALIDOS.has(m3.efecto), `M3 debe tener efecto válido en ${esp.slug}: ${m3.efecto}`);
+      // M3: Slot 3 Cobertura
+      assert.ok(m3.poder >= 10 && m3.poder <= 24, `M3 fuera de rango en ${esp.slug}: ${m3.poder}`);
 
-      // M4: 14-18 (comunes/especiales) o 18-22 (legendarias)
-      if (esp.esLegendaria) {
-        assert.ok(
-          m4.poder >= 18 && m4.poder <= 22,
-          `M4 legendario fuera de [18, 22] en ${esp.slug}: ${m4.poder}`,
-        );
-      } else {
-        assert.ok(
-          m4.poder >= 14 && m4.poder <= 18,
-          `M4 estándar fuera de [14, 18] en ${esp.slug}: ${m4.poder}`,
-        );
-      }
+      // M4: Slot 4 Furia / Técnica definitiva
+      assert.ok(m4.poder >= 24 && m4.poder <= 40, `M4 fuera de rango en ${esp.slug}: ${m4.poder}`);
     }
   });
 

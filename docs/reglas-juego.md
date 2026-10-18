@@ -176,11 +176,22 @@ Estos cinco invariantes actúan como contratos inquebrantables de la lógica del
 
 | ID | Invariante | Descripción matemática / Lógica | Fase donde se valida |
 | --- | --- | --- | --- |
-| **INV-01** | Suma de pesos positiva | $\sum_{i=1}^{k} \text{peso}_i > 0$ para toda tabla de aparición o eventos de zona. Ninguna tabla puede estar vacía o tener suma cero. | Fase 5 (Seed) y Fase 6 |
+| **INV-01** | Suma de pesos positiva y normalizada | $\sum_{i=1}^{k} \text{peso}_i > 0$ para toda tabla de aparición o eventos. En la Subfase 10j, cada tabla de las 6 zonas cuenta con exactamente 5 especies con suma estricta de 100 % ($35\% + 35\% + 15\% + 10\% + 5\% = 100\%$). | Fase 5 (Seed), Fase 6 y Fase 10j |
 | **INV-02** | Rango de captura acotado | $0.05 \le \text{probFinal} \le 0.95$. Toda tirada de captura retiene un riesgo mínimo ($5\,\%$) y una oportunidad mínima ($5\,\%$). | Fase 7 (Combate) |
 | **INV-03** | Rango de puntos de golpe | $0 \le \text{hpActual} \le \text{hpMaximo}$. Ningún cálculo de daño permite HP negativo ni curación por encima del máximo. En curación fuera de combate (`POST /api/inventario/usar`), si $\text{hpActual} \ge \text{hpMaximo}$ la acción es rechazada con `400 SALUD_COMPLETA` sin consumir el objeto ni descontar stock. En el Santuario de Curación (`POST /api/curacion/restaurar`, Subfase 10h), restaura atómicamente a todo el equipo activo y revive a criaturas caídas ($\text{hpActual} = 0 \to \text{hpMaximo}$) exactamente al 100 % de su salud sin sobrecuración. | Fase 7 (Combate/Curación), Fase 10g y Fase 10h |
 | **INV-04** | Daño mínimo no nulo | $\text{danoFinal} \ge 1$. Todo ataque ejecutado que impacte inflige al menos 1 punto de daño, sin importar la defensa del rival. | Fase 7 (Combate) |
 | **INV-05** | Progresión monótona creciente | $\text{xpRequerida}(n+1) > \text{xpRequerida}(n)$ para todo $n \ge 1$. Cada nivel exige estrictamente más XP acumulada que el anterior. | Fase 7 (Progresión) |
+
+### 4.1 Invariantes de jerarquía táctica y presupuesto de especies (Subfase 10j)
+
+Para garantizar que ninguna criatura temprana opaque a los desafíos de zonas avanzadas y que las criaturas especiales y legendarias conserven su estatus apex, rigen 4 invariantes numéricos verificados por la suite unitaria (`apps/api/test/bestiario-canonico.spec.ts`):
+
+| ID | Invariante | Regla Matemática / Lógica Operativa | Cumplimiento Verificado |
+| --- | --- | --- | --- |
+| **J-1** | Jerarquía de Aprendiz a Aventurero | Todo presupuesto común de Zona 1 ($166 - 178$) es estrictamente menor que los presupuestos comunes de Zona 2 ($200 - 232$). | Verificado en código (`bestiario-canonico.ts`) |
+| **J-2** | Supremacía de Rarezas Superiores | Toda criatura común de una jerarquía regional posee un presupuesto total inferior a las criaturas especiales o legendarias de jerarquías iguales o superiores. | Verificado en código y pruebas unitarias |
+| **J-3** | Monotonía Estricta Apex y Legendarias | Los presupuestos de criaturas especiales y legendarias crecen estrictamente por zona bioma: $210 < 270 < 280 < 320 < 355 < 380$. Las dos Legendarias (`behir-abismo`: 355, `remorhaz-glaciar`: 380) superan a todas las demás criaturas del compendio. | Verificado en matriz canónica y BD |
+| **J-4** | Acotamiento de Atributos Base | Cada estadística individual ($\text{hpBase}, \text{ataqueBase}, \text{defensaBase}, \text{velocidadBase}$) se ubica estrictamente dentro del intervalo $[30, 100]$. | Verificado en 30 especies del bestiario |
 
 ---
 

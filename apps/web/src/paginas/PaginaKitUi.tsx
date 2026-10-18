@@ -67,7 +67,7 @@ import { toast } from "@/components/ui/8bit/toast";
 export function PaginaKitUi() {
   // Estado para el formulario de prueba
   const [nombreExplorador, setNombreExplorador] = useState("");
-  const [especieSeleccionada, setEspecieSeleccionada] = useState("lobo-gris");
+  const [especieSeleccionada, setEspecieSeleccionada] = useState("lobo-estepario");
   const [mensajeFormulario, setMensajeFormulario] = useState<string | null>(null);
 
   // Estado para la sección de carga con API simulada
@@ -176,9 +176,9 @@ export function PaginaKitUi() {
                 <SelectValue placeholder="Selecciona una criatura" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lobo-gris">Lobo Gris (Nivel 1)</SelectItem>
-                <SelectItem value="pico-de-hacha">Pico de Hacha (Nivel 2)</SelectItem>
-                <SelectItem value="arana-lobo-gigante">Araña Lobo Gigante (Nivel 1)</SelectItem>
+                <SelectItem value="lobo-estepario">Lobo Estepario (Nivel 1)</SelectItem>
+                <SelectItem value="vibora-rocosa">Víbora Rocosa (Nivel 1)</SelectItem>
+                <SelectItem value="ciervo-lunar">Ciervo Lunar (Nivel 1)</SelectItem>
               </SelectContent>
             </Select>
           </div>

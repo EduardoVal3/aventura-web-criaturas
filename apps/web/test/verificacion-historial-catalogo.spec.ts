@@ -70,7 +70,7 @@ test('Compendio: calcularArquetipoCriatura clasifica fielmente las 4 vertientes 
 
   // Equilibrado
   assert.strictEqual(
-    calcularArquetipoCriatura({ hpBase: 30, ataqueBase: 42, defensaBase: 58, velocidadBase: 50 }),
+    calcularArquetipoCriatura({ hpBase: 38, ataqueBase: 44, defensaBase: 38, velocidadBase: 52 }),
     'EQUILIBRADO',
   );
 });
@@ -78,14 +78,14 @@ test('Compendio: calcularArquetipoCriatura clasifica fielmente las 4 vertientes 
 test('Compendio: filtrarEspeciesCatalogo combina tipo, arquetipo, rareza especial y búsqueda textual', () => {
   const listaPrueba: EspecieCatalogo[] = [
     {
-      slug: 'lobo-gris',
-      nombre: 'Lobo Gris',
+      slug: 'lobo-estepario',
+      nombre: 'Lobo Estepario',
       tipo: 'beast',
       challengeRating: 0.25,
-      hpBase: 30,
-      ataqueBase: 42,
-      defensaBase: 58,
-      velocidadBase: 50,
+      hpBase: 38,
+      ataqueBase: 44,
+      defensaBase: 38,
+      velocidadBase: 52,
       tasaCaptura: 0.88,
       esEspecial: false,
       descripcion: 'Cazador en manada ágil y coordinado.',

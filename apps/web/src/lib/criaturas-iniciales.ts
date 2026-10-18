@@ -4,7 +4,7 @@
  */
 
 export interface CriaturaInicialOpcion {
-  slug: "lobo-gris" | "pico-de-hacha" | "arana-lobo-gigante";
+  slug: "lobo-estepario" | "vibora-rocosa" | "ciervo-lunar";
   nombre: string;
   tipo: string;
   arquetipo: string;
@@ -17,39 +17,39 @@ export interface CriaturaInicialOpcion {
 
 export const OPCIONES_CRIATURAS: CriaturaInicialOpcion[] = [
   {
-    slug: "lobo-gris",
-    nombre: "Lobo Gris",
+    slug: "lobo-estepario",
+    nombre: "Lobo Estepario",
     tipo: "Bestia",
-    arquetipo: "Defensa y Aguante",
-    hpBase: 30,
-    ataqueBase: 42,
-    defensaBase: 58,
-    velocidadBase: 50,
-    descripcion:
-      "Fiel cazador de manada. Posee gran resistencia física y defensas sólidas para resistir embestidas.",
-  },
-  {
-    slug: "pico-de-hacha",
-    nombre: "Pico de Hacha",
-    tipo: "Bestia",
-    arquetipo: "Equilibrado y Ágil",
-    hpBase: 19,
-    ataqueBase: 42,
-    defensaBase: 51,
-    velocidadBase: 60,
-    descripcion:
-      "Ave veloz de las planicies con un impacto cortante certero y zancada implacable.",
-  },
-  {
-    slug: "arana-lobo-gigante",
-    nombre: "Araña Lobo Gigante",
-    tipo: "Bestia",
-    arquetipo: "Velocidad e Iniciativa",
-    hpBase: 11,
+    arquetipo: "Cazador Ágil y Coordinado",
+    hpBase: 38,
     ataqueBase: 44,
-    defensaBase: 48,
-    velocidadBase: 65,
+    defensaBase: 38,
+    velocidadBase: 52,
     descripcion:
-      "Depredadora nocturna de reflejos fulgurantes, alta iniciativa táctica y mordedura letal.",
+      "Cazador en manada ágil y coordinado que recorre las praderas abiertas de Aethelgard.",
+  },
+  {
+    slug: "vibora-rocosa",
+    nombre: "Víbora Rocosa",
+    tipo: "Bestia",
+    arquetipo: "Sigilo y Ponzoña",
+    hpBase: 32,
+    ataqueBase: 48,
+    defensaBase: 32,
+    velocidadBase: 58,
+    descripcion:
+      "Sierpe venenosa camuflada entre las rocas calizas del amanecer con ataque punzante.",
+  },
+  {
+    slug: "ciervo-lunar",
+    nombre: "Ciervo Lunar",
+    tipo: "Bestia",
+    arquetipo: "Velocidad y Luz Astral",
+    hpBase: 35,
+    ataqueBase: 34,
+    defensaBase: 35,
+    velocidadBase: 62,
+    descripcion:
+      "Herbívoro esquivo imbuido por la luz astral que ilumina las sendas nocturnas con gran velocidad.",
   },
 ];

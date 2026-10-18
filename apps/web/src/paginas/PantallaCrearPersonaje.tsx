@@ -50,7 +50,7 @@ export function PantallaCrearPersonaje() {
     resolver: zodResolver(esquemaCrearPersonaje),
     defaultValues: {
       nombre: "",
-      especieInicialSlug: "lobo-gris",
+      especieInicialSlug: "lobo-estepario",
     },
     mode: "onChange",
   });

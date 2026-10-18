@@ -83,14 +83,14 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
             {
               id: 'esp-01',
               idExterno: 'srd-2024_wolf',
-              nombre: 'Lobo Gris',
-              slug: 'lobo-gris',
+              nombre: 'Lobo Estepario',
+              slug: 'lobo-estepario',
               tipo: 'beast',
               challengeRating: 0.25,
-              hpBase: 30,
-              ataqueBase: 42,
-              defensaBase: 58,
-              velocidadBase: 50,
+              hpBase: 38,
+              ataqueBase: 44,
+              defensaBase: 38,
+              velocidadBase: 52,
               tasaCaptura: 0.88,
               esEspecial: false,
               descripcion: 'Cazador en manada ágil y coordinado.',
@@ -98,9 +98,9 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
                 {
                   id: 'mov-01',
                   nombreOriginal: 'Bite',
-                  nombre: 'Mordisco Feroz',
+                  nombre: 'Mordisco',
                   tipoAccion: 'Ataque melé',
-                  poder: 5.5,
+                  poder: 12,
                 },
               ],
             },
@@ -115,13 +115,13 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
       assert.strictEqual(respuesta.total, 1);
       assert.strictEqual(respuesta.especies.length, 1);
       const esp = respuesta.especies[0];
-      assert.strictEqual(esp.slug, 'lobo-gris');
+      assert.strictEqual(esp.slug, 'lobo-estepario');
       assert.strictEqual(esp.keyExterna, 'srd-2024_wolf');
       assert.strictEqual(esp.arquetipo, 'EQUILIBRADO');
       assert.strictEqual(esp.movimientos.length, 1);
-      assert.strictEqual(esp.movimientos[0].nombre, 'Mordisco Feroz');
+      assert.strictEqual(esp.movimientos[0].nombre, 'Mordisco');
       assert.strictEqual(esp.movimientos[0].tipoAccion, 'Ataque melé');
-      assert.strictEqual(esp.movimientos[0].poder, 5.5);
+      assert.strictEqual(esp.movimientos[0].poder, 12);
     });
 
     it('obtenerEspecies filtra por tipo biológico y activa fallback determinista si la BD está vacía', async () => {
@@ -143,15 +143,15 @@ describe('Compendio de Criaturas (M-CRI) y Bitácora de Historial (M-HIS)', () =
 
       // Consulta filtrada por tipo elemental
       const elementales = await servicio.obtenerEspecies('elemental');
-      assert.strictEqual(elementales.total, 5, 'Debe retornar exactamente las 5 especies elementales');
+      assert.strictEqual(elementales.total, 4, 'Debe retornar exactamente las 4 especies elementales');
       for (const e of elementales.especies) {
         assert.strictEqual(e.tipo, 'elemental');
       }
 
       // Consulta de detalle por slug
-      const lobo = await servicio.obtenerEspeciePorSlug('lobo-gris');
-      assert.strictEqual(lobo.slug, 'lobo-gris');
-      assert.strictEqual(lobo.nombre, 'Lobo Gris');
+      const lobo = await servicio.obtenerEspeciePorSlug('lobo-estepario');
+      assert.strictEqual(lobo.slug, 'lobo-estepario');
+      assert.strictEqual(lobo.nombre, 'Lobo Estepario');
       assert.ok(lobo.movimientos.length >= 1, 'Lobo debe tener movimientos');
     });
 

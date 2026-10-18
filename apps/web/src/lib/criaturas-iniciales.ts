@@ -4,7 +4,7 @@
  */
 
 export interface CriaturaInicialOpcion {
-  slug: "lobo-estepario" | "vibora-rocosa" | "ciervo-lunar";
+  slug: "lobo-estepario" | "vibora-rocosa" | "cangrejo-abismal";
   nombre: string;
   tipo: string;
   arquetipo: string;
@@ -41,15 +41,15 @@ export const OPCIONES_CRIATURAS: CriaturaInicialOpcion[] = [
       "Sierpe venenosa camuflada entre las rocas calizas del amanecer con ataque punzante.",
   },
   {
-    slug: "ciervo-lunar",
-    nombre: "Ciervo Lunar",
-    tipo: "Bestia",
-    arquetipo: "Velocidad y Luz Astral",
-    hpBase: 35,
-    ataqueBase: 34,
-    defensaBase: 35,
-    velocidadBase: 62,
+    slug: "cangrejo-abismal",
+    nombre: "Cangrejo Abismal",
+    tipo: "Monstruosidad",
+    arquetipo: "Defensa y Coraza Marina",
+    hpBase: 44,
+    ataqueBase: 42,
+    defensaBase: 72,
+    velocidadBase: 42,
     descripcion:
-      "Herbívoro esquivo imbuido por la luz astral que ilumina las sendas nocturnas con gran velocidad.",
+      "Crustáceo blindado adaptado a las presiones fangosas y aguas turbias de las marismas.",
   },
 ];

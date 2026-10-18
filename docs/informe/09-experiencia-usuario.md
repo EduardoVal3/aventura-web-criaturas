@@ -650,13 +650,13 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
 
 ### 12.1 Diagnóstico Inicial y Auditoría
 1. **Desfase en Definición de Especies del Servidor:** `apps/api/src/modulos/externo/bestiario-canonico.ts` conservaba remanentes de prototipado temprano (como `lobo-gris`, `pico-de-hacha`, `arana-lobo-gigante`, `lobo-huargo`) desalineados con las 30 especies temáticas canónicas consagradas en `docs/catalogo-criaturas.md`.
-2. **Inconsistencia de Criaturas Iniciales:** El endpoint de creación de personaje (`crear-personaje.dto.ts`, `personajes.service.ts`) y la interfaz web (`criaturas-iniciales.ts`, `esquemas-auth.ts`, `PantallaCrearPersonaje.tsx`, `PaginaKitUi.tsx`) restringían las especies elegibles a combinaciones híbridas desfasadas en lugar del trío canónico de la Zona 1: `lobo-estepario`, `vibora-rocosa` y `ciervo-lunar`.
+2. **Inconsistencia de Criaturas Iniciales:** El endpoint de creación de personaje (`crear-personaje.dto.ts`, `personajes.service.ts`) y la interfaz web (`criaturas-iniciales.ts`, `esquemas-auth.ts`, `PantallaCrearPersonaje.tsx`, `PaginaKitUi.tsx`) requerían restringir las especies elegibles estrictamente a rareza Común (peso 35%). Al ser `ciervo-lunar` una criatura de rareza Frecuente (15%), se seleccionó una especie común de la Zona 02 (`cangrejo-abismal`, común 35%, agua, con acceso inicial habilitado) para consolidar el trío canónico común: `lobo-estepario`, `vibora-rocosa` y `cangrejo-abismal`.
 3. **Dispersión en Snapshot de Contingencia:** El snapshot estático requería albergar exactamente los 30 identificadores externos (`idExterno`) de Open5e SRD 2024 para garantizar el 100% de aislamiento ante contingencias de red.
 
 ### 12.2 Mejoras Implementadas
 1. **Bestiario Soberano Unificado (`apps/api/src/modulos/externo/bestiario-canonico.ts`):** Se reemplazaron íntegramente las 30 especies de `BESTIARIO` y las 30 filas de `TABLAS_APARICION` (con alias retrocompatible `TABLA_APARICION_CANONICA`) siguiendo la matriz oficial de 5 especies por bioma regional, distribuciones INV-01 ($35\%/35\%/15\%/10\%/5\%$), atributos base dentro del intervalo $[30, 100]$, jerarquía táctica J-1 a J-4 y sets de 4 movimientos con tipos de acción y efectos.
 2. **Consagración de Criaturas Legendarias:** Se fijaron con `esLegendaria: true` y `esEspecial: true` exclusivamente a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380).
-3. **Actualización de Especies Iniciales:** Se sincronizaron las opciones autorizadas a `lobo-estepario`, `vibora-rocosa` y `ciervo-lunar` en:
+3. **Restricción de Especies Iniciales a Rareza Común (35%):** Se sincronizaron las opciones autorizadas a `lobo-estepario` (Zona 1, común 35%, físico), `vibora-rocosa` (Zona 1, común 35%, natura) y `cangrejo-abismal` (Zona 2, común 35%, agua) en:
    - DTO y servicio de creación de personaje (`apps/api/src/modulos/personajes/`).
    - Biblioteca de opciones y esquemas Zod (`apps/web/src/lib/`).
    - Pantalla interactiva de creación de explorador y catálogo de componentes (`apps/web/src/paginas/`).
@@ -665,7 +665,7 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
 ### 12.3 Verificación de Calidad y Cero Regresiones
 - **Pruebas de Servidor (`pnpm --filter api test`):** **71 de 71 pruebas aprobadas** (100% de éxito), incluyendo la suite exhaustiva de invariantes en `bestiario-canonico.spec.ts` y las pruebas e2e adaptadas (`exploracion.e2e-spec.ts`, `mundo-personaje-equipo.e2e-spec.ts`, `seguridad-s1-s7.e2e-spec.ts`).
 - **Pruebas de Interfaz (`pnpm --filter web test`):** **60 de 60 pruebas aprobadas** (100% de éxito), sin fallos ni regresiones tras la transición de slugs iniciales.
-- **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 4.56 s.
+- **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 2.07 s.
 - **Regla R1 y Estándar Retro:** Cumplimiento estricto de nomenclatura en español, cero emojis unicode en controles interactivos y modales responsive libres de overflow horizontal.
 
 

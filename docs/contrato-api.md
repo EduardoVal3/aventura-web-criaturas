@@ -124,7 +124,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   ```json
   {
     "nombre": "Arturo",
-    "especieInicialSlug": "lobo-gris"
+    "especieInicialSlug": "lobo-estepario"
   }
   ```
 - **Respuesta exitosa (`201 Created`):**
@@ -136,8 +136,8 @@ Este documento define la especificación técnica de la API REST que comunica el
     "ubicacionActualId": "LOC-01",
     "criaturaInicial": {
       "criaturaId": "cri-301",
-      "especieSlug": "lobo-gris",
-      "nombre": "Lobo Gris",
+      "especieSlug": "lobo-estepario",
+      "nombre": "Lobo Estepario",
       "nivel": 1,
       "hpActual": 30,
       "hpMaximo": 30,

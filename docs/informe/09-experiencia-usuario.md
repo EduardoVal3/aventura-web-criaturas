@@ -642,6 +642,32 @@ Con la culminación de la Subfase 10j, se da por **completada y auditada en su t
 - **Compilación TypeScript:** 100% limpia en `web` y `api` bajo configuración estricta.
 - **Diseño y Ergonomía:** Cumplimiento riguroso de la guía `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos, modales sellados contra overflow en 320px–360px bajo el estándar Impeccable y audio retro sintetizado en Web Audio API.
 
+---
+
+## 12. Adenda de Calidad: Alineación Definitiva del Bestiario Canónico y Criaturas Iniciales
+
+A solicitud de la dirección técnica y bajo la estricta auditoría del Ingeniero Claudio, se ejecutó la consolidación definitiva entre el catálogo temático oficial (`docs/catalogo-criaturas.md`) y el ecosistema ejecutable del proyecto.
+
+### 12.1 Diagnóstico Inicial y Auditoría
+1. **Desfase en Definición de Especies del Servidor:** `apps/api/src/modulos/externo/bestiario-canonico.ts` conservaba remanentes de prototipado temprano (como `lobo-gris`, `pico-de-hacha`, `arana-lobo-gigante`, `lobo-huargo`) desalineados con las 30 especies temáticas canónicas consagradas en `docs/catalogo-criaturas.md`.
+2. **Inconsistencia de Criaturas Iniciales:** El endpoint de creación de personaje (`crear-personaje.dto.ts`, `personajes.service.ts`) y la interfaz web (`criaturas-iniciales.ts`, `esquemas-auth.ts`, `PantallaCrearPersonaje.tsx`, `PaginaKitUi.tsx`) restringían las especies elegibles a combinaciones híbridas desfasadas en lugar del trío canónico de la Zona 1: `lobo-estepario`, `vibora-rocosa` y `ciervo-lunar`.
+3. **Dispersión en Snapshot de Contingencia:** El snapshot estático requería albergar exactamente los 30 identificadores externos (`idExterno`) de Open5e SRD 2024 para garantizar el 100% de aislamiento ante contingencias de red.
+
+### 12.2 Mejoras Implementadas
+1. **Bestiario Soberano Unificado (`apps/api/src/modulos/externo/bestiario-canonico.ts`):** Se reemplazaron íntegramente las 30 especies de `BESTIARIO` y las 30 filas de `TABLAS_APARICION` (con alias retrocompatible `TABLA_APARICION_CANONICA`) siguiendo la matriz oficial de 5 especies por bioma regional, distribuciones INV-01 ($35\%/35\%/15\%/10\%/5\%$), atributos base dentro del intervalo $[30, 100]$, jerarquía táctica J-1 a J-4 y sets de 4 movimientos con tipos de acción y efectos.
+2. **Consagración de Criaturas Legendarias:** Se fijaron con `esLegendaria: true` y `esEspecial: true` exclusivamente a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380).
+3. **Actualización de Especies Iniciales:** Se sincronizaron las opciones autorizadas a `lobo-estepario`, `vibora-rocosa` y `ciervo-lunar` en:
+   - DTO y servicio de creación de personaje (`apps/api/src/modulos/personajes/`).
+   - Biblioteca de opciones y esquemas Zod (`apps/web/src/lib/`).
+   - Pantalla interactiva de creación de explorador y catálogo de componentes (`apps/web/src/paginas/`).
+4. **Sincronización del Snapshot Externo:** Actualización de `apps/api/src/modulos/externo/snapshot/open5e-srd-2024-seleccion.json` y `datos/open5e-srd-2024-seleccion.json` conteniendo los 30 registros SRD exactos.
+
+### 12.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas de Servidor (`pnpm --filter api test`):** **71 de 71 pruebas aprobadas** (100% de éxito), incluyendo la suite exhaustiva de invariantes en `bestiario-canonico.spec.ts` y las pruebas e2e adaptadas (`exploracion.e2e-spec.ts`, `mundo-personaje-equipo.e2e-spec.ts`, `seguridad-s1-s7.e2e-spec.ts`).
+- **Pruebas de Interfaz (`pnpm --filter web test`):** **60 de 60 pruebas aprobadas** (100% de éxito), sin fallos ni regresiones tras la transición de slugs iniciales.
+- **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 4.56 s.
+- **Regla R1 y Estándar Retro:** Cumplimiento estricto de nomenclatura en español, cero emojis unicode en controles interactivos y modales responsive libres de overflow horizontal.
+
 
 
 

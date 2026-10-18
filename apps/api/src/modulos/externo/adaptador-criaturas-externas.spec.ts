@@ -13,7 +13,7 @@ import {
 describe('AdaptadorCriaturasExternas y Normalizador', () => {
   const adaptador = new AdaptadorCriaturasExternas();
 
-  it('Prueba 1: normaliza correctamente las estadísticas de lobo-gris', () => {
+  it('Prueba 1: normaliza correctamente las estadísticas de lobo-estepario', () => {
     // Valores de catálogo para srd-2024_wolf (docs/catalogo-criaturas.md §2)
     const hp = calcularHpBase(11);
     const ataque = calcularAtaqueBase(5.5);

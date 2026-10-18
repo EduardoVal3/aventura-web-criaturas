@@ -20,7 +20,7 @@ Este documento es el enrutador ligero (~2 KB) para navegar el proyecto sin neces
 | **7** | Combate y captura (AV4) | ✅ Completada | `funcionalidad/fase-07-combate` | [FASE-07.md](file:///docs/workflows/FASE-07.md) | L374–L393 |
 | **8** | Integración Front↔API | ✅ Completada | `funcionalidad/fase-08-integracion` | [FASE-08.md](file:///docs/workflows/FASE-08.md) | L394–L410 |
 | **9** | Seguridad y cierre base | ✅ Completada | `pruebas/fase-09-seguridad` | [FASE-09.md](file:///docs/workflows/FASE-09.md) | L415–L431 |
-| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (Subfases 10a a 10j completadas) | Sub-ramas por subfase | [10-10-bestiario-legendarias.md](file:///docs/workflows/fase-10/10-10-bestiario-legendarias.md) | L435–L525 |
+| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (Subfases 10a a 10j completadas; Bestiario y criaturas iniciales alineados) | `correccion/fase-10j-alineacion-bestiario-canonico` | [10-10-bestiario-legendarias.md](file:///docs/workflows/fase-10/10-10-bestiario-legendarias.md) | L435–L525 |
 | **11** | Extras: Gateway y UI (+5) | Pendiente | `configuracion/fase-11-extras` | `docs/workflows/FASE-11.md` | L483–L501 |
 | **12** | Entrega final (FIN) | Pendiente | `documentacion/fase-12-entrega` | `docs/workflows/FASE-12.md` | L502–L516 |
 | **13** | Multijugador (opcional) | Opcional | `funcionalidad/fase-13-presencia` | `docs/workflows/FASE-13.md` | L517–L530 |
@@ -34,6 +34,7 @@ Consulta estos archivos solo cuando la tarea toque directamente su dominio:
 | Dominio | Archivo | Cuándo consultarlo |
 | :--- | :--- | :--- |
 | **Reglas transversales** | [docs/reglas-de-trabajo.md](file:///docs/reglas-de-trabajo.md) | Antes de iniciar cualquier fase (R1, R2, R3). |
+| **Catálogo Canónico y Especies** | [docs/catalogo-criaturas.md](file:///docs/catalogo-criaturas.md) | Bestiario temático de 30 especies, sets M1..M4, tablas INV-01 y jerarquía J-1 a J-4. |
 | **Sistema de Diseño Retro** | [docs/DESIGN.md](file:///docs/DESIGN.md) | Paleta HSL retro, tokens, tipografía 8-bit, contrastes y animaciones con Impeccable (Fase 10 y 11). |
 | **Recursos y Multimedia** | [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) · [apps/web/src/lib/assets.ts](file:///apps/web/src/lib/assets.ts) | Convención de nombres, resolución de sprites/zonas/objetos con fallback SVG y audio retro. |
 | **Servidores MCP** | [docs/mcp.md](file:///docs/mcp.md) | Configuración y límites de MCP. |

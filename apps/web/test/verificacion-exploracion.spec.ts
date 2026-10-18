@@ -20,8 +20,8 @@ test("RespuestaExploracion modela adecuadamente encuentros con criaturas salvaje
     encuentroId: "ENC-1001",
     estado: "EN_CURSO",
     especie: {
-      slug: "lobo-gris",
-      nombre: "Lobo Gris",
+      slug: "lobo-estepario",
+      nombre: "Lobo Estepario",
       nivel: 3,
       hpActual: 32,
       hpMaximo: 32,
@@ -33,15 +33,15 @@ test("RespuestaExploracion modela adecuadamente encuentros con criaturas salvaje
 
   const respuesta: RespuestaExploracion = {
     tipoEvento: "ENCUENTRO",
-    mensaje: "¡Un feroz Lobo Gris surge entre la maleza!",
+    mensaje: "¡Un feroz Lobo Estepario surge entre la maleza!",
     progresoZona: 0,
     encuentro: encuentroEjemplo,
   };
 
   assert.strictEqual(respuesta.tipoEvento, "ENCUENTRO");
   assert.ok(respuesta.encuentro, "El encuentro no debe ser nulo");
-  assert.strictEqual(respuesta.encuentro?.especie.slug, "lobo-gris");
-  assert.strictEqual(respuesta.encuentro?.especie.nombre, "Lobo Gris");
+  assert.strictEqual(respuesta.encuentro?.especie.slug, "lobo-estepario");
+  assert.strictEqual(respuesta.encuentro?.especie.nombre, "Lobo Estepario");
   assert.strictEqual(respuesta.encuentro?.especie.nivel, 3);
   assert.strictEqual(respuesta.encuentro?.especie.hpActual, 32);
   assert.strictEqual(respuesta.encuentro?.especie.hpMaximo, 32);
@@ -50,7 +50,7 @@ test("RespuestaExploracion modela adecuadamente encuentros con criaturas salvaje
   assert.ok(respuesta.encuentro.especie.velocidad > 0);
   assert.strictEqual(
     obtenerImagenCriatura(respuesta.encuentro.especie.slug),
-    "/assets/criaturas/lobo-gris.webp",
+    "/assets/criaturas/lobo-estepario.webp",
   );
 });
 

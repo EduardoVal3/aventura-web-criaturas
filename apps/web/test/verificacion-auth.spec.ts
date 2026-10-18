@@ -35,7 +35,7 @@ test("Esquema de inicio de sesión valida campos requeridos", () => {
 
 test("Helper de assets resuelve rutas y placeholders seguros", () => {
   assert.strictEqual(obtenerImagenCriatura(null), RUTAS_PLACEHOLDERS.criatura);
-  assert.strictEqual(obtenerImagenCriatura("lobo-gris"), "/assets/criaturas/lobo-gris.webp");
+  assert.strictEqual(obtenerImagenCriatura("lobo-estepario"), "/assets/criaturas/lobo-estepario.webp");
   assert.strictEqual(obtenerImagenZona(null), RUTAS_PLACEHOLDERS.zona);
   assert.strictEqual(obtenerImagenObjeto(null), RUTAS_PLACEHOLDERS.objeto);
 });

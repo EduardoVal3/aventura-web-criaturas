@@ -55,7 +55,7 @@ test('Contratos: RespuestaEquipo modela limiteEquipo y enLocalidadSegura', () =>
     criaturas: [
       {
         criaturaId: 'c-1',
-        slug: 'lobo-gris',
+        slug: 'lobo-estepario',
         nombre: 'Lobo Alfa',
         apodo: 'Colmillo',
         nivel: 5,

@@ -41,7 +41,7 @@ export function PaginaCreditos() {
   };
 
   const criaturasEmblematicas = [
-    { slug: "lobo-gris", nombre: "Lobo Gris", tipo: "Bestia" },
+    { slug: "lobo-estepario", nombre: "Lobo Estepario", tipo: "Bestia" },
     { slug: "grifo", nombre: "Grifo", tipo: "Monstruosidad" },
     { slug: "quimera-tricefala", nombre: "Quimera Tricéfala", tipo: "Monstruosidad" },
     { slug: "hidra-de-las-marismas", nombre: "Hidra de las Marismas", tipo: "Monstruosidad" },

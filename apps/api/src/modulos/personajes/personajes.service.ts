@@ -8,10 +8,9 @@ import { PrismaService } from '../../comun/prisma/prisma.service';
 import { CrearPersonajeDto } from './dto/crear-personaje.dto';
 
 const ESPECIES_INICIALES_VALIDAS = [
-  'lobo-gris',
-  'oso-negro',
-  'arana-lobo-gigante',
-  'pico-de-hacha',
+  'lobo-estepario',
+  'vibora-rocosa',
+  'ciervo-lunar',
 ];
 
 @Injectable()

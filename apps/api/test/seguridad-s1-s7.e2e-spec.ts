@@ -66,7 +66,7 @@ describe('Batería de seguridad S-1 a S-7 (E2E)', () => {
       },
       body: JSON.stringify({
         nombre: `HeroeA_${ts}`,
-        especieInicialSlug: 'lobo-gris',
+        especieInicialSlug: 'lobo-estepario',
       }),
     });
     assert.strictEqual(resPjA.status, 201);
@@ -96,7 +96,7 @@ describe('Batería de seguridad S-1 a S-7 (E2E)', () => {
       },
       body: JSON.stringify({
         nombre: `HeroeB_${ts}`,
-        especieInicialSlug: 'lobo-gris',
+        especieInicialSlug: 'lobo-estepario',
       }),
     });
     assert.strictEqual(resPjB.status, 201);
@@ -105,7 +105,7 @@ describe('Batería de seguridad S-1 a S-7 (E2E)', () => {
 
     // Crear encuentro activo para Usuario A
     const especieLobo = await prisma.especie.findFirstOrThrow({
-      where: { slug: 'lobo-gris' },
+      where: { slug: 'lobo-estepario' },
     });
 
     const criaturaRival = await prisma.criatura.create({
@@ -352,7 +352,7 @@ describe('Batería de seguridad S-1 a S-7 (E2E)', () => {
         },
         body: JSON.stringify({
           nombre: 'Hacker',
-          especieInicialSlug: 'lobo-gris',
+          especieInicialSlug: 'lobo-estepario',
           monedas: 999999, // Campo prohibido
           nivel: 99, // Campo prohibido
           experiencia: 50000, // Campo prohibido

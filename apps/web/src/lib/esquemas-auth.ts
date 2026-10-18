@@ -40,7 +40,7 @@ export const esquemaCrearPersonaje = z.object({
     .trim()
     .min(3, "El nombre del explorador debe tener al menos 3 caracteres."),
   especieInicialSlug: z.enum(
-    ["lobo-gris", "pico-de-hacha", "arana-lobo-gigante"],
+    ["lobo-estepario", "vibora-rocosa", "ciervo-lunar"],
     {
       errorMap: () => ({
         message: "Debes seleccionar una de las criaturas iniciales.",

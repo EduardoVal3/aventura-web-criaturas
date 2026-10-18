@@ -36,8 +36,8 @@ test("EncuentroActivo recupera fielmente el estado, movimientos y bitácora en r
     turno: 3,
     esTurnoJugador: true,
     criaturaRival: {
-      slug: "lobo-gris",
-      nombre: "Lobo Gris",
+      slug: "lobo-estepario",
+      nombre: "Lobo Estepario",
       nivel: 4,
       hpActual: 18,
       hpMaximo: 32,
@@ -46,7 +46,7 @@ test("EncuentroActivo recupera fielmente el estado, movimientos y bitácora en r
     bitacora: [
       "Turno 2: El rival respondió con Mordisco causando 7 de daño.",
       "Turno 2: Tu criatura usó Llamarada causando 14 de daño.",
-      "Turno 1: ¡Un Lobo Gris salvaje (Nv. 4) está frente a ti!",
+      "Turno 1: ¡Un Lobo Estepario salvaje (Nv. 4) está frente a ti!",
       "¡Tu aliada es Ignis (Nv. 5)!",
     ],
   };
@@ -60,7 +60,7 @@ test("EncuentroActivo recupera fielmente el estado, movimientos y bitácora en r
   assert.strictEqual(encuentro.bitacora?.length, 4);
   assert.strictEqual(
     obtenerImagenCriatura(encuentro.criaturaRival.slug),
-    "/assets/criaturas/lobo-gris.webp",
+    "/assets/criaturas/lobo-estepario.webp",
   );
   assert.strictEqual(
     obtenerImagenCriatura(encuentro.criaturaAliada.slug),

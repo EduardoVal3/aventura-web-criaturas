@@ -87,8 +87,8 @@ test('Contratos tipados: RespuestaRestaurar y DetalleCriaturaRestaurada son cons
 });
 
 test('Multimedia y Assets: resolución de imágenes de criaturas y zonas del santuario', () => {
-  const rutaCriatura = obtenerImagenCriatura('lobo-gris');
-  assert.strictEqual(rutaCriatura, '/assets/criaturas/lobo-gris.webp');
+  const rutaCriatura = obtenerImagenCriatura('lobo-estepario');
+  assert.strictEqual(rutaCriatura, '/assets/criaturas/lobo-estepario.webp');
 
   const rutaZona = obtenerImagenZona('villa-serena');
   assert.strictEqual(rutaZona, '/assets/zonas/villa-serena.webp');

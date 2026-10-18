@@ -8,21 +8,21 @@ test("Esquema de creación de personaje valida nombres correctamente", () => {
   // Rechaza nombres con menos de 3 caracteres
   const resultadoCorto = esquemaCrearPersonaje.safeParse({
     nombre: "Al",
-    especieInicialSlug: "lobo-gris",
+    especieInicialSlug: "lobo-estepario",
   });
   assert.strictEqual(resultadoCorto.success, false);
 
   // Rechaza nombres solo con espacios en blanco (gracias a .trim())
   const resultadoEspacios = esquemaCrearPersonaje.safeParse({
     nombre: "   ",
-    especieInicialSlug: "lobo-gris",
+    especieInicialSlug: "lobo-estepario",
   });
   assert.strictEqual(resultadoEspacios.success, false);
 
   // Acepta nombres válidos y recorta espacios
   const resultadoValido = esquemaCrearPersonaje.safeParse({
     nombre: "  Arturo de Sendas  ",
-    especieInicialSlug: "lobo-gris",
+    especieInicialSlug: "lobo-estepario",
   });
   assert.strictEqual(resultadoValido.success, true);
   if (resultadoValido.success) {
@@ -31,7 +31,7 @@ test("Esquema de creación de personaje valida nombres correctamente", () => {
 });
 
 test("Esquema de creación de personaje valida las 3 criaturas iniciales autorizadas", () => {
-  const criaturasValidas = ["lobo-gris", "pico-de-hacha", "arana-lobo-gigante"] as const;
+  const criaturasValidas = ["lobo-estepario", "vibora-rocosa", "ciervo-lunar"] as const;
 
   for (const slug of criaturasValidas) {
     const res = esquemaCrearPersonaje.safeParse({

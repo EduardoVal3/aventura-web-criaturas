@@ -8,8 +8,8 @@ export class CrearPersonajeDto {
 
   @IsString()
   @IsNotEmpty({ message: 'La especie inicial es obligatoria.' })
-  @IsIn(['lobo-gris', 'oso-negro', 'arana-lobo-gigante'], {
-    message: 'La especie inicial debe ser una de las autorizadas: lobo-gris, oso-negro, arana-lobo-gigante.',
+  @IsIn(['lobo-estepario', 'vibora-rocosa', 'ciervo-lunar'], {
+    message: 'La especie inicial debe ser una de las autorizadas: lobo-estepario, vibora-rocosa, ciervo-lunar.',
   })
   especieInicialSlug: string;
 }

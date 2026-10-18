@@ -178,7 +178,7 @@ export function PaginaKitUi() {
               <SelectContent>
                 <SelectItem value="lobo-estepario">Lobo Estepario (Nivel 1)</SelectItem>
                 <SelectItem value="vibora-rocosa">Víbora Rocosa (Nivel 1)</SelectItem>
-                <SelectItem value="ciervo-lunar">Ciervo Lunar (Nivel 1)</SelectItem>
+                <SelectItem value="cangrejo-abismal">Cangrejo Abismal (Nivel 1)</SelectItem>
               </SelectContent>
             </Select>
           </div>

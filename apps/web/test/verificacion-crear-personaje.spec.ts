@@ -31,7 +31,7 @@ test("Esquema de creación de personaje valida nombres correctamente", () => {
 });
 
 test("Esquema de creación de personaje valida las 3 criaturas iniciales autorizadas", () => {
-  const criaturasValidas = ["lobo-estepario", "vibora-rocosa", "ciervo-lunar"] as const;
+  const criaturasValidas = ["lobo-estepario", "vibora-rocosa", "cangrejo-abismal"] as const;
 
   for (const slug of criaturasValidas) {
     const res = esquemaCrearPersonaje.safeParse({

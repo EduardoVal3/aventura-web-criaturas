@@ -10,7 +10,7 @@ import { CrearPersonajeDto } from './dto/crear-personaje.dto';
 const ESPECIES_INICIALES_VALIDAS = [
   'lobo-estepario',
   'vibora-rocosa',
-  'ciervo-lunar',
+  'cangrejo-abismal',
 ];
 
 @Injectable()

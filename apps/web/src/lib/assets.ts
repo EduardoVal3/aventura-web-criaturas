@@ -251,21 +251,14 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
 }
 
 /**
- * Reproduce un efecto de sonido retro si está disponible en /assets/sonidos/[nombre].mp3.
- * Si no está disponible o falla, degrada limpiamente a síntesis retro 8-bit nativa.
+ * Reproduce un efecto de sonido retro sintetizado fielmente con la Web Audio API (8-bit).
+ * Al ser generado proceduralmente, garantiza latencia cero y elimina peticiones de red 404.
  */
 export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
   try {
-    const audio = new Audio(`/assets/sonidos/${nombre}.mp3`);
-    audio.volume = Math.max(0, Math.min(1, volumen));
-    const promesa = audio.play();
-    if (promesa) {
-      promesa.catch(() => {
-        sintetizarTonoRetro(nombre, volumen);
-      });
-    }
-  } catch {
     sintetizarTonoRetro(nombre, volumen);
+  } catch {
+    // simplificacion: silencio controlado si el navegador bloquea la Web Audio API.
   }
 }
 

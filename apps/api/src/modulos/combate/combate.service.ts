@@ -457,12 +457,15 @@ export class CombateService {
         },
       });
 
+      const combateContinua = estadoEncuentroFinal === ESTADOS_ENCUENTRO.ACTIVO;
+
       return {
         encuentroId: encuentro.id,
         estado: estadoEncuentroFinal,
-        turno: resultadoRonda.resultado === 'EN_CURSO' ? turnoActual + 1 : turnoActual,
+        turno: combateContinua ? turnoActual + 1 : turnoActual,
         accionJugador: resultadoRonda.accionJugador,
         accionRival: accionRivalFormateada,
+        rivalActuoPrimero: resultadoRonda.rivalActuoPrimero,
         resultadoFinal,
         progreso: progresoVictoria,
         efectosFinDeTurno: resultadoRonda.efectosFinDeTurno,

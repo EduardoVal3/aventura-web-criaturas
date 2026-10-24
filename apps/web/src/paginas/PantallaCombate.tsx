@@ -291,39 +291,46 @@ export function PantallaCombate() {
       // Bitácora fiel: anteponer mensajes invertidos si el servidor los envió
       if (resultado.mensajes && resultado.mensajes.length > 0) {
         setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
-      } else {
+      } else if (resultado.accionJugador) {
         const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
         setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
       }
 
-      // 1. Impacto del jugador sobre el rival
-      if (resultado.accionJugador.perdioTurno) {
-        reproducirSonido("error");
-      } else {
-        reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
-        setAnimacionRival("anim-sacudida anim-parpadeo-dano");
-        setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+      // Animación de impacto del jugador sobre el rival
+      const animarImpactoJugador = async () => {
+        if (!resultado.accionJugador) return;
+        if (resultado.accionJugador.perdioTurno) {
+          reproducirSonido("error");
+        } else {
+          reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+          setAnimacionRival("anim-sacudida anim-parpadeo-dano");
+          setDanoFlotanteRival(resultado.accionJugador.danoCausado);
 
-        if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
-          setRival({
-            ...rival,
-            hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
-          });
-        }
+          if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
+            setRival({
+              ...rival,
+              hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
+            });
+          }
 
-        setTimeout(() => {
+          await new Promise((resolver) => setTimeout(resolver, 500));
           setAnimacionRival("");
           setDanoFlotanteRival(null);
-        }, 500);
-      }
+        }
+      };
 
-      // 2. Si el combate termina en VICTORIA
-      if (resultado.estado === "VICTORIA") {
+      // Animación de contraataque rival
+      const animarContraataqueRival = async () => {
+        if (!resultado.accionRival) return;
+        await reproducirContraataqueYDoT(resultado.accionRival, []);
+      };
+
+      // Procesar recompensas de victoria
+      const procesarVictoria = () => {
         reproducirSonido("victoria");
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
 
-        // Extraer recompensas
         const recompensa = resultado.progreso || resultado.recompensas || (
           typeof resultado.resultadoFinal === "object" ? resultado.resultadoFinal : null
         );
@@ -362,26 +369,75 @@ export function PantallaCombate() {
             toast.success(`¡Ganaste ${xp} XP y ${monedas} monedas!`);
           }
         }
+      };
+
+      // Secuencia cronológica estricta según prioridad de velocidad
+      if (resultado.rivalActuoPrimero) {
+        // 1. El rival actuó primero
+        await animarContraataqueRival();
+
+        // 2. Si la aliada quedó debilitada antes de responder
+        if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
+          if (resultado.estado === "DERROTA") {
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            return;
+          }
+
+          toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          await refrescarCombate();
+          return;
+        }
+
+        // 3. Si sobrevivió, la aliada responde con su ataque
+        if (resultado.accionJugador) {
+          await animarImpactoJugador();
+        }
+      } else {
+        // 1. La aliada actuó primero
+        if (resultado.accionJugador) {
+          await animarImpactoJugador();
+        }
+
+        if (resultado.estado === "VICTORIA") {
+          procesarVictoria();
+          return;
+        }
+
+        // 2. El rival contraataca
+        if (resultado.accionRival) {
+          await animarContraataqueRival();
+        }
+
+        if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
+          if (resultado.estado === "DERROTA") {
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            return;
+          }
+
+          toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          await refrescarCombate();
+          return;
+        }
+      }
+
+      // 4. Si terminó en victoria tras la respuesta
+      if (resultado.estado === "VICTORIA") {
+        procesarVictoria();
         return;
       }
 
-      // 3. Cadencia de turno visual: contraataque rival y efectos fin de turno (DoT)
-      await reproducirContraataqueYDoT(
-        resultado.accionRival,
-        resultado.efectosFinDeTurno,
-      );
-
-      // 4. Evaluar desenlace de la ronda
-      if (resultado.estado === "DERROTA") {
-        reproducirSonido("error");
-        setCombateFinalizado(true);
-        setEstadoFinal("DERROTA");
-        toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
-      } else if (resultado.resultadoFinal === "ALIADA_DEBILITADA") {
-        toast.info("Tu criatura cayó. Entra la siguiente del equipo.");
+      // 5. Efectos fin de turno (DoT de quemadura/veneno)
+      if (resultado.efectosFinDeTurno && resultado.efectosFinDeTurno.length > 0) {
+        await reproducirContraataqueYDoT(null, resultado.efectosFinDeTurno);
       }
 
-      // 5. Reconciliación fiel de estado con el servidor (D-7)
+      // 6. Reconciliación fiel de estado con el servidor (D-7)
       if (resultado.estado === "EN_CURSO") {
         await refrescarCombate();
       }

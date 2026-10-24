@@ -1,6 +1,10 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import {
@@ -398,4 +402,310 @@ describe('Motor de combate, daño y huida (Fase 7a)', () => {
       assert.ok(errores[0].constraints?.max !== undefined);
     });
   });
+
+  describe('Servicio de combate autoritativo: afinidades, resonancia y concurrencia (Subfase 10k)', () => {
+    const mockMovimientos = [
+      { id: 'm-1', slot: 1, nombre: 'Golpe', poder: 10, tipoAccion: 'ATAQUE', efecto: null },
+      { id: 'm-2', slot: 2, nombre: 'Mordisco', poder: 15, tipoAccion: 'ATAQUE', efecto: null },
+      { id: 'm-3', slot: 3, nombre: 'Rugido', poder: 0, tipoAccion: 'ESTADO', efecto: 'PARALISIS' },
+      { id: 'm-4', slot: 4, nombre: 'Furia Total', poder: 50, tipoAccion: 'INSIGNIA', efecto: null },
+    ];
+
+    it('rechaza movimiento insignia (índice 3) con MOVIMIENTO_BLOQUEADO si la resonancia aliada es < 100', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }) },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliado-1',
+            nivel: 5,
+            ataque: 20,
+            defensa: 20,
+            velocidad: 15,
+            hpActual: 50,
+            hpMaximo: 50,
+            especie: { elemento: 'fuego', movimientos: mockMovimientos },
+          }),
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 20,
+              defensa: 20,
+              velocidad: 10,
+              hpActual: 50,
+              hpMaximo: 50,
+              especie: { elemento: 'planta', movimientos: mockMovimientos },
+            },
+            combates: [
+              {
+                turno: 1,
+                esTurnoJugador: true,
+                detalleJson: {
+                  estadoBatalla: {
+                    turno: 1,
+                    aliada: { criaturaId: 'aliado-1', resonancia: 75, estados: [], inmunidades: [] },
+                    rival: { resonancia: 30, estados: [], inmunidades: [] },
+                  },
+                },
+              },
+            ],
+          }),
+        },
+      };
+
+      const servicio = new CombateService(prismaMock, {} as any);
+
+      await assert.rejects(
+        async () => {
+          await servicio.atacar('usr-1', 'enc-1', 3);
+        },
+        (err: any) => {
+          assert.strictEqual(err instanceof BadRequestException, true);
+          assert.strictEqual(err.getResponse().codigo, 'MOVIMIENTO_BLOQUEADO');
+          return true;
+        },
+      );
+    });
+
+    it('permite movimiento insignia (índice 3) con resonancia 100, y reinicia la resonancia aliada a 0 en la persistencia', async () => {
+      let combatePersistido: any = null;
+
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }) },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliado-1',
+            nivel: 5,
+            ataque: 30,
+            defensa: 20,
+            velocidad: 25,
+            hpActual: 50,
+            hpMaximo: 50,
+            especie: { elemento: 'fuego', movimientos: mockMovimientos },
+          }),
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 10,
+              defensa: 20,
+              velocidad: 10,
+              hpActual: 100,
+              hpMaximo: 100,
+              especie: { elemento: 'planta', movimientos: mockMovimientos },
+            },
+            combates: [
+              {
+                turno: 1,
+                esTurnoJugador: true,
+                detalleJson: {
+                  estadoBatalla: {
+                    turno: 1,
+                    aliada: { criaturaId: 'aliado-1', resonancia: 100, estados: [], inmunidades: [] },
+                    rival: { resonancia: 40, estados: [], inmunidades: [] },
+                  },
+                },
+              },
+            ],
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            criatura: {
+              update: async () => ({}),
+              count: async () => 1,
+            },
+            combate: {
+              findFirst: async () => ({ turno: 1 }),
+              create: async (args: any) => {
+                combatePersistido = args.data;
+              },
+            },
+            encuentro: { update: async () => ({}) },
+            historial: { create: async () => ({}) },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const gen = new GeneradorAleatorioFijo([0.5, 0.5]);
+      const servicio = new CombateService(prismaMock, {} as any, gen);
+
+      const res = await servicio.atacar('usr-1', 'enc-1', 3);
+
+      assert.strictEqual(res.accionJugador?.esInsignia, true);
+      assert.strictEqual(res.resonancia.aliada, 0);
+      assert.strictEqual(combatePersistido.detalleJson.estadoBatalla.aliada.resonancia, 0);
+    });
+
+    it('detecta concurrencia y arroja TURNO_DESACTUALIZADO (409) cuando turnoEsperado no coincide con BD', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }) },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliado-1',
+            nivel: 5,
+            ataque: 20,
+            defensa: 20,
+            velocidad: 15,
+            hpActual: 50,
+            hpMaximo: 50,
+            especie: { elemento: 'fuego', movimientos: mockMovimientos },
+          }),
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 20,
+              defensa: 20,
+              velocidad: 10,
+              hpActual: 50,
+              hpMaximo: 50,
+              especie: { elemento: 'planta', movimientos: mockMovimientos },
+            },
+            combates: [{ turno: 1, esTurnoJugador: true, detalleJson: null }],
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            $queryRaw: async () => [],
+            combate: {
+              // En BD ya hay un combate en turno 2, por lo que el turno actual esperado es 3
+              findFirst: async () => ({ turno: 2 }),
+            },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new CombateService(prismaMock, {} as any);
+
+      // Enviamos turnoEsperado = 2, pero en BD ya avanzó a 3
+      await assert.rejects(
+        async () => {
+          await servicio.atacar('usr-1', 'enc-1', 0, 2);
+        },
+        (err: any) => {
+          assert.strictEqual(err instanceof ConflictException, true);
+          assert.strictEqual(err.getResponse().codigo, 'TURNO_DESACTUALIZADO');
+          return true;
+        },
+      );
+    });
+
+    it('sanea el snapshot ante relevo de aliada debilitada (D-11)', async () => {
+      let combatePersistido: any = null;
+
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }) },
+        criatura: {
+          // Nueva aliada activa tras muerte de la anterior
+          findFirst: async () => ({
+            id: 'aliada-nueva-2',
+            nivel: 5,
+            ataque: 20,
+            defensa: 20,
+            velocidad: 20,
+            hpActual: 50,
+            hpMaximo: 50,
+            especie: { elemento: 'natura', movimientos: mockMovimientos },
+          }),
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 10,
+              defensa: 20,
+              velocidad: 10,
+              hpActual: 50,
+              hpMaximo: 50,
+              especie: { elemento: 'agua', movimientos: mockMovimientos },
+            },
+            combates: [
+              {
+                turno: 1,
+                esTurnoJugador: true,
+                detalleJson: {
+                  estadoBatalla: {
+                    turno: 1,
+                    aliada: {
+                      criaturaId: 'aliada-anterior-muerta-1',
+                      resonancia: 80,
+                      estados: [{ codigo: 'VENENO', turnosRestantes: 2, valor: 5 }],
+                      inmunidades: ['QUEMADURA'],
+                    },
+                    rival: {
+                      resonancia: 50,
+                      estados: [{ codigo: 'QUEMADURA', turnosRestantes: 2, valor: 4 }],
+                      inmunidades: ['VENENO'],
+                    },
+                  },
+                },
+              },
+            ],
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            criatura: {
+              update: async () => ({}),
+              count: async () => 1,
+            },
+            combate: {
+              findFirst: async () => ({ turno: 1 }),
+              create: async (args: any) => {
+                combatePersistido = args.data;
+              },
+            },
+            encuentro: { update: async () => ({}) },
+            historial: { create: async () => ({}) },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const gen = new GeneradorAleatorioFijo([0.5, 0.5]);
+      const servicio = new CombateService(prismaMock, {} as any, gen);
+
+      const res = await servicio.atacar('usr-1', 'enc-1', 0);
+
+      // La nueva aliada inició limpia (sin veneno de la anterior y resonancia reseteada a 0 + ganancias de la ronda)
+      assert.strictEqual(
+        res.estados.aliada.some((e: any) => e.codigo === 'VENENO'),
+        false,
+      );
+      // El rival preservó su estado previo
+      assert.strictEqual(
+        combatePersistido.detalleJson.estadoBatalla.rival.estados.some(
+          (e: any) => e.codigo === 'QUEMADURA',
+        ),
+        true,
+      );
+      assert.strictEqual(
+        combatePersistido.detalleJson.estadoBatalla.aliada.criaturaId,
+        'aliada-nueva-2',
+      );
+    });
+  });
 });
+

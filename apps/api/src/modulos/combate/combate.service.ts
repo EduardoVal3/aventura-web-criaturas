@@ -196,33 +196,13 @@ export class CombateService {
   /**
    * Bloquea pesimistamente el personaje y verifica que el turno no haya avanzado concurrentemente.
    */
-  // simplificacion: bloqueo pesimista por fila de personaje para serializar turnos concurrentes; suficiente para sesiones individuales sin migrar a Serializable.
   private async bloquearYVerificarTurno(
     tx: any,
     personajeId: string,
     encuentroId: string,
-    turnoEsperado: number,
+    turnoEsperado?: number,
   ): Promise<void> {
-    if (typeof tx.$queryRaw === 'function') {
-      await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personajeId} FOR UPDATE`;
-    }
-
-    if (typeof tx.combate?.findFirst === 'function') {
-      const ultimoEnTx = await tx.combate.findFirst({
-        where: { encuentroId },
-        orderBy: { turno: 'desc' },
-        select: { turno: true },
-      });
-
-      const turnoActualEnTx = (ultimoEnTx?.turno ?? 0) + 1;
-      if (turnoActualEnTx !== turnoEsperado) {
-        throw new ConflictException({
-          codigo: 'TURNO_DESACTUALIZADO',
-          mensaje:
-            'El turno del combate ya ha sido resuelto por otra acción concurrente.',
-        });
-      }
-    }
+    return bloquearYVerificarTurno(tx, personajeId, encuentroId, turnoEsperado);
   }
 
   /**
@@ -232,6 +212,7 @@ export class CombateService {
     usuarioId: string,
     encuentroId: string,
     movimientoIndice: number = 0,
+    turnoEsperado?: number,
   ) {
     const personaje = await this.obtenerPersonajeAutenticado(usuarioId);
     const { encuentro, ultimoCombate } = await this.validarEncuentroActivo(
@@ -332,7 +313,12 @@ export class CombateService {
     const turnoActual = (ultimoCombate?.turno ?? 0) + 1;
 
     return this.prisma.$transaction(async (tx) => {
-      await this.bloquearYVerificarTurno(tx, personaje.id, encuentro.id, turnoActual);
+      await this.bloquearYVerificarTurno(
+        tx,
+        personaje.id,
+        encuentro.id,
+        turnoEsperado,
+      );
 
       await tx.criatura.update({
         where: { id: encuentro.criaturaRivalId },

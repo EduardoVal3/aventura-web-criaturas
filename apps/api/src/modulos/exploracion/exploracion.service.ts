@@ -218,6 +218,7 @@ export class ExploracionService {
         'ENCUENTRO',
         `Avistamiento de criatura salvaje: ${especie.nombre} (Nv. ${nivelSorteado}) en ${zona.nombre}.`,
         { encuentroId: encuentro.id, especieSlug: especie.slug, nivel: nivelSorteado },
+        tx,
       );
 
       return {
@@ -263,6 +264,7 @@ export class ExploracionService {
           'OBJETO',
           `Has encontrado un alijo oculto con ${monedasGanadas} monedas en ${zona.nombre}.`,
           { tipoRecompensa: 'MONEDAS', cantidad: monedasGanadas },
+          tx,
         );
       });
 
@@ -306,6 +308,7 @@ export class ExploracionService {
           'OBJETO',
           `Has recogido un consumible: ${objeto.nombre} en ${zona.nombre}.`,
           { tipoRecompensa: 'ITEM', itemCodigo: objeto.codigo },
+          tx,
         );
       });
 

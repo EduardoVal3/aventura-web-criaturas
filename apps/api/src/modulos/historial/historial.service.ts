@@ -57,8 +57,10 @@ export class HistorialService {
     tipo: string,
     descripcion: string,
     datosJson?: Record<string, any>,
+    tx?: any,
   ) {
-    return this.prisma.historial.create({
+    const cliente = tx ?? this.prisma;
+    return cliente.historial.create({
       data: {
         personajeId,
         tipo,

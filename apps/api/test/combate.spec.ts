@@ -706,6 +706,121 @@ describe('Motor de combate, daño y huida (Fase 7a)', () => {
         'aliada-nueva-2',
       );
     });
+
+    it('debe propagar el cliente transaccional tx a historialService.registrar en victoria para evitar deadlocks de PostgreSQL', async () => {
+      let llamadaHistorial: any = null;
+      let txCapturada: any = null;
+
+      const historialMock: any = {
+        registrar: async (
+          personajeId: string,
+          tipo: string,
+          descripcion: string,
+          datosJson?: any,
+          tx?: any,
+        ) => {
+          llamadaHistorial = { personajeId, tipo, descripcion, datosJson, tx };
+        },
+      };
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliada-1',
+            personajeId: 'pj-1',
+            nivel: 5,
+            ataque: 50,
+            defensa: 30,
+            hpActual: 100,
+            hpMaximo: 100,
+            velocidad: 40,
+            especie: {
+              elemento: 'fuego',
+              movimientos: [
+                { id: 'm-1', nombre: 'Golpe Ígneo', poder: 50, slot: 1, efecto: null },
+              ],
+            },
+          }),
+          update: async () => ({}),
+          count: async () => 1,
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            criaturaRivalId: 'rival-1',
+            estado: 'EN_CURSO',
+            zonaId: null,
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 1,
+              ataque: 10,
+              defensa: 10,
+              hpActual: 5,
+              hpMaximo: 30,
+              velocidad: 10,
+              especie: {
+                challengeRating: 1,
+                nombre: 'Duende Pruebas',
+                elemento: 'planta',
+                movimientos: [],
+              },
+            },
+            combates: [],
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            idTransaccion: 'tx-activa-123',
+            criatura: {
+              update: async () => ({}),
+              count: async () => 1,
+              findUnique: async () => ({
+                id: 'aliada-1',
+                personajeId: 'pj-1',
+                nivel: 5,
+                experiencia: 500,
+                especie: {
+                  hpBase: 40,
+                  ataqueBase: 50,
+                  defensaBase: 30,
+                  velocidadBase: 40,
+                },
+              }),
+            },
+            personaje: {
+              update: async () => ({ monedas: 100 }),
+            },
+            historial: { create: async () => ({}) },
+            combate: {
+              findFirst: async () => null,
+              create: async () => ({}),
+            },
+            encuentro: { update: async () => ({}) },
+          };
+          txCapturada = txMock;
+          return cb(txMock);
+        },
+      };
+
+      const gen = new GeneradorAleatorioFijo([0.5, 0.5]);
+      const servicio = new CombateService(prismaMock, historialMock, gen);
+
+      const res = await servicio.atacar('usr-1', 'enc-1', 0);
+
+      assert.strictEqual(res.resultadoFinal, 'VICTORIA');
+      assert.ok(llamadaHistorial, 'Debe haber llamado a historialService.registrar');
+      assert.strictEqual(llamadaHistorial.tipo, 'COMBATE');
+      assert.strictEqual(
+        llamadaHistorial.tx,
+        txCapturada,
+        'El parámetro tx debe coincidir con el cliente transaccional de $transaction',
+      );
+    });
   });
 });
+
 

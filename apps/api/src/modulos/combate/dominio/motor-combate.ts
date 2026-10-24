@@ -651,6 +651,28 @@ export interface Combatiente {
   movimientos: MovimientoCombatiente[];
 }
 
+export function construirCombatiente(criatura: any, defectoNombre: string): Combatiente {
+  const movimientos = criatura?.especie?.movimientos ?? [];
+  return {
+    id: criatura?.id ?? 'desconocido',
+    nombre: criatura?.apodo ?? criatura?.especie?.nombre ?? defectoNombre,
+    nivel: criatura?.nivel ?? 1,
+    ataque: criatura?.ataque ?? 10,
+    defensa: criatura?.defensa ?? 10,
+    velocidad: criatura?.velocidad ?? 10,
+    hpActual: criatura?.hpActual ?? 10,
+    hpMaximo: criatura?.hpMaximo ?? 10,
+    elemento: criatura?.especie?.elemento ?? 'fisico',
+    movimientos: movimientos.map((m: any) => ({
+      nombre: m.nombre,
+      poder: m.poder ?? 10,
+      tipoAccion: m.tipoAccion ?? 'Ataque melé',
+      slot: m.slot,
+      efecto: m.efecto,
+    })),
+  };
+}
+
 export interface AccionResultado {
   movimiento: string;
   danoCausado: number;

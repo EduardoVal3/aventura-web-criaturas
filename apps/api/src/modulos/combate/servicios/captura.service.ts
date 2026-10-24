@@ -12,7 +12,15 @@ import {
   GeneradorAleatorioNativo,
 } from '../../../comun/azar/generador-aleatorio.interface';
 import { ESTADOS_ENCUENTRO, esEstadoTerminal } from '../dominio/estado-encuentro';
-import { calcularDano, aplicarDano } from '../combate.service';
+import {
+  calcularDano,
+  aplicarDano,
+  leerEstadoBatalla,
+  resolverRonda,
+  construirCombatiente,
+  tieneEstadoAlterado,
+  bloquearYVerificarTurno,
+} from '../combate.service';
 import { calcularXpRequerida } from '../../progreso/progreso.service';
 
 export const MULTIPLICADORES_TALISMAN: Record<string, number> = {
@@ -24,7 +32,7 @@ export const MULTIPLICADORES_TALISMAN: Record<string, number> = {
 /**
  * Calcula la probabilidad final de captura según las reglas de equilibrio (§2.2).
  * factorSalud = 1.0 - 0.5 * (hpActual / hpMaximo)
- * probBruta = tasaCaptura * factorSalud * multiplicadorTalisman
+ * probBruta = tasaCaptura * factorSalud * multiplicadorTalisman * multiplicadorEstado
  * probFinal = clamp(0.05, 0.95, probBruta) -> Cumple INV-02
  */
 export function calcularProbabilidadCaptura(
@@ -32,11 +40,13 @@ export function calcularProbabilidadCaptura(
   hpActual: number,
   hpMaximo: number,
   multiplicadorTalisman: number = 1.0,
+  multiplicadorEstado: number = 1.0,
 ): number {
   const hpSeguro = Math.max(1, hpActual);
   const maxSeguro = Math.max(1, hpMaximo);
   const factorSalud = 1.0 - 0.5 * (hpSeguro / maxSeguro);
-  const probBruta = tasaCaptura * factorSalud * multiplicadorTalisman;
+  const probBruta =
+    tasaCaptura * factorSalud * multiplicadorTalisman * multiplicadorEstado;
   return Math.max(0.05, Math.min(0.95, probBruta));
 }
 
@@ -55,7 +65,12 @@ export class CapturaService {
   /**
    * Resuelve el intento de captura dentro de una transacción atómica estricta (prisma.$transaction).
    */
-  async capturar(usuarioId: string, encuentroId: string, itemCodigo: string) {
+  async capturar(
+    usuarioId: string,
+    encuentroId: string,
+    itemCodigo: string,
+    turnoEsperado?: number,
+  ) {
     // 1. Validar personaje autenticado
     const personaje = await this.prisma.personaje.findUnique({
       where: { usuarioId },
@@ -77,6 +92,10 @@ export class CapturaService {
               include: { movimientos: true },
             },
           },
+        },
+        combates: {
+          orderBy: { turno: 'desc' },
+          take: 1,
         },
       },
     });
@@ -114,12 +133,22 @@ export class CapturaService {
       });
     }
 
+    const ultimoCombatePre = (encuentro as any).combates?.[0] ?? null;
+    const estadoBatallaPrevio = leerEstadoBatalla(
+      ultimoCombatePre?.detalleJson,
+    );
+    const rivalConEstado = tieneEstadoAlterado(
+      estadoBatallaPrevio.rival.estados,
+    );
+    const multiplicadorEstado = rivalConEstado ? 1.25 : 1.0;
+
     const multiplicador = MULTIPLICADORES_TALISMAN[itemCodigo] ?? 1.0;
     const probabilidadFinal = calcularProbabilidadCaptura(
       encuentro.criaturaRival.especie.tasaCaptura,
       encuentro.criaturaRival.hpActual,
       encuentro.criaturaRival.hpMaximo,
       multiplicador,
+      multiplicadorEstado,
     );
 
     const capturaExitosa = this.generador.generar() < probabilidadFinal;
@@ -154,11 +183,20 @@ export class CapturaService {
         });
       }
 
-      const ultimoCombate = await tx.combate.findFirst({
-        where: { encuentroId: encuentro.id },
-        orderBy: { turno: 'desc' },
-      });
+      const ultimoCombate = tx.combate?.findFirst
+        ? await tx.combate.findFirst({
+            where: { encuentroId: encuentro.id },
+            orderBy: { turno: 'desc' },
+          })
+        : ultimoCombatePre;
       const turnoActual = (ultimoCombate?.turno ?? 0) + 1;
+
+      await bloquearYVerificarTurno(
+        tx,
+        personaje.id,
+        encuentro.id,
+        turnoEsperado,
+      );
 
       if (capturaExitosa) {
         // Actualizar encuentro a CAPTURADO
@@ -203,7 +241,8 @@ export class CapturaService {
               exito: true,
               itemCodigo,
               destino: vaAlEquipo ? 'EQUIPO' : 'ALMACEN',
-            },
+              multiplicadorEstado,
+            } as any,
           },
         });
 
@@ -217,7 +256,10 @@ export class CapturaService {
               },
             },
           });
-          const progresoActualizado = Math.min(100, (regZona?.progreso ?? 0) + 20);
+          const progresoActualizado = Math.min(
+            100,
+            (regZona?.progreso ?? 0) + 20,
+          );
           await tx.zonaDesbloqueada.upsert({
             where: {
               personajeId_zonaId: {
@@ -262,7 +304,7 @@ export class CapturaService {
         };
       }
 
-      // Fallo de captura: contraataque rival
+      // Fallo de captura: contraataque rival autoritativo
       const criaturaAliada = await tx.criatura.findFirst({
         where: {
           personajeId: personaje.id,
@@ -270,37 +312,58 @@ export class CapturaService {
           hpActual: { gt: 0 },
         },
         orderBy: { ordenEquipo: 'asc' },
+        include: {
+          especie: {
+            include: { movimientos: true },
+          },
+        },
       });
 
       let contraataqueRival: any = null;
+      let efectosFinDeTurno: any[] = [];
+      let mensajes: string[] = [];
+      let resonanciaFinal = {
+        aliada: 0,
+        rival: 0,
+      };
+      let estadosFinales = {
+        aliada: [] as any[],
+        rival: [] as any[],
+      };
       let estadoFinal: string = ESTADOS_ENCUENTRO.ACTIVO;
 
       if (criaturaAliada) {
-        const movimientosRivales = encuentro.criaturaRival.especie.movimientos;
-        const movRival =
-          movimientosRivales[0] ?? {
-            nombre: 'Ataque Salvaje',
-            poder: 10,
-          };
-
-        const danoRival = calcularDano(
-          encuentro.criaturaRival.ataque,
-          criaturaAliada.defensa,
-          movRival.poder,
-          encuentro.criaturaRival.nivel,
+        const snapshot = leerEstadoBatalla(
+          ultimoCombate?.detalleJson,
+          criaturaAliada.id,
         );
-        const nuevoHpAliado = aplicarDano(
-          criaturaAliada.hpActual,
-          danoRival,
-          criaturaAliada.hpMaximo,
+        const aliadaCombatiente = construirCombatiente(criaturaAliada, 'Aliada');
+        const rivalCombatiente = construirCombatiente(
+          encuentro.criaturaRival,
+          'Rival',
+        );
+
+        const resultado = resolverRonda(
+          aliadaCombatiente,
+          rivalCombatiente,
+          snapshot,
+          null,
+          this.generador,
         );
 
         await tx.criatura.update({
           where: { id: criaturaAliada.id },
-          data: { hpActual: nuevoHpAliado },
+          data: { hpActual: resultado.hpRestanteAliada },
         });
 
-        if (nuevoHpAliado <= 0) {
+        if (resultado.hpRestanteRival !== encuentro.criaturaRival.hpActual) {
+          await tx.criatura.update({
+            where: { id: encuentro.criaturaRival.id },
+            data: { hpActual: resultado.hpRestanteRival },
+          });
+        }
+
+        if (resultado.hpRestanteAliada <= 0) {
           const vivasRestantes = await tx.criatura.count({
             where: {
               personajeId: personaje.id,
@@ -322,26 +385,62 @@ export class CapturaService {
           }
         }
 
-        contraataqueRival = {
-          movimiento: movRival.nombre,
-          danoCausado: danoRival,
-          hpRestanteAliado: nuevoHpAliado,
-        };
-      }
+        const accionRival = resultado.accionRival;
+        contraataqueRival = accionRival
+          ? {
+              movimiento: accionRival.movimiento,
+              danoCausado: accionRival.danoCausado,
+              hpRestanteAliado: resultado.hpRestanteAliada,
+              danoAbsorbido: accionRival.danoAbsorbido,
+              estadoAplicado: accionRival.estadoAplicado,
+              perdioTurno: accionRival.perdioTurno,
+            }
+          : null;
 
-      await tx.combate.create({
-        data: {
-          encuentroId: encuentro.id,
-          turno: turnoActual,
-          esTurnoJugador: true,
-          accionUltima: 'CAPTURAR_FALLIDO',
-          detalleJson: {
-            exito: false,
-            itemCodigo,
-            contraataqueRival,
+        efectosFinDeTurno = resultado.efectosFinDeTurno;
+        mensajes = resultado.mensajes;
+        resonanciaFinal = {
+          aliada: resultado.estadoBatalla.aliada.resonancia,
+          rival: resultado.estadoBatalla.rival.resonancia,
+        };
+        estadosFinales = {
+          aliada: resultado.estadoBatalla.aliada.estados,
+          rival: resultado.estadoBatalla.rival.estados,
+        };
+
+        await tx.combate.create({
+          data: {
+            encuentroId: encuentro.id,
+            turno: turnoActual,
+            esTurnoJugador: true,
+            accionUltima: 'CAPTURAR_FALLIDO',
+            detalleJson: {
+              exito: false,
+              itemCodigo,
+              multiplicadorEstado,
+              contraataqueRival,
+              efectosFinDeTurno,
+              mensajes,
+              estadoBatalla: resultado.estadoBatalla,
+            } as any,
           },
-        },
-      });
+        });
+      } else {
+        await tx.combate.create({
+          data: {
+            encuentroId: encuentro.id,
+            turno: turnoActual,
+            esTurnoJugador: true,
+            accionUltima: 'CAPTURAR_FALLIDO',
+            detalleJson: {
+              exito: false,
+              itemCodigo,
+              multiplicadorEstado,
+              contraataqueRival: null,
+            } as any,
+          },
+        });
+      }
 
       await tx.historial.create({
         data: {
@@ -358,6 +457,10 @@ export class CapturaService {
         encuentroId: encuentro.id,
         estado: estadoFinal,
         contraataqueRival,
+        efectosFinDeTurno,
+        resonancia: resonanciaFinal,
+        estados: estadosFinales,
+        mensajes,
       };
     });
   }

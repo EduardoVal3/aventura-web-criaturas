@@ -17,4 +17,12 @@ export class CapturarDto {
   @IsNotEmpty({ message: 'El código del objeto talismán es requerido.' })
   @IsString({ message: 'El código del objeto debe ser una cadena.' })
   itemCodigo: string;
+
+  @ApiPropertyOptional({
+    description: 'Turno esperado por el cliente para prevenir desincronizaciones',
+    example: 1,
+  })
+  @IsOptional()
+  turnoEsperado?: number;
 }
+

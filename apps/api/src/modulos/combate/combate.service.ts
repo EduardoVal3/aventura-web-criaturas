@@ -31,6 +31,8 @@ import {
   resolverRonda,
   Combatiente,
   velocidadEfectiva,
+  construirCombatiente,
+  tieneEstadoAlterado,
 } from './dominio/motor-combate';
 
 export {
@@ -50,6 +52,8 @@ export {
   resolverRonda,
   Combatiente,
   velocidadEfectiva,
+  construirCombatiente,
+  tieneEstadoAlterado,
 };
 
 /**
@@ -60,13 +64,16 @@ export async function bloquearYVerificarTurno(
   tx: any,
   personajeId: string,
   encuentroId: string,
-  turnoEsperado: number,
+  turnoEsperado?: number,
 ): Promise<void> {
   if (typeof tx.$queryRaw === 'function') {
     await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personajeId} FOR UPDATE`;
   }
 
-  if (typeof tx.combate?.findFirst === 'function') {
+  if (
+    turnoEsperado !== undefined &&
+    typeof tx.combate?.findFirst === 'function'
+  ) {
     const ultimoEnTx = await tx.combate.findFirst({
       where: { encuentroId },
       orderBy: { turno: 'desc' },

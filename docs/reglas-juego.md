@@ -48,27 +48,27 @@ El valor $65$ corresponde al punto medio exacto del intervalo normalizado $[30, 
 
 ## 2. Fórmulas del sistema de juego
 
-### 2.1 Fórmula de daño en combate
-Determina el daño infligido a los puntos de golpe del defensor al impactar un movimiento.
+### 2.1 Fórmula de daño en combate (Subfase 10k)
+Determina el daño infligido a los puntos de golpe del defensor al impactar un movimiento, incorporando afinidades elementales y defensa efectiva.
 
 - **Variables y rangos:**
   - $\text{ataque}$ (Atacante): $[30, 250]$ (estadística escalada por nivel).
-  - $\text{defensa}$ (Defensor): $[30, 250]$ (estadística escalada por nivel).
-  - $\text{poder}$ (Movimiento): $[5, 50]$.
+  - $\text{defensaEfectiva}$ (Defensor): $[1, 250]$ ($\text{defensa} \times 0.75$ si sufre `QUEMADURA`, sino $\text{defensa}$).
+  - $\text{poder}$ (Movimiento): $[5, 80]$.
   - $\text{nivel}$ (Atacante): $[1, 50]$.
+  - $F_{\text{afinidad}}$: Multiplicador de ventaja elemental ($1.5$ ventaja, $0.75$ desventaja, $1.0$ neutral).
 - **Fórmula:**
-  $$\text{danoBruto} = \left( \frac{\text{ataque}}{\max(1, \text{defensa})} \times \text{poder} \times 0.8 \right) + (\text{nivel} \times 0.5)$$
+  $$\text{danoBruto} = \left( \frac{\text{ataque}}{\max(1, \text{defensaEfectiva})} \times \text{poder} \times 0.8 \right) + (\text{nivel} \times 0.5)$$
   $$\text{factorVariacion} = 0.85 + 0.30 \times r, \quad r \sim \mathcal{U}[0, 1) \quad (\pm 15\,\% \text{ de variación estocástica})$$
-  $$\text{danoFinal} = \max(1, \lfloor \text{danoBruto} \times \text{factorVariacion} \rfloor)$$
-- **Invariante cumplido:** **INV-04** (El daño mínimo de un golpe es siempre $\ge 1$, garantizado aun bajo el factor estocástico mínimo de $0.85$).
+  $$\text{danoFinal} = \max(1, \lfloor \text{danoBruto} \times \text{factorVariacion} \times F_{\text{afinidad}} \rfloor)$$
+- **Invariante cumplido:** **INV-04** (El daño mínimo de un golpe es siempre $\ge 1$, garantizado aun bajo desventaja elemental y factor estocástico mínimo de $0.85$).
 - **Ejemplo numérico resuelto:**
-  - Atacante Nivel 3 con $\text{ataque} = 45$ usa movimiento con $\text{poder} = 12$. Defensor con $\text{defensa} = 50$.
+  - Atacante Nivel 3 con $\text{ataque} = 45$ usa movimiento de fuego ($\text{poder} = 12$) contra rival de natura ($F_{\text{afinidad}} = 1.5$) con $\text{defensa} = 50$.
   - Con factor base $1.0$: $\text{danoBruto} = (45 / 50 \times 12 \times 0.8) + (3 \times 0.5) = 8.64 + 1.5 = 10.14$.
-  - $\text{danoFinal} = \max(1, \lfloor 10.14 \times 1.0 \rfloor) = 10$.
-  - Con factor mínimo $0.85$: $\lfloor 10.14 \times 0.85 \rfloor = \lfloor 8.619 \rfloor = 8$.
-  - Con factor máximo $1.15$: $\lfloor 10.14 \times 1.15 \rfloor = \lfloor 11.661 \rfloor = 11$.
+  - $\text{danoFinal} = \max(1, \lfloor 10.14 \times 1.0 \times 1.5 \rfloor) = \lfloor 15.21 \rfloor = 15$.
+  - Si el defensor cuenta con escudo `BASTION`, el daño consume primero los puntos del escudo ($0 \le \text{escudo}$); el remanente, de existir, impacta los puntos de salud.
 
-### 2.2 Probabilidad final de captura
+### 2.2 Probabilidad final de captura (Subfase 10k)
 Determina la probabilidad de éxito al intentar capturar una criatura salvaje durante un turno de combate.
 
 - **Variables y rangos:**
@@ -76,18 +76,19 @@ Determina la probabilidad de éxito al intentar capturar una criatura salvaje du
   - $\text{hpActual}$: $[1, \text{hpMaximo}]$.
   - $\text{hpMaximo}$: $[30, 500]$.
   - $\text{multiplicadorTalisman}$: $1.0$ (Básico) o $1.5$ (Resonante).
+  - $\text{multiplicadorEstado}$: $1.25$ si el rival sufre un estado alterado activo (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`), $1.0$ en caso contrario.
 - **Fórmula:**
   $$\text{factorSalud} = 1.0 - 0.5 \times \left( \frac{\text{hpActual}}{\text{hpMaximo}} \right)$$
-  $$\text{probBruta} = \text{tasaCaptura} \times \text{factorSalud} \times \text{multiplicadorTalisman}$$
+  $$\text{probBruta} = \text{tasaCaptura} \times \text{factorSalud} \times \text{multiplicadorTalisman} \times \text{multiplicadorEstado}$$
   $$\text{probFinal} = \text{clamp}(0.05, 0.95, \text{probBruta})$$
 - **Relación entre $\text{tasaCaptura}$ y $\text{probFinal}$:**
-  La $\text{tasaCaptura}$ ($0.10$ a $0.90$) es una propiedad genética fija de la especie. La probabilidad final ($\text{probFinal}$) modula dicha tasa en función de la situación táctica (debilitar al rival aumenta el factor salud de $0.50$ hasta rozar $1.00$) y el objeto empleado. La función $\text{clamp}$ final impone una salvaguarda universal estricta: ninguna captura tiene garantizado el éxito absoluto ($95\,\%$ máximo) ni es matemáticamente imposible ($5\,\%$ mínimo).
+  La $\text{tasaCaptura}$ ($0.10$ a $0.90$) es una propiedad genética fija de la especie. La probabilidad final ($\text{probFinal}$) modula dicha tasa en función de la salud rival, el talismán y la sinergia de estados alterados activos ($\times 1.25$). La función $\text{clamp}$ final impone una salvaguarda universal estricta: ninguna captura tiene garantizado el éxito absoluto ($95\,\%$ máximo) ni es matemáticamente imposible ($5\,\%$ mínimo).
 - **Invariante cumplido:** **INV-02** ($\text{probFinal} \in [0.05, 0.95]$).
 - **Ejemplo numérico resuelto:**
-  - Criatura salvaje con $\text{tasaCaptura} = 0.60$, reducida a $\text{hpActual} = 15$ de $\text{hpMaximo} = 60$. Se usa Talismán Resonante ($1.5$).
-  - $\text{factorSalud} = 1.0 - 0.5 \times (15 / 60) = 1.0 - 0.125 = 0.875$.
-  - $\text{probBruta} = 0.60 \times 0.875 \times 1.5 = 0.7875$ ($78.75\,\%$).
-  - $\text{probFinal} = \text{clamp}(0.05, 0.95, 0.7875) = 0.7875$.
+  - Criatura salvaje con $\text{tasaCaptura} = 0.50$, reducida a $\text{hpActual} = 30$ de $\text{hpMaximo} = 60$, afectada por `QUEMADURA` ($\text{multiplicadorEstado} = 1.25$). Se usa Talismán Básico ($1.0$).
+  - $\text{factorSalud} = 1.0 - 0.5 \times (30 / 60) = 0.75$.
+  - $\text{probBruta} = 0.50 \times 0.75 \times 1.0 \times 1.25 = 0.46875$ ($46.88\,\%$).
+  - $\text{probFinal} = \text{clamp}(0.05, 0.95, 0.46875) = 0.46875$.
 
 ### 2.3 Experiencia (XP) ganada en combate
 Experiencia otorgada a la criatura participante al debilitar a un oponente en combate.
@@ -123,20 +124,18 @@ Determina la cantidad total de XP necesaria para que una criatura alcance un niv
 - **Aislamiento por Personaje y Multitenancy:**
   La entrega de experiencia y actualización de nivel en `ProgresoService` valida estrictamente la pertenencia `criatura.personajeId === personajeId`, asegurando que el progreso se guarde y conserve única y exclusivamente en la criatura del usuario/personaje en sesión, impidiendo fuga de datos hacia otros jugadores.
 
-### 2.5 Probabilidad de huida de combate
-Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje.
+### 2.5 Probabilidad de huida de combate (Subfase 10k)
+Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje, evaluando velocidades efectivas.
 
 - **Variables y rangos:**
-  - $\text{velJugador}$: $[30, 200]$.
-  - $\text{velRival}$: $[30, 200]$.
+  - $\text{velEfectivaJugador}$: $[10, 200]$ ($\text{velocidad} \times 0.60$ si sufre `ESCARCHA`, $\times 0.75$ si sufre `PARALISIS`).
+  - $\text{velEfectivaRival}$: $[10, 200]$ ($\text{velocidad} \times 0.60$ si sufre `ESCARCHA`, $\times 0.75$ si sufre `PARALISIS`).
   - $\text{intentos}$: Contador de intentos fallidos previos en el encuentro ($1, 2, 3\dots$).
 - **Fórmula:**
-  $$\text{probHuidaBruta} = \left(\frac{\text{velJugador}}{\text{velJugador} + \text{velRival}}\right) + 0.10 \times (\text{intentos} - 1)$$
+  $$\text{probHuidaBruta} = \left(\frac{\text{velEfectivaJugador}}{\text{velEfectivaJugador} + \text{velEfectivaRival}}\right) + 0.10 \times (\text{intentos} - 1)$$
   $$\text{probHuidaFinal} = \text{clamp}(0.10, 0.90, \text{probHuidaBruta})$$
-- **Ejemplo numérico resuelto:**
-  - Jugador con $\text{velJugador} = 40$ frente a rival con $\text{velRival} = 60$ en el primer intento ($\text{intentos} = 1$).
-  - $\text{probHuidaBruta} = (40 / (40 + 60)) + 0 = 0.40$ ($40\,\%$).
-  - $\text{probHuidaFinal} = \text{clamp}(0.10, 0.90, 0.40) = 0.40$.
+- **Contraataque en Huida Fallida:**
+  Si la huida fracasa ($r \ge \text{probHuidaFinal}$), el rival ejecuta un contraataque autoritativo determinista a través de `resolverRonda`, aplicando daño elemental, chequeo de estados y fin de ronda.
 
 ### 2.6 Progreso de exploración de zona (Fase 9 / Subfase 10d)
 Determina el grado de reconocimiento cartográfico de una zona salvaje por parte del explorador.
@@ -150,6 +149,43 @@ Determina el grado de reconocimiento cartográfico de una zona salvaje por parte
   1. Si la exploración resulta en un evento de `ENCUENTRO`, el progreso de la ruta **no se incrementa prematuramente** mientras el combate permanezca en curso (`EN_CURSO`).
   2. El incremento de $+20\,\%$ de la zona se acredita y persiste en la base de datos exclusivamente cuando el encuentro es resuelto favorablemente (al derrotar a la bestia en `CombateService` o al capturarla en `CapturaService`). Si el jugador huye o es derrotado, la senda retiene su progreso previo.
   3. El progreso es administrado y validado íntegramente en el servidor en la columna `zona_desbloqueada.progreso`. Al alcanzar $100\,\%$, el cliente despliega la insignia de "100% Cartografiada / Explorada".
+
+### 2.8 Desbloqueo del movimiento insignia M4 (Subfase 10k)
+- Toda especie cuenta con 4 movimientos en los slots $1..4$. El slot 4 corresponde a la técnica insignia o movimiento de Furia.
+- **Condición de activación:** La criatura aliada requiere $\text{resonancia} = 100$ para habilitar el slot 4. Cualquier intento de ejecución con resonancia menor es rechazado en servidor con `BadRequestException(MOVIMIENTO_BLOQUEADO)`.
+- **Reinicio:** Al completarse la ejecución del movimiento insignia, la resonancia de la criatura aliada se reinicia inmediatamente a $0\,\%$ sin acumular ganancias en dicha ronda.
+- **Restricción rival:** La criatura rival nunca sortea ni ejecuta el slot 4 en sus turnos regulares.
+
+### 2.10 Matriz inmutable de afinidades elementales (Subfase 10k)
+Rige las interacciones elementales entre el tipo del movimiento atacante y la afinidad de la criatura defensora:
+
+| Atacante \ Defensor | Físico | Fuego | Agua | Natura | Sombra | Luz |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Físico** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ |
+| **Fuego** | $1.0\times$ | $0.75\times$ | $0.75\times$ | **$1.5\times$** | $1.0\times$ | $1.0\times$ |
+| **Agua** | $1.0\times$ | **$1.5\times$** | $0.75\times$ | $0.75\times$ | $1.0\times$ | $1.0\times$ |
+| **Natura** | $1.0\times$ | $0.75\times$ | **$1.5\times$** | $0.75\times$ | $1.0\times$ | $1.0\times$ |
+| **Sombra** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | $0.75\times$ | **$1.5\times$** |
+| **Luz** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | **$1.5\times$** | $0.75\times$ |
+
+### 2.11 Catálogo y reglas de estados alterados (Subfase 10k)
+1. **`QUEMADURA`:** DoT del $10\,\%$ del HP Máximo (mínimo 1), $\text{defensaEfectiva} = \text{defensa} \times 0.75$. Duración: 3 turnos.
+2. **`VENENO`:** DoT del $12\,\%$ del HP Máximo (mínimo 1). Duración: 4 turnos.
+3. **`ESCARCHA`:** $\text{velEfectiva} = \text{velocidad} \times 0.60$. Duración: 2 turnos.
+4. **`PARALISIS`:** $\text{velEfectiva} = \text{velocidad} \times 0.75$, $25\,\%$ de probabilidad de perder turno ($r < 0.25$). Duración: 2 turnos.
+5. **`PETRIFICACION`:** Pérdida total del turno ($100\,\%$, sin consumir tirada estocástica). Duración: 1 turno.
+6. **`BASTION`:** Escudo de protección equivalente al $20\,\%$ del HP Máximo que absorbe daño directo antes de impactar los puntos de salud. Expira al consumirse o tras 3 turnos (beneficio: `esAlterado: false`).
+
+- **Regla DoT No Letal (D-4):** Los daños por estado al final del turno se acotan a $\max(1, \text{hpActual} - \text{danoDoT})$, impidiendo que un estado alterado debilite a una criatura por sí solo.
+- **Inmunidad de 1 Turno (D-6):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno inmediatamente posterior.
+
+### 2.12 Acumulador y mecánicas de Resonancia (Subfase 10k)
+La barra de Resonancia ($0 - 100\,\%$) se incrementa al final de cada ronda según las siguientes reglas autoritativas:
+1. **Ganancia base:** $+8\,\%$ por ronda concluida.
+2. **Bonificación elemental:** $+10\,\%$ si el atacante asestó un golpe con ventaja elemental ($F_{\text{afinidad}} = 1.5$).
+3. **Carga por daño recibido:** $\lfloor (\text{danoAbsorbido} / \text{hpMaximo}) \times 40 \rfloor$, con un tope máximo de $+20\,\%$ por ronda.
+4. **Saturación:** Acotada en $[0, 100]$. Al alcanzar $100\,\%$, desbloquea el movimiento insignia M4.
+5. **Consumo:** Ejecutar M4 reinicia la resonancia a $0\,\%$ sin acumular ganancias en dicha ronda.
 
 ---
 
@@ -177,9 +213,9 @@ Estos cinco invariantes actúan como contratos inquebrantables de la lógica del
 | ID | Invariante | Descripción matemática / Lógica | Fase donde se valida |
 | --- | --- | --- | --- |
 | **INV-01** | Suma de pesos positiva y normalizada | $\sum_{i=1}^{k} \text{peso}_i > 0$ para toda tabla de aparición o eventos. En la Subfase 10j, cada tabla de las 6 zonas cuenta con exactamente 5 especies con suma estricta de 100 % ($35\% + 35\% + 15\% + 10\% + 5\% = 100\%$). | Fase 5 (Seed), Fase 6 y Fase 10j |
-| **INV-02** | Rango de captura acotado | $0.05 \le \text{probFinal} \le 0.95$. Toda tirada de captura retiene un riesgo mínimo ($5\,\%$) y una oportunidad mínima ($5\,\%$). | Fase 7 (Combate) |
-| **INV-03** | Rango de puntos de golpe | $0 \le \text{hpActual} \le \text{hpMaximo}$. Ningún cálculo de daño permite HP negativo ni curación por encima del máximo. En curación fuera de combate (`POST /api/inventario/usar`), si $\text{hpActual} \ge \text{hpMaximo}$ la acción es rechazada con `400 SALUD_COMPLETA` sin consumir el objeto ni descontar stock. En el Santuario de Curación (`POST /api/curacion/restaurar`, Subfase 10h), restaura atómicamente a todo el equipo activo y revive a criaturas caídas ($\text{hpActual} = 0 \to \text{hpMaximo}$) exactamente al 100 % de su salud sin sobrecuración. | Fase 7 (Combate/Curación), Fase 10g y Fase 10h |
-| **INV-04** | Daño mínimo no nulo | $\text{danoFinal} \ge 1$. Todo ataque ejecutado que impacte inflige al menos 1 punto de daño, sin importar la defensa del rival. | Fase 7 (Combate) |
+| **INV-02** | Rango de captura acotado | $0.05 \le \text{probFinal} \le 0.95$. Toda tirada de captura retiene un riesgo mínimo ($5\,\%$) y una oportunidad mínima ($5\,\%$), incluso ante la sinergia de estados alterados ($\times 1.25$). | Fase 7 (Combate) y Subfase 10k |
+| **INV-03** | Rango de puntos de golpe | $0 \le \text{hpActual} \le \text{hpMaximo}$. Ningún cálculo de daño permite HP negativo ni curación por encima del máximo. En curación fuera de combate (`POST /api/inventario/usar`), si $\text{hpActual} \ge \text{hpMaximo}$ la acción es rechazada con `400 SALUD_COMPLETA` sin consumir el objeto ni descontar stock. En el Santuario de Curación (`POST /api/curacion/restaurar`, Subfase 10h), restaura atómicamente a todo el equipo activo y revive a criaturas caídas ($\text{hpActual} = 0 \to \text{hpMaximo}$) exactamente al 100 % de su salud sin sobrecuración. En la Subfase 10k, los DoTs de estados respetan la salvaguarda no letal ($\max(1, \text{hpActual} - \text{danoDoT})$). | Fase 7, Fase 10g, Fase 10h y Subfase 10k |
+| **INV-04** | Daño mínimo no nulo | $\text{danoFinal} \ge 1$. Todo ataque ejecutado que impacte inflige al menos 1 punto de daño, sin importar la defensa del rival ni la desventaja elemental ($0.75\times$). | Fase 7 (Combate) y Subfase 10k |
 | **INV-05** | Progresión monótona creciente | $\text{xpRequerida}(n+1) > \text{xpRequerida}(n)$ para todo $n \ge 1$. Cada nivel exige estrictamente más XP acumulada que el anterior. | Fase 7 (Progresión) |
 
 ### 4.1 Invariantes de jerarquía táctica y presupuesto de especies (Subfase 10j)

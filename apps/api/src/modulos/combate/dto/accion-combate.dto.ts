@@ -11,6 +11,7 @@ import {
 
 export const TIPOS_ACCION_COMBATE = [
   'ATACAR',
+  'RESONANCIA',
   'USAR_OBJETO',
   'CAMBIAR_CRIATURA',
   'CAPTURAR',
@@ -28,7 +29,7 @@ export class AccionCombateDto {
   @IsNotEmpty({ message: 'El tipo de acción es requerido.' })
   @IsIn(TIPOS_ACCION_COMBATE, {
     message:
-      'El tipo de acción debe ser ATACAR, USAR_OBJETO, CAMBIAR_CRIATURA, CAPTURAR o HUIR.',
+      'El tipo de acción debe ser ATACAR, RESONANCIA, USAR_OBJETO, CAMBIAR_CRIATURA, CAPTURAR o HUIR.',
   })
   tipoAccion: TipoAccionCombate;
 

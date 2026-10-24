@@ -1005,3 +1005,185 @@ Este documento define la especificación técnica de la API REST que comunica el
   ```
 - **Errores posibles:**
   - `404 PERSONAJE_NO_ENCONTRADO` ("No se encontró un personaje activo para el usuario autenticado.").
+
+---
+
+### 2.13 Encuentros y combate táctico por turnos (`M-ENC` / `M-CBT`) (Subfase 10k)
+
+#### `GET /api/encuentros/activo`
+- **Módulo:** `M-ENC`.
+- **Descripción:** Reanuda el encuentro activo del explorador en sesión, entregando el estado táctico integral: afinidades elementales, multiplicador y etiqueta de ventaja elemental, barras de Resonancia ($0-100\%$), catálogo de estados alterados activos en ambos lados y estado de bloqueo de movimientos (`bloqueado: true` en el slot 4 si la resonancia aliada es $<100\%$).
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "estado": "EN_CURSO",
+    "turno": 2,
+    "esTurnoJugador": true,
+    "efectividadAliadaSobreRival": {
+      "multiplicador": 1.5,
+      "etiqueta": "VENTAJA"
+    },
+    "criaturaRival": {
+      "slug": "salamandra-roca",
+      "nombre": "Salamandra de Roca",
+      "nivel": 5,
+      "hpActual": 35,
+      "hpMaximo: 45,
+      "ataque": 18,
+      "defensa": 12,
+      "velocidad": 10,
+      "afinidad": "agua",
+      "resonancia": 24,
+      "estados": [
+        { "codigo": "QUEMADURA", "turnosRestantes": 2, "valor": 5 }
+      ]
+    },
+    "criaturaAliada": {
+      "criaturaId": "cri-101",
+      "slug": "lobo-bosque",
+      "nombre": "Lobo del Bosque",
+      "nombreEspecie": "Lobo del Bosque",
+      "nivel": 5,
+      "hpActual": 42,
+      "hpMaximo": 50,
+      "ataque": 20,
+      "defensa": 15,
+      "velocidad": 14,
+      "afinidad": "natura",
+      "resonancia": 86,
+      "estados": [],
+      "experiencia": 1250,
+      "porcentajeXp": 45,
+      "xpSiguienteNivel": 1500,
+      "xpNivelActual": 1006,
+      "movimientos": [
+        { "nombre": "Arañazo", "poder": 10, "tipoAccion": "ATAQUE", "slot": 1, "efecto": null, "bloqueado": false },
+        { "nombre": "Liana", "poder": 20, "tipoAccion": "ATAQUE", "slot": 2, "efecto": null, "bloqueado": false },
+        { "nombre": "Esporas", "poder": 0, "tipoAccion": "ESTADO", "slot": 3, "efecto": "VENENO", "bloqueado": false },
+        { "nombre": "Furia de la Selva", "poder": 60, "tipoAccion": "INSIGNIA", "slot": 4, "efecto": null, "bloqueado": true }
+      ]
+    },
+    "bitacora": [
+      "¡Lobo del Bosque usó Liana causando 25 de daño!",
+      "Turno 1: ¡Un Salamandra de Roca salvaje (Nv. 5) está frente a ti!"
+    ]
+  }
+  ```
+- **Errores posibles:**
+  - `404 ENCUENTRO_NO_ENCONTRADO` ("No tienes ningún encuentro o combate activo en este momento.").
+
+#### `POST /api/combates/:id/acciones` y `POST /api/combate/atacar`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Despachador de acciones tácticas del turno (`ATACAR`, `RESONANCIA`, `HUIR`, `CAPTURAR`). Soporta ejecución del movimiento insignia (`RESONANCIA` o `movimientoIndice: 3`) previa validación de `resonancia === 100`, con reinicio inmediato a 0% tras el ataque. Incluye validación de concurrencia y serialización mediante `turnoEsperado`.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "tipoAccion": "ATACAR",
+    "movimientoIndice": 1,
+    "turnoEsperado": 2
+  }
+  ```
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "turno": 2,
+    "accionJugador": {
+      "movimiento": "Liana",
+      "danoCausado": 22,
+      "hpRestanteRival": 23,
+      "efectividad": "VENTAJA",
+      "multiplicadorAfinidad": 1.5,
+      "danoAbsorbido": 0,
+      "estadoAplicado": null,
+      "perdioTurno": null,
+      "esInsignia": false
+    },
+    "accionRival": {
+      "movimiento": "Placaje",
+      "danoCausado": 8,
+      "hpRestanteAliado": 34,
+      "efectividad": "DESVENTAJA",
+      "multiplicadorAfinidad": 0.75,
+      "danoAbsorbido": 0,
+      "estadoAplicado": null,
+      "perdioTurno": null
+    },
+    "efectosFinDeTurno": [
+      {
+        "objetivo": "RIVAL",
+        "codigo": "QUEMADURA",
+        "dano": 5,
+        "hpRestante": 18
+      }
+    ],
+    "resonancia": {
+      "aliada": 94,
+      "rival": 32
+    },
+    "estados": {
+      "aliada": [],
+      "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }]
+    },
+    "mensajes": [
+      "¡Lobo del Bosque usó Liana causando 22 de daño! (¡Es súper efectivo!)",
+      "El rival respondió con Placaje causando 8 de daño.",
+      "Salamandra de Roca sufre 5 de daño por QUEMADURA."
+    ],
+    "estado": "EN_CURSO"
+  }
+  ```
+- **Errores posibles:**
+  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.").
+  - `400 ACCION_FUERA_DE_TURNO` ("No es el turno del jugador en este combate.").
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+
+#### `POST /api/combate/capturar`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Resuelve el intento probabilístico de captura aplicando $\times 1.25$ al multiplicador de estado si la criatura rival padece un estado alterado activo (`tieneEstadoAlterado`). Si la captura fracasa, el rival contraataca y resuelve el fin de turno con el motor determinista.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "itemCodigo": "talisman-basico",
+    "turnoEsperado": 2
+  }
+  ```
+- **Respuesta fallida (`200 OK` con `exito: false`):**
+  ```json
+  {
+    "exito": false,
+    "mensaje": "¡El talismán no logró contener a la criatura! Se ha roto.",
+    "encuentroId": "enc-401",
+    "estado": "EN_CURSO",
+    "contraataqueRival": {
+      "movimiento": "Placaje",
+      "danoCausado": 10,
+      "hpRestanteAliado": 32
+    },
+    "efectosFinDeTurno": [],
+    "resonancia": { "aliada": 16, "rival": 30 },
+    "estados": { "aliada": [], "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }] },
+    "mensajes": [
+      "¡El talismán no logró contener a la criatura! Se ha roto.",
+      "El rival respondió con Placaje causando 10 de daño."
+    ]
+  }
+  ```
+- **Errores posibles:**
+  - `400 ITEM_NO_DISPONIBLE` ("No posees este talismán en tu inventario.").
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+
+#### `POST /api/combate/huir`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Evalúa la huida usando velocidades efectivas ($\text{vel} \times 0.60$ si sufre Escarcha, $\times 0.75$ si sufre Parálisis). Si fracasa, ejecuta contraataque rival determinista.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "turnoEsperado": 2
+  }
+  ```
+- **Errores posibles:**
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+

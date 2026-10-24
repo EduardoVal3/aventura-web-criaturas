@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
 import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.service';
+import {
+  leerEstadoBatalla,
+  multiplicadorAfinidad,
+  etiquetaEfectividad,
+  Elemento,
+} from '../combate/dominio/motor-combate';
 
 @Injectable()
 export class EncuentrosService {
@@ -63,6 +69,18 @@ export class EncuentrosService {
         : null;
     const turnoActual = ultimoCombate ? ultimoCombate.turno + 1 : 1;
 
+    const snapshot = leerEstadoBatalla(
+      ultimoCombate?.detalleJson,
+      aliadaLider?.id,
+    );
+
+    const elementoAliado =
+      ((aliadaLider?.especie as any)?.elemento as Elemento) ?? 'fisico';
+    const elementoRival =
+      ((encuentro.criaturaRival?.especie as any)?.elemento as Elemento) ?? 'fisico';
+    const multAfinidad = multiplicadorAfinidad(elementoAliado, elementoRival);
+    const etiqAfinidad = etiquetaEfectividad(multAfinidad);
+
     // simplificacion: reconstrucción cronológica inversa de la bitácora para reanudar la UI fielmente
     const bitacora: string[] = [
       aliadaLider
@@ -73,23 +91,29 @@ export class EncuentrosService {
 
     for (const c of encuentro.combates) {
       const detalle = c.detalleJson as Record<string, unknown> | null;
-      if (detalle?.movimientoRival) {
-        bitacora.unshift(
-          `El rival respondió con ${detalle.movimientoRival} causando ${detalle.danoRival} de daño.`,
-        );
-      }
-      if (detalle?.movimientoJugador) {
-        bitacora.unshift(
-          `Tu criatura usó ${detalle.movimientoJugador} causando ${detalle.danoJugador} de daño.`,
-        );
-      }
-      if (c.accionUltima === 'CAPTURAR' || detalle?.exito !== undefined) {
-        if (detalle?.exito) {
+      if (Array.isArray(detalle?.mensajes) && detalle.mensajes.length > 0) {
+        for (const msg of detalle.mensajes) {
+          bitacora.unshift(String(msg));
+        }
+      } else {
+        if (detalle?.movimientoRival) {
           bitacora.unshift(
-            `¡Captura exitosa enviada a ${detalle?.destino === 'EQUIPO' ? 'tu equipo activo' : 'el almacén'}!`,
+            `El rival respondió con ${detalle.movimientoRival} causando ${detalle.danoRival} de daño.`,
           );
-        } else {
-          bitacora.unshift(`La criatura se resistió a la captura.`);
+        }
+        if (detalle?.movimientoJugador) {
+          bitacora.unshift(
+            `Tu criatura usó ${detalle.movimientoJugador} causando ${detalle.danoJugador} de daño.`,
+          );
+        }
+        if (c.accionUltima === 'CAPTURAR' || detalle?.exito !== undefined) {
+          if (detalle?.exito) {
+            bitacora.unshift(
+              `¡Captura exitosa enviada a ${detalle?.destino === 'EQUIPO' ? 'tu equipo activo' : 'el almacén'}!`,
+            );
+          } else {
+            bitacora.unshift(`La criatura se resistió a la captura.`);
+          }
         }
       }
     }
@@ -109,6 +133,10 @@ export class EncuentrosService {
       estado: encuentro.estado,
       turno: turnoActual,
       esTurnoJugador: ultimoCombate?.esTurnoJugador ?? true,
+      efectividadAliadaSobreRival: {
+        multiplicador: multAfinidad,
+        etiqueta: etiqAfinidad,
+      },
       criaturaRival: {
         slug: encuentro.criaturaRival.especie.slug,
         nombre: encuentro.criaturaRival.especie.nombre,
@@ -118,6 +146,9 @@ export class EncuentrosService {
         ataque: encuentro.criaturaRival.ataque,
         defensa: encuentro.criaturaRival.defensa,
         velocidad: encuentro.criaturaRival.velocidad,
+        afinidad: elementoRival,
+        resonancia: snapshot.rival.resonancia,
+        estados: snapshot.rival.estados,
       },
       criaturaAliada: aliadaLider
         ? {
@@ -131,22 +162,39 @@ export class EncuentrosService {
             ataque: aliadaLider.ataque,
             defensa: aliadaLider.defensa,
             velocidad: aliadaLider.velocidad,
+            afinidad: elementoAliado,
+            resonancia: snapshot.aliada.resonancia,
+            estados: snapshot.aliada.estados,
             experiencia: aliadaLider.experiencia,
             porcentajeXp: progresoAliada?.porcentajeXp ?? 0,
             xpSiguienteNivel: progresoAliada?.xpSiguienteNivel ?? 0,
             xpNivelActual: progresoAliada?.xpNivelActual ?? 0,
             movimientos: aliadaLider.especie?.movimientos?.length
-              ? aliadaLider.especie.movimientos.map((m) => ({
+              ? aliadaLider.especie.movimientos.map((m, idx) => ({
                   nombre: m.nombre,
                   poder: m.poder,
                   tipoAccion: m.tipoAccion,
                   slot: m.slot,
                   efecto: m.efecto,
+                  bloqueado:
+                    (m.slot === 4 || idx === 3)
+                      ? snapshot.aliada.resonancia < 100
+                      : false,
                 }))
-              : [{ nombre: 'Golpe Firme', poder: 12, tipoAccion: 'ATAQUE', slot: 1, efecto: null }],
+              : [
+                  {
+                    nombre: 'Golpe Firme',
+                    poder: 12,
+                    tipoAccion: 'ATAQUE',
+                    slot: 1,
+                    efecto: null,
+                    bloqueado: false,
+                  },
+                ],
           }
         : null,
       bitacora,
     };
   }
 }
+

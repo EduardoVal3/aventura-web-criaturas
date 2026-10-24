@@ -678,6 +678,85 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
 - **Compilación de Producción (`pnpm --filter web build`):** Build de Vite 100% limpio en TypeScript estricto en 2.70 s.
 - **Regla R1 y Estándar Retro:** Cumplimiento estricto de nomenclatura en español, cero emojis unicode en controles interactivos y modales responsive libres de overflow horizontal.
 
+---
+
+## 13. Sub-Fase 10k: Motor Autoritativo de Combate Táctico, Afinidades Elementales y Resonancia
+
+A solicitud de la dirección técnica y bajo la estricta auditoría del Ingeniero Claudio, se implementó el motor autoritativo de combate táctico por turnos en el backend de NestJS, integrando afinidades elementales (6×6), catálogo autoritativo de estados alterados (persistidos en `detalleJson`), acumulador de Resonancia para desbloqueo del movimiento insignia (Slot 4 / M4) y sinergia de captura con contraataque autoritativo.
+
+### 13.1 Diagnóstico Inicial y Auditoría Impeccable
+Antes de esta intervención, la resolución de combates y acciones asociadas presentaba deficiencias arquitectónicas y de balance:
+1. **Fórmula de Daño Plana y Carente de Afinidades:** El cálculo de daño en `CombateService` evaluaba únicamente ataque, defensa y poder sin ponderar el tipo elemental del movimiento ni la afinidad defensora, desaprovechando las afinidades canónicas asignadas a las 30 criaturas en la Subfase 10j.
+2. **Ausencia de Estados Alterados Autoritativos:** A pesar de que los movimientos registraban efectos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), el servidor no disponía de un gestor de estados por turnos, ni de persistencia de duraciones o ejecución de daño periódico (DoT) en fin de turno.
+3. **Mecánica de Furia / Resonancia Inoperante en Servidor:** El movimiento insignia (Slot 4) se bloqueaba estáticamente en el cliente y servidor sin un mecanismo autoritativo de acumulación de Resonancia ($0-100\%$) que permitiera su desbloqueo táctico y posterior reinicio.
+4. **Desarticulación de Huida y Captura del Motor de Combate:** La huida fallida y el intento de captura fallido aplicaban fórmulas ad-hoc de daño rival en lugar de delegar en el motor determinista de combate, provocando desincronización de estados, desactualización de turnos y omisión de efectos de fin de ronda.
+5. **Carencia de Sinergia Táctica en Captura:** La probabilidad de captura evaluaba únicamente salud y multiplicador de talismán, ignorando la regla oficial de bonificación ($\times 1.25$) cuando la criatura rival se encuentra afectada por un estado alterado activo.
+6. **Reanudación del Encuentro Incompleta:** `GET /encuentros/activo` omitía afinidades, resonancia y estados activos de los contendientes, forzando al cliente a reconstruir o inventar el estado de la batalla tras recargar la página.
+
+---
+
+### 13.2 Mejoras Implementadas
+
+#### A. Matriz Inmutable de Afinidades Elementales y Daño Elemental (`motor-combate.ts`)
+- **Matriz 6×6 Congelada (`TABLA_AFINIDADES`):** Implementación inmutable (`Object.freeze`) para los 6 elementos canónicos (`fisico`, `fuego`, `agua`, `natura`, `sombra`, `luz`), definiendo 5 ventajas elementales ($1.5\times$), 8 desventajas elementales ($0.75\times$) y 23 cruces neutrales ($1.0\times$):
+  - Fuego vence a Natura ($1.5\times$), resistido por Fuego y Agua ($0.75\times$).
+  - Agua vence a Fuego ($1.5\times$), resistido por Agua y Natura ($0.75\times$).
+  - Natura vence a Agua ($1.5\times$), resistido por Natura y Fuego ($0.75\times$).
+  - Sombra vence a Luz ($1.5\times$), resistido por Sombra ($0.75\times$).
+  - Luz vence a Sombra ($1.5\times$), resistido por Luz ($0.75\times$).
+- **Etiquetado Oficial:** Funciones puras `multiplicadorAfinidad` y `etiquetaEfectividad` (`VENTAJA` para $>1.0$, `DESVENTAJA` para $<1.0$, `NEUTRAL` para $1.0$).
+- **Fórmula de Daño Elemental con Salvaguarda INV-04:**
+  $$D = \max\left(1, \left\lfloor \left( \left( \frac{\text{Ataque}}{\text{DefensaEfectiva}} \times \text{Poder} \times 0.8 \right) + (\text{Nivel} \times 0.5) \right) \times \text{factorVariacion} \times F_{\text{afinidad}} \right\rfloor \right)$$
+  Garantizando $\text{danoFinal} \ge 1$ (`INV-04`) y acotamiento estricto de salud en $[0, \text{hpMaximo}]$ (`INV-03`).
+
+#### B. Catálogo Autoritativo de Estados Alterados y Persistencia
+- **Catálogo de 6 Estados (`CATALOGO_ESTADOS`):**
+  - `QUEMADURA`: DoT del $10\%$ del HP Máximo (mínimo 1), reduce defensa efectiva en $25\%$ ($0.75\times$), duración 3 turnos.
+  - `VENENO`: DoT del $12\%$ del HP Máximo (mínimo 1), duración 4 turnos.
+  - `ESCARCHA`: Reduce velocidad efectiva en $40\%$ ($0.60\times$), duración 2 turnos.
+  - `PARALISIS`: Reduce velocidad efectiva en $25\%$ ($0.75\times$), $25\%$ de probabilidad de perder el turno por bloqueo motor ($r < 0.25$), duración 2 turnos.
+  - `PETRIFICACION`: Inmovilización total ($100\%$ de pérdida de turno, sin consumir tirada aleatoria), duración 1 turno.
+  - `BASTION`: Escudo protector equivalente al $20\%$ del HP Máximo que absorbe daño entrante antes de tocar la salud; expira al consumirse o tras 3 turnos (beneficio no alterado: `esAlterado: false`).
+- **Reglas de Supervivencia y Balance:**
+  - **Decisión D-4 (DoT No Letal):** El daño por estados al final del turno nunca debilita a una criatura por sí solo; se acota con $\max(1, \text{hpActual} - \text{danoDoT})$, requiriendo un impacto directo para la derrota.
+  - **Decisión D-6 (Inmunidad Temporal de 1 Turno):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno siguiente para prevenir aturdimientos permanentes (*stunlock*).
+  - **Persistencia en `Combate.detalleJson.estadoBatalla`:** Reconstrucción determinista del estado mediante `leerEstadoBatalla(detalleJson, criaturaAliadaId)`, saneando límites y reiniciando el lado aliado si ocurre un relevo por muerte (`D-11`).
+
+#### C. Acumulador Puro de Resonancia y Desbloqueo del Movimiento Insignia
+- **Dinámica de Resonancia ($0-100\%$):**
+  - Ganancia base por ronda: $+8\%$.
+  - Bonificación por ventaja elemental: $+10\%$.
+  - Carga por daño recibido: $\lfloor (\text{danoAbsorbido} / \text{hpMaximo}) \times 40 \rfloor$, con tope de $+20\%$ por ronda.
+- **Desbloqueo Autoritativo de M4 (Furia/Insignia):**
+  - La acción `RESONANCIA` o índice 3 sólo es admisible si `resonanciaAliada === 100`. De lo contrario, se rechaza en servidor con `BadRequestException(MOVIMIENTO_BLOQUEADO)`.
+  - Al ejecutarse M4 con éxito, la resonancia de la criatura se reinicia inmediatamente a $0\%$ sin sumar ganancias en dicha ronda.
+  - El rival nunca ejecuta movimientos del Slot 4 en sus turnos regulares.
+
+#### D. Sinergia de Captura, Bloqueo de Turno y Resolución Unificada
+- **Sinergia Táctica de Captura (§2.2):**
+  $$\text{probBruta} = \text{tasaCaptura} \times \left(1.0 - 0.5 \times \frac{\text{hpActual}}{\text{hpMaximo}}\right) \times \text{multTalisman} \times \text{multEstado}$$
+  Donde $\text{multEstado} = 1.25$ si el rival sufre un estado alterado activo (`tieneEstadoAlterado`), acotando el resultado final en $[0.05, 0.95]$ bajo la invariante `INV-02`.
+- **Bloqueo Pesimista de Concurrencia:** Integración de `bloquearYVerificarTurno` en `atacar`, `huir` y `capturar`, adquiriendo bloqueo pesimista en PostgreSQL (`SELECT id FROM personaje ... FOR UPDATE`) y validando el turno esperado contra desincronizaciones (`ConflictException: TURNO_DESACTUALIZADO`, HTTP 409).
+- **Contraataque Táctico en Huida y Captura:** Si la huida o la captura fallan, el contraataque rival se procesa invocando `resolverRonda(aliada, rival, snapshot, null, generador)`, persistiendo estados, desgastando escudos y aplicando DoTs en fin de turno.
+- **Reanudación Enriquecida (`GET /encuentros/activo`):** Entrega afinidad elemental de ambos bandos, efectividad aliada sobre rival (`multiplicador`, `etiqueta`), barra de resonancia ($0-100$), lista de estados activos y movimientos con flag `bloqueado: boolean`.
+
+---
+
+### 13.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Unitarias de Back-End (`pnpm --filter api test`):**
+  - `combate-elemental.spec.ts`: 22 pruebas deterministas validando afinidades 6×6, daño elemental INV-04, catálogo de estados alterados, DoT no letal D-4, absorción y desgaste de Bastión, escarcha/petrificación, refresco e inmunidades, acumulador de resonancia y resolución determinista de la ronda.
+  - `captura.spec.ts`: 12 pruebas validando fórmula INV-02, sinergia $\times 1.25$ ante estados alterados y contraataque táctico autoritativo en fallo de captura.
+  - `encuentros-activo.spec.ts`: 4 pruebas verificando reanudación inicial y avanzada con afinidad, resonancia y estados persistidos.
+  - `combate.spec.ts`: 18 pruebas verificando bloqueo autoritativo de M4 con $<100\%$ de resonancia, desbloqueo y reseteo a 0, detección de concurrencia 409 `TURNO_DESACTUALIZADO` y saneamiento ante relevo D-11.
+  - **Total de pruebas en API:** **107 de 107 pruebas aprobadas** (100% de éxito, 0 fallos).
+- **Pruebas Unitarias de Front-End (`pnpm --filter web test`):**
+  - **60 de 60 pruebas aprobadas** (100% de éxito, cero regresiones).
+- **Compilación de Producción (`pnpm --filter web build`):**
+  - 0 errores TypeScript en modo estricto en Vite (construcción limpia en 3.0s).
+- **Regla R1 Estricta:** Textos en español sin emojis unicode en controles ni respuestas de la API.
+- **Invariantes del Sistema:** Verificación estricta de `INV-01` (tablas de aparición al 100%), `INV-02` (captura en $[0.05, 0.95]$), `INV-03` (salud en $[0, \text{hpMaximo}]$) e `INV-04` ($\text{danoFinal} \ge 1$).
+
+
 
 
 

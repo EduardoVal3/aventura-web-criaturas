@@ -73,7 +73,22 @@ Cada especie canónica dispone de exactamente **4 movimientos ordenados por slot
 - **Slot 1 (M1 - Básico):** Ataque elemental o físico estándar de daño constante ($12 - 16$).
 - **Slot 2 (M2 - Táctico):** Ataque con efecto secundario de control, debilidad o daño moderado ($14 - 18$).
 - **Slot 3 (M3 - Cobertura):** Ataque de defensa, drenaje, ventaja o potencia elevada ($16 - 22$).
-- **Slot 4 (M4 - Furia/Especial):** Técnica definitiva de alta potencia ($24 - 36$). Bloqueada en servidor bajo código `MOVIMIENTO_BLOQUEADO` en la Subfase 10j hasta desbloquear la mecánica de Resonancia 100%.
+- **Slot 4 (M4 - Movimiento Insignia / Furia):** Técnica definitiva de alta potencia ($24 - 36$). Bloqueada autoritativamente en servidor con código `MOVIMIENTO_BLOQUEADO` (HTTP 400) mientras la criatura posea $< 100$ de Resonancia táctica. Al alcanzar el **100% de Resonancia** (acumulada por asestar y recibir golpes), se desbloquea autoritativamente; su ejecución consume íntegramente la Resonancia reiniciando el acumulador a $0$ (implementado en **Subfase 10k**).
+
+### 4.1 Correspondencia de Efectos del Bestiario a Estados Alterados Autoritativos
+
+El motor autoritativo de combate (Subfase 10k) mapea los efectos de movimientos a 6 estados alterados canónicos persistidos en `detalleJson`:
+
+| Efecto en Movimiento | Código de Estado Autoritativo | Duración | Comportamiento en Combate |
+| --- | --- | :---: | --- |
+| `QUEMADURA`, `IGNICION`, `QUEMADURA_GRAVE` | `QUEMADURA` | 3 turnos | DoT de Fuego: $\lfloor 0.08 \times \text{HP}_{\text{máx}} \rfloor$. No letal ($hp \ge 1$). |
+| `VENENO`, `VENENO_GRAVE` | `VENENO` | 3 turnos | DoT de Natura: $\lfloor 0.06 \times \text{HP}_{\text{máx}} \rfloor$. No letal ($hp \ge 1$). |
+| `ENFRIAMIENTO`, `CONGELACION` | `ESCARCHA` | 2 turnos | Reduce la velocidad efectiva a la mitad ($\lfloor \text{vel} / 2 \rfloor$). |
+| `PARALISIS`, `STUN`, `ATURDIMIENTO` | `PARALISIS` | 1 turno | Pierde el turno de acción con $50\%$ de probabilidad determinista. |
+| `PETRIFICACION`, `PETRIFICACION_LEVE` | `PETRIFICACION` | 1 turno | Inmoviliza totalmente a la criatura (pierde turno de acción garantizado). |
+| `BASTION`, `BARRERA`, `FORTALEZA` | `BASTION` | 2 turnos | Escudo de absorción equivalente a $\lfloor 0.20 \times \text{HP}_{\text{máx}} \rfloor$. |
+
+*Nota sobre efectos estadísticos directos (`ATQ_UP`, `DEF_DOWN`, `VEL_UP`, `CRITICO`, `DRENAJE`):* Se resuelven como modificadores inmediatos en la ronda o cálculo de daño directo.
 
 ### Desglose por Especie y Slot
 

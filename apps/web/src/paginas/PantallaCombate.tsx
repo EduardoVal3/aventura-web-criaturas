@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -41,6 +41,8 @@ import {
   type ItemInventario,
   type CriaturaEquipo,
   type CriaturaCapturada,
+  type AccionCombate,
+  type EfectoFinDeTurno,
   ErrorApi,
 } from "@/api";
 import {
@@ -54,6 +56,7 @@ import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
 import {
   construirSlotsTacticos,
   ETIQUETA_EFECTIVIDAD,
+  sonidoDeGolpe,
 } from "@/lib/combate-tactico";
 import {
   BarraResonancia,
@@ -184,10 +187,16 @@ export function PantallaCombate() {
     };
   }, [navigate]);
 
+  // Cerrojo síncrono para hardening estricto contra doble clic rápido
+  const cerrojoAccion = useRef(false);
+
   // Recarga fiel tras relevo de criatura aliada
   const refrescarCombate = useCallback(async () => {
     try {
-      const datos = await api.obtenerEncuentroActivo();
+      const [datos, respEquipo] = await Promise.all([
+        api.obtenerEncuentroActivo(),
+        api.obtenerEquipo(),
+      ]);
       setEncuentro(datos);
       setRival(datos.criaturaRival);
       setAliado(datos.criaturaAliada);
@@ -199,17 +208,75 @@ export function PantallaCombate() {
       if (datos.bitacora && datos.bitacora.length > 0) {
         setBitacoraCombate(datos.bitacora);
       }
-      const respEquipo = await api.obtenerEquipo();
       setEquipoCriaturas(respEquipo.criaturas);
     } catch {
       // simplificacion: tolerancia a fallo en refresco secundario
     }
   }, []);
 
-  // Manejador de Ataque con selector de movimientos
-  const handleAtacar = async (movimientoIndice = 0) => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+  // Auxiliar unificado para animar contraataque rival y efectos fin de turno (DoT)
+  const reproducirContraataqueYDoT = async (
+    contraataque: AccionCombate | null | undefined,
+    efectosFinDeTurno: EfectoFinDeTurno[] = [],
+  ) => {
+    if (contraataque && aliado) {
+      await new Promise((resolver) => setTimeout(resolver, 600));
 
+      if (contraataque.perdioTurno) {
+        reproducirSonido("error");
+      } else {
+        reproducirSonido(sonidoDeGolpe(contraataque));
+        setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
+        setDanoFlotanteAliado(contraataque.danoCausado);
+
+        if (typeof contraataque.hpRestanteAliado === "number") {
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, contraataque.hpRestanteAliado!) } : null,
+          );
+        }
+
+        setTimeout(() => {
+          setAnimacionAliado("");
+          setDanoFlotanteAliado(null);
+        }, 500);
+      }
+    }
+
+    if (efectosFinDeTurno && efectosFinDeTurno.length > 0) {
+      for (const efecto of efectosFinDeTurno) {
+        await new Promise((resolver) => setTimeout(resolver, 400));
+        reproducirSonido("dot");
+
+        if (efecto.objetivo === "ALIADA") {
+          setAnimacionAliado("anim-parpadeo-dano");
+          setDanoFlotanteAliado(efecto.dano);
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionAliado("");
+            setDanoFlotanteAliado(null);
+          }, 450);
+        } else {
+          setAnimacionRival("anim-parpadeo-dano");
+          setDanoFlotanteRival(efecto.dano);
+          setRival((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionRival("");
+            setDanoFlotanteRival(null);
+          }, 450);
+        }
+      }
+    }
+  };
+
+  // Manejador de Ataque con selector de movimientos tácticos
+  const handleAtacar = async (movimientoIndice = 0) => {
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
+
+    cerrojoAccion.current = true;
     setPanelMovimientosAbierto(false);
     setProcesandoAccion(true);
     reproducirSonido("click");
@@ -218,35 +285,41 @@ export function PantallaCombate() {
       const resultado = await api.atacar({
         encuentroId: encuentro.encuentroId,
         movimientoIndice,
+        turnoEsperado: encuentro.turno,
       });
 
-      // 1. Impacto del jugador sobre el rival
-      reproducirSonido("golpe");
-      setAnimacionRival("anim-sacudida anim-parpadeo-dano");
-      setDanoFlotanteRival(resultado.accionJugador.danoCausado);
-
-      const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
-      setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
-
-      if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
-        setRival({
-          ...rival,
-          hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
-        });
+      // Bitácora fiel: anteponer mensajes invertidos si el servidor los envió
+      if (resultado.mensajes && resultado.mensajes.length > 0) {
+        setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+      } else {
+        const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
+        setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
       }
 
-      setTimeout(() => {
-        setAnimacionRival("");
-        setDanoFlotanteRival(null);
-      }, 500);
+      // 1. Impacto del jugador sobre el rival
+      if (resultado.accionJugador.perdioTurno) {
+        reproducirSonido("error");
+      } else {
+        reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+        setAnimacionRival("anim-sacudida anim-parpadeo-dano");
+        setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+
+        if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
+          setRival({
+            ...rival,
+            hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
+          });
+        }
+
+        setTimeout(() => {
+          setAnimacionRival("");
+          setDanoFlotanteRival(null);
+        }, 500);
+      }
 
       // 2. Si el combate termina en VICTORIA
       if (resultado.estado === "VICTORIA") {
         reproducirSonido("victoria");
-        setBitacoraCombate((prev) => [
-          "¡Victoria! La criatura enemiga ha caído debilitada.",
-          ...prev,
-        ]);
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
 
@@ -292,48 +365,37 @@ export function PantallaCombate() {
         return;
       }
 
-      // 3. Cadencia de turno visual: pausa de 800ms antes del contraataque rival (S-5)
-      if (resultado.accionRival && aliado) {
-        await new Promise((resolver) => setTimeout(resolver, 800));
+      // 3. Cadencia de turno visual: contraataque rival y efectos fin de turno (DoT)
+      await reproducirContraataqueYDoT(
+        resultado.accionRival,
+        resultado.efectosFinDeTurno,
+      );
 
-        reproducirSonido("golpe");
-        setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-        setDanoFlotanteAliado(resultado.accionRival.danoCausado);
+      // 4. Evaluar desenlace de la ronda
+      if (resultado.estado === "DERROTA") {
+        reproducirSonido("error");
+        setCombateFinalizado(true);
+        setEstadoFinal("DERROTA");
+        toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+      } else if (resultado.resultadoFinal === "ALIADA_DEBILITADA") {
+        toast.info("Tu criatura cayó. Entra la siguiente del equipo.");
+      }
 
-        const mensajeRival = `El rival respondió con ${resultado.accionRival.movimiento} causando ${resultado.accionRival.danoCausado} de daño.`;
-        setBitacoraCombate((prev) => [mensajeRival, ...prev]);
-
-        if (typeof resultado.accionRival.hpRestanteAliado === "number") {
-          setAliado({
-            ...aliado,
-            hpActual: Math.max(0, resultado.accionRival.hpRestanteAliado),
-          });
-        }
-
-        setTimeout(() => {
-          setAnimacionAliado("");
-          setDanoFlotanteAliado(null);
-        }, 500);
-
-        // 4. Evaluar si resultó en DERROTA
-        if (resultado.estado === "DERROTA") {
-          reproducirSonido("error");
-          setBitacoraCombate((prev) => [
-            "Tu criatura ha quedado fuera de combate.",
-            ...prev,
-          ]);
-          setCombateFinalizado(true);
-          setEstadoFinal("DERROTA");
-          toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
-        }
+      // 5. Reconciliación fiel de estado con el servidor (D-7)
+      if (resultado.estado === "EN_CURSO") {
+        await refrescarCombate();
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al ejecutar el ataque.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
@@ -431,8 +493,9 @@ export function PantallaCombate() {
 
   // Secuencia de Captura con Suspenso Visual e Incertidumbre (impeccable animate)
   const ejecutarCaptura = async () => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
+    cerrojoAccion.current = true;
     setModalCapturaAbierto(false);
     setProcesandoAccion(true);
     setSecuenciaCaptura(true);
@@ -445,6 +508,7 @@ export function PantallaCombate() {
       const resultado = await api.capturar({
         encuentroId: encuentro.encuentroId,
         itemCodigo: talismanSeleccionado,
+        turnoEsperado: encuentro.turno,
       });
 
       setSecuenciaCaptura(false);
@@ -464,43 +528,33 @@ export function PantallaCombate() {
       } else {
         reproducirSonido("error");
         toast.error(resultado.mensaje || "El talismán falló y la criatura se resistió.");
-        const mensajesFallo = [resultado.mensaje || "La criatura se resistió a la captura."];
 
-        if (resultado.contraataqueRival && aliado) {
-          await new Promise((resolver) => setTimeout(resolver, 500));
-          reproducirSonido("golpe");
-          setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-          setDanoFlotanteAliado(resultado.contraataqueRival.danoCausado);
-
-          mensajesFallo.push(
-            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño.`,
-          );
-
-          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
-            setAliado({
-              ...aliado,
-              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
-            });
-          }
-
-          setTimeout(() => {
-            setAnimacionAliado("");
-            setDanoFlotanteAliado(null);
-          }, 500);
-
-          if (
-            typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
-            resultado.contraataqueRival.hpRestanteAliado <= 0
-          ) {
-            await new Promise((resolver) => setTimeout(resolver, 400));
-            reproducirSonido("error");
-            setCombateFinalizado(true);
-            setEstadoFinal("DERROTA");
-            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
-          }
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "La criatura se resistió a la captura.",
+            ...prev,
+          ]);
         }
 
-        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          (resultado.estado as string) === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
 
         // Refrescar inventario de talismanes
         const inv = await api.obtenerInventario();
@@ -508,26 +562,32 @@ export function PantallaCombate() {
       }
     } catch (error) {
       setSecuenciaCaptura(false);
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al intentar la captura.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
 
   // Manejador de Huida del Combate con aplicación inmediata de daño de contraataque
   const handleHuir = async () => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
+    cerrojoAccion.current = true;
     setProcesandoAccion(true);
     reproducirSonido("click");
 
     try {
       const resultado = await api.huir({
         encuentroId: encuentro.encuentroId,
+        turnoEsperado: encuentro.turno,
       });
 
       if (resultado.exito) {
@@ -537,55 +597,45 @@ export function PantallaCombate() {
       } else {
         reproducirSonido("error");
         toast.error(resultado.mensaje || "No lograste escapar. El combate continúa.");
-        const mensajesFallo = [
-          resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
-        ];
 
-        // Reflejar de inmediato el daño del contraataque rival sin necesidad de recargar la página
-        if (resultado.contraataqueRival && aliado) {
-          await new Promise((resolver) => setTimeout(resolver, 400));
-          reproducirSonido("golpe");
-          setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-          setDanoFlotanteAliado(resultado.contraataqueRival.danoCausado);
-
-          mensajesFallo.unshift(
-            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño tras tu intento de huida.`,
-          );
-
-          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
-            setAliado({
-              ...aliado,
-              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
-            });
-          }
-
-          setTimeout(() => {
-            setAnimacionAliado("");
-            setDanoFlotanteAliado(null);
-          }, 500);
-
-          if (
-            resultado.estado === "DERROTA" ||
-            (typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
-              resultado.contraataqueRival.hpRestanteAliado <= 0)
-          ) {
-            await new Promise((resolver) => setTimeout(resolver, 400));
-            reproducirSonido("error");
-            setCombateFinalizado(true);
-            setEstadoFinal("DERROTA");
-            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
-          }
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
+            ...prev,
+          ]);
         }
 
-        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          resultado.estado === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("No lograste huir del combate.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };

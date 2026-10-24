@@ -184,7 +184,6 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       osc.start();
       osc.stop(ctx.currentTime + 0.26);
     } else if (nombre === "santuario" || nombre === "bendicion") {
-      osc.type = "triangle";
       osc.frequency.setValueAtTime(523.25, ctx.currentTime);
       osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.09);
       osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.18);
@@ -195,6 +194,56 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.42);
+    } else if (nombre === "dot") {
+      // simplificacion: ruido blanco breve de quemadura/veneno cerrando el contexto en onended
+      const tamanoBuffer = Math.floor(ctx.sampleRate * 0.18);
+      const buffer = ctx.createBuffer(1, tamanoBuffer, ctx.sampleRate);
+      const salida = buffer.getChannelData(0);
+      for (let i = 0; i < tamanoBuffer; i++) {
+        salida[i] = Math.random() * 2 - 1;
+      }
+      const fuenteRuido = ctx.createBufferSource();
+      fuenteRuido.buffer = buffer;
+      fuenteRuido.onended = () => void ctx.close();
+      const gananciaRuido = ctx.createGain();
+      gananciaRuido.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);
+      gananciaRuido.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      fuenteRuido.connect(gananciaRuido);
+      gananciaRuido.connect(ctx.destination);
+      fuenteRuido.start();
+      return;
+    } else if (nombre === "eficaz") {
+      osc.type = "square";
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.05);
+      ganancia.gain.setValueAtTime(Math.min(0.25, volumen * 0.25), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+    } else if (nombre === "resistido") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(110, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.15);
+      ganancia.gain.setValueAtTime(Math.min(0.15, volumen * 0.15), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.15);
+    } else if (nombre === "furia") {
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+      osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.3);
+      ganancia.gain.setValueAtTime(Math.min(0.28, volumen * 0.28), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
     }
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.

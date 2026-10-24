@@ -618,7 +618,7 @@ Previo a esta intervención, el ecosistema de criaturas presentaba importantes a
 
 ## 11. Cierre Formal de la Fase 10 (Consolidado Full-Stack AV5 Definitivo)
 
-Con la culminación de la Subfase 10j, se da por **completada y auditada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 Definitivo (Entrega Final de UX Retro, Bestiario Canónico y Mecánicas Full-Stack)**.
+Con la culminación de las Subfases 10k y 10l, se da por **completada y auditada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 Definitivo (Entrega Final de UX Retro, Bestiario Canónico, Motor Táctico y Combate Completo Full-Stack)**.
 
 ### Tabla Resumen Consolidada de Subfases de la Fase 10
 
@@ -634,11 +634,13 @@ Con la culminación de la Subfase 10j, se da por **completada y auditada en su t
 | **10h** | Santuario de Curación (`PantallaCuracion.tsx`) | Restauración atómica INV-03 con FOR UPDATE, resurrección de caídas y cinemática. | 8 tests web + 6 tests api | ✅ Completada |
 | **10i** | Compendio, Bitácora y Créditos (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`) | Erradicación N+1 en catálogo, modal de inspección sellado, crónicas categorizadas con Lucide, Salón de la Fama y homenaje al Ing. Claudio. | 8 tests web + 6 tests api | ✅ Completada |
 | **10j** | Bestiario Canónico y Legendarias (`bestiario-canonico.ts`, `PantallaCatalogo.tsx`, `PantallaCombate.tsx`) | 30 especies canónicas soberanas, jerarquía J-1 a J-4, consagración de Behir y Remorhaz como Legendarias, sets de 4 movimientos M1..M4, bloqueo de Furia y tablas INV-01 al 100%. | 8 tests web + 11 tests api | ✅ Completada |
+| **10k** | Motor Elemental y Estados (`motor-combate.ts`, `combate.service.ts`) | Matriz inmutable 6×6 de afinidades, daño elemental INV-04, 6 estados alterados, DoT no letal D-4, inmunidad de 1 turno D-6, acumulador de resonancia, sinergia de captura x1.25 y bloqueo pesimista contra concurrencia. | 36 tests api | ✅ Completada |
+| **10l** | Experiencia Táctica y Catálogo (`PantallaCombate.tsx`, `PantallaCatalogo.tsx`, `PantallaExploracion.tsx`) | Panel interactivo de 4 comandos, chips de efectividad, barra de 10 bloques de Resonancia, botón «Desatar Insignia», cerrojo useRef, turnoEsperado y manejo 409, Web Audio sintetizado (eficaz, resistido, dot, furia), agrupación por 6 hábitats, halos legendarios y avistamiento mítico en exploración. | 3 tests web | ✅ Completada |
 
 ### Métricas Finales de Calidad del Proyecto
-- **Pruebas Unitarias de Back-End (NestJS):** 71 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
-- **Pruebas Unitarias de Front-End (React / Vite):** 60 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
-- **Total de Pruebas Automatizadas:** **131 pruebas unitarias libres de regresiones**.
+- **Pruebas Unitarias de Back-End (NestJS):** 107 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
+- **Pruebas Unitarias de Front-End (React / Vite):** 63 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
+- **Total de Pruebas Automatizadas:** **170 pruebas unitarias libres de regresiones**.
 - **Compilación TypeScript:** 100% limpia en `web` y `api` bajo configuración estricta.
 - **Diseño y Ergonomía:** Cumplimiento riguroso de la guía `docs/DESIGN.md`, cero emojis unicode en controles (Regla R1), cero anidamientos de botones interactivos, modales sellados contra overflow en 320px–360px bajo el estándar Impeccable y audio retro sintetizado en Web Audio API.
 
@@ -755,6 +757,75 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
   - 0 errores TypeScript en modo estricto en Vite (construcción limpia en 3.0s).
 - **Regla R1 Estricta:** Textos en español sin emojis unicode en controles ni respuestas de la API.
 - **Invariantes del Sistema:** Verificación estricta de `INV-01` (tablas de aparición al 100%), `INV-02` (captura en $[0.05, 0.95]$), `INV-03` (salud en $[0, \text{hpMaximo}]$) e `INV-04` ($\text{danoFinal} \ge 1$).
+
+---
+
+## 14. Sub-Fase 10l: Experiencia Táctica de Combate, Catálogo por Zonas y Alerta Legendaria (`PantallaCombate.tsx`, `PantallaCatalogo.tsx`, `PantallaExploracion.tsx`)
+
+### 14.1 Diagnóstico Inicial y Auditoría Impeccable
+Previo a esta intervención, la experiencia de combate y compendio presentaba una brecha entre la riqueza de los motores de servidor (Fase 10k) y la retroalimentación visual/acústica del jugador en el cliente web:
+1. **Invisibilidad del Medidor de Resonancia y M4 Desconectado:** El movimiento insignia (Slot 4 / Furia) permanecía bloqueado de forma estática en la UI (`Furia (Bloqueado)`) sin que el jugador pudiera monitorear visualmente el porcentaje de Resonancia acumulada ($0-100\%$) ni anticipar su momento de activación.
+2. **Desincronización Visual de Salud tras Daño Continuo (DoT):** Al aplicarse efectos de estado en fin de turno (`efectosFinDeTurno`), la interfaz actualizaba el HP aliada/rival basándose en el daño del ataque directo pero postergaba la deducción del DoT, dejando barras de vida desfasadas hasta la siguiente recarga forzada de pantalla.
+3. **Vulnerabilidad a Doble Clic y Concurrencia Silenciosa:** Si el explorador pulsaba rápidamente los botones de ataque antes de finalizar la cinemática o ante fluctuaciones de latencia, se emitían peticiones concurrentes sin adjuntar el número de turno esperado (`turnoEsperado`), provocando anomalías o rechazos no explicados en lugar de capturar el error `409 TURNO_DESACTUALIZADO`.
+4. **Animaciones Parásitas ante Pérdida de Turno:** Cuando una criatura perdía su turno por parálisis o petrificación (`perdioTurno: true`), el cliente reproducía animaciones parásitas de impacto (`-0`), desconcertando al jugador respecto al efecto real del aturdimiento.
+5. **Triplicación de la Lógica de Fin de Turno:** Las pantallas de combate duplicaban la resolución de contraataques rivales y DoT en tres manejadores inconexos (`handleAtacar`, `ejecutarCaptura` y `handleHuir`), elevando la deuda técnica y el riesgo de regresiones.
+6. **Compendio Plano de Especies y Desalineación Geográfica:** En `PantallaCatalogo.tsx`, las 30 criaturas se mostraban en una cuadrícula plana continua sin agrupación por zonas de hábitat biológico. Asimismo, se identificó una inversión nominal en la semilla de datos entre la Zona 2 («Bosque Susurrante») y la Zona 3 («Riberas del Lago Espejo»), contradiciendo la presencia de especies acuáticas como `cangrejo-abismal` en ZON-02.
+7. **Ausencia de Clímax Cinemático en Encuentros Legendarios:** En `PantallaExploracion.tsx`, toparse con criaturas legendarias como *Behir* o *Remorhaz* utilizaba el mismo modal y sonido de alerta que una bestia común de bajo nivel, privando al juego de la emoción retro del avistamiento de un titán mítico.
+
+---
+
+### 14.2 Mejoras Implementadas
+
+#### A. Identidad Retro Aethelgard y Ergonomía Visual (`DESIGN.md`)
+- **Selector de 4 Movimientos con Chips Dinámicos de Efectividad:** Rediseño del panel de combate con botones retro biselados para cada slot (`M1`, `M2`, `M3`, `M4`). Integración de chips de efectividad táctica en tiempo real: `[¡EFICAZ!]` en verde esmeralda brillante (`text-emerald-400 bg-emerald-950/40 border-emerald-500/70`) ante ventaja elemental ($1.5\times$), y `[RESISTIDO]` en rojo bermellón (`text-red-400 bg-red-950/40 border-red-500/70`) ante desventaja elemental ($0.75\times$).
+- **Medidor Retro Segmentado de 10 Bloques de Resonancia:** Creación del componente `BarraResonancia` en `PanelTactico.tsx`, representando la resonancia mediante 10 bloques discretos retro (`floor(resonancia / 10)`). Al llegar al 100% de resonancia (10 bloques), la barra adquiere la animación pulsante ámbar `.anim-pulso-resonancia`, el slot 4 se desbloquea con iluminación dorada y emerge el botón heroico «Desatar Insignia».
+- **Insignias Visuales de Estados Alterados:** Creación del componente `InsigniasEstado` con iconos vectoriales SVG de Lucide estrictos bajo la Regla R1 (cero emojis unicode): `Flame` para Quemadura, `Skull` para Veneno, `Snowflake` para Escarcha, `Zap` para Parálisis, `Mountain` para Petrificación y `Shield` para Bastión. Despliega el nombre y turnos restantes (`ej. Quemadura (2)`), renderizándose en las placas de ambos combatientes.
+- **Catálogo Agrupado por 6 Hábitats Geográficos:** En `PantallaCatalogo.tsx`, se reestructuró la vista en 6 secciones temáticas `<section aria-labelledby>` utilizando la función pura `agruparEspeciesPorZona`, con badges de región (`ZON-01` a `ZON-06`), encabezados retro, recuento de especies y etiqueta dorada de «Hábitat Legendario».
+- **Consagración Visual de Criaturas Legendarias:** Las dos especies legendarias (*Behir del Abismo Ciego* en ZON-05 y *Remorhaz del Glaciar Eterno* en ZON-06) lucen el halo respirante dorado `.anim-halo-legendario`, borde ámbar pixelado `border-amber-400` y una corona dorada `Crown` junto a su nombre tanto en la tarjeta como en la ficha del modal táctico.
+- **Cinemática de Avistamiento Legendario:** En `PantallaExploracion.tsx`, el encuentro con una bestia legendaria transforma el diálogo con borde dorado palpitante, título `¡AVISTAMIENTO LEGENDARIO!`, corona `Crown` animada, sonido triunfal `fanfarria` y notificación toast de alta prioridad.
+
+#### B. Componentes 8bitcn/ui, Hardening contra Concurrencia y Accesibilidad
+- **Cerrojo Síncrono `useRef` contra Doble Clic:** Implementación de `peticionEnVueloRef = useRef(false)` en `PantallaCombate.tsx`, garantizando que clics repetidos o simultáneos sean bloqueados en el mismo milisegundo antes de que React re-renderice el estado `procesandoAccion`.
+- **Integridad de Turno con `turnoEsperado` y Captura de 409:** El cliente adjunta `turnoEsperado: turno` en cada comando de combate (`atacar`, `capturar`, `huir`). Si ocurre una condición de carrera, el cliente captura el error `409 TURNO_DESACTUALIZADO`, muestra una alerta de resincronización y refresca limpiamente el estado sin desarmar la arena.
+- **Unificación de Resolución de Ronda (`reproducirContraataqueYDoT`):** Se concentró la animación del contraataque rival, el reporte de estados, el relevo de aliada debilitada y la aplicación del daño continuo DoT en una única rutina compartida, asegurando que la salud final se actualice fidedignamente tras el DoT.
+- **Soporte de Movimiento Reducido (`prefers-reduced-motion`):** En `index.css`, se definió el bloque `@media (prefers-reduced-motion: reduce)` que neutraliza las animaciones de pulso de resonancia, halos legendarios y parpadeos de turno para cumplir las directrices de accesibilidad WCAG.
+- **Ergonomía Responsiva Impeccable (320 px):** Verificación exhaustiva de diseño en viewport móvil estrecho (320 px a 360 px) sin desbordes horizontales ni recortes de texto.
+
+#### C. Multimedia y Síntesis Web Audio Retro Centralizada (`assets.ts`)
+- **Síntesis Procedural de Audio 8-bit:**
+  - `reproducirAudio("eficaz")`: Trino ascendente en quinta justa retro con oscilador triangular y modulación armónica brillante.
+  - `reproducirAudio("resistido")`: Doble pulso amortiguado en frecuencias graves ($110-80\text{ Hz}$) con onda sinusoidal y decaimiento rápido.
+  - `reproducirAudio("dot")`: Ráfaga estocástica de ruido blanco sintetizado directamente en buffer mono, con filtrado paso-banda y cierre limpio del contexto para evitar fugas de memoria.
+  - `reproducirAudio("furia")`: Barrido épico multifrecuencia con ondas en diente de sierra ($180-600\text{ Hz}$) que emula la activación de un poder supremo de 16 bits.
+- **Sonorización Dinámica de Impacto:** En combate, el impacto acústico se deriva dinámicamente según la afinidad mediante `sonidoDeGolpe(efectividad)`.
+
+#### D. Reglas de Servidor, Prisma y Contratos Autoritativos
+- **Corrección de Semilla de Datos de Zonas (Decisión D-1):** En `apps/api/prisma/seed.ts`, se intercambiaron los nombres y descripciones de `ZON-02` («Riberas del Lago Espejo») y `ZON-03` («Bosque Susurrante») alineándolos fidedignamente con sus biomas y especies acuáticas/forestales.
+- **Ampliación Aditiva de Contratos sin Ruptura de Esquema:**
+  - `CriaturasService.obtenerEspecies` y `obtenerEspeciePorSlug` exponen `zona: { id, nombre } | null` resolviendo la relación desde `apariciones.zona` con respaldo determinista en `TABLAS_APARICION`.
+  - `ExploracionService.explorar` expone `esLegendaria: boolean` en `encuentro.especie`.
+  - `EncuentrosService.obtenerEncuentroActivo` expone `esLegendaria: boolean` en `criaturaRival` y `estadoAplicado: CodigoEstado | null` en cada slot de movimiento aliado.
+  - Los DTOs de combate (`AtacarDto`, `CapturarDto`, `HuirDto`) admiten de forma opcional `turnoEsperado?: number`.
+
+---
+
+### 14.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Unitarias de Back-End (`pnpm --filter api test`):**
+  - **107 de 107 pruebas aprobadas** (100% de éxito, 0 fallos).
+  - Verificación exhaustiva de motores de combate, afinidades elementales, estados alterados, invariantes INV-01 a INV-05, compras por lotes, transferencias de almacén y persistencia de resonancia.
+- **Pruebas Unitarias de Front-End (`pnpm --filter web test`):**
+  - **63 de 63 pruebas aprobadas** (100% de éxito, cero regresiones).
+  - Incorporación de la suite minimalista `apps/web/test/verificacion-combate-tactico.spec.ts` (55 líneas) validando:
+    1. Renderizado de 4 slots tácticos y desbloqueo de M4 exclusivamente con 100 de Resonancia.
+    2. Insignias de estados activos con icono Lucide, etiqueta en español y conteo de turnos.
+    3. Agrupación por zonas de hábitat y preservación de la condición legendaria en *Behir* y *Remorhaz*.
+- **Compilación de Producción (`pnpm --filter web build`):**
+  - **0 errores** TypeScript en modo estricto en Vite (construcción completada en 1.78s).
+- **Linter de Front-End (`pnpm --filter web lint`):**
+  - **0 errores** en 79 archivos analizados bajo 116 reglas de código.
+- **Regla R1 Estricta:** 100% de interfaces de usuario, botones y controles libres de emojis unicode (uso universal de Lucide SVG).
+- **Regla R2 Estricta:** Commits atómicos en la rama `funcionalidad/fase-10l-ux-combate-tactico-catalogo` con formato semántico en español.
+
 
 
 

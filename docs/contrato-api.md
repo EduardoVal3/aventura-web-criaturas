@@ -197,7 +197,7 @@ Este documento define la especificación técnica de la API REST que comunica el
       },
       {
         "ubicacionDestinoId": "ZON-02",
-        "nombre": "Bosque Susurrante",
+        "nombre": "Riberas del Lago Espejo",
         "nivelSugerido": "2-4",
         "estaBloqueada": false,
         "requisito": null
@@ -864,6 +864,10 @@ Este documento define la especificación técnica de la API REST que comunica el
         "tasaCaptura": 0.88,
         "esEspecial": false,
         "esLegendaria": false,
+        "zona": {
+          "id": "ZON-01",
+          "nombre": "Praderas del Amanecer"
+        },
         "descripcion": "Cazador en manada ágil y coordinado que recorre las praderas abiertas.",
         "arquetipo": "VELOZ",
         "movimientos": [
@@ -924,6 +928,10 @@ Este documento define la especificación técnica de la API REST que comunica el
     "tasaCaptura": 0.15,
     "esEspecial": true,
     "esLegendaria": true,
+    "zona": {
+      "id": "ZON-05",
+      "nombre": "Abismo Ciego"
+    },
     "descripcion": "Serpentina criatura colosal que domina las profundidades del abismo.",
     "arquetipo": "ATACANTE",
     "movimientos": [
@@ -1029,12 +1037,13 @@ Este documento define la especificación técnica de la API REST que comunica el
       "nombre": "Salamandra de Roca",
       "nivel": 5,
       "hpActual": 35,
-      "hpMaximo: 45,
+      "hpMaximo": 45,
       "ataque": 18,
       "defensa": 12,
       "velocidad": 10,
       "afinidad": "agua",
       "resonancia": 24,
+      "esLegendaria": false,
       "estados": [
         { "codigo": "QUEMADURA", "turnosRestantes": 2, "valor": 5 }
       ]
@@ -1058,10 +1067,10 @@ Este documento define la especificación técnica de la API REST que comunica el
       "xpSiguienteNivel": 1500,
       "xpNivelActual": 1006,
       "movimientos": [
-        { "nombre": "Arañazo", "poder": 10, "tipoAccion": "ATAQUE", "slot": 1, "efecto": null, "bloqueado": false },
-        { "nombre": "Liana", "poder": 20, "tipoAccion": "ATAQUE", "slot": 2, "efecto": null, "bloqueado": false },
-        { "nombre": "Esporas", "poder": 0, "tipoAccion": "ESTADO", "slot": 3, "efecto": "VENENO", "bloqueado": false },
-        { "nombre": "Furia de la Selva", "poder": 60, "tipoAccion": "INSIGNIA", "slot": 4, "efecto": null, "bloqueado": true }
+        { "nombre": "Arañazo", "poder": 10, "tipoAccion": "ATAQUE", "slot": 1, "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Liana", "poder": 20, "tipoAccion": "ATAQUE", "slot": 2, "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Esporas", "poder": 0, "tipoAccion": "ESTADO", "slot": 3, "efecto": "VENENO", "estadoAplicado": "VENENO", "bloqueado": false },
+        { "nombre": "Furia de la Selva", "poder": 60, "tipoAccion": "INSIGNIA", "slot": 4, "efecto": null, "estadoAplicado": null, "bloqueado": true }
       ]
     },
     "bitacora": [

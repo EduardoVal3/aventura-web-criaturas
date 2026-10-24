@@ -51,17 +51,51 @@ import {
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
-import { Lock, Crown, ChevronsUp, ChevronsDown, Sparkles } from "lucide-react";
+import {
+  Lock,
+  Crown,
+  ChevronsUp,
+  ChevronsDown,
+  Sparkles,
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Swords,
+  HeartPulse,
+  Trophy,
+} from "lucide-react";
 import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
 import {
   construirSlotsTacticos,
   ETIQUETA_EFECTIVIDAD,
   sonidoDeGolpe,
+  resolverBadgeEfectoMovimiento,
+  type TipoIconoEfecto,
 } from "@/lib/combate-tactico";
 import {
   BarraResonancia,
   InsigniasEstado,
 } from "@/components/combate/PanelTactico";
+
+const ICONOS_EFECTO_LUCIDE: Record<
+  TipoIconoEfecto,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+> = {
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Sparkles,
+  Swords,
+  HeartPulse,
+  ChevronsUp,
+  ChevronsDown,
+};
 
 interface RecompensasVictoria {
   xpGanada: number;
@@ -778,7 +812,7 @@ export function PantallaCombate() {
               <div className="flex items-center gap-1.5 min-w-0 truncate">
                 {rival.esLegendaria && (
                   <span title="Criatura Legendaria" className="shrink-0">
-                    <Crown className="size-3.5 text-amber-400 animate-bounce motion-reduce:animate-none" aria-hidden="true" />
+                    <Crown className="size-3.5 text-amber-400 animate-pulse motion-reduce:animate-none" aria-hidden="true" />
                   </span>
                 )}
                 <span className="font-bold text-xs truncate text-destructive">
@@ -1041,6 +1075,10 @@ export function PantallaCombate() {
                       const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival
                         ?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
                       const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
+                      const badgeEfecto = resolverBadgeEfectoMovimiento(
+                        mov?.efecto,
+                        mov?.estadoAplicado,
+                      );
 
                       return (
                         <Button
@@ -1053,10 +1091,10 @@ export function PantallaCombate() {
                           onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
                           aria-label={
                             estaBloqueado
-                              ? `${nombreMov} bloqueado. Requiere Resonancia 100 %`
-                              : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}`
+                              ? `${nombreMov} bloqueado. Requiere Resonancia 100 %${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
+                              : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
                           }
-                          className={`flex flex-col items-start justify-between text-xs min-h-[58px] p-2 border border-pixel transition-all ${
+                          className={`flex flex-col items-start justify-between text-xs min-h-[62px] p-2 border border-pixel transition-all ${
                             estaBloqueado
                               ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed border-border/80 text-muted-foreground"
                               : esInsignia
@@ -1089,19 +1127,36 @@ export function PantallaCombate() {
                             ) : null}
                           </div>
 
-                          <div className="flex items-center justify-between w-full mt-1 min-w-0">
+                          <div className="flex items-center justify-between w-full mt-1 min-w-0 gap-1">
                             {estaBloqueado ? (
-                              <span className="text-[9px] font-mono text-amber-300/80 truncate">
-                                Requiere Resonancia 100 %
-                                {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
-                              </span>
+                              <div className="flex items-center justify-between w-full gap-1 min-w-0">
+                                <span className="text-[9px] font-mono text-amber-300/80 truncate">
+                                  Requiere Resonancia 100 %
+                                  {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
+                                </span>
+                                {badgeEfecto && (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 rounded-none shrink-0 opacity-80 ${badgeEfecto.claseEstilo}`}
+                                    title={`Efecto: ${badgeEfecto.nombre}`}
+                                  >
+                                    {(() => {
+                                      const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
+                                      return <IconoComp className="size-2.5 shrink-0" aria-hidden="true" />;
+                                    })()}
+                                    <span className="truncate max-w-[55px] sm:max-w-[75px]">
+                                      {badgeEfecto.nombre}
+                                    </span>
+                                  </Badge>
+                                )}
+                              </div>
                             ) : (
                               <>
-                                <div className="flex items-center gap-1 min-w-0">
+                                <div className="flex items-center gap-1 min-w-0 flex-wrap">
                                   {textoChip === "¡EFICAZ!" && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5"
+                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5 rounded-none shrink-0"
                                     >
                                       <ChevronsUp className="size-2.5" aria-hidden="true" />
                                       {textoChip}
@@ -1110,14 +1165,29 @@ export function PantallaCombate() {
                                   {textoChip === "RESISTIDO" && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5"
+                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5 rounded-none shrink-0"
                                     >
                                       <ChevronsDown className="size-2.5" aria-hidden="true" />
                                       {textoChip}
                                     </Badge>
                                   )}
+                                  {badgeEfecto && (
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 rounded-none shrink-0 ${badgeEfecto.claseEstilo}`}
+                                      title={`Efecto: ${badgeEfecto.nombre}`}
+                                    >
+                                      {(() => {
+                                        const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
+                                        return <IconoComp className="size-2.5 shrink-0" aria-hidden="true" />;
+                                      })()}
+                                      <span className="truncate max-w-[65px] sm:max-w-[85px]">
+                                        {badgeEfecto.nombre}
+                                      </span>
+                                    </Badge>
+                                  )}
                                 </div>
-                                <span className="text-[9px] font-mono text-muted-foreground ml-auto">
+                                <span className="text-[9px] font-mono text-muted-foreground ml-auto shrink-0">
                                   Pot. {poder}
                                 </span>
                               </>
@@ -1441,7 +1511,7 @@ export function PantallaCombate() {
         <DialogContent className="sm:max-w-md w-[92vw] border-4 border-pixel-dorado bg-bastion anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
             <div className="mx-auto size-12 rounded bg-pixel-dorado/20 border-2 border-pixel-dorado flex items-center justify-center anim-pulso-turno">
-              <span className="text-xl">🏆</span>
+              <Trophy className="size-6 text-amber-400" aria-hidden="true" />
             </div>
             <DialogTitle className="text-sm sm:text-base font-bold text-pixel-dorado retro tracking-wider">
               ¡VICTORIA EN COMBATE!
@@ -1546,7 +1616,7 @@ export function PantallaCombate() {
         <DialogContent className="sm:max-w-md w-[92vw] border-4 border-destructive/80 bg-bastion anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
             <div className="mx-auto size-12 rounded bg-destructive/20 border-2 border-destructive flex items-center justify-center anim-sacudida">
-              <span className="text-xl">⚔️</span>
+              <Swords className="size-6 text-destructive" aria-hidden="true" />
             </div>
             <DialogTitle className="text-sm sm:text-base font-bold text-destructive retro">
               EQUIPO DEBILITADO

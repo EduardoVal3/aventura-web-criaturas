@@ -4,6 +4,8 @@
  * Es autoritativo, determinista y completamente desacoplado de Prisma.
  */
 
+import { GeneradorAleatorio } from '../../../comun/azar/generador-aleatorio.interface';
+
 // ============================================================================
 // 1. AFINIDADES ELEMENTALES Y DAÑO
 // ============================================================================
@@ -560,5 +562,643 @@ export function aplicarEstado(
   return {
     aplicado: true,
     estados: [...estados, nuevoEstado],
+  };
+}
+
+// ============================================================================
+// 3. ACUMULADOR DE RESONANCIA
+// ============================================================================
+
+export const CONSTANTES_RESONANCIA = {
+  GANANCIA_RONDA_COMPLETADA: 8,
+  FACTOR_DANO_RECIBIDO: 50,
+  TOPE_DANO_RECIBIDO: 20,
+  BONIFICACION_VENTAJA: 10,
+  MAXIMO: 100,
+} as const;
+
+export interface ParametrosResonancia {
+  rondaCompletada?: boolean;
+  danoRecibido?: number;
+  hpMaximoAliada?: number;
+  golpeConVentaja?: boolean;
+  ejecutoInsignia?: boolean;
+}
+
+/**
+ * Acumula o consume resonancia de la criatura aliada (§3.4).
+ * Si ejecutó el movimiento insignia (M4), la resonancia se reinicia a 0 y no gana resonancia en esa ronda.
+ */
+export function acumularResonancia(
+  resonanciaPrevia: number,
+  params: ParametrosResonancia,
+): number {
+  if (params.ejecutoInsignia) {
+    return 0;
+  }
+
+  let ganancia = 0;
+  if (params.rondaCompletada) {
+    ganancia += CONSTANTES_RESONANCIA.GANANCIA_RONDA_COMPLETADA;
+  }
+  if (
+    typeof params.danoRecibido === 'number' &&
+    params.danoRecibido > 0 &&
+    typeof params.hpMaximoAliada === 'number' &&
+    params.hpMaximoAliada > 0
+  ) {
+    const gananciaDano = Math.min(
+      CONSTANTES_RESONANCIA.TOPE_DANO_RECIBIDO,
+      Math.round(
+        (CONSTANTES_RESONANCIA.FACTOR_DANO_RECIBIDO * params.danoRecibido) /
+          params.hpMaximoAliada,
+      ),
+    );
+    ganancia += gananciaDano;
+  }
+  if (params.golpeConVentaja) {
+    ganancia += CONSTANTES_RESONANCIA.BONIFICACION_VENTAJA;
+  }
+
+  return Math.min(
+    CONSTANTES_RESONANCIA.MAXIMO,
+    Math.max(0, resonanciaPrevia + ganancia),
+  );
+}
+
+// ============================================================================
+// 4. RESOLUCIÓN DETERMINISTA DE LA RONDA
+// ============================================================================
+
+export interface MovimientoCombatiente {
+  nombre: string;
+  poder: number;
+  tipoAccion: string;
+  slot?: number;
+  efecto?: string | null;
+}
+
+export interface Combatiente {
+  id?: string;
+  nombre: string;
+  nivel: number;
+  ataque: number;
+  defensa: number;
+  velocidad: number;
+  hpActual: number;
+  hpMaximo: number;
+  elemento?: string | null;
+  movimientos: MovimientoCombatiente[];
+}
+
+export interface AccionResultado {
+  movimiento: string;
+  danoCausado: number;
+  hpRestanteRival: number;
+  efectividad: EtiquetaEfectividad;
+  multiplicadorAfinidad: number;
+  danoAbsorbido: number;
+  estadoAplicado: CodigoEstado | null;
+  perdioTurno: CodigoEstado | null;
+  esInsignia: boolean;
+}
+
+export interface EfectoFinDeTurno {
+  objetivo: 'ALIADA' | 'RIVAL';
+  codigo: CodigoEstado;
+  dano: number;
+  hpRestante: number;
+}
+
+export interface ResultadoRonda {
+  hpRestanteAliada: number;
+  hpRestanteRival: number;
+  estadoBatalla: EstadoBatalla;
+  accionJugador: AccionResultado | null;
+  accionRival: AccionResultado | null;
+  efectosFinDeTurno: EfectoFinDeTurno[];
+  mensajes: string[];
+  resultado: 'EN_CURSO' | 'VICTORIA' | 'ALIADA_DEBILITADA';
+}
+
+export interface AccionIntencionJugador {
+  indiceMovimiento: number;
+}
+
+function obtenerAleatorio(gen: GeneradorAleatorio): number {
+  if (gen && typeof gen.generar === 'function') {
+    return gen.generar();
+  }
+  return Math.random();
+}
+
+/**
+ * Resuelve una ronda completa de combate táctico de forma pura y determinista (§3.7).
+ */
+export function resolverRonda(
+  aliada: Combatiente,
+  rival: Combatiente,
+  snapshotPrevio: EstadoBatalla,
+  accionJugador: AccionIntencionJugador | null,
+  generador: GeneradorAleatorio,
+): ResultadoRonda {
+  let estadosAliada = [...snapshotPrevio.aliada.estados];
+  let inmunidadesAliada = [...snapshotPrevio.aliada.inmunidades];
+  let resonanciaAliada = snapshotPrevio.aliada.resonancia;
+
+  let estadosRival = [...snapshotPrevio.rival.estados];
+  let inmunidadesRival = [...snapshotPrevio.rival.inmunidades];
+
+  let hpAliada = aliada.hpActual;
+  let hpRival = rival.hpActual;
+
+  const mensajes: string[] = [];
+  let accionJugadorResultado: AccionResultado | null = null;
+  let accionRivalResultado: AccionResultado | null = null;
+
+  let danoRecibidoPorAliada = 0;
+  let golpeJugadorConVentaja = false;
+  let jugadorEjecutoInsignia = false;
+
+  const velAliada = velocidadEfectiva(aliada.velocidad, estadosAliada);
+  const velRival = velocidadEfectiva(rival.velocidad, estadosRival);
+
+  // D-3: rival solo actúa primero si su velocidad efectiva es estrictamente mayor
+  const rivalActuaPrimero = accionJugador !== null && velRival > velAliada;
+
+  function ejecutarTurnoJugador() {
+    if (accionJugador === null) return;
+    const esInsignia = accionJugador.indiceMovimiento === 3;
+    if (esInsignia) jugadorEjecutoInsignia = true;
+
+    // 1. Petrificación
+    if (estadosAliada.some((e) => e.codigo === 'PETRIFICACION')) {
+      accionJugadorResultado = {
+        movimiento: 'Turno perdido',
+        danoCausado: 0,
+        hpRestanteRival: hpRival,
+        efectividad: 'NEUTRAL',
+        multiplicadorAfinidad: 1.0,
+        danoAbsorbido: 0,
+        estadoAplicado: null,
+        perdioTurno: 'PETRIFICACION',
+        esInsignia,
+      };
+      mensajes.push(`Tu criatura perdió el turno debido a la petrificación.`);
+      return;
+    }
+
+    // 2. Parálisis
+    if (estadosAliada.some((e) => e.codigo === 'PARALISIS')) {
+      const tiradaParalisis = obtenerAleatorio(generador);
+      if (tiradaParalisis < 0.25) {
+        accionJugadorResultado = {
+          movimiento: 'Turno perdido',
+          danoCausado: 0,
+          hpRestanteRival: hpRival,
+          efectividad: 'NEUTRAL',
+          multiplicadorAfinidad: 1.0,
+          danoAbsorbido: 0,
+          estadoAplicado: null,
+          perdioTurno: 'PARALISIS',
+          esInsignia,
+        };
+        mensajes.push(`Tu criatura no pudo actuar por un espasmo de parálisis.`);
+        return;
+      }
+    }
+
+    // Movimiento
+    const mov =
+      aliada.movimientos[accionJugador.indiceMovimiento] ??
+      aliada.movimientos[0] ?? {
+        nombre: 'Ataque Básico',
+        poder: 10,
+        tipoAccion: 'Ataque melé',
+        efecto: null,
+      };
+
+    // 3. Tirada de variación
+    const tiradaVariacion = obtenerAleatorio(generador);
+    const factorVariacion = 0.85 + 0.3 * tiradaVariacion;
+
+    // 4. Daño y absorción
+    const multAfinidad = multiplicadorAfinidad(aliada.elemento, rival.elemento);
+    const efectividad = etiquetaEfectividad(multAfinidad);
+    if (efectividad === 'VENTAJA') golpeJugadorConVentaja = true;
+
+    const defEfectivaRival = defensaEfectiva(rival.defensa, estadosRival);
+    const danoBase = calcularDano(
+      aliada.ataque,
+      defEfectivaRival,
+      mov.poder,
+      aliada.nivel,
+      factorVariacion * multAfinidad,
+    );
+
+    const { danoRestante, danoAbsorbido, estadosActualizados } = absorberConEscudo(
+      danoBase,
+      estadosRival,
+    );
+    estadosRival = estadosActualizados;
+
+    hpRival = aplicarDano(hpRival, danoRestante, rival.hpMaximo);
+
+    // 5. Aplicar efecto si mapea
+    let estadoAplicado: CodigoEstado | null = null;
+    if (mov.efecto && mov.efecto in EFECTO_A_ESTADO) {
+      const codigo = EFECTO_A_ESTADO[mov.efecto];
+      if (codigo === 'BASTION') {
+        const res = aplicarEstado(
+          estadosAliada,
+          inmunidadesAliada,
+          'BASTION',
+          aliada.hpMaximo,
+          esInsignia,
+        );
+        if (res.aplicado) {
+          estadosAliada = res.estados;
+          estadoAplicado = 'BASTION';
+        }
+      } else if (esInsignia) {
+        const res = aplicarEstado(
+          estadosRival,
+          inmunidadesRival,
+          codigo,
+          rival.hpMaximo,
+          true,
+        );
+        if (res.aplicado) {
+          estadosRival = res.estados;
+          estadoAplicado = codigo;
+        }
+      } else {
+        const prob = mov.tipoAccion === 'Estado' ? 0.9 : 0.5;
+        const rEfecto = obtenerAleatorio(generador);
+        if (rEfecto < prob) {
+          const res = aplicarEstado(
+            estadosRival,
+            inmunidadesRival,
+            codigo,
+            rival.hpMaximo,
+            false,
+          );
+          if (res.aplicado) {
+            estadosRival = res.estados;
+            estadoAplicado = codigo;
+          }
+        }
+      }
+    }
+
+    accionJugadorResultado = {
+      movimiento: mov.nombre,
+      danoCausado: danoBase,
+      hpRestanteRival: hpRival,
+      efectividad,
+      multiplicadorAfinidad: multAfinidad,
+      danoAbsorbido,
+      estadoAplicado,
+      perdioTurno: null,
+      esInsignia,
+    };
+
+    let msg = `Tu criatura usó ${mov.nombre}. ¡Causó ${danoBase} de daño!`;
+    if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
+    else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
+    if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;
+    if (estadoAplicado) {
+      if (estadoAplicado === 'BASTION') {
+        msg += ` ¡Tu criatura alzó un Bastión protector!`;
+      } else {
+        msg += ` ¡El rival quedó afectado por ${CATALOGO_ESTADOS[estadoAplicado].nombre}!`;
+      }
+    }
+    mensajes.push(msg);
+  }
+
+  function ejecutarTurnoRival() {
+    // 1. Petrificación
+    if (estadosRival.some((e) => e.codigo === 'PETRIFICACION')) {
+      accionRivalResultado = {
+        movimiento: 'Turno perdido',
+        danoCausado: 0,
+        hpRestanteRival: hpAliada,
+        efectividad: 'NEUTRAL',
+        multiplicadorAfinidad: 1.0,
+        danoAbsorbido: 0,
+        estadoAplicado: null,
+        perdioTurno: 'PETRIFICACION',
+        esInsignia: false,
+      };
+      mensajes.push(`El rival perdió el turno debido a la petrificación.`);
+      return;
+    }
+
+    // 2. Parálisis
+    if (estadosRival.some((e) => e.codigo === 'PARALISIS')) {
+      const tiradaParalisis = obtenerAleatorio(generador);
+      if (tiradaParalisis < 0.25) {
+        accionRivalResultado = {
+          movimiento: 'Turno perdido',
+          danoCausado: 0,
+          hpRestanteRival: hpAliada,
+          efectividad: 'NEUTRAL',
+          multiplicadorAfinidad: 1.0,
+          danoAbsorbido: 0,
+          estadoAplicado: null,
+          perdioTurno: 'PARALISIS',
+          esInsignia: false,
+        };
+        mensajes.push(`El rival no pudo actuar por un espasmo de parálisis.`);
+        return;
+      }
+    }
+
+    // Selección de movimiento: slots 1-3
+    const poolRival = rival.movimientos.slice(0, Math.min(3, rival.movimientos.length));
+    const tiradaIndice = obtenerAleatorio(generador);
+    const indice =
+      poolRival.length > 0
+        ? Math.min(poolRival.length - 1, Math.floor(tiradaIndice * poolRival.length))
+        : 0;
+    const mov = poolRival[indice] ?? {
+      nombre: 'Ataque Básico',
+      poder: 10,
+      tipoAccion: 'Ataque melé',
+      efecto: null,
+    };
+
+    // 3. Tirada de variación
+    const tiradaVariacion = obtenerAleatorio(generador);
+    const factorVariacion = 0.85 + 0.3 * tiradaVariacion;
+
+    // 4. Daño y absorción
+    const multAfinidad = multiplicadorAfinidad(rival.elemento, aliada.elemento);
+    const efectividad = etiquetaEfectividad(multAfinidad);
+
+    const defEfectivaAliada = defensaEfectiva(aliada.defensa, estadosAliada);
+    const danoBase = calcularDano(
+      rival.ataque,
+      defEfectivaAliada,
+      mov.poder,
+      rival.nivel,
+      factorVariacion * multAfinidad,
+    );
+
+    const { danoRestante, danoAbsorbido, estadosActualizados } = absorberConEscudo(
+      danoBase,
+      estadosAliada,
+    );
+    estadosAliada = estadosActualizados;
+
+    hpAliada = aplicarDano(hpAliada, danoRestante, aliada.hpMaximo);
+    danoRecibidoPorAliada += danoBase;
+
+    // 5. Efecto
+    let estadoAplicado: CodigoEstado | null = null;
+    if (mov.efecto && mov.efecto in EFECTO_A_ESTADO) {
+      const codigo = EFECTO_A_ESTADO[mov.efecto];
+      if (codigo === 'BASTION') {
+        const res = aplicarEstado(
+          estadosRival,
+          inmunidadesRival,
+          'BASTION',
+          rival.hpMaximo,
+          false,
+        );
+        if (res.aplicado) {
+          estadosRival = res.estados;
+          estadoAplicado = 'BASTION';
+        }
+      } else {
+        const prob = mov.tipoAccion === 'Estado' ? 0.9 : 0.5;
+        const rEfecto = obtenerAleatorio(generador);
+        if (rEfecto < prob) {
+          const res = aplicarEstado(
+            estadosAliada,
+            inmunidadesAliada,
+            codigo,
+            aliada.hpMaximo,
+            false,
+          );
+          if (res.aplicado) {
+            estadosAliada = res.estados;
+            estadoAplicado = codigo;
+          }
+        }
+      }
+    }
+
+    accionRivalResultado = {
+      movimiento: mov.nombre,
+      danoCausado: danoBase,
+      hpRestanteRival: hpAliada,
+      efectividad,
+      multiplicadorAfinidad: multAfinidad,
+      danoAbsorbido,
+      estadoAplicado,
+      perdioTurno: null,
+      esInsignia: false,
+    };
+
+    let msg = `El rival usó ${mov.nombre}. ¡Causó ${danoBase} de daño a tu criatura!`;
+    if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
+    else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
+    if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;
+    if (estadoAplicado) {
+      if (estadoAplicado === 'BASTION') {
+        msg += ` ¡El rival alzó un Bastión protector!`;
+      } else {
+        msg += ` ¡Tu criatura quedó afectada por ${CATALOGO_ESTADOS[estadoAplicado].nombre}!`;
+      }
+    }
+    mensajes.push(msg);
+  }
+
+  if (rivalActuaPrimero) {
+    ejecutarTurnoRival();
+    if (hpAliada <= 0) {
+      return {
+        hpRestanteAliada: 0,
+        hpRestanteRival: hpRival,
+        estadoBatalla: {
+          aliada: {
+            criaturaId: aliada.id,
+            resonancia: resonanciaAliada,
+            estados: estadosAliada,
+            inmunidades: inmunidadesAliada,
+          },
+          rival: { resonancia: 0, estados: estadosRival, inmunidades: inmunidadesRival },
+        },
+        accionJugador: null,
+        accionRival: accionRivalResultado,
+        efectosFinDeTurno: [],
+        mensajes,
+        resultado: 'ALIADA_DEBILITADA',
+      };
+    }
+
+    ejecutarTurnoJugador();
+    if (hpRival <= 0) {
+      return {
+        hpRestanteAliada: hpAliada,
+        hpRestanteRival: 0,
+        estadoBatalla: {
+          aliada: {
+            criaturaId: aliada.id,
+            resonancia: jugadorEjecutoInsignia ? 0 : resonanciaAliada,
+            estados: estadosAliada,
+            inmunidades: inmunidadesAliada,
+          },
+          rival: { resonancia: 0, estados: estadosRival, inmunidades: inmunidadesRival },
+        },
+        accionJugador: accionJugadorResultado,
+        accionRival: accionRivalResultado,
+        efectosFinDeTurno: [],
+        mensajes,
+        resultado: 'VICTORIA',
+      };
+    }
+  } else {
+    ejecutarTurnoJugador();
+    if (hpRival <= 0) {
+      return {
+        hpRestanteAliada: hpAliada,
+        hpRestanteRival: 0,
+        estadoBatalla: {
+          aliada: {
+            criaturaId: aliada.id,
+            resonancia: jugadorEjecutoInsignia ? 0 : resonanciaAliada,
+            estados: estadosAliada,
+            inmunidades: inmunidadesAliada,
+          },
+          rival: { resonancia: 0, estados: estadosRival, inmunidades: inmunidadesRival },
+        },
+        accionJugador: accionJugadorResultado,
+        accionRival: null,
+        efectosFinDeTurno: [],
+        mensajes,
+        resultado: 'VICTORIA',
+      };
+    }
+
+    ejecutarTurnoRival();
+    if (hpAliada <= 0) {
+      return {
+        hpRestanteAliada: 0,
+        hpRestanteRival: hpRival,
+        estadoBatalla: {
+          aliada: {
+            criaturaId: aliada.id,
+            resonancia: resonanciaAliada,
+            estados: estadosAliada,
+            inmunidades: inmunidadesAliada,
+          },
+          rival: { resonancia: 0, estados: estadosRival, inmunidades: inmunidadesRival },
+        },
+        accionJugador: accionJugadorResultado,
+        accionRival: accionRivalResultado,
+        efectosFinDeTurno: [],
+        mensajes,
+        resultado: 'ALIADA_DEBILITADA',
+      };
+    }
+  }
+
+  // Fin de ronda
+  const efectosFinDeTurno: EfectoFinDeTurno[] = [];
+
+  // 1. DoT de aliada
+  for (const estado of estadosAliada) {
+    const dot = calcularDot(estado.codigo, aliada.hpMaximo);
+    if (dot > 0) {
+      hpAliada = aplicarDot(hpAliada, dot);
+      efectosFinDeTurno.push({
+        objetivo: 'ALIADA',
+        codigo: estado.codigo,
+        dano: dot,
+        hpRestante: hpAliada,
+      });
+      mensajes.push(
+        `Tu criatura sufre ${dot} de daño por ${CATALOGO_ESTADOS[estado.codigo].nombre}.`,
+      );
+    }
+  }
+
+  // 2. DoT de rival
+  for (const estado of estadosRival) {
+    const dot = calcularDot(estado.codigo, rival.hpMaximo);
+    if (dot > 0) {
+      hpRival = aplicarDot(hpRival, dot);
+      efectosFinDeTurno.push({
+        objetivo: 'RIVAL',
+        codigo: estado.codigo,
+        dano: dot,
+        hpRestante: hpRival,
+      });
+      mensajes.push(
+        `El rival sufre ${dot} de daño por ${CATALOGO_ESTADOS[estado.codigo].nombre}.`,
+      );
+    }
+  }
+
+  // 3. Resonancia aliada
+  resonanciaAliada = acumularResonancia(resonanciaAliada, {
+    rondaCompletada: true,
+    danoRecibido: danoRecibidoPorAliada,
+    hpMaximoAliada: aliada.hpMaximo,
+    golpeConVentaja: golpeJugadorConVentaja,
+    ejecutoInsignia: jugadorEjecutoInsignia,
+  });
+
+  // 4. Decremento de duraciones y gestión de inmunidades
+  const nuevasInmunidadesAliada: CodigoEstado[] = [];
+  const estadosActualizadosAliada: EstadoActivo[] = [];
+  for (const e of estadosAliada) {
+    const restantes = e.turnosRestantes - 1;
+    if (restantes > 0) {
+      estadosActualizadosAliada.push({ ...e, turnosRestantes: restantes });
+    } else {
+      if (e.codigo === 'PARALISIS' || e.codigo === 'PETRIFICACION') {
+        nuevasInmunidadesAliada.push(e.codigo);
+      }
+    }
+  }
+
+  const nuevasInmunidadesRival: CodigoEstado[] = [];
+  const estadosActualizadosRival: EstadoActivo[] = [];
+  for (const e of estadosRival) {
+    const restantes = e.turnosRestantes - 1;
+    if (restantes > 0) {
+      estadosActualizadosRival.push({ ...e, turnosRestantes: restantes });
+    } else {
+      if (e.codigo === 'PARALISIS' || e.codigo === 'PETRIFICACION') {
+        nuevasInmunidadesRival.push(e.codigo);
+      }
+    }
+  }
+
+  return {
+    hpRestanteAliada: hpAliada,
+    hpRestanteRival: hpRival,
+    estadoBatalla: {
+      aliada: {
+        criaturaId: aliada.id,
+        resonancia: resonanciaAliada,
+        estados: estadosActualizadosAliada,
+        inmunidades: nuevasInmunidadesAliada,
+      },
+      rival: {
+        resonancia: 0,
+        estados: estadosActualizadosRival,
+        inmunidades: nuevasInmunidadesRival,
+      },
+    },
+    accionJugador: accionJugadorResultado,
+    accionRival: accionRivalResultado,
+    efectosFinDeTurno,
+    mensajes,
+    resultado: 'EN_CURSO',
   };
 }

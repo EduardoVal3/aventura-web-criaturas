@@ -21,8 +21,13 @@ import {
   aplicarDot,
   absorberConEscudo,
   tieneEstadoAlterado,
+  CONSTANTES_RESONANCIA,
+  acumularResonancia,
+  resolverRonda,
+  Combatiente,
 } from '../src/modulos/combate/dominio/motor-combate';
 import { BESTIARIO } from '../src/modulos/externo/bestiario-canonico';
+import { GeneradorAleatorioFijo } from '../src/comun/azar/generador-aleatorio.interface';
 
 describe('Motor de Combate Táctico y Afinidades Elementales (Subfase 10k)', () => {
   describe('Afinidades Elementales y Daño Elemental (§3.1 y §3.2)', () => {
@@ -335,6 +340,250 @@ describe('Motor de Combate Táctico y Afinidades Elementales (Subfase 10k)', () 
           `La clave '${clave}' mapeada en EFECTO_A_ESTADO no existe en ningún movimiento de BESTIARIO`,
         );
       }
+    });
+  });
+
+  describe('Acumulador de Resonancia (§3.4)', () => {
+    it('calcula las ganancias por ronda (+8), daño recibido y ventaja elemental (+10)', () => {
+      // Vector de §3.4: ronda completada (+8), daño 9 sobre hpMaximo 60 (round(50*9/60)=8), ventaja (+10) -> total 26
+      const resonancia = acumularResonancia(0, {
+        rondaCompletada: true,
+        danoRecibido: 9,
+        hpMaximoAliada: 60,
+        golpeConVentaja: true,
+        ejecutoInsignia: false,
+      });
+      assert.strictEqual(resonancia, 26);
+    });
+
+    it('aplica el tope de ganancia por daño recibido (+20)', () => {
+      // Daño masivo 100 sobre 60: round(50*100/60) = 83 -> acotado a 20
+      const resonancia = acumularResonancia(0, {
+        rondaCompletada: false,
+        danoRecibido: 100,
+        hpMaximoAliada: 60,
+        golpeConVentaja: false,
+      });
+      assert.strictEqual(resonancia, 20);
+    });
+
+    it('satura en 100 y ejecutar el movimiento insignia reinicia a 0 sin sumar ganancias', () => {
+      const saturada = acumularResonancia(95, {
+        rondaCompletada: true,
+        golpeConVentaja: true,
+      });
+      assert.strictEqual(saturada, 100);
+
+      const reinicio = acumularResonancia(100, {
+        rondaCompletada: true,
+        danoRecibido: 10,
+        hpMaximoAliada: 60,
+        golpeConVentaja: true,
+        ejecutoInsignia: true,
+      });
+      assert.strictEqual(reinicio, 0);
+    });
+  });
+
+  describe('Resolución Determinista de la Ronda (§3.7)', () => {
+    const crearAliada = (parcial: Partial<Combatiente> = {}): Combatiente => ({
+      id: 'aliada-1',
+      nombre: 'Lobo Aliado',
+      nivel: 3,
+      ataque: 45,
+      defensa: 50,
+      velocidad: 50,
+      hpActual: 60,
+      hpMaximo: 60,
+      elemento: 'fuego',
+      movimientos: [
+        { nombre: 'Mordisco', poder: 12, tipoAccion: 'Ataque melé', slot: 1, efecto: null },
+        { nombre: 'Llamarada', poder: 14, tipoAccion: 'Ataque melé', slot: 2, efecto: 'QUEMADURA' },
+        { nombre: 'Aullido', poder: 10, tipoAccion: 'Estado', slot: 3, efecto: 'PARALISIS' },
+        { nombre: 'Furia Ígnea', poder: 25, tipoAccion: 'Ataque melé', slot: 4, efecto: 'QUEMADURA_GRAVE' },
+      ],
+      ...parcial,
+    });
+
+    const crearRival = (parcial: Partial<Combatiente> = {}): Combatiente => ({
+      id: 'rival-1',
+      nombre: 'Víbora Rival',
+      nivel: 3,
+      ataque: 40,
+      defensa: 45,
+      velocidad: 45,
+      hpActual: 50,
+      hpMaximo: 50,
+      elemento: 'natura',
+      movimientos: [
+        { nombre: 'Picotazo', poder: 10, tipoAccion: 'Ataque melé', slot: 1, efecto: null },
+        { nombre: 'Mordedura Tóxica', poder: 12, tipoAccion: 'Ataque melé', slot: 2, efecto: 'VENENO' },
+        { nombre: 'Escudo Escama', poder: 10, tipoAccion: 'Estado', slot: 3, efecto: 'BASTION' },
+        { nombre: 'Veneno Letal', poder: 22, tipoAccion: 'Ataque melé', slot: 4, efecto: 'VENENO_GRAVE' },
+      ],
+      ...parcial,
+    });
+
+    it('Iniciativa (D-3): rival más veloz actúa antes, empate favorece al jugador y ESCARCHA invierte el orden', () => {
+      // Rival más veloz (60 vs 50)
+      const rivalVeloz = crearRival({ velocidad: 60 });
+      const aliadaNormal = crearAliada({ velocidad: 50 });
+      // Generador para variación jugador (0.5), índice rival (0.0), variación rival (0.5)
+      const gen1 = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res1 = resolverRonda(aliadaNormal, rivalVeloz, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen1);
+      assert.ok(res1.mensajes[0].startsWith('El rival usó'), 'Rival más veloz debe actuar en primer lugar');
+
+      // Empate en velocidad (50 vs 50) favorece al jugador
+      const rivalEmpate = crearRival({ velocidad: 50 });
+      const gen2 = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res2 = resolverRonda(aliadaNormal, rivalEmpate, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen2);
+      assert.ok(res2.mensajes[0].startsWith('Tu criatura usó'), 'Empate en velocidad debe favorecer al jugador');
+
+      // Aliada con velocidad base mayor (60 vs 45) pero afectada por ESCARCHA (efectiva 30 < 45)
+      const aliadaRapida = crearAliada({ velocidad: 60 });
+      const rivalBase = crearRival({ velocidad: 45 });
+      const snapshotConEscarcha = estadoVacio('aliada-1');
+      snapshotConEscarcha.aliada.estados = [{ codigo: 'ESCARCHA', nombre: 'Escarcha', turnosRestantes: 2 }];
+      const gen3 = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res3 = resolverRonda(aliadaRapida, rivalBase, snapshotConEscarcha, { indiceMovimiento: 0 }, gen3);
+      assert.ok(res3.mensajes[0].startsWith('El rival usó'), 'ESCARCHA debe reducir la velocidad efectiva e invertir el orden');
+    });
+
+    it('PARALISIS con r = 0.24 pierde el turno y con r = 0.25 actúa (límite exacto)', () => {
+      const aliada = crearAliada();
+      const rival = crearRival();
+
+      // Caso r = 0.24 -> pierde turno
+      const snapshotParalisis = estadoVacio('aliada-1');
+      snapshotParalisis.aliada.estados = [{ codigo: 'PARALISIS', nombre: 'Parálisis', turnosRestantes: 2 }];
+      // Tiradas: tiradaParalisis (0.24), índice rival (0.0), variación rival (0.5)
+      const genPierde = new GeneradorAleatorioFijo([0.24, 0.0, 0.5]);
+      const resPierde = resolverRonda(aliada, rival, snapshotParalisis, { indiceMovimiento: 0 }, genPierde);
+      assert.strictEqual(resPierde.accionJugador?.perdioTurno, 'PARALISIS');
+      assert.strictEqual(resPierde.accionJugador?.danoCausado, 0);
+
+      // Caso r = 0.25 -> actúa normalmente
+      // Tiradas: tiradaParalisis (0.25), variación jugador (0.5), índice rival (0.0), variación rival (0.5)
+      const genActua = new GeneradorAleatorioFijo([0.25, 0.5, 0.0, 0.5]);
+      const resActua = resolverRonda(aliada, rival, snapshotParalisis, { indiceMovimiento: 0 }, genActua);
+      assert.strictEqual(resActua.accionJugador?.perdioTurno, null);
+      assert.ok(resActua.accionJugador!.danoCausado > 0);
+    });
+
+    it('PETRIFICACION pierde el turno sin consumir tirada del generador aleatorio', () => {
+      const aliada = crearAliada();
+      const rival = crearRival();
+
+      const snapshotPetrificacion = estadoVacio('aliada-1');
+      snapshotPetrificacion.aliada.estados = [{ codigo: 'PETRIFICACION', nombre: 'Petrificación', turnosRestantes: 2 }];
+
+      // Al no consumir tirada, la primera tirada del generador debe ir directamente al índice del rival
+      // Tiradas: índice rival (0.0 -> movimiento 0), variación rival (0.5)
+      const gen = new GeneradorAleatorioFijo([0.0, 0.5]);
+      const res = resolverRonda(aliada, rival, snapshotPetrificacion, { indiceMovimiento: 0 }, gen);
+      assert.strictEqual(res.accionJugador?.perdioTurno, 'PETRIFICACION');
+      assert.strictEqual(res.accionJugador?.danoCausado, 0);
+      assert.strictEqual(res.accionRival?.movimiento, 'Picotazo');
+    });
+
+    it('Aplicación de estado respeta umbrales de D-5: ataque (0.50), Estado (0.90), Insignia (1.00) y BASTION', () => {
+      const aliada = crearAliada();
+      const rival = crearRival();
+
+      // 1. Ataque con efecto (Llamarada, slot 2, prob 0.50)
+      // Tiradas: variación jugador (0.5), efecto r = 0.49 (< 0.50 -> aplica), índice rival (0.0), variación rival (0.5)
+      const genAplicaAtaque = new GeneradorAleatorioFijo([0.5, 0.49, 0.0, 0.5]);
+      const resAplicaAtaque = resolverRonda(aliada, rival, estadoVacio('aliada-1'), { indiceMovimiento: 1 }, genAplicaAtaque);
+      assert.strictEqual(resAplicaAtaque.accionJugador?.estadoAplicado, 'QUEMADURA');
+      assert.ok(resAplicaAtaque.estadoBatalla.rival.estados.some((e) => e.codigo === 'QUEMADURA'));
+
+      // r = 0.50 no aplica
+      const genNoAplicaAtaque = new GeneradorAleatorioFijo([0.5, 0.50, 0.0, 0.5]);
+      const resNoAplicaAtaque = resolverRonda(aliada, rival, estadoVacio('aliada-1'), { indiceMovimiento: 1 }, genNoAplicaAtaque);
+      assert.strictEqual(resNoAplicaAtaque.accionJugador?.estadoAplicado, null);
+
+      // 2. Movimiento tipo Estado (Aullido, slot 3, prob 0.90)
+      // Tiradas: variación (0.5), efecto r = 0.89 (< 0.90 -> aplica), índice rival (0.0), variación rival (0.5)
+      const genAplicaEstado = new GeneradorAleatorioFijo([0.5, 0.89, 0.0, 0.5]);
+      const resAplicaEstado = resolverRonda(aliada, rival, estadoVacio('aliada-1'), { indiceMovimiento: 2 }, genAplicaEstado);
+      assert.strictEqual(resAplicaEstado.accionJugador?.estadoAplicado, 'PARALISIS');
+
+      // 3. Insignia (Furia Ígnea, slot 4, índice 3): aplica 100% sin tirada y con +1 ronda (duración 3 + 1 = 4)
+      // Tiradas: variación (0.5), índice rival (0.0), variación rival (0.5)
+      const genInsignia = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const resInsignia = resolverRonda(aliada, rival, estadoVacio('aliada-1'), { indiceMovimiento: 3 }, genInsignia);
+      assert.strictEqual(resInsignia.accionJugador?.esInsignia, true);
+      assert.strictEqual(resInsignia.accionJugador?.estadoAplicado, 'QUEMADURA');
+      // Al fin de ronda, se descuenta 1 turno: 4 - 1 = 3 restantes
+      const quemaduraRival = resInsignia.estadoBatalla.rival.estados.find((e) => e.codigo === 'QUEMADURA');
+      assert.strictEqual(quemaduraRival?.turnosRestantes, 3);
+      assert.strictEqual(resInsignia.estadoBatalla.aliada.resonancia, 0, 'Insignia reinicia resonancia a 0');
+
+      // 4. BASTION en el rival (movimiento 3: Escudo Escama): autoaplicado al rival sin tirada
+      // Tiradas: variación jugador (0.5), índice rival (2 -> Escudo Escama), variación rival (0.5)
+      const genBastion = new GeneradorAleatorioFijo([0.5, 2 / 3, 0.5]);
+      const resBastion = resolverRonda(aliada, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, genBastion);
+      assert.strictEqual(resBastion.accionRival?.estadoAplicado, 'BASTION');
+      assert.ok(resBastion.estadoBatalla.rival.estados.some((e) => e.codigo === 'BASTION'));
+    });
+
+    it('Corte por victoria no ejecuta contraataque rival ni fin de ronda, y corte por aliada debilitada devuelve ALIADA_DEBILITADA', () => {
+      // Corte por victoria: rival con 5 PV es derrotado por el jugador
+      const rivalDebil = crearRival({ hpActual: 5 });
+      const aliada = crearAliada();
+      const genVictoria = new GeneradorAleatorioFijo([0.5]);
+      const resVictoria = resolverRonda(aliada, rivalDebil, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, genVictoria);
+      assert.strictEqual(resVictoria.resultado, 'VICTORIA');
+      assert.strictEqual(resVictoria.hpRestanteRival, 0);
+      assert.strictEqual(resVictoria.accionRival, null, 'Rival no debe actuar si cae derrotado');
+      assert.strictEqual(resVictoria.efectosFinDeTurno.length, 0);
+
+      // Corte por aliada debilitada: rival más veloz derrota a la aliada
+      const rivalFuerte = crearRival({ velocidad: 80, ataque: 500 });
+      const aliadaDebil = crearAliada({ hpActual: 10, velocidad: 20 });
+      const genDerrota = new GeneradorAleatorioFijo([0.0, 0.5]);
+      const resDerrota = resolverRonda(aliadaDebil, rivalFuerte, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, genDerrota);
+      assert.strictEqual(resDerrota.resultado, 'ALIADA_DEBILITADA');
+      assert.strictEqual(resDerrota.hpRestanteAliada, 0);
+      assert.strictEqual(resDerrota.accionJugador, null, 'Jugador no debe actuar si la aliada cae antes');
+    });
+
+    it('Fin de ronda ejecuta DoT, acumula resonancia, decrementa duraciones y otorga inmunidad al expirar', () => {
+      const aliada = crearAliada({ hpActual: 50, hpMaximo: 60 });
+      const rival = crearRival({ hpActual: 40, hpMaximo: 50 });
+
+      const snapshot = estadoVacio('aliada-1');
+      // Aliada con VENENO (1 turno restante -> cobrará DoT y expirará)
+      snapshot.aliada.estados = [{ codigo: 'VENENO', nombre: 'Veneno', turnosRestantes: 1 }];
+      // Rival con PARALISIS (1 turno restante -> expirará y otorgará inmunidad)
+      snapshot.rival.estados = [{ codigo: 'PARALISIS', nombre: 'Parálisis', turnosRestantes: 1 }];
+
+      // Tiradas: variación jugador (0.5), tirada parálisis rival (0.8 -> actúa), índice rival (0.0), variación rival (0.5)
+      const gen = new GeneradorAleatorioFijo([0.5, 0.8, 0.0, 0.5]);
+      const res = resolverRonda(aliada, rival, snapshot, { indiceMovimiento: 0 }, gen);
+
+      assert.strictEqual(res.resultado, 'EN_CURSO');
+      // DoT de Veneno cobrado a la aliada
+      assert.ok(res.efectosFinDeTurno.some((e) => e.objetivo === 'ALIADA' && e.codigo === 'VENENO'));
+      // Estados expirados retirados
+      assert.strictEqual(res.estadoBatalla.aliada.estados.length, 0);
+      assert.strictEqual(res.estadoBatalla.rival.estados.length, 0);
+      // Inmunidad a PARALISIS activada en el rival para la siguiente ronda
+      assert.deepStrictEqual(res.estadoBatalla.rival.inmunidades, ['PARALISIS']);
+    });
+
+    it('Determinismo: dos ejecuciones con idénticos combatientes y secuencia producen resultados idénticos', () => {
+      const aliada1 = crearAliada();
+      const rival1 = crearRival();
+      const gen1 = new GeneradorAleatorioFijo([0.3, 0.4, 0.5, 0.6]);
+      const res1 = resolverRonda(aliada1, rival1, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen1);
+
+      const aliada2 = crearAliada();
+      const rival2 = crearRival();
+      const gen2 = new GeneradorAleatorioFijo([0.3, 0.4, 0.5, 0.6]);
+      const res2 = resolverRonda(aliada2, rival2, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen2);
+
+      assert.deepStrictEqual(res1, res2, 'Ambas ejecuciones deben producir resultados profundamente idénticos');
     });
   });
 });

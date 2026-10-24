@@ -182,15 +182,15 @@ Rige las interacciones elementales entre el tipo del movimiento atacante y la af
 #### 2.11.1 Taxonomía de Cobertura de los 51 Efectos del Bestiario (Decisión D-12)
 El bestiario canónico y la base de datos cuentan con 51 efectos únicos asociados a los movimientos de las 30 criaturas. Todos ellos se calculan y resuelven con rigor autoritativo exclusivamente en el servidor:
 
-1. **Efectos mapeados a Estados Persistentes (41 efectos en `EFECTO_A_ESTADO`):**
-   - **Ígneos (`QUEMADURA`):** `QUEMADURA`, `QUEMADURA_GRAVE`, `IGNICION`, `COMBUSTION`, `TRAMPA_FUEGO`, `BOMBARDEO`, `DEVASTACION_LEGENDARIA`, `CALAMIDAD`.
-   - **Tóxicos/Sangrado (`VENENO`):** `VENENO`, `VENENO_GRAVE`, `DESGARRO`, `HERIDA`, `CONDENA`.
-   - **Gélidos (`ESCARCHA`):** `ENFRIAMIENTO`, `CONGELACION`, `LENTITUD`, `MAREJADA`.
-   - **Control/Inmovilización (`PARALISIS`):** `PARALISIS`, `STUN`, `ATURDIMIENTO`, `ENREDO`, `MIEDO`, `TERROR`, `CONFUSION`, `CEGUERA`, `SOBRECARGA_LEGENDARIA`, `DISTANCIA`.
-   - **Pétreos (`PETRIFICACION`):** `PETRIFICACION`, `PETRIFICACION_LEVE`, `SISMICO`.
-   - **Protectores (`BASTION`):** `BASTION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `RETRIBUCION`, `ESPINAS`, `DESFASADO`, `INVISIBILIDAD`, `DEF_UP`, `EVASION_UP`.
+1. **Efectos mapeados a Estados Persistentes (40 efectos en `EFECTO_A_ESTADO`):**
+   - **Ígneos (`QUEMADURA`, 8 efectos):** `QUEMADURA`, `QUEMADURA_GRAVE`, `IGNICION`, `COMBUSTION`, `TRAMPA_FUEGO`, `BOMBARDEO`, `DEVASTACION_LEGENDARIA`, `CALAMIDAD`.
+   - **Tóxicos/Sangrado (`VENENO`, 5 efectos):** `VENENO`, `VENENO_GRAVE`, `DESGARRO`, `HERIDA`, `CONDENA`.
+   - **Gélidos (`ESCARCHA`, 4 efectos):** `ENFRIAMIENTO`, `CONGELACION`, `LENTITUD`, `MAREJADA`.
+   - **Control/Inmovilización (`PARALISIS`, 10 efectos):** `PARALISIS`, `STUN`, `ATURDIMIENTO`, `ENREDO`, `MIEDO`, `TERROR`, `CONFUSION`, `CEGUERA`, `SOBRECARGA_LEGENDARIA`, `DISTANCIA`.
+   - **Pétreos (`PETRIFICACION`, 3 efectos):** `PETRIFICACION`, `PETRIFICACION_LEVE`, `SISMICO`.
+   - **Protectores (`BASTION`, 10 efectos):** `BASTION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `RETRIBUCION`, `ESPINAS`, `DESFASADO`, `INVISIBILIDAD`, `DEF_UP`, `EVASION_UP`.
 
-2. **Efectos Instantáneos con Mecánicas Directas de Servidor (10 efectos):**
+2. **Efectos Instantáneos con Mecánicas Directas de Servidor (11 efectos):**
    - **`CRITICO`:** Multiplica el daño por $1.35\times$ en el servidor.
    - **`EJECUCION`:** Letalidad de movimiento insignia, multiplica el daño por $1.50\times$.
    - **`EMPUJE`:** Impacto contundente, multiplica el daño por $1.15\times$.
@@ -200,7 +200,7 @@ El bestiario canónico y la base de datos cuentan con 51 efectos únicos asociad
    - **`ATQ_UP`:** Potencia el daño saliente en un $+20\,\%$ ($1.20\times$).
    - **`DEF_DOWN`:** Quebrantamiento de guardia que incrementa el daño recibido en un $+25\,\%$ ($1.25\times$).
    - **`ATQ_DOWN`:** Debilitamiento del atacante que reduce el daño saliente a $0.85\times$.
-   - **`VEL_UP`:** Bonificación de agilidad táctica que asegura iniciativa y ventaja temporal.
+   - **`VEL_UP`:** Bonificación de agilidad táctica que otorga $+15\,\%$ de Resonancia táctica inmediata al atacante e incrementa el daño en un $+10\,\%$ ($1.10\times$).
 
 ### 2.12 Acumulador y mecánicas de Resonancia (Subfase 10k)
 La barra de Resonancia ($0 - 100\,\%$) se incrementa al final de cada ronda según las siguientes reglas autoritativas:

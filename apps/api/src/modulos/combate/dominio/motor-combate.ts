@@ -849,6 +849,11 @@ export function resolverRonda(
     let multEfecto = 1.0;
     let esCritico = false;
     let esEjecucion = false;
+    let esEmpuje = false;
+    let esAtqUp = false;
+    let esDefDown = false;
+    let esAtqDown = false;
+    let esVelUp = false;
     if (mov.efecto === 'CRITICO') {
       multEfecto = 1.35;
       esCritico = true;
@@ -857,12 +862,19 @@ export function resolverRonda(
       esEjecucion = true;
     } else if (mov.efecto === 'EMPUJE') {
       multEfecto = 1.15;
+      esEmpuje = true;
     } else if (mov.efecto === 'ATQ_UP') {
       multEfecto = 1.20;
+      esAtqUp = true;
     } else if (mov.efecto === 'DEF_DOWN') {
       multEfecto = 1.25;
+      esDefDown = true;
     } else if (mov.efecto === 'ATQ_DOWN') {
       multEfecto = 0.85;
+      esAtqDown = true;
+    } else if (mov.efecto === 'VEL_UP') {
+      multEfecto = 1.10;
+      esVelUp = true;
     }
 
     const defEfectivaRival = defensaEfectiva(rival.defensa, estadosRival);
@@ -929,8 +941,17 @@ export function resolverRonda(
       }
     }
 
-    // 6. Mecánicas de Drenaje, Regeneración y Purificación
-    if (mov.efecto === 'DRENAJE' && danoBase > 0) {
+    // 6. Mecánicas de Drenaje, Regeneración, Purificación y Aceleración de Agilidad (VEL_UP)
+    if (mov.efecto === 'VEL_UP') {
+      const resonanciaPrevia = resonanciaAliada;
+      resonanciaAliada = Math.min(100, resonanciaAliada + 15);
+      const gananciaReal = resonanciaAliada - resonanciaPrevia;
+      if (gananciaReal > 0) {
+        mensajes.push(`¡Tu criatura desplegó agilidad extrema ganando +${gananciaReal}% de Resonancia táctica!`);
+      } else {
+        mensajes.push(`¡Tu criatura desplegó agilidad extrema en su ataque!`);
+      }
+    } else if (mov.efecto === 'DRENAJE' && danoBase > 0) {
       const curacionDrenaje = Math.max(1, Math.floor(danoBase * 0.30));
       const hpPrevioAliada = hpAliada;
       hpAliada = Math.min(aliada.hpMaximo, hpAliada + curacionDrenaje);
@@ -976,12 +997,37 @@ export function resolverRonda(
     let msg = `Tu criatura usó ${mov.nombre}. ¡Causó ${danoBase} de daño!`;
     if (esCritico) msg += ` ¡Golpe crítico!`;
     if (esEjecucion) msg += ` ¡Ejecución letal asestada!`;
+    if (esEmpuje) msg += ` ¡Impacto de empuje!`;
+    if (esAtqUp) msg += ` ¡Poder de ataque incrementado!`;
+    if (esDefDown) msg += ` ¡Defensa rival vulnerada!`;
+    if (esAtqDown) msg += ` (Ataque con impacto reducido)`;
+    if (esVelUp) msg += ` ¡Aceleración de reflejos!`;
     if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
     else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
     if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;
     if (estadoAplicado) {
       if (estadoAplicado === 'BASTION') {
-        msg += ` ¡Tu criatura alzó un Bastión protector!`;
+        if (mov.efecto === 'ESPINAS') {
+          msg += ` ¡Tu criatura alzó una defensa de espinas afiladas!`;
+        } else if (mov.efecto === 'RETRIBUCION') {
+          msg += ` ¡Tu criatura alzó un bastión de retribución arcana!`;
+        } else if (mov.efecto === 'BARRERA') {
+          msg += ` ¡Tu criatura levantó una barrera mística!`;
+        } else if (mov.efecto === 'FORTALEZA') {
+          msg += ` ¡Tu criatura reforzó su postura en fortaleza inamovible!`;
+        } else if (mov.efecto === 'BLOQUEO') {
+          msg += ` ¡Tu criatura activó un bloqueo firme!`;
+        } else if (mov.efecto === 'INVISIBILIDAD') {
+          msg += ` ¡Tu criatura se desvaneció tras un velo de invisibilidad!`;
+        } else if (mov.efecto === 'DESFASADO') {
+          msg += ` ¡Tu criatura entró en desfasamiento defensivo!`;
+        } else if (mov.efecto === 'DEF_UP') {
+          msg += ` ¡Tu criatura potenció su defensa con un bastión férreo!`;
+        } else if (mov.efecto === 'EVASION_UP') {
+          msg += ` ¡Tu criatura incrementó su evasión con un bastión de reflejos!`;
+        } else {
+          msg += ` ¡Tu criatura alzó un Bastión protector!`;
+        }
       } else {
         msg += ` ¡El rival quedó afectado por ${CATALOGO_ESTADOS[estadoAplicado].nombre}!`;
       }
@@ -1053,6 +1099,11 @@ export function resolverRonda(
     let multEfecto = 1.0;
     let esCritico = false;
     let esEjecucion = false;
+    let esEmpuje = false;
+    let esAtqUp = false;
+    let esDefDown = false;
+    let esAtqDown = false;
+    let esVelUp = false;
     if (mov.efecto === 'CRITICO') {
       multEfecto = 1.35;
       esCritico = true;
@@ -1061,12 +1112,19 @@ export function resolverRonda(
       esEjecucion = true;
     } else if (mov.efecto === 'EMPUJE') {
       multEfecto = 1.15;
+      esEmpuje = true;
     } else if (mov.efecto === 'ATQ_UP') {
       multEfecto = 1.20;
+      esAtqUp = true;
     } else if (mov.efecto === 'DEF_DOWN') {
       multEfecto = 1.25;
+      esDefDown = true;
     } else if (mov.efecto === 'ATQ_DOWN') {
       multEfecto = 0.85;
+      esAtqDown = true;
+    } else if (mov.efecto === 'VEL_UP') {
+      multEfecto = 1.10;
+      esVelUp = true;
     }
 
     const defEfectivaAliada = defensaEfectiva(aliada.defensa, estadosAliada);
@@ -1122,8 +1180,10 @@ export function resolverRonda(
       }
     }
 
-    // 6. Mecánicas de Drenaje, Regeneración y Purificación del Rival
-    if (mov.efecto === 'DRENAJE' && danoBase > 0) {
+    // 6. Mecánicas de Drenaje, Regeneración, Purificación y Aceleración de Agilidad del Rival
+    if (mov.efecto === 'VEL_UP') {
+      mensajes.push(`¡El rival aceleró sus reflejos con agilidad extrema!`);
+    } else if (mov.efecto === 'DRENAJE' && danoBase > 0) {
       const curacionDrenaje = Math.max(1, Math.floor(danoBase * 0.30));
       const hpPrevioRival = hpRival;
       hpRival = Math.min(rival.hpMaximo, hpRival + curacionDrenaje);
@@ -1164,12 +1224,37 @@ export function resolverRonda(
     let msg = `El rival usó ${mov.nombre}. ¡Causó ${danoBase} de daño a tu criatura!`;
     if (esCritico) msg += ` ¡Golpe crítico!`;
     if (esEjecucion) msg += ` ¡Ejecución letal asestada!`;
+    if (esEmpuje) msg += ` ¡Impacto de empuje!`;
+    if (esAtqUp) msg += ` ¡Poder de ataque incrementado!`;
+    if (esDefDown) msg += ` ¡Defensa aliada vulnerada!`;
+    if (esAtqDown) msg += ` (Ataque rival con impacto reducido)`;
+    if (esVelUp) msg += ` ¡Aceleración de reflejos!`;
     if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
     else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
     if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;
     if (estadoAplicado) {
       if (estadoAplicado === 'BASTION') {
-        msg += ` ¡El rival alzó un Bastión protector!`;
+        if (mov.efecto === 'ESPINAS') {
+          msg += ` ¡El rival alzó una defensa de espinas afiladas!`;
+        } else if (mov.efecto === 'RETRIBUCION') {
+          msg += ` ¡El rival alzó un bastión de retribución arcana!`;
+        } else if (mov.efecto === 'BARRERA') {
+          msg += ` ¡El rival levantó una barrera mística!`;
+        } else if (mov.efecto === 'FORTALEZA') {
+          msg += ` ¡El rival reforzó su postura en fortaleza inamovible!`;
+        } else if (mov.efecto === 'BLOQUEO') {
+          msg += ` ¡El rival activó un bloqueo firme!`;
+        } else if (mov.efecto === 'INVISIBILIDAD') {
+          msg += ` ¡El rival se desvaneció tras un velo de invisibilidad!`;
+        } else if (mov.efecto === 'DESFASADO') {
+          msg += ` ¡El rival entró en desfasamiento defensivo!`;
+        } else if (mov.efecto === 'DEF_UP') {
+          msg += ` ¡El rival potenció su defensa con un bastión férreo!`;
+        } else if (mov.efecto === 'EVASION_UP') {
+          msg += ` ¡El rival incrementó su evasión con un bastión de reflejos!`;
+        } else {
+          msg += ` ¡El rival alzó un Bastión protector!`;
+        }
       } else {
         msg += ` ¡Tu criatura quedó afectada por ${CATALOGO_ESTADOS[estadoAplicado].nombre}!`;
       }

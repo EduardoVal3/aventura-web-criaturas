@@ -168,16 +168,39 @@ Rige las interacciones elementales entre el tipo del movimiento atacante y la af
 | **Sombra** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | $0.75\times$ | **$1.5\times$** |
 | **Luz** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | **$1.5\times$** | $0.75\times$ |
 
-### 2.11 Catálogo y reglas de estados alterados (Subfase 10k)
-1. **`QUEMADURA`:** DoT del $10\,\%$ del HP Máximo (mínimo 1), $\text{defensaEfectiva} = \text{defensa} \times 0.75$. Duración: 3 turnos.
-2. **`VENENO`:** DoT del $12\,\%$ del HP Máximo (mínimo 1). Duración: 4 turnos.
-3. **`ESCARCHA`:** $\text{velEfectiva} = \text{velocidad} \times 0.60$. Duración: 2 turnos.
-4. **`PARALISIS`:** $\text{velEfectiva} = \text{velocidad} \times 0.75$, $25\,\%$ de probabilidad de perder turno ($r < 0.25$). Duración: 2 turnos.
-5. **`PETRIFICACION`:** Pérdida total del turno ($100\,\%$, sin consumir tirada estocástica). Duración: 1 turno.
-6. **`BASTION`:** Escudo de protección equivalente al $20\,\%$ del HP Máximo que absorbe daño directo antes de impactar los puntos de salud. Expira al consumirse o tras 3 turnos (beneficio: `esAlterado: false`).
+### 2.11 Catálogo y reglas de estados alterados (Subfase 10k y 10l)
+1. **`QUEMADURA`:** DoT del $8\,\%$ del HP Máximo (mínimo 1), $\text{defensaEfectiva} = \text{defensa} \times 0.75$. Duración: 3 turnos. Aplica sobre el objetivo.
+2. **`VENENO`:** DoT del $6\,\%$ del HP Máximo (mínimo 1). Duración: 3 turnos. Aplica sobre el objetivo.
+3. **`ESCARCHA`:** $\text{velEfectiva} = \max(1, \lfloor \text{velocidad} \times 0.50 \rfloor)$. Duración: 2 turnos. Aplica sobre el objetivo.
+4. **`PARALISIS`:** $\text{velEfectiva} = \max(1, \lfloor \text{velocidad} \times 0.75 \rfloor)$, $25\,\%$ de probabilidad estocástica de perder turno ($r < 0.25$). Duración: 3 turnos. Aplica sobre el objetivo.
+5. **`PETRIFICACION`:** Pérdida total del turno ($100\,\%$, sin consumir tirada estocástica) y $\text{defensaEfectiva} = \lfloor \text{defensa} \times 1.50 \rfloor$. Duración: 2 turnos. Aplica sobre el objetivo.
+6. **`BASTION`:** Escudo místico de protección equivalente al $20\,\%$ del HP Máximo (o $35\,\%$ en M4 Insignia) que absorbe daño directo antes de impactar los puntos de salud. Expira al consumirse o tras 3 turnos (beneficio: `esBeneficioso: true`). Aplica sobre el combatiente que lo conjura.
 
-- **Regla DoT No Letal (D-4):** Los daños por estado al final del turno se acotan a $\max(1, \text{hpActual} - \text{danoDoT})$, impidiendo que un estado alterado debilite a una criatura por sí solo.
+- **Regla DoT No Letal (D-4):** Los daños por estado al final del turno se acotan a $\max(1, \text{hpActual} - \text{danoDoT})$, impidiendo que un estado alterado debilite a una criatura por sí solo para favorecer la captura táctica.
 - **Inmunidad de 1 Turno (D-6):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno inmediatamente posterior.
+
+#### 2.11.1 Taxonomía de Cobertura de los 51 Efectos del Bestiario (Decisión D-12)
+El bestiario canónico y la base de datos cuentan con 51 efectos únicos asociados a los movimientos de las 30 criaturas. Todos ellos se calculan y resuelven con rigor autoritativo exclusivamente en el servidor:
+
+1. **Efectos mapeados a Estados Persistentes (41 efectos en `EFECTO_A_ESTADO`):**
+   - **Ígneos (`QUEMADURA`):** `QUEMADURA`, `QUEMADURA_GRAVE`, `IGNICION`, `COMBUSTION`, `TRAMPA_FUEGO`, `BOMBARDEO`, `DEVASTACION_LEGENDARIA`, `CALAMIDAD`.
+   - **Tóxicos/Sangrado (`VENENO`):** `VENENO`, `VENENO_GRAVE`, `DESGARRO`, `HERIDA`, `CONDENA`.
+   - **Gélidos (`ESCARCHA`):** `ENFRIAMIENTO`, `CONGELACION`, `LENTITUD`, `MAREJADA`.
+   - **Control/Inmovilización (`PARALISIS`):** `PARALISIS`, `STUN`, `ATURDIMIENTO`, `ENREDO`, `MIEDO`, `TERROR`, `CONFUSION`, `CEGUERA`, `SOBRECARGA_LEGENDARIA`, `DISTANCIA`.
+   - **Pétreos (`PETRIFICACION`):** `PETRIFICACION`, `PETRIFICACION_LEVE`, `SISMICO`.
+   - **Protectores (`BASTION`):** `BASTION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `RETRIBUCION`, `ESPINAS`, `DESFASADO`, `INVISIBILIDAD`, `DEF_UP`, `EVASION_UP`.
+
+2. **Efectos Instantáneos con Mecánicas Directas de Servidor (10 efectos):**
+   - **`CRITICO`:** Multiplica el daño por $1.35\times$ en el servidor.
+   - **`EJECUCION`:** Letalidad de movimiento insignia, multiplica el daño por $1.50\times$.
+   - **`EMPUJE`:** Impacto contundente, multiplica el daño por $1.15\times$.
+   - **`DRENAJE`:** Absorbe el $30\,\%$ del daño infligido y lo suma a los PV del atacante (acotado a $\text{hpMaximo}$ por INV-03).
+   - **`REGENERACION`:** Restaura el $20\,\%$ del $\text{hpMaximo}$ del usuario (INV-03).
+   - **`PURIFICACION` / `LUZ`:** Limpia todas las aflicciones negativas conservando los escudos de Bastión y restaura el $15\,\%$ del $\text{hpMaximo}$.
+   - **`ATQ_UP`:** Potencia el daño saliente en un $+20\,\%$ ($1.20\times$).
+   - **`DEF_DOWN`:** Quebrantamiento de guardia que incrementa el daño recibido en un $+25\,\%$ ($1.25\times$).
+   - **`ATQ_DOWN`:** Debilitamiento del atacante que reduce el daño saliente a $0.85\times$.
+   - **`VEL_UP`:** Bonificación de agilidad táctica que asegura iniciativa y ventaja temporal.
 
 ### 2.12 Acumulador y mecánicas de Resonancia (Subfase 10k)
 La barra de Resonancia ($0 - 100\,\%$) se incrementa al final de cada ronda según las siguientes reglas autoritativas:

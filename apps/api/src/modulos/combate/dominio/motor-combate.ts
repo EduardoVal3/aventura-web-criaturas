@@ -237,25 +237,60 @@ export const CATALOGO_ESTADOS: Readonly<
 
 /**
  * Mapeo de claves de efecto existentes en Movimiento/BESTIARIO hacia estados autoritativos.
- * Todos los efectos no listados son informativos (D-6).
+ * simplificacion: Mapeo O(1) con tabla inmutable exhaustiva para los 41 efectos de estado del bestiario de BD.
  */
 export const EFECTO_A_ESTADO: Readonly<Record<string, CodigoEstado>> = Object.freeze({
+  // Quemadura y DoT ígneo
   QUEMADURA: 'QUEMADURA',
   QUEMADURA_GRAVE: 'QUEMADURA',
+  IGNICION: 'QUEMADURA',
+  COMBUSTION: 'QUEMADURA',
+  TRAMPA_FUEGO: 'QUEMADURA',
+  BOMBARDEO: 'QUEMADURA',
+  DEVASTACION_LEGENDARIA: 'QUEMADURA',
+  CALAMIDAD: 'QUEMADURA',
+
+  // Veneno, DoT tóxico y sangrado
   VENENO: 'VENENO',
   VENENO_GRAVE: 'VENENO',
+  DESGARRO: 'VENENO',
+  HERIDA: 'VENENO',
+  CONDENA: 'VENENO',
+
+  // Escarcha, congelación y ralentización
   ENFRIAMIENTO: 'ESCARCHA',
   CONGELACION: 'ESCARCHA',
   LENTITUD: 'ESCARCHA',
+  MAREJADA: 'ESCARCHA',
+
+  // Parálisis, aturdimiento y control de turno
   PARALISIS: 'PARALISIS',
   STUN: 'PARALISIS',
   ATURDIMIENTO: 'PARALISIS',
+  ENREDO: 'PARALISIS',
+  MIEDO: 'PARALISIS',
+  TERROR: 'PARALISIS',
+  CONFUSION: 'PARALISIS',
+  CEGUERA: 'PARALISIS',
+  SOBRECARGA_LEGENDARIA: 'PARALISIS',
+  DISTANCIA: 'PARALISIS',
+
+  // Petrificación y sacudidas telúricas
   PETRIFICACION: 'PETRIFICACION',
   PETRIFICACION_LEVE: 'PETRIFICACION',
+  SISMICO: 'PETRIFICACION',
+
+  // Bastión, escudos y evasión protectora
   BASTION: 'BASTION',
   BARRERA: 'BASTION',
   FORTALEZA: 'BASTION',
   BLOQUEO: 'BASTION',
+  RETRIBUCION: 'BASTION',
+  ESPINAS: 'BASTION',
+  DESFASADO: 'BASTION',
+  INVISIBILIDAD: 'BASTION',
+  DEF_UP: 'BASTION',
+  EVASION_UP: 'BASTION',
 });
 
 export interface EstadoActivo {
@@ -810,13 +845,33 @@ export function resolverRonda(
     const efectividad = etiquetaEfectividad(multAfinidad);
     if (efectividad === 'VENTAJA') golpeJugadorConVentaja = true;
 
+    // Modificadores tácticos autoritativos según efecto del movimiento
+    let multEfecto = 1.0;
+    let esCritico = false;
+    let esEjecucion = false;
+    if (mov.efecto === 'CRITICO') {
+      multEfecto = 1.35;
+      esCritico = true;
+    } else if (mov.efecto === 'EJECUCION') {
+      multEfecto = 1.50;
+      esEjecucion = true;
+    } else if (mov.efecto === 'EMPUJE') {
+      multEfecto = 1.15;
+    } else if (mov.efecto === 'ATQ_UP') {
+      multEfecto = 1.20;
+    } else if (mov.efecto === 'DEF_DOWN') {
+      multEfecto = 1.25;
+    } else if (mov.efecto === 'ATQ_DOWN') {
+      multEfecto = 0.85;
+    }
+
     const defEfectivaRival = defensaEfectiva(rival.defensa, estadosRival);
     const danoBase = calcularDano(
       aliada.ataque,
       defEfectivaRival,
       mov.poder,
       aliada.nivel,
-      factorVariacion * multAfinidad,
+      factorVariacion * multAfinidad * multEfecto,
     );
 
     const { danoRestante, danoAbsorbido, estadosActualizados } = absorberConEscudo(
@@ -827,7 +882,7 @@ export function resolverRonda(
 
     hpRival = aplicarDano(hpRival, danoRestante, rival.hpMaximo);
 
-    // 5. Aplicar efecto si mapea
+    // 5. Aplicar estado alterado si mapea en EFECTO_A_ESTADO
     let estadoAplicado: CodigoEstado | null = null;
     if (mov.efecto && mov.efecto in EFECTO_A_ESTADO) {
       const codigo = EFECTO_A_ESTADO[mov.efecto];
@@ -874,6 +929,38 @@ export function resolverRonda(
       }
     }
 
+    // 6. Mecánicas de Drenaje, Regeneración y Purificación
+    if (mov.efecto === 'DRENAJE' && danoBase > 0) {
+      const curacionDrenaje = Math.max(1, Math.floor(danoBase * 0.30));
+      const hpPrevioAliada = hpAliada;
+      hpAliada = Math.min(aliada.hpMaximo, hpAliada + curacionDrenaje);
+      const drenadoReal = hpAliada - hpPrevioAliada;
+      if (drenadoReal > 0) {
+        mensajes.push(`¡Tu criatura drenó vitalidad y recuperó ${drenadoReal} PV!`);
+      }
+    } else if (mov.efecto === 'REGENERACION') {
+      const curacionRegen = Math.max(1, Math.floor(aliada.hpMaximo * 0.20));
+      const hpPrevioAliada = hpAliada;
+      hpAliada = Math.min(aliada.hpMaximo, hpAliada + curacionRegen);
+      const curadoReal = hpAliada - hpPrevioAliada;
+      if (curadoReal > 0) {
+        mensajes.push(`¡Tu criatura canalizó energía vital y regeneró ${curadoReal} PV!`);
+      }
+    } else if (mov.efecto === 'PURIFICACION' || mov.efecto === 'LUZ') {
+      const tieneAfliccion = estadosAliada.some((e) => e.codigo !== 'BASTION');
+      if (tieneAfliccion) {
+        estadosAliada = estadosAliada.filter((e) => e.codigo === 'BASTION');
+        mensajes.push(`¡El resplandor místico purificó todas las aflicciones de tu criatura!`);
+      }
+      const curacionLuz = Math.max(1, Math.floor(aliada.hpMaximo * 0.15));
+      const hpPrevioAliada = hpAliada;
+      hpAliada = Math.min(aliada.hpMaximo, hpAliada + curacionLuz);
+      const curadoLuz = hpAliada - hpPrevioAliada;
+      if (curadoLuz > 0) {
+        mensajes.push(`¡La luz estelar restauró ${curadoLuz} PV a tu criatura!`);
+      }
+    }
+
     accionJugadorResultado = {
       movimiento: mov.nombre,
       danoCausado: danoBase,
@@ -887,6 +974,8 @@ export function resolverRonda(
     };
 
     let msg = `Tu criatura usó ${mov.nombre}. ¡Causó ${danoBase} de daño!`;
+    if (esCritico) msg += ` ¡Golpe crítico!`;
+    if (esEjecucion) msg += ` ¡Ejecución letal asestada!`;
     if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
     else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
     if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;
@@ -960,13 +1049,33 @@ export function resolverRonda(
     const multAfinidad = multiplicadorAfinidad(rival.elemento, aliada.elemento);
     const efectividad = etiquetaEfectividad(multAfinidad);
 
+    // Modificadores tácticos autoritativos según efecto del movimiento del rival
+    let multEfecto = 1.0;
+    let esCritico = false;
+    let esEjecucion = false;
+    if (mov.efecto === 'CRITICO') {
+      multEfecto = 1.35;
+      esCritico = true;
+    } else if (mov.efecto === 'EJECUCION') {
+      multEfecto = 1.50;
+      esEjecucion = true;
+    } else if (mov.efecto === 'EMPUJE') {
+      multEfecto = 1.15;
+    } else if (mov.efecto === 'ATQ_UP') {
+      multEfecto = 1.20;
+    } else if (mov.efecto === 'DEF_DOWN') {
+      multEfecto = 1.25;
+    } else if (mov.efecto === 'ATQ_DOWN') {
+      multEfecto = 0.85;
+    }
+
     const defEfectivaAliada = defensaEfectiva(aliada.defensa, estadosAliada);
     const danoBase = calcularDano(
       rival.ataque,
       defEfectivaAliada,
       mov.poder,
       rival.nivel,
-      factorVariacion * multAfinidad,
+      factorVariacion * multAfinidad * multEfecto,
     );
 
     const { danoRestante, danoAbsorbido, estadosActualizados } = absorberConEscudo(
@@ -1013,6 +1122,33 @@ export function resolverRonda(
       }
     }
 
+    // 6. Mecánicas de Drenaje, Regeneración y Purificación del Rival
+    if (mov.efecto === 'DRENAJE' && danoBase > 0) {
+      const curacionDrenaje = Math.max(1, Math.floor(danoBase * 0.30));
+      const hpPrevioRival = hpRival;
+      hpRival = Math.min(rival.hpMaximo, hpRival + curacionDrenaje);
+      const drenadoReal = hpRival - hpPrevioRival;
+      if (drenadoReal > 0) {
+        mensajes.push(`¡El rival drenó vitalidad y recuperó ${drenadoReal} PV!`);
+      }
+    } else if (mov.efecto === 'REGENERACION') {
+      const curacionRegen = Math.max(1, Math.floor(rival.hpMaximo * 0.20));
+      const hpPrevioRival = hpRival;
+      hpRival = Math.min(rival.hpMaximo, hpRival + curacionRegen);
+      const curadoReal = hpRival - hpPrevioRival;
+      if (curadoReal > 0) {
+        mensajes.push(`¡El rival canalizó energía vital y regeneró ${curadoReal} PV!`);
+      }
+    } else if (mov.efecto === 'PURIFICACION' || mov.efecto === 'LUZ') {
+      const tieneAfliccion = estadosRival.some((e) => e.codigo !== 'BASTION');
+      if (tieneAfliccion) {
+        estadosRival = estadosRival.filter((e) => e.codigo === 'BASTION');
+        mensajes.push(`¡Un resplandor místico purificó todas las aflicciones del rival!`);
+      }
+      const curacionLuz = Math.max(1, Math.floor(rival.hpMaximo * 0.15));
+      hpRival = Math.min(rival.hpMaximo, hpRival + curacionLuz);
+    }
+
     accionRivalResultado = {
       movimiento: mov.nombre,
       danoCausado: danoBase,
@@ -1026,6 +1162,8 @@ export function resolverRonda(
     };
 
     let msg = `El rival usó ${mov.nombre}. ¡Causó ${danoBase} de daño a tu criatura!`;
+    if (esCritico) msg += ` ¡Golpe crítico!`;
+    if (esEjecucion) msg += ` ¡Ejecución letal asestada!`;
     if (efectividad === 'VENTAJA') msg += ` ¡Fue muy efectivo!`;
     else if (efectividad === 'DESVENTAJA') msg += ` No fue muy efectivo...`;
     if (danoAbsorbido > 0) msg += ` (El escudo absorbió ${danoAbsorbido} de daño)`;

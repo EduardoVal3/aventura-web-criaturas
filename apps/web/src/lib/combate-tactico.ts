@@ -368,6 +368,71 @@ const TABLA_BADGES_EFECTOS: Readonly<
     icono: "Flame",
     claseEstilo: "border-orange-400 text-orange-300 bg-orange-500/20",
   },
+  BOMBARDEO: {
+    nombre: "Bombardeo",
+    icono: "Flame",
+    claseEstilo: "border-orange-500/80 text-orange-300 bg-orange-500/20",
+  },
+  CALAMIDAD: {
+    nombre: "Calamidad",
+    icono: "Flame",
+    claseEstilo: "border-rose-500/80 text-rose-300 bg-rose-500/20",
+  },
+  COMBUSTION: {
+    nombre: "Combustión",
+    icono: "Flame",
+    claseEstilo: "border-red-500/80 text-red-300 bg-red-500/20",
+  },
+  IGNICION: {
+    nombre: "Ignición",
+    icono: "Flame",
+    claseEstilo: "border-red-500/70 text-red-400 bg-red-500/15",
+  },
+  TRAMPA_FUEGO: {
+    nombre: "Trampa Ígnea",
+    icono: "Flame",
+    claseEstilo: "border-orange-500/70 text-orange-400 bg-orange-500/15",
+  },
+  DESGARRO: {
+    nombre: "Desgarro",
+    icono: "Skull",
+    claseEstilo: "border-red-500/70 text-red-300 bg-red-500/15",
+  },
+  DESFASADO: {
+    nombre: "Desfasado",
+    icono: "Shield",
+    claseEstilo: "border-indigo-400/70 text-indigo-300 bg-indigo-500/15",
+  },
+  DISTANCIA: {
+    nombre: "Distancia",
+    icono: "Zap",
+    claseEstilo: "border-slate-400/70 text-slate-300 bg-slate-500/15",
+  },
+  MAREJADA: {
+    nombre: "Marejada",
+    icono: "Snowflake",
+    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
+  },
+  MIEDO: {
+    nombre: "Miedo",
+    icono: "Zap",
+    claseEstilo: "border-purple-400/70 text-purple-300 bg-purple-500/15",
+  },
+  TERROR: {
+    nombre: "Terror",
+    icono: "Zap",
+    claseEstilo: "border-purple-500/70 text-purple-300 bg-purple-600/15",
+  },
+  RETRIBUCION: {
+    nombre: "Retribución",
+    icono: "Shield",
+    claseEstilo: "border-amber-500/70 text-amber-300 bg-amber-500/15",
+  },
+  SISMICO: {
+    nombre: "Sísmico",
+    icono: "ShieldAlert",
+    claseEstilo: "border-amber-700/70 text-amber-300 bg-amber-800/15",
+  },
 });
 
 /**

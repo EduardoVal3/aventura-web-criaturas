@@ -49,6 +49,16 @@ import {
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
+import { Lock, Crown, ChevronsUp, ChevronsDown, Sparkles } from "lucide-react";
+import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
+import {
+  construirSlotsTacticos,
+  ETIQUETA_EFECTIVIDAD,
+} from "@/lib/combate-tactico";
+import {
+  BarraResonancia,
+  InsigniasEstado,
+} from "@/components/combate/PanelTactico";
 
 interface RecompensasVictoria {
   xpGanada: number;
@@ -595,7 +605,8 @@ export function PantallaCombate() {
   const esTurnoJugador = encuentro?.esTurnoJugador ?? true;
   const movimientosAliados = aliado.movimientos && aliado.movimientos.length > 0
     ? aliado.movimientos
-    : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE" }];
+    : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE", slot: 1 }];
+  const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto py-2 sm:py-4 px-2 sm:px-0">
@@ -656,7 +667,33 @@ export function PantallaCombate() {
         {/* SECTOR RIVAL: Fondo / Arriba-Derecha */}
         <div className="relative z-10 flex flex-col items-end sm:flex-row sm:items-start sm:justify-end gap-3 sm:gap-6 self-end w-full sm:w-auto">
           {/* Placa de Vitalidad del Rival */}
-          <div className="w-full sm:w-64 bg-bastion border-2 border-pixel p-2.5 shadow-pixel-sm">
+          <div className="w-full sm:w-64 bg-bastion border-2 border-pixel p-2.5 shadow-pixel-sm space-y-1.5">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                {rival.esLegendaria && (
+                  <span title="Criatura Legendaria" className="shrink-0">
+                    <Crown className="size-3.5 text-amber-400 animate-bounce motion-reduce:animate-none" aria-hidden="true" />
+                  </span>
+                )}
+                <span className="font-bold text-xs truncate text-destructive">
+                  {rival.nombre}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[8px] font-mono px-1 py-0 ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
+                  >
+                    {TRADUCCION_ELEMENTOS[rival.afinidad].nombre}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-[9px] font-mono">
+                  Nv. {rival.nivel}
+                </Badge>
+              </div>
+            </div>
+
             <EnemyHealthDisplay
               enemyName={rival.nombre}
               level={rival.nivel}
@@ -665,6 +702,8 @@ export function PantallaCombate() {
               variant="retro"
               textColor="red"
             />
+
+            <InsigniasEstado estados={rival.estados} />
           </div>
 
           {/* Sprite del Rival con pedestal y efecto de daño */}
@@ -719,11 +758,21 @@ export function PantallaCombate() {
 
           {/* Placa de Vitalidad y XP del Aliado */}
           <div className="w-full sm:w-72 bg-bastion border-2 border-pixel p-3 shadow-pixel-sm space-y-2 order-1 sm:order-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs sm:text-sm text-primary tracking-wide">
-                {aliado.nombre}
-              </span>
-              <Badge variant="outline" className="text-[10px] font-mono">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span className="font-bold text-xs sm:text-sm text-primary tracking-wide truncate">
+                  {aliado.nombre}
+                </span>
+                {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] font-mono px-1 py-0 shrink-0 ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
+                  >
+                    {TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}
+                  </Badge>
+                )}
+              </div>
+              <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                 Nv. {aliado.nivel}
               </Badge>
             </div>
@@ -742,6 +791,16 @@ export function PantallaCombate() {
                 className="h-3 sm:h-3.5"
               />
             </div>
+
+            {/* Barra de Resonancia Táctica (10 Bloques Ámbar) */}
+            <BarraResonancia
+              resonancia={aliado.resonancia ?? 0}
+              deshabilitado={procesandoAccion || !esTurnoJugador}
+              onDesatarInsignia={() => handleAtacar(3)}
+            />
+
+            {/* Insignias de Estados Activos Aliados */}
+            <InsigniasEstado estados={aliado.estados} />
 
             {/* Barra de Experiencia (XP) precisa según escalado de nivel (§2.4) */}
             <div className="space-y-1 pt-0.5">
@@ -850,10 +909,10 @@ export function PantallaCombate() {
             <div className="w-full space-y-2">
               {/* Desplegable de Movimientos cuando se presiona Atacar */}
               {panelMovimientosAbierto && (
-                <div className="p-2 bg-abismo border-2 border-primary/70 rounded space-y-1.5 anim-revelacion-evento">
+                <div className="p-2 bg-abismo border-2 border-primary/70 rounded space-y-2 anim-revelacion-evento">
                   <div className="flex items-center justify-between pb-1 border-b border-border/30">
                     <span className="text-[11px] font-bold text-primary retro">
-                      Selecciona un Ataque:
+                      Selecciona un Movimiento:
                     </span>
                     <Button
                       variant="ghost"
@@ -864,62 +923,98 @@ export function PantallaCombate() {
                       Cancelar
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {movimientosAliados.map((mov, idx) => {
-                      const numSlot = mov.slot ?? idx + 1;
-                      const esFuriaSlot4 = numSlot === 4 || idx === 3;
-                      const estaBloqueado = esFuriaSlot4; // simplificacion: Furia bloqueada en servidor hasta tener Resonancia 100%
+                  <div className="grid grid-cols-2 gap-2">
+                    {slotsTacticos.map((slotItem) => {
+                      const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
+                      const esFuriaSlot4 = esInsignia;
+                      const estaBloqueado = bloqueado;
+                      const nombreMov =
+                        mov?.nombre ??
+                        (esInsignia ? "Movimiento Insignia" : `Movimiento ${slot}`);
+                      const poder = mov?.poder ?? 10;
+                      const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival
+                        ?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
+                      const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
 
                       return (
                         <Button
-                          key={idx}
-                          variant={estaBloqueado ? "outline" : "secondary"}
+                          key={slot}
+                          variant={estaBloqueado ? "outline" : esInsignia ? "default" : "secondary"}
                           size="sm"
                           disabled={procesandoAccion || estaBloqueado}
                           aria-disabled={estaBloqueado}
                           aria-busy={procesandoAccion}
-                          onClick={() => !estaBloqueado && handleAtacar(idx)}
-                          title={
+                          onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
+                          aria-label={
                             estaBloqueado
-                              ? "Furia táctica bloqueada: requiere 100% de Resonancia en combate"
-                              : undefined
+                              ? `${nombreMov} bloqueado. Requiere Resonancia 100 %`
+                              : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}`
                           }
-                          className={`flex items-center justify-between text-xs h-9 px-2.5 sm:px-3 border border-pixel transition-all ${
+                          className={`flex flex-col items-start justify-between text-xs min-h-[58px] p-2 border border-pixel transition-all ${
                             estaBloqueado
                               ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed border-border/80 text-muted-foreground"
+                              : esInsignia
+                              ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia motion-reduce:animate-none"
                               : "hover:border-primary active:scale-[0.98]"
                           }`}
                         >
-                          <div className="flex items-center gap-1.5 min-w-0 truncate">
-                            <Badge
-                              variant="outline"
-                              className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
-                                estaBloqueado
-                                  ? "border-amber-500/50 text-amber-300 bg-amber-500/10"
-                                  : "border-border text-foreground"
-                              }`}
-                            >
-                              M{numSlot}
-                            </Badge>
-                            <span className="font-semibold truncate">{mov.nombre}</span>
-                            {mov.efecto && !estaBloqueado && (
-                              <span className="text-[8px] font-mono uppercase px-1 py-0 text-primary hidden sm:inline">
-                                {mov.efecto}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 ml-1">
-                            {estaBloqueado ? (
+                          <div className="flex items-center justify-between w-full gap-1 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
                               <Badge
-                                variant="secondary"
-                                className="text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/40 px-1 py-0"
+                                variant="outline"
+                                className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
+                                  estaBloqueado
+                                    ? "border-border text-muted-foreground"
+                                    : esInsignia
+                                    ? "border-amber-400 text-amber-300 bg-amber-500/20"
+                                    : "border-border text-foreground"
+                                }`}
                               >
-                                Furia (Bloqueado)
+                                M{slot}
                               </Badge>
+                              <span className="font-semibold truncate text-[11px]">
+                                {nombreMov}
+                              </span>
+                            </div>
+                            {estaBloqueado ? (
+                              <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
+                            ) : esInsignia ? (
+                              <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
+                            ) : null}
+                          </div>
+
+                          <div className="flex items-center justify-between w-full mt-1 min-w-0">
+                            {estaBloqueado ? (
+                              <span className="text-[9px] font-mono text-amber-300/80 truncate">
+                                Requiere Resonancia 100 %
+                                {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
+                              </span>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] font-mono px-1 py-0">
-                                Pot. {mov.poder}
-                              </Badge>
+                              <>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  {textoChip === "¡EFICAZ!" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5"
+                                    >
+                                      <ChevronsUp className="size-2.5" aria-hidden="true" />
+                                      {textoChip}
+                                    </Badge>
+                                  )}
+                                  {textoChip === "RESISTIDO" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5"
+                                    >
+                                      <ChevronsDown className="size-2.5" aria-hidden="true" />
+                                      {textoChip}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-[9px] font-mono text-muted-foreground ml-auto">
+                                  Pot. {poder}
+                                </span>
+                              </>
                             )}
                           </div>
                         </Button>

@@ -6,6 +6,7 @@ import {
   multiplicadorAfinidad,
   etiquetaEfectividad,
   Elemento,
+  EFECTO_A_ESTADO,
 } from '../combate/dominio/motor-combate';
 
 @Injectable()
@@ -149,6 +150,7 @@ export class EncuentrosService {
         afinidad: elementoRival,
         resonancia: snapshot.rival.resonancia,
         estados: snapshot.rival.estados,
+        esLegendaria: Boolean(encuentro.criaturaRival.especie.esLegendaria),
       },
       criaturaAliada: aliadaLider
         ? {
@@ -180,6 +182,10 @@ export class EncuentrosService {
                     (m.slot === 4 || idx === 3)
                       ? snapshot.aliada.resonancia < 100
                       : false,
+                  estadoAplicado:
+                    m.efecto && m.efecto in EFECTO_A_ESTADO
+                      ? EFECTO_A_ESTADO[m.efecto]
+                      : null,
                 }))
               : [
                   {
@@ -189,6 +195,7 @@ export class EncuentrosService {
                     slot: 1,
                     efecto: null,
                     bloqueado: false,
+                    estadoAplicado: null,
                   },
                 ],
           }

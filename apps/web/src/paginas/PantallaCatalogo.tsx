@@ -12,6 +12,7 @@ import {
   Scale,
   Sparkles,
   Crown,
+  MapPin,
   Eye,
   RotateCcw,
   X,
@@ -59,6 +60,7 @@ import {
   TRADUCCION_ELEMENTOS,
   calcularArquetipoCriatura,
   filtrarEspeciesCatalogo,
+  agruparEspeciesPorZona,
 } from "@/lib/catalogo-historial";
 
 const ARQUETIPOS_FILTRO = [
@@ -114,6 +116,11 @@ export function PantallaCatalogo() {
       busqueda,
     });
   }, [especies, tipoFiltro, arquetipoFiltro, busqueda]);
+
+  // Agrupamiento por hábitat de zona (Subfase 10l)
+  const gruposPorZona = useMemo(() => {
+    return agruparEspeciesPorZona(especiesFiltradas);
+  }, [especiesFiltradas]);
 
   // Métricas para la barra de avistamiento
   const metricas = useMemo(() => {
@@ -357,123 +364,167 @@ export function PantallaCatalogo() {
           </Button>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {especiesFiltradas.map((especie) => {
-            const arquetipo = especie.arquetipo || calcularArquetipoCriatura(especie);
-            const tipoEspanol = TRADUCCION_TIPOS_ESPECIE[especie.tipo.toLowerCase()] || especie.tipo;
-
-            return (
-              <Card
-                key={especie.slug}
-                className={`border-2 rounded-none bg-bastion flex flex-col justify-between transition-all duration-200 hover:border-primary/80 ${
-                  especie.esLegendaria
-                    ? "border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.4)]"
-                    : especie.esEspecial
-                    ? "border-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
-                    : "border-border"
-                }`}
-              >
-                {/* Cabecera de la Tarjeta */}
-                <CardHeader className="p-3 pb-2 space-y-1">
-                  {/* Título de la Criatura a ancho completo: sin truncate forzado que corte nombres largos */}
-                  <CardTitle className="text-xs sm:text-[13px] font-bold text-foreground leading-snug retro tracking-tight break-words line-clamp-2 min-h-[2rem]">
-                    {especie.nombre}
-                  </CardTitle>
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">
-                    {especie.keyExterna || `srd-2024_${especie.slug}`}
-                  </p>
-
-                  {/* Badges de Tipo, Afinidad Elemental y Arquetipo limpios sin pseudo-bordes laterales desbordados */}
-                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase bg-secondary text-secondary-foreground border border-border rounded-none">
-                      {tipoEspanol}
-                    </span>
-                    {especie.elemento && TRADUCCION_ELEMENTOS[especie.elemento] && (
-                      <span
-                        className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase border rounded-none ${
-                          TRADUCCION_ELEMENTOS[especie.elemento].clase
-                        }`}
-                      >
-                        {TRADUCCION_ELEMENTOS[especie.elemento].nombre}
-                      </span>
-                    )}
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
-                      {renderIconoArquetipo(arquetipo)}
-                      <span>{arquetipo}</span>
-                    </span>
-                  </div>
-                </CardHeader>
-
-                {/* Vitrina Central de la Criatura con Sprite Pixel-Art */}
-                <div className="relative w-full h-36 sm:h-40 bg-abismo/90 border-y-2 border-border/70 flex items-center justify-center p-3 overflow-hidden group">
-                  <div
-                    className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
-                    aria-hidden="true"
-                  />
-
-                  {/* Badge flotante de LEGENDARIO o ESPECIAL */}
-                  {especie.esLegendaria ? (
-                    <span className="absolute top-2 right-2 z-10 bg-amber-400/25 text-amber-200 border-2 border-amber-400 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
-                      <Crown className="w-2.5 h-2.5" aria-hidden="true" />
-                      <span>LEGENDARIO</span>
-                    </span>
-                  ) : especie.esEspecial ? (
-                    <span className="absolute top-2 right-2 z-10 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
-                      <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
-                      <span>ESPECIAL</span>
-                    </span>
-                  ) : null}
-
-                  <img
-                    src={obtenerImagenCriatura(especie.slug)}
-                    alt={`Sprite de ${especie.nombre}`}
-                    onError={(e) => manejarErrorImagen(e, "criatura")}
-                    className="pixelated h-28 w-28 sm:h-32 sm:w-32 object-contain transition-transform duration-200 group-hover:scale-110 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
-                    loading="lazy"
-                  />
-                </div>
-
-                {/* Contenido: Atributos y Acciones */}
-                <CardContent className="p-3 pt-2.5 space-y-2.5">
-                  {/* Resumen de Atributos Base */}
-                  <div className="grid grid-cols-4 gap-1 p-1.5 bg-background border border-border/60 text-center font-mono text-[11px]">
-                    <div>
-                      <span className="text-[8px] text-muted-foreground block uppercase">HP</span>
-                      <span className="font-semibold text-foreground">{especie.hpBase}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-muted-foreground block uppercase">ATQ</span>
-                      <span className="font-semibold text-red-400">{especie.ataqueBase}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-muted-foreground block uppercase">DEF</span>
-                      <span className="font-semibold text-blue-400">{especie.defensaBase}</span>
-                    </div>
-                    <div>
-                      <span className="text-[8px] text-muted-foreground block uppercase">VEL</span>
-                      <span className="font-semibold text-emerald-400">{especie.velocidadBase}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] font-mono px-0.5 text-muted-foreground">
-                    <span>CR: <strong className="text-primary">{especie.challengeRating}</strong></span>
-                    <span>Captura: <strong className="text-amber-400">{Math.round(especie.tasaCaptura * 100)}%</strong></span>
-                  </div>
-
-                  {/* Botón de Inspección */}
-                  <Button
-                    size="sm"
+        <div className="space-y-8">
+          {gruposPorZona.map((grupo) => (
+            <section
+              key={grupo.zonaId}
+              aria-labelledby={`zona-encabezado-${grupo.zonaId}`}
+              className="space-y-3"
+            >
+              {/* Encabezado Retro de la Zona de Hábitat */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-border/70 pb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge
                     variant="outline"
-                    className="w-full text-xs rounded-none flex items-center justify-center gap-1.5 h-8 font-mono hover:bg-primary hover:text-primary-foreground transition-colors"
-                    onClick={() => abrirInspeccion(especie)}
+                    className="font-mono text-[10px] uppercase rounded-none border-primary/60 bg-primary/10 text-primary"
                   >
-                    <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>INSPECCIONAR FICHA</span>
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+                    {grupo.zonaId}
+                  </Badge>
+                  <h2
+                    id={`zona-encabezado-${grupo.zonaId}`}
+                    className="text-sm sm:text-base font-bold retro text-foreground"
+                  >
+                    {grupo.zonaNombre}
+                  </h2>
+                  <span className="text-[11px] font-mono text-muted-foreground">
+                    ({grupo.especies.length} {grupo.especies.length === 1 ? "criatura" : "criaturas"})
+                  </span>
+                </div>
+                {grupo.legendarias > 0 && (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono font-bold border border-amber-400 bg-amber-400/20 text-amber-300 rounded-none shadow-[2px_2px_0_0_#000]">
+                    <Crown className="w-3 h-3 text-amber-400" aria-hidden="true" />
+                    <span>Hábitat Legendario</span>
+                  </span>
+                )}
+              </div>
+
+              {/* Cuadrícula de Criaturas de la Zona */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {grupo.especies.map((especie) => {
+                  const arquetipo = especie.arquetipo || calcularArquetipoCriatura(especie);
+                  const tipoEspanol = TRADUCCION_TIPOS_ESPECIE[especie.tipo.toLowerCase()] || especie.tipo;
+
+                  return (
+                    <Card
+                      key={especie.slug}
+                      className={`border-2 rounded-none bg-bastion flex flex-col justify-between transition-all duration-200 hover:border-primary/80 ${
+                        especie.esLegendaria
+                          ? "anim-halo-legendario border-amber-400 bg-amber-950/20 shadow-[0_0_16px_rgba(251,191,36,0.35)]"
+                          : especie.esEspecial
+                          ? "border-amber-500/80 shadow-[0_0_10px_rgba(245,158,11,0.25)]"
+                          : "border-border"
+                      }`}
+                    >
+                      {/* Cabecera de la Tarjeta */}
+                      <CardHeader className="p-3 pb-2 space-y-1">
+                        {/* Título de la Criatura con corona en especies legendarias */}
+                        <CardTitle className="text-xs sm:text-[13px] font-bold text-foreground leading-snug retro tracking-tight break-words line-clamp-2 min-h-[2rem]">
+                          {especie.nombre}
+                          {especie.esLegendaria && (
+                            <Crown
+                              className="w-3.5 h-3.5 text-amber-400 inline ml-1.5 align-text-bottom drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]"
+                              aria-label="Criatura Legendaria"
+                            />
+                          )}
+                        </CardTitle>
+                        <p className="text-[10px] text-muted-foreground font-mono truncate">
+                          {especie.keyExterna || `srd-2024_${especie.slug}`}
+                        </p>
+
+                        {/* Badges de Tipo, Afinidad Elemental y Arquetipo */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                          <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase bg-secondary text-secondary-foreground border border-border rounded-none">
+                            {tipoEspanol}
+                          </span>
+                          {especie.elemento && TRADUCCION_ELEMENTOS[especie.elemento] && (
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase border rounded-none ${
+                                TRADUCCION_ELEMENTOS[especie.elemento].clase
+                              }`}
+                            >
+                              {TRADUCCION_ELEMENTOS[especie.elemento].nombre}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border bg-background text-muted-foreground rounded-none">
+                            {renderIconoArquetipo(arquetipo)}
+                            <span>{arquetipo}</span>
+                          </span>
+                        </div>
+                      </CardHeader>
+
+                      {/* Vitrina Central de la Criatura con Sprite Pixel-Art */}
+                      <div className="relative w-full h-36 sm:h-40 bg-abismo/90 border-y-2 border-border/70 flex items-center justify-center p-3 overflow-hidden group">
+                        <div
+                          className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none"
+                          aria-hidden="true"
+                        />
+
+                        {/* Badge flotante de LEGENDARIO o ESPECIAL */}
+                        {especie.esLegendaria ? (
+                          <span className="absolute top-2 right-2 z-10 bg-amber-400/25 text-amber-200 border-2 border-amber-400 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
+                            <Crown className="w-2.5 h-2.5" aria-hidden="true" />
+                            <span>LEGENDARIO</span>
+                          </span>
+                        ) : especie.esEspecial ? (
+                          <span className="absolute top-2 right-2 z-10 bg-amber-500/20 text-amber-300 border border-amber-500/80 text-[9px] px-1.5 py-0.5 rounded-none font-mono font-bold flex items-center gap-1 shadow-[2px_2px_0_0_#000]">
+                            <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
+                            <span>ESPECIAL</span>
+                          </span>
+                        ) : null}
+
+                        <img
+                          src={obtenerImagenCriatura(especie.slug)}
+                          alt={`Sprite de ${especie.nombre}`}
+                          onError={(e) => manejarErrorImagen(e, "criatura")}
+                          className="pixelated h-28 w-28 sm:h-32 sm:w-32 object-contain transition-transform duration-200 group-hover:scale-110 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
+                          loading="lazy"
+                        />
+                      </div>
+
+                      {/* Contenido: Atributos y Acciones */}
+                      <CardContent className="p-3 pt-2.5 space-y-2.5">
+                        {/* Resumen de Atributos Base */}
+                        <div className="grid grid-cols-4 gap-1 p-1.5 bg-background border border-border/60 text-center font-mono text-[11px]">
+                          <div>
+                            <span className="text-[8px] text-muted-foreground block uppercase">HP</span>
+                            <span className="font-semibold text-foreground">{especie.hpBase}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] text-muted-foreground block uppercase">ATQ</span>
+                            <span className="font-semibold text-red-400">{especie.ataqueBase}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] text-muted-foreground block uppercase">DEF</span>
+                            <span className="font-semibold text-blue-400">{especie.defensaBase}</span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] text-muted-foreground block uppercase">VEL</span>
+                            <span className="font-semibold text-emerald-400">{especie.velocidadBase}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[10px] font-mono px-0.5 text-muted-foreground">
+                          <span>CR: <strong className="text-primary">{especie.challengeRating}</strong></span>
+                          <span>Captura: <strong className="text-amber-400">{Math.round(especie.tasaCaptura * 100)}%</strong></span>
+                        </div>
+
+                        {/* Botón de Inspección */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full text-xs rounded-none flex items-center justify-center gap-1.5 h-8 font-mono hover:bg-primary hover:text-primary-foreground transition-colors"
+                          onClick={() => abrirInspeccion(especie)}
+                        >
+                          <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>INSPECCIONAR FICHA</span>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       )}
 
@@ -554,6 +605,18 @@ export function PantallaCatalogo() {
                   <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono border border-border text-muted-foreground rounded-none">
                     CR {especieSeleccionada.challengeRating}
                   </span>
+                  {especieSeleccionada.zona && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono border border-border text-muted-foreground rounded-none bg-background">
+                      <MapPin className="w-2.5 h-2.5" aria-hidden="true" />
+                      <span>{especieSeleccionada.zona.nombre}</span>
+                    </span>
+                  )}
+                  {especieSeleccionada.esLegendaria && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-mono font-bold border border-amber-400 bg-amber-400/20 text-amber-300 rounded-none shadow-[2px_2px_0_0_#000]">
+                      <Crown className="w-2.5 h-2.5 text-amber-400" aria-hidden="true" />
+                      <span>Criatura Legendaria</span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Lore Biológico */}

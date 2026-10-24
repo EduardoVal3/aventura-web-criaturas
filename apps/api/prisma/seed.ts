@@ -48,8 +48,8 @@ async function sembrarZonas() {
     },
     {
       id: 'ZON-02',
-      nombre: 'Bosque Susurrante',
-      descripcion: 'Espesura arbórea donde el viento silba entre ramas antiguas.',
+      nombre: 'Riberas del Lago Espejo',
+      descripcion: 'Aguas serenas que reflejan el cielo y albergan fauna ribereña.',
       tipo: 'ZONA',
       esSegura: false,
       nivelMinimo: 2,
@@ -58,8 +58,8 @@ async function sembrarZonas() {
     },
     {
       id: 'ZON-03',
-      nombre: 'Riberas del Lago Espejo',
-      descripcion: 'Aguas serenas que reflejan el cielo y albergan fauna ribereña.',
+      nombre: 'Bosque Susurrante',
+      descripcion: 'Espesura arbórea donde el viento silba entre ramas antiguas.',
       tipo: 'ZONA',
       esSegura: false,
       nivelMinimo: 3,

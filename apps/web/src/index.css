@@ -380,3 +380,53 @@
 .anim-curacion-flotante {
   animation: flotar-curacion 700ms ease-out forwards;
 }
+
+/* 9. Pulso de Resonancia al 100% (Subfase 10l) */
+@keyframes pulso-resonancia {
+  0%, 100% {
+    box-shadow: 0 0 0 0 hsl(43 85% 55% / 0.8), inset 0 0 4px hsl(43 90% 60% / 0.5);
+    border-color: hsl(43 85% 55%);
+  }
+  50% {
+    box-shadow: 0 0 10px 3px hsl(43 90% 60% / 0.6), inset 0 0 8px hsl(43 95% 65% / 0.8);
+    border-color: hsl(43 95% 65%);
+  }
+}
+
+.anim-pulso-resonancia {
+  animation: pulso-resonancia 1000ms infinite ease-in-out;
+}
+
+/* 10. Halo Legendario Dorado (Subfase 10l) */
+@keyframes halo-legendario {
+  0%, 100% {
+    box-shadow: 0 0 6px 1px hsl(43 90% 50% / 0.7);
+    border-color: hsl(43 85% 50%);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px hsl(43 95% 65% / 0.9);
+    border-color: hsl(43 95% 65%);
+  }
+}
+
+.anim-halo-legendario {
+  animation: halo-legendario 1500ms infinite ease-in-out;
+}
+
+/* Accesibilidad: Reducción de movimiento para usuarios sensibles */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .anim-pulso-turno,
+  .anim-pulso-resonancia,
+  .anim-halo-legendario,
+  .anim-pulso-critico {
+    animation: none !important;
+  }
+}

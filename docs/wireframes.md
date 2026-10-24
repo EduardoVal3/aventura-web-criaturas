@@ -96,7 +96,7 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 | Conexiones y Rutas Disponibles:                                       |
 | +-------------------------------------------------------------------+ |
 | | [boton-viajar-zon01] -> Praderas del Amanecer (Nv. 1-3) [Abierta] | |
-| | [boton-viajar-zon02] -> Bosque Susurrante    (Nv. 2-4) [Abierta] | |
+| | [boton-viajar-zon02] -> Riberas Lago Espejo   (Nv. 2-4) [Abierta] | |
 | | [indicador-bloqueado]-> Cueva Umbría (Nv. 7-10) [BLOQUEADA - M-PRO] |
 | +-------------------------------------------------------------------+ |
 | [boton-ver-catalogo]                      [boton-cerrar-sesion]       |

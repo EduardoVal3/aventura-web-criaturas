@@ -146,7 +146,7 @@ Cada tabla asigna una probabilidad exacta y normalizada a sus 5 especies autóct
 | `oso-fresno` | 5 | 2 – 3 | 5.0 % | **Especial** |
 | **Total** | **100** | — | **100.0 %** | Cumple INV-01 |
 
-### 5.2 ZON-02: Marismas del Ocaso (Nivel 2–4)
+### 5.2 ZON-02: Riberas del Lago Espejo (Nivel 2–4)
 | Especie (`slug`) | Peso relativo | Nivel mín. – máx. | Probabilidad | Tipo de encuentro |
 | --- | :---: | :---: | :---: | --- |
 | `cangrejo-abismal` | 35 | 2 – 3 | 35.0 % | Común |

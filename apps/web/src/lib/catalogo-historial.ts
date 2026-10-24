@@ -240,3 +240,54 @@ export function filtrarEventosHistorial(
     return true;
   });
 }
+
+export interface GrupoZona {
+  zonaId: string;
+  zonaNombre: string;
+  especies: EspecieCatalogo[];
+  legendarias: number;
+}
+
+/**
+ * Agrupa las especies del catálogo por su zona de hábitat canónica.
+ * Ordena los grupos por zonaId ascendente; las especies sin zona se agrupan al final bajo "SIN-ZONA".
+ */
+export function agruparEspeciesPorZona(
+  especies: EspecieCatalogo[] = [],
+): GrupoZona[] {
+  const mapa = new Map<string, { zonaNombre: string; especies: EspecieCatalogo[] }>();
+  const sinZona: EspecieCatalogo[] = [];
+
+  for (const esp of especies) {
+    if (esp.zona && esp.zona.id) {
+      const zId = esp.zona.id;
+      if (!mapa.has(zId)) {
+        mapa.set(zId, { zonaNombre: esp.zona.nombre || zId, especies: [] });
+      }
+      mapa.get(zId)!.especies.push(esp);
+    } else {
+      sinZona.push(esp);
+    }
+  }
+
+  const grupos: GrupoZona[] = Array.from(mapa.entries())
+    .sort(([a], [b]) => a.localeCompare(b, "es"))
+    .map(([zonaId, datos]) => ({
+      zonaId,
+      zonaNombre: datos.zonaNombre,
+      especies: datos.especies,
+      legendarias: datos.especies.filter((e) => Boolean(e.esLegendaria)).length,
+    }));
+
+  if (sinZona.length > 0) {
+    grupos.push({
+      zonaId: "SIN-ZONA",
+      zonaNombre: "Sin zona asignada",
+      especies: sinZona,
+      legendarias: sinZona.filter((e) => Boolean(e.esLegendaria)).length,
+    });
+  }
+
+  return grupos;
+}
+

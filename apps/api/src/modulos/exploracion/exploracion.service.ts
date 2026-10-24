@@ -229,6 +229,7 @@ export class ExploracionService {
           especie: {
             slug: especie.slug,
             nombre: especie.nombre,
+            esLegendaria: Boolean(especie.esLegendaria),
             nivel: criaturaRival.nivel,
             hpActual: criaturaRival.hpActual,
             hpMaximo: criaturaRival.hpMaximo,

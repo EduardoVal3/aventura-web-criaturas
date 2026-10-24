@@ -114,6 +114,30 @@ export interface RespuestaViajar {
   mensaje: string;
 }
 
+export type CodigoEstado =
+  | "QUEMADURA"
+  | "VENENO"
+  | "ESCARCHA"
+  | "PARALISIS"
+  | "PETRIFICACION"
+  | "BASTION";
+
+export type EtiquetaEfectividad = "VENTAJA" | "DESVENTAJA" | "NEUTRAL";
+
+export interface EstadoActivo {
+  codigo: CodigoEstado;
+  nombre: string;
+  turnosRestantes: number;
+  escudo?: number;
+}
+
+export interface EfectoFinDeTurno {
+  objetivo: "ALIADA" | "RIVAL";
+  codigo: CodigoEstado;
+  dano: number;
+  hpRestante: number;
+}
+
 export interface EspecieEncuentro {
   slug: string;
   nombre: string;
@@ -123,6 +147,7 @@ export interface EspecieEncuentro {
   ataque: number;
   defensa: number;
   velocidad: number;
+  esLegendaria?: boolean;
 }
 
 export interface EncuentroDetalle {
@@ -154,6 +179,10 @@ export interface CriaturaCombateRival {
   ataque?: number;
   defensa?: number;
   velocidad?: number;
+  afinidad?: string;
+  resonancia?: number;
+  estados?: EstadoActivo[];
+  esLegendaria?: boolean;
 }
 
 export interface MovimientoCombate {
@@ -162,6 +191,8 @@ export interface MovimientoCombate {
   tipoAccion?: string;
   slot?: number;
   efecto?: string | null;
+  bloqueado?: boolean;
+  estadoAplicado?: CodigoEstado | null;
 }
 
 export interface CriaturaCombateAliada {
@@ -180,6 +211,9 @@ export interface CriaturaCombateAliada {
   defensa?: number;
   velocidad?: number;
   movimientos?: MovimientoCombate[];
+  afinidad?: string;
+  resonancia?: number;
+  estados?: EstadoActivo[];
 }
 
 export interface EncuentroActivo {
@@ -190,11 +224,16 @@ export interface EncuentroActivo {
   criaturaRival: CriaturaCombateRival;
   criaturaAliada: CriaturaCombateAliada;
   bitacora?: string[];
+  efectividadAliadaSobreRival?: {
+    multiplicador: number;
+    etiqueta: string;
+  };
 }
 
 export interface PeticionAtacar {
   encuentroId: string;
   movimientoIndice: number;
+  turnoEsperado?: number;
 }
 
 export interface AccionCombate {
@@ -202,6 +241,11 @@ export interface AccionCombate {
   danoCausado: number;
   hpRestanteRival?: number;
   hpRestanteAliado?: number;
+  efectividad?: EtiquetaEfectividad;
+  danoAbsorbido?: number;
+  estadoAplicado?: CodigoEstado | null;
+  perdioTurno?: boolean;
+  esInsignia?: boolean;
 }
 
 export interface ProgresoVictoria {
@@ -238,11 +282,22 @@ export interface RespuestaAtacar {
     subioNivel?: boolean;
     nivelNuevo?: number;
   } | null;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
 }
 
 export interface PeticionCapturar {
   encuentroId: string;
   itemCodigo: string;
+  turnoEsperado?: number;
 }
 
 export interface CriaturaCapturada {
@@ -261,10 +316,21 @@ export interface RespuestaCapturar {
   destinoCaptura?: "EQUIPO" | "ALMACEN";
   criaturaCapturada?: CriaturaCapturada;
   contraataqueRival?: AccionCombate;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
 }
 
 export interface PeticionHuir {
   encuentroId: string;
+  turnoEsperado?: number;
 }
 
 export interface RespuestaHuir {
@@ -272,6 +338,16 @@ export interface RespuestaHuir {
   mensaje: string;
   estado: string;
   contraataqueRival?: AccionCombate | null;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
 }
 
 export interface CriaturaEquipo {
@@ -466,6 +542,7 @@ export interface EspecieCatalogo {
   descripcion?: string;
   arquetipo?: ArquetipoEspecie;
   movimientos?: MovimientoEspecie[];
+  zona?: { id: string; nombre: string } | null;
 }
 
 export interface RespuestaEspecies {

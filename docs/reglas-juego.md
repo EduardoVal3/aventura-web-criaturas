@@ -186,6 +186,7 @@ La barra de Resonancia ($0 - 100\,\%$) se incrementa al final de cada ronda seg�
 3. **Carga por daño recibido:** $\lfloor (\text{danoAbsorbido} / \text{hpMaximo}) \times 40 \rfloor$, con un tope máximo de $+20\,\%$ por ronda.
 4. **Saturación:** Acotada en $[0, 100]$. Al alcanzar $100\,\%$, desbloquea el movimiento insignia M4.
 5. **Consumo:** Ejecutar M4 reinicia la resonancia a $0\,\%$ sin acumular ganancias en dicha ronda.
+6. **Representación en cliente (Subfase 10l):** El cliente representa la Resonancia mediante 10 bloques discretos retro calculados como $\lfloor \text{resonancia} / 10 \rfloor$. El servidor permanece como la única fuente autoritativa de su acumulación y persistencia.
 
 ---
 

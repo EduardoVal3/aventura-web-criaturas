@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -41,6 +41,8 @@ import {
   type ItemInventario,
   type CriaturaEquipo,
   type CriaturaCapturada,
+  type AccionCombate,
+  type EfectoFinDeTurno,
   ErrorApi,
 } from "@/api";
 import {
@@ -49,6 +51,17 @@ import {
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
+import { Lock, Crown, ChevronsUp, ChevronsDown, Sparkles } from "lucide-react";
+import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
+import {
+  construirSlotsTacticos,
+  ETIQUETA_EFECTIVIDAD,
+  sonidoDeGolpe,
+} from "@/lib/combate-tactico";
+import {
+  BarraResonancia,
+  InsigniasEstado,
+} from "@/components/combate/PanelTactico";
 
 interface RecompensasVictoria {
   xpGanada: number;
@@ -174,10 +187,16 @@ export function PantallaCombate() {
     };
   }, [navigate]);
 
+  // Cerrojo síncrono para hardening estricto contra doble clic rápido
+  const cerrojoAccion = useRef(false);
+
   // Recarga fiel tras relevo de criatura aliada
   const refrescarCombate = useCallback(async () => {
     try {
-      const datos = await api.obtenerEncuentroActivo();
+      const [datos, respEquipo] = await Promise.all([
+        api.obtenerEncuentroActivo(),
+        api.obtenerEquipo(),
+      ]);
       setEncuentro(datos);
       setRival(datos.criaturaRival);
       setAliado(datos.criaturaAliada);
@@ -189,17 +208,75 @@ export function PantallaCombate() {
       if (datos.bitacora && datos.bitacora.length > 0) {
         setBitacoraCombate(datos.bitacora);
       }
-      const respEquipo = await api.obtenerEquipo();
       setEquipoCriaturas(respEquipo.criaturas);
     } catch {
       // simplificacion: tolerancia a fallo en refresco secundario
     }
   }, []);
 
-  // Manejador de Ataque con selector de movimientos
-  const handleAtacar = async (movimientoIndice = 0) => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+  // Auxiliar unificado para animar contraataque rival y efectos fin de turno (DoT)
+  const reproducirContraataqueYDoT = async (
+    contraataque: AccionCombate | null | undefined,
+    efectosFinDeTurno: EfectoFinDeTurno[] = [],
+  ) => {
+    if (contraataque && aliado) {
+      await new Promise((resolver) => setTimeout(resolver, 600));
 
+      if (contraataque.perdioTurno) {
+        reproducirSonido("error");
+      } else {
+        reproducirSonido(sonidoDeGolpe(contraataque));
+        setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
+        setDanoFlotanteAliado(contraataque.danoCausado);
+
+        if (typeof contraataque.hpRestanteAliado === "number") {
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, contraataque.hpRestanteAliado!) } : null,
+          );
+        }
+
+        setTimeout(() => {
+          setAnimacionAliado("");
+          setDanoFlotanteAliado(null);
+        }, 500);
+      }
+    }
+
+    if (efectosFinDeTurno && efectosFinDeTurno.length > 0) {
+      for (const efecto of efectosFinDeTurno) {
+        await new Promise((resolver) => setTimeout(resolver, 400));
+        reproducirSonido("dot");
+
+        if (efecto.objetivo === "ALIADA") {
+          setAnimacionAliado("anim-parpadeo-dano");
+          setDanoFlotanteAliado(efecto.dano);
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionAliado("");
+            setDanoFlotanteAliado(null);
+          }, 450);
+        } else {
+          setAnimacionRival("anim-parpadeo-dano");
+          setDanoFlotanteRival(efecto.dano);
+          setRival((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionRival("");
+            setDanoFlotanteRival(null);
+          }, 450);
+        }
+      }
+    }
+  };
+
+  // Manejador de Ataque con selector de movimientos tácticos
+  const handleAtacar = async (movimientoIndice = 0) => {
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
+
+    cerrojoAccion.current = true;
     setPanelMovimientosAbierto(false);
     setProcesandoAccion(true);
     reproducirSonido("click");
@@ -208,35 +285,41 @@ export function PantallaCombate() {
       const resultado = await api.atacar({
         encuentroId: encuentro.encuentroId,
         movimientoIndice,
+        turnoEsperado: encuentro.turno,
       });
 
-      // 1. Impacto del jugador sobre el rival
-      reproducirSonido("golpe");
-      setAnimacionRival("anim-sacudida anim-parpadeo-dano");
-      setDanoFlotanteRival(resultado.accionJugador.danoCausado);
-
-      const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
-      setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
-
-      if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
-        setRival({
-          ...rival,
-          hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
-        });
+      // Bitácora fiel: anteponer mensajes invertidos si el servidor los envió
+      if (resultado.mensajes && resultado.mensajes.length > 0) {
+        setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+      } else {
+        const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
+        setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
       }
 
-      setTimeout(() => {
-        setAnimacionRival("");
-        setDanoFlotanteRival(null);
-      }, 500);
+      // 1. Impacto del jugador sobre el rival
+      if (resultado.accionJugador.perdioTurno) {
+        reproducirSonido("error");
+      } else {
+        reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+        setAnimacionRival("anim-sacudida anim-parpadeo-dano");
+        setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+
+        if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
+          setRival({
+            ...rival,
+            hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
+          });
+        }
+
+        setTimeout(() => {
+          setAnimacionRival("");
+          setDanoFlotanteRival(null);
+        }, 500);
+      }
 
       // 2. Si el combate termina en VICTORIA
       if (resultado.estado === "VICTORIA") {
         reproducirSonido("victoria");
-        setBitacoraCombate((prev) => [
-          "¡Victoria! La criatura enemiga ha caído debilitada.",
-          ...prev,
-        ]);
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
 
@@ -282,48 +365,37 @@ export function PantallaCombate() {
         return;
       }
 
-      // 3. Cadencia de turno visual: pausa de 800ms antes del contraataque rival (S-5)
-      if (resultado.accionRival && aliado) {
-        await new Promise((resolver) => setTimeout(resolver, 800));
+      // 3. Cadencia de turno visual: contraataque rival y efectos fin de turno (DoT)
+      await reproducirContraataqueYDoT(
+        resultado.accionRival,
+        resultado.efectosFinDeTurno,
+      );
 
-        reproducirSonido("golpe");
-        setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-        setDanoFlotanteAliado(resultado.accionRival.danoCausado);
+      // 4. Evaluar desenlace de la ronda
+      if (resultado.estado === "DERROTA") {
+        reproducirSonido("error");
+        setCombateFinalizado(true);
+        setEstadoFinal("DERROTA");
+        toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+      } else if (resultado.resultadoFinal === "ALIADA_DEBILITADA") {
+        toast.info("Tu criatura cayó. Entra la siguiente del equipo.");
+      }
 
-        const mensajeRival = `El rival respondió con ${resultado.accionRival.movimiento} causando ${resultado.accionRival.danoCausado} de daño.`;
-        setBitacoraCombate((prev) => [mensajeRival, ...prev]);
-
-        if (typeof resultado.accionRival.hpRestanteAliado === "number") {
-          setAliado({
-            ...aliado,
-            hpActual: Math.max(0, resultado.accionRival.hpRestanteAliado),
-          });
-        }
-
-        setTimeout(() => {
-          setAnimacionAliado("");
-          setDanoFlotanteAliado(null);
-        }, 500);
-
-        // 4. Evaluar si resultó en DERROTA
-        if (resultado.estado === "DERROTA") {
-          reproducirSonido("error");
-          setBitacoraCombate((prev) => [
-            "Tu criatura ha quedado fuera de combate.",
-            ...prev,
-          ]);
-          setCombateFinalizado(true);
-          setEstadoFinal("DERROTA");
-          toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
-        }
+      // 5. Reconciliación fiel de estado con el servidor (D-7)
+      if (resultado.estado === "EN_CURSO") {
+        await refrescarCombate();
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al ejecutar el ataque.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
@@ -421,8 +493,9 @@ export function PantallaCombate() {
 
   // Secuencia de Captura con Suspenso Visual e Incertidumbre (impeccable animate)
   const ejecutarCaptura = async () => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
+    cerrojoAccion.current = true;
     setModalCapturaAbierto(false);
     setProcesandoAccion(true);
     setSecuenciaCaptura(true);
@@ -435,6 +508,7 @@ export function PantallaCombate() {
       const resultado = await api.capturar({
         encuentroId: encuentro.encuentroId,
         itemCodigo: talismanSeleccionado,
+        turnoEsperado: encuentro.turno,
       });
 
       setSecuenciaCaptura(false);
@@ -454,43 +528,33 @@ export function PantallaCombate() {
       } else {
         reproducirSonido("error");
         toast.error(resultado.mensaje || "El talismán falló y la criatura se resistió.");
-        const mensajesFallo = [resultado.mensaje || "La criatura se resistió a la captura."];
 
-        if (resultado.contraataqueRival && aliado) {
-          await new Promise((resolver) => setTimeout(resolver, 500));
-          reproducirSonido("golpe");
-          setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-          setDanoFlotanteAliado(resultado.contraataqueRival.danoCausado);
-
-          mensajesFallo.push(
-            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño.`,
-          );
-
-          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
-            setAliado({
-              ...aliado,
-              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
-            });
-          }
-
-          setTimeout(() => {
-            setAnimacionAliado("");
-            setDanoFlotanteAliado(null);
-          }, 500);
-
-          if (
-            typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
-            resultado.contraataqueRival.hpRestanteAliado <= 0
-          ) {
-            await new Promise((resolver) => setTimeout(resolver, 400));
-            reproducirSonido("error");
-            setCombateFinalizado(true);
-            setEstadoFinal("DERROTA");
-            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
-          }
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "La criatura se resistió a la captura.",
+            ...prev,
+          ]);
         }
 
-        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          (resultado.estado as string) === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
 
         // Refrescar inventario de talismanes
         const inv = await api.obtenerInventario();
@@ -498,26 +562,32 @@ export function PantallaCombate() {
       }
     } catch (error) {
       setSecuenciaCaptura(false);
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al intentar la captura.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
 
   // Manejador de Huida del Combate con aplicación inmediata de daño de contraataque
   const handleHuir = async () => {
-    if (!encuentro || procesandoAccion || combateFinalizado) return;
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
+    cerrojoAccion.current = true;
     setProcesandoAccion(true);
     reproducirSonido("click");
 
     try {
       const resultado = await api.huir({
         encuentroId: encuentro.encuentroId,
+        turnoEsperado: encuentro.turno,
       });
 
       if (resultado.exito) {
@@ -527,55 +597,45 @@ export function PantallaCombate() {
       } else {
         reproducirSonido("error");
         toast.error(resultado.mensaje || "No lograste escapar. El combate continúa.");
-        const mensajesFallo = [
-          resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
-        ];
 
-        // Reflejar de inmediato el daño del contraataque rival sin necesidad de recargar la página
-        if (resultado.contraataqueRival && aliado) {
-          await new Promise((resolver) => setTimeout(resolver, 400));
-          reproducirSonido("golpe");
-          setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
-          setDanoFlotanteAliado(resultado.contraataqueRival.danoCausado);
-
-          mensajesFallo.unshift(
-            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño tras tu intento de huida.`,
-          );
-
-          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
-            setAliado({
-              ...aliado,
-              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
-            });
-          }
-
-          setTimeout(() => {
-            setAnimacionAliado("");
-            setDanoFlotanteAliado(null);
-          }, 500);
-
-          if (
-            resultado.estado === "DERROTA" ||
-            (typeof resultado.contraataqueRival.hpRestanteAliado === "number" &&
-              resultado.contraataqueRival.hpRestanteAliado <= 0)
-          ) {
-            await new Promise((resolver) => setTimeout(resolver, 400));
-            reproducirSonido("error");
-            setCombateFinalizado(true);
-            setEstadoFinal("DERROTA");
-            toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
-          }
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
+            ...prev,
+          ]);
         }
 
-        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          resultado.estado === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("No lograste huir del combate.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
@@ -595,7 +655,8 @@ export function PantallaCombate() {
   const esTurnoJugador = encuentro?.esTurnoJugador ?? true;
   const movimientosAliados = aliado.movimientos && aliado.movimientos.length > 0
     ? aliado.movimientos
-    : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE" }];
+    : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE", slot: 1 }];
+  const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto py-2 sm:py-4 px-2 sm:px-0">
@@ -656,7 +717,33 @@ export function PantallaCombate() {
         {/* SECTOR RIVAL: Fondo / Arriba-Derecha */}
         <div className="relative z-10 flex flex-col items-end sm:flex-row sm:items-start sm:justify-end gap-3 sm:gap-6 self-end w-full sm:w-auto">
           {/* Placa de Vitalidad del Rival */}
-          <div className="w-full sm:w-64 bg-bastion border-2 border-pixel p-2.5 shadow-pixel-sm">
+          <div className="w-full sm:w-64 bg-bastion border-2 border-pixel p-2.5 shadow-pixel-sm space-y-1.5">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                {rival.esLegendaria && (
+                  <span title="Criatura Legendaria" className="shrink-0">
+                    <Crown className="size-3.5 text-amber-400 animate-bounce motion-reduce:animate-none" aria-hidden="true" />
+                  </span>
+                )}
+                <span className="font-bold text-xs truncate text-destructive">
+                  {rival.nombre}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[8px] font-mono px-1 py-0 ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
+                  >
+                    {TRADUCCION_ELEMENTOS[rival.afinidad].nombre}
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-[9px] font-mono">
+                  Nv. {rival.nivel}
+                </Badge>
+              </div>
+            </div>
+
             <EnemyHealthDisplay
               enemyName={rival.nombre}
               level={rival.nivel}
@@ -665,6 +752,8 @@ export function PantallaCombate() {
               variant="retro"
               textColor="red"
             />
+
+            <InsigniasEstado estados={rival.estados} />
           </div>
 
           {/* Sprite del Rival con pedestal y efecto de daño */}
@@ -719,11 +808,21 @@ export function PantallaCombate() {
 
           {/* Placa de Vitalidad y XP del Aliado */}
           <div className="w-full sm:w-72 bg-bastion border-2 border-pixel p-3 shadow-pixel-sm space-y-2 order-1 sm:order-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-xs sm:text-sm text-primary tracking-wide">
-                {aliado.nombre}
-              </span>
-              <Badge variant="outline" className="text-[10px] font-mono">
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1.5 min-w-0 truncate">
+                <span className="font-bold text-xs sm:text-sm text-primary tracking-wide truncate">
+                  {aliado.nombre}
+                </span>
+                {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] font-mono px-1 py-0 shrink-0 ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
+                  >
+                    {TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}
+                  </Badge>
+                )}
+              </div>
+              <Badge variant="outline" className="text-[10px] font-mono shrink-0">
                 Nv. {aliado.nivel}
               </Badge>
             </div>
@@ -742,6 +841,16 @@ export function PantallaCombate() {
                 className="h-3 sm:h-3.5"
               />
             </div>
+
+            {/* Barra de Resonancia Táctica (10 Bloques Ámbar) */}
+            <BarraResonancia
+              resonancia={aliado.resonancia ?? 0}
+              deshabilitado={procesandoAccion || !esTurnoJugador}
+              onDesatarInsignia={() => handleAtacar(3)}
+            />
+
+            {/* Insignias de Estados Activos Aliados */}
+            <InsigniasEstado estados={aliado.estados} />
 
             {/* Barra de Experiencia (XP) precisa según escalado de nivel (§2.4) */}
             <div className="space-y-1 pt-0.5">
@@ -850,10 +959,10 @@ export function PantallaCombate() {
             <div className="w-full space-y-2">
               {/* Desplegable de Movimientos cuando se presiona Atacar */}
               {panelMovimientosAbierto && (
-                <div className="p-2 bg-abismo border-2 border-primary/70 rounded space-y-1.5 anim-revelacion-evento">
+                <div className="p-2 bg-abismo border-2 border-primary/70 rounded space-y-2 anim-revelacion-evento">
                   <div className="flex items-center justify-between pb-1 border-b border-border/30">
                     <span className="text-[11px] font-bold text-primary retro">
-                      Selecciona un Ataque:
+                      Selecciona un Movimiento:
                     </span>
                     <Button
                       variant="ghost"
@@ -864,62 +973,98 @@ export function PantallaCombate() {
                       Cancelar
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {movimientosAliados.map((mov, idx) => {
-                      const numSlot = mov.slot ?? idx + 1;
-                      const esFuriaSlot4 = numSlot === 4 || idx === 3;
-                      const estaBloqueado = esFuriaSlot4; // simplificacion: Furia bloqueada en servidor hasta tener Resonancia 100%
+                  <div className="grid grid-cols-2 gap-2">
+                    {slotsTacticos.map((slotItem) => {
+                      const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
+                      const esFuriaSlot4 = esInsignia;
+                      const estaBloqueado = bloqueado;
+                      const nombreMov =
+                        mov?.nombre ??
+                        (esInsignia ? "Movimiento Insignia" : `Movimiento ${slot}`);
+                      const poder = mov?.poder ?? 10;
+                      const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival
+                        ?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
+                      const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
 
                       return (
                         <Button
-                          key={idx}
-                          variant={estaBloqueado ? "outline" : "secondary"}
+                          key={slot}
+                          variant={estaBloqueado ? "outline" : esInsignia ? "default" : "secondary"}
                           size="sm"
                           disabled={procesandoAccion || estaBloqueado}
                           aria-disabled={estaBloqueado}
                           aria-busy={procesandoAccion}
-                          onClick={() => !estaBloqueado && handleAtacar(idx)}
-                          title={
+                          onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
+                          aria-label={
                             estaBloqueado
-                              ? "Furia táctica bloqueada: requiere 100% de Resonancia en combate"
-                              : undefined
+                              ? `${nombreMov} bloqueado. Requiere Resonancia 100 %`
+                              : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}`
                           }
-                          className={`flex items-center justify-between text-xs h-9 px-2.5 sm:px-3 border border-pixel transition-all ${
+                          className={`flex flex-col items-start justify-between text-xs min-h-[58px] p-2 border border-pixel transition-all ${
                             estaBloqueado
                               ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed border-border/80 text-muted-foreground"
+                              : esInsignia
+                              ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia motion-reduce:animate-none"
                               : "hover:border-primary active:scale-[0.98]"
                           }`}
                         >
-                          <div className="flex items-center gap-1.5 min-w-0 truncate">
-                            <Badge
-                              variant="outline"
-                              className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
-                                estaBloqueado
-                                  ? "border-amber-500/50 text-amber-300 bg-amber-500/10"
-                                  : "border-border text-foreground"
-                              }`}
-                            >
-                              M{numSlot}
-                            </Badge>
-                            <span className="font-semibold truncate">{mov.nombre}</span>
-                            {mov.efecto && !estaBloqueado && (
-                              <span className="text-[8px] font-mono uppercase px-1 py-0 text-primary hidden sm:inline">
-                                {mov.efecto}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0 ml-1">
-                            {estaBloqueado ? (
+                          <div className="flex items-center justify-between w-full gap-1 min-w-0">
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
                               <Badge
-                                variant="secondary"
-                                className="text-[9px] font-mono bg-amber-500/15 text-amber-300 border border-amber-500/40 px-1 py-0"
+                                variant="outline"
+                                className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
+                                  estaBloqueado
+                                    ? "border-border text-muted-foreground"
+                                    : esInsignia
+                                    ? "border-amber-400 text-amber-300 bg-amber-500/20"
+                                    : "border-border text-foreground"
+                                }`}
                               >
-                                Furia (Bloqueado)
+                                M{slot}
                               </Badge>
+                              <span className="font-semibold truncate text-[11px]">
+                                {nombreMov}
+                              </span>
+                            </div>
+                            {estaBloqueado ? (
+                              <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
+                            ) : esInsignia ? (
+                              <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
+                            ) : null}
+                          </div>
+
+                          <div className="flex items-center justify-between w-full mt-1 min-w-0">
+                            {estaBloqueado ? (
+                              <span className="text-[9px] font-mono text-amber-300/80 truncate">
+                                Requiere Resonancia 100 %
+                                {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
+                              </span>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] font-mono px-1 py-0">
-                                Pot. {mov.poder}
-                              </Badge>
+                              <>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  {textoChip === "¡EFICAZ!" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5"
+                                    >
+                                      <ChevronsUp className="size-2.5" aria-hidden="true" />
+                                      {textoChip}
+                                    </Badge>
+                                  )}
+                                  {textoChip === "RESISTIDO" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5"
+                                    >
+                                      <ChevronsDown className="size-2.5" aria-hidden="true" />
+                                      {textoChip}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <span className="text-[9px] font-mono text-muted-foreground ml-auto">
+                                  Pot. {poder}
+                                </span>
+                              </>
                             )}
                           </div>
                         </Button>

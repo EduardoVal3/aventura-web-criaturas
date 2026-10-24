@@ -15,7 +15,7 @@ Este documento constituye la sección correspondiente a la **Fase 1 (Concepto y 
 ## 2. Mundo de Aethelgard
 El mundo prescinde de mapas con coordenadas continuas o motores gráficos (`A-2`), modelándose como una red topológica de nodos seguros y rutas silvestres (`A-4`):
 - **Localidades principales (3):** `LOC-01` Villa Serena (asentamiento inicial), `LOC-02` Puesto Fronterizo del Río (comercio y almacén) y `LOC-03` Bastión del Norte (fortaleza avanzada).
-- **Rutas y zonas explorables (6):** `ZON-01` Praderas del Amanecer, `ZON-02` Bosque Susurrante, `ZON-03` Riberas del Lago Espejo, `ZON-04` Paso de los Riscos, `ZON-05` Cueva Umbría y `ZON-06` Pico de la Cumbre.
+- **Rutas y zonas explorables (6):** `ZON-01` Praderas del Amanecer, `ZON-02` Riberas del Lago Espejo, `ZON-03` Bosque Susurrante, `ZON-04` Paso de los Riscos, `ZON-05` Cueva Umbría y `ZON-06` Pico de la Cumbre.
 - **Zonas con requisito de desbloqueo (`M-PRO`):**
   - `ZON-05` Cueva Umbría: Bloqueada hasta contar con al menos 3 criaturas en el equipo de nivel $\ge 5$ y haber alcanzado el Puesto Fronterizo.
   - `ZON-06` Pico de la Cumbre: Bloqueada hasta superar la expedición en la Cueva Umbría.

@@ -20,4 +20,14 @@ export class AtacarDto {
   @Min(0, { message: 'El índice del movimiento no puede ser negativo.' })
   @Max(3, { message: 'El índice del movimiento no puede ser mayor a 3.' })
   movimientoIndice?: number = 0;
+
+  @ApiPropertyOptional({
+    description:
+      'Turno esperado por el cliente para prevenir desincronizaciones concurrentes',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt({ message: 'El turno esperado debe ser un número entero.' })
+  @Min(1, { message: 'El turno esperado debe ser mayor o igual a 1.' })
+  turnoEsperado?: number;
 }

@@ -52,4 +52,14 @@ export class AccionCombateDto {
   @IsOptional()
   @IsString({ message: 'El código del objeto debe ser una cadena.' })
   itemCodigo?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Turno esperado por el cliente para prevenir desincronizaciones concurrentes',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt({ message: 'El turno esperado debe ser un número entero.' })
+  @Min(1, { message: 'El turno esperado debe ser mayor o igual a 1.' })
+  turnoEsperado?: number;
 }

@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { construirSlotsTacticos, bloquesResonancia, describirEstado } from "../src/lib/combate-tactico.ts";
+import {
+  construirSlotsTacticos,
+  bloquesResonancia,
+  describirEstado,
+  resolverBadgeEfectoMovimiento,
+} from "../src/lib/combate-tactico.ts";
 import { agruparEspeciesPorZona } from "../src/lib/catalogo-historial.ts";
 
 const mov = (slot: number, extra = {}) => ({ nombre: `M${slot}`, poder: 10, slot, ...extra });
@@ -25,6 +30,52 @@ test("la insignia de estado activo expone icono, nombre y turnos", () => {
   assert.equal(desc.icono, "Flame");
   assert.equal(desc.etiqueta, "Quemadura (2)");
   assert.equal(desc.turnos, 2);
+});
+
+test("resolverBadgeEfectoMovimiento resuelve badges representativos de efectos", () => {
+  // Retorna null si no hay efecto
+  assert.equal(resolverBadgeEfectoMovimiento(null, null), null);
+  assert.equal(resolverBadgeEfectoMovimiento(undefined, undefined), null);
+  assert.equal(resolverBadgeEfectoMovimiento("", null), null);
+
+  // Efectos mecánicos principales
+  const quemadura = resolverBadgeEfectoMovimiento("QUEMADURA");
+  assert.equal(quemadura?.nombre, "Quemadura");
+  assert.equal(quemadura?.icono, "Flame");
+
+  const paralisis = resolverBadgeEfectoMovimiento(null, "PARALISIS");
+  assert.equal(paralisis?.nombre, "Parálisis");
+  assert.equal(paralisis?.icono, "Zap");
+
+  const escarcha = resolverBadgeEfectoMovimiento("ENFRIAMIENTO");
+  assert.equal(escarcha?.nombre, "Escarcha");
+  assert.equal(escarcha?.icono, "Snowflake");
+
+  const veneno = resolverBadgeEfectoMovimiento("VENENO_GRAVE");
+  assert.equal(veneno?.nombre, "Veneno+");
+  assert.equal(veneno?.icono, "Skull");
+
+  const bastion = resolverBadgeEfectoMovimiento("BASTION");
+  assert.equal(bastion?.nombre, "Bastión");
+  assert.equal(bastion?.icono, "Shield");
+
+  const petrificacion = resolverBadgeEfectoMovimiento("PETRIFICACION_LEVE");
+  assert.equal(petrificacion?.nombre, "Petrif. Leve");
+  assert.equal(petrificacion?.icono, "ShieldAlert");
+
+  // Efectos tácticos del bestiario
+  const critico = resolverBadgeEfectoMovimiento("CRITICO");
+  assert.equal(critico?.nombre, "Crítico");
+  assert.equal(critico?.icono, "Swords");
+
+  const drenaje = resolverBadgeEfectoMovimiento("DRENAJE");
+  assert.equal(drenaje?.nombre, "Drenaje");
+  assert.equal(drenaje?.icono, "HeartPulse");
+
+  // Efecto no tabulado como respaldo seguro
+  const desconocido = resolverBadgeEfectoMovimiento("SOBRECARGA_MISTICA");
+  assert.equal(desconocido?.nombre, "Sobrecarga Mistica");
+  assert.equal(desconocido?.icono, "Sparkles");
 });
 
 test("el catalogo agrupa por zona y marca las legendarias", () => {

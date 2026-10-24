@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
   Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
@@ -23,6 +24,12 @@ import {
   ELEMENTOS,
   Elemento,
   EtiquetaEfectividad,
+  CodigoEstado,
+  EstadoActivo,
+  EstadoBatalla,
+  leerEstadoBatalla,
+  resolverRonda,
+  Combatiente,
 } from './dominio/motor-combate';
 
 export {
@@ -35,6 +42,12 @@ export {
   ELEMENTOS,
   Elemento,
   EtiquetaEfectividad,
+  CodigoEstado,
+  EstadoActivo,
+  EstadoBatalla,
+  leerEstadoBatalla,
+  resolverRonda,
+  Combatiente,
 };
 
 /**
@@ -140,6 +153,38 @@ export class CombateService {
   }
 
   /**
+   * Bloquea pesimistamente el personaje y verifica que el turno no haya avanzado concurrentemente.
+   */
+  // simplificacion: bloqueo pesimista por fila de personaje para serializar turnos concurrentes; suficiente para sesiones individuales sin migrar a Serializable.
+  private async bloquearYVerificarTurno(
+    tx: any,
+    personajeId: string,
+    encuentroId: string,
+    turnoEsperado: number,
+  ): Promise<void> {
+    if (typeof tx.$queryRaw === 'function') {
+      await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personajeId} FOR UPDATE`;
+    }
+
+    if (typeof tx.combate?.findFirst === 'function') {
+      const ultimoEnTx = await tx.combate.findFirst({
+        where: { encuentroId },
+        orderBy: { turno: 'desc' },
+        select: { turno: true },
+      });
+
+      const turnoActualEnTx = (ultimoEnTx?.turno ?? 0) + 1;
+      if (turnoActualEnTx !== turnoEsperado) {
+        throw new ConflictException({
+          codigo: 'TURNO_DESACTUALIZADO',
+          mensaje:
+            'El turno del combate ya ha sido resuelto por otra acción concurrente.',
+        });
+      }
+    }
+  }
+
+  /**
    * Ejecuta una acción de ataque en el combate por turnos.
    */
   async atacar(
@@ -175,51 +220,96 @@ export class CombateService {
     if (!criaturaAliada) {
       throw new BadRequestException({
         codigo: 'EQUIPO_DEBILITADO',
-        mensaje: 'No tienes ninguna criatura activa con puntos de golpe disponibles.',
+        mensaje:
+          'No tienes ninguna criatura activa con puntos de golpe disponibles.',
       });
     }
 
-    // Bloqueo de slot 4 (Furia) en servidor hasta implementar Resonancia (D-4)
-    if (movimientoIndice === 3) {
+    // Leer snapshot previo de estado y resonancia
+    const estadoBatallaPrevio = leerEstadoBatalla(
+      ultimoCombate?.detalleJson,
+      criaturaAliada.id,
+    );
+    const resonanciaPrevia = estadoBatallaPrevio.aliada.resonancia;
+
+    // Validación y desbloqueo de Movimiento Insignia (slot 4, índice 3) con Resonancia 100%
+    if (movimientoIndice === 3 && resonanciaPrevia < 100) {
       throw new BadRequestException({
         codigo: 'MOVIMIENTO_BLOQUEADO',
-        mensaje: 'El movimiento de Furia (slot 4) requiere 100% de Resonancia para ser ejecutado.',
+        mensaje: 'La Resonancia aún no llegó al 100 %.',
       });
     }
 
-    // Determinar movimiento del jugador
-    const movimientosAliados = criaturaAliada.especie.movimientos;
-    const movimientoAliado =
-      movimientosAliados[movimientoIndice] ??
-      movimientosAliados[0] ?? {
-        nombre: 'Golpe Firme',
-        poder: 12,
-      };
+    const movimientosAliados = criaturaAliada.especie?.movimientos ?? [];
+    const aliadaCombatiente: Combatiente = {
+      id: criaturaAliada.id,
+      nombre: (criaturaAliada as any).apodo ?? criaturaAliada.especie?.nombre ?? 'Aliada',
+      nivel: criaturaAliada.nivel,
+      ataque: criaturaAliada.ataque,
+      defensa: criaturaAliada.defensa,
+      velocidad: criaturaAliada.velocidad,
+      hpActual: criaturaAliada.hpActual,
+      hpMaximo: criaturaAliada.hpMaximo,
+      elemento: criaturaAliada.especie?.elemento ?? 'fisico',
+      movimientos: movimientosAliados.map((m: any) => ({
+        nombre: m.nombre,
+        poder: m.poder ?? 10,
+        tipoAccion: m.tipoAccion ?? 'Ataque melé',
+        slot: m.slot,
+        efecto: m.efecto,
+      })),
+    };
+
+    const movimientosRivales = encuentro.criaturaRival.especie?.movimientos ?? [];
+    const rivalCombatiente: Combatiente = {
+      id: encuentro.criaturaRival.id,
+      nombre: (encuentro.criaturaRival as any).apodo ?? encuentro.criaturaRival.especie?.nombre ?? 'Rival',
+      nivel: encuentro.criaturaRival.nivel,
+      ataque: encuentro.criaturaRival.ataque,
+      defensa: encuentro.criaturaRival.defensa,
+      velocidad: encuentro.criaturaRival.velocidad,
+      hpActual: encuentro.criaturaRival.hpActual,
+      hpMaximo: encuentro.criaturaRival.hpMaximo,
+      elemento: encuentro.criaturaRival.especie?.elemento ?? 'fisico',
+      movimientos: movimientosRivales.map((m: any) => ({
+        nombre: m.nombre,
+        poder: m.poder ?? 10,
+        tipoAccion: m.tipoAccion ?? 'Ataque melé',
+        slot: m.slot,
+        efecto: m.efecto,
+      })),
+    };
+
+    const resultadoRonda = resolverRonda(
+      aliadaCombatiente,
+      rivalCombatiente,
+      estadoBatallaPrevio,
+      { indiceMovimiento: movimientoIndice },
+      this.generador,
+    );
 
     const turnoActual = (ultimoCombate?.turno ?? 0) + 1;
 
-    // 1. Daño del jugador al rival con variación de ±15%
-    const factorJugador = 0.85 + this.generador.generar() * 0.30;
-    const danoJugador = calcularDano(
-      criaturaAliada.ataque,
-      encuentro.criaturaRival.defensa,
-      movimientoAliado.poder,
-      criaturaAliada.nivel,
-      factorJugador,
-    );
-    const nuevoHpRival = aplicarDano(
-      encuentro.criaturaRival.hpActual,
-      danoJugador,
-      encuentro.criaturaRival.hpMaximo,
-    );
+    return this.prisma.$transaction(async (tx) => {
+      await this.bloquearYVerificarTurno(tx, personaje.id, encuentro.id, turnoActual);
 
-    // Si el rival se debilita: VICTORIA
-    if (nuevoHpRival <= 0) {
-      return this.prisma.$transaction(async (tx) => {
-        await tx.criatura.update({
-          where: { id: encuentro.criaturaRivalId },
-          data: { hpActual: 0 },
-        });
+      await tx.criatura.update({
+        where: { id: encuentro.criaturaRivalId },
+        data: { hpActual: resultadoRonda.hpRestanteRival },
+      });
+
+      await tx.criatura.update({
+        where: { id: criaturaAliada.id },
+        data: { hpActual: resultadoRonda.hpRestanteAliada },
+      });
+
+      let estadoEncuentroFinal: string = ESTADOS_ENCUENTRO.ACTIVO;
+      let resultadoFinal: string | null = null;
+      let progresoVictoria: any = null;
+
+      if (resultadoRonda.resultado === 'VICTORIA') {
+        estadoEncuentroFinal = ESTADOS_ENCUENTRO.VICTORIA;
+        resultadoFinal = ESTADOS_ENCUENTRO.VICTORIA;
 
         await tx.encuentro.update({
           where: { id: encuentro.id },
@@ -229,7 +319,6 @@ export class CombateService {
           },
         });
 
-        let progresoVictoria: any = null;
         if (this.progresoService) {
           progresoVictoria = await this.progresoService.aplicarRecompensaVictoria(
             tx,
@@ -239,7 +328,6 @@ export class CombateService {
           );
         }
 
-        // Actualizar progreso de zona por victoria en combate (+20% hasta 100%)
         if (encuentro.zonaId) {
           const regZona = await tx.zonaDesbloqueada.findUnique({
             where: {
@@ -266,92 +354,16 @@ export class CombateService {
           });
         }
 
-        await tx.combate.create({
-          data: {
-            encuentroId: encuentro.id,
-            turno: turnoActual,
-            esTurnoJugador: true,
-            accionUltima: 'ATACAR',
-            detalleJson: {
-              movimientoJugador: movimientoAliado.nombre,
-              danoJugador,
-              hpRestanteRival: 0,
-              victoria: true,
-              progreso: progresoVictoria,
-            },
-          },
-        });
-
         await this.historialService.registrar(
           personaje.id,
           'COMBATE',
-          `Victoria sobre ${encuentro.criaturaRival.especie.nombre} en el turno ${turnoActual}.`,
-          { encuentroId: encuentro.id, danoFinal: danoJugador },
-        );
-
-        return {
-          encuentroId: encuentro.id,
-          estado: ESTADOS_ENCUENTRO.VICTORIA,
-          turno: turnoActual,
-          accionJugador: {
-            movimiento: movimientoAliado.nombre,
-            danoCausado: danoJugador,
-            hpRestanteRival: 0,
+          `Victoria sobre ${encuentro.criaturaRival.especie?.nombre ?? 'Rival'} en el turno ${turnoActual}.`,
+          {
+            encuentroId: encuentro.id,
+            danoFinal: resultadoRonda.accionJugador?.danoCausado ?? 0,
           },
-          accionRival: null,
-          resultadoFinal: ESTADOS_ENCUENTRO.VICTORIA,
-          progreso: progresoVictoria,
-        };
-      });
-    }
-
-    // 2. Si el rival sobrevive: contraataque rival con selección aleatoria entre slots 1-3 y variación (D-4)
-    const movimientosRivalesDisponibles = encuentro.criaturaRival.especie.movimientos.filter(
-      (m) => m.slot <= 3,
-    );
-    const poolRivales =
-      movimientosRivalesDisponibles.length > 0
-        ? movimientosRivalesDisponibles
-        : encuentro.criaturaRival.especie.movimientos;
-    const indiceRival =
-      poolRivales.length > 0
-        ? Math.floor(this.generador.generar() * poolRivales.length)
-        : 0;
-    const movimientoRival = poolRivales[indiceRival] ?? {
-      nombre: 'Ataque Salvaje',
-      poder: 10,
-    };
-
-    const factorRival = 0.85 + this.generador.generar() * 0.30;
-    const danoRival = calcularDano(
-      encuentro.criaturaRival.ataque,
-      criaturaAliada.defensa,
-      movimientoRival.poder,
-      encuentro.criaturaRival.nivel,
-      factorRival,
-    );
-    const nuevoHpAliado = aplicarDano(
-      criaturaAliada.hpActual,
-      danoRival,
-      criaturaAliada.hpMaximo,
-    );
-
-    return this.prisma.$transaction(async (tx) => {
-      await tx.criatura.update({
-        where: { id: encuentro.criaturaRivalId },
-        data: { hpActual: nuevoHpRival },
-      });
-
-      await tx.criatura.update({
-        where: { id: criaturaAliada.id },
-        data: { hpActual: nuevoHpAliado },
-      });
-
-      let estadoEncuentroFinal: string = ESTADOS_ENCUENTRO.ACTIVO;
-      let resultadoFinal: string | null = null;
-
-      // Evaluar si todo el equipo aliado fue derrotado
-      if (nuevoHpAliado <= 0) {
+        );
+      } else if (resultadoRonda.resultado === 'ALIADA_DEBILITADA') {
         const criaturasVivasRestantes = await tx.criatura.count({
           where: {
             personajeId: personaje.id,
@@ -376,45 +388,64 @@ export class CombateService {
           await this.historialService.registrar(
             personaje.id,
             'COMBATE',
-            `Tu equipo ha sido debilitado por ${encuentro.criaturaRival.especie.nombre}.`,
+            `Tu equipo ha sido debilitado por ${encuentro.criaturaRival.especie?.nombre ?? 'Rival'}.`,
             { encuentroId: encuentro.id, derrota: true },
           );
+        } else {
+          resultadoFinal = 'ALIADA_DEBILITADA';
         }
       }
+
+      const accionRivalFormateada = resultadoRonda.accionRival
+        ? {
+            ...resultadoRonda.accionRival,
+            hpRestanteAliado: resultadoRonda.accionRival.hpRestanteRival,
+          }
+        : null;
+
+      const detalleJsonPersistido = {
+        movimientoJugador: resultadoRonda.accionJugador?.movimiento ?? 'Ninguno',
+        danoJugador: resultadoRonda.accionJugador?.danoCausado ?? 0,
+        hpRestanteRival: resultadoRonda.hpRestanteRival,
+        movimientoRival: resultadoRonda.accionRival?.movimiento ?? null,
+        danoRival: resultadoRonda.accionRival?.danoCausado ?? null,
+        hpRestanteAliado: resultadoRonda.hpRestanteAliada,
+        resultadoFinal,
+        progreso: progresoVictoria,
+        victoria: resultadoRonda.resultado === 'VICTORIA',
+        estadoBatalla: resultadoRonda.estadoBatalla,
+        efectosFinDeTurno: resultadoRonda.efectosFinDeTurno,
+        mensajes: resultadoRonda.mensajes,
+      };
 
       await tx.combate.create({
         data: {
           encuentroId: encuentro.id,
           turno: turnoActual,
           esTurnoJugador: true,
-          accionUltima: 'ATACAR',
-          detalleJson: {
-            movimientoJugador: movimientoAliado.nombre,
-            danoJugador,
-            hpRestanteRival: nuevoHpRival,
-            movimientoRival: movimientoRival.nombre,
-            danoRival,
-            hpRestanteAliado: nuevoHpAliado,
-            resultadoFinal,
-          },
+          accionUltima: resultadoRonda.accionJugador?.esInsignia ? 'RESONANCIA' : 'ATACAR',
+          detalleJson: detalleJsonPersistido as any,
         },
       });
 
       return {
         encuentroId: encuentro.id,
         estado: estadoEncuentroFinal,
-        turno: turnoActual + 1,
-        accionJugador: {
-          movimiento: movimientoAliado.nombre,
-          danoCausado: danoJugador,
-          hpRestanteRival: nuevoHpRival,
-        },
-        accionRival: {
-          movimiento: movimientoRival.nombre,
-          danoCausado: danoRival,
-          hpRestanteAliado: nuevoHpAliado,
-        },
+        turno: resultadoRonda.resultado === 'EN_CURSO' ? turnoActual + 1 : turnoActual,
+        accionJugador: resultadoRonda.accionJugador,
+        accionRival: accionRivalFormateada,
         resultadoFinal,
+        progreso: progresoVictoria,
+        efectosFinDeTurno: resultadoRonda.efectosFinDeTurno,
+        resonancia: {
+          aliada: resultadoRonda.estadoBatalla.aliada.resonancia,
+          rival: resultadoRonda.estadoBatalla.rival.resonancia,
+        },
+        estados: {
+          aliada: resultadoRonda.estadoBatalla.aliada.estados,
+          rival: resultadoRonda.estadoBatalla.rival.estados,
+        },
+        mensajes: resultadoRonda.mensajes,
       };
     });
   }

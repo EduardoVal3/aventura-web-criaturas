@@ -104,6 +104,8 @@ export class CombateController {
           encuentroId,
           dto.movimientoIndice ?? 0,
         );
+      case 'RESONANCIA':
+        return this.combateService.atacar(usuarioId, encuentroId, 3);
       case 'HUIR':
         return this.combateService.huir(usuarioId, encuentroId);
       case 'CAPTURAR':

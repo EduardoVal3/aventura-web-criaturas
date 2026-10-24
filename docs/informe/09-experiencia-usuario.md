@@ -829,23 +829,26 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 ---
 
 ### 14.4 Cobertura Integral de Efectos en Combate y Badges Tácticos (Decisión D-12)
-- **Diagnóstico y Auditoría:** Se identificó que la base de datos y el bestiario contienen 51 efectos únicos asociados a los movimientos de las 30 criaturas. Sin embargo, el motor de combate sólo mapeaba 16 claves, dejando los efectos restantes como cadenas informativas sin cómputo numérico en servidor.
+- **Diagnóstico y Auditoría:** Se identificó que la base de datos y el bestiario contienen exactamente 51 efectos únicos asociados a los movimientos de las 30 criaturas. Se requería garantizar que absolutamente todos ellos produjeran impacto mecánico tangible tanto en el servidor como en el cliente visual.
 - **Mapeo Autoritativo Exhaustivo en Backend (`motor-combate.ts`):**
-  1. Se expandió `EFECTO_A_ESTADO` a 41 claves que aplican formalmente los 6 estados canónicos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`).
-  2. Se implementaron las 10 mecánicas tácticas instantáneas restantes en `ejecutarTurnoJugador` y `ejecutarTurnoRival`:
+  1. Se expandió `EFECTO_A_ESTADO` a 40 claves que aplican formalmente los 6 estados canónicos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), contextualizando mensajes retro específicos para variantes protectoras (`ESPINAS`, `RETRIBUCION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `INVISIBILIDAD`, `DESFASADO`, `DEF_UP`, `EVASION_UP`).
+  2. Se implementaron las 11 mecánicas tácticas instantáneas restantes en `ejecutarTurnoJugador` y `ejecutarTurnoRival`:
      - `CRITICO` ($1.35\times$) y `EJECUCION` ($1.50\times$).
      - `DRENAJE`: Recuperación del $30\,\%$ del daño causado sin exceder `hpMaximo` (INV-03).
      - `REGENERACION`: Curación del $20\,\%$ de salud vital (INV-03).
      - `PURIFICACION` / `LUZ`: Disipación de estados negativos y restauración del $15\,\%$ de salud.
      - `ATQ_UP` ($1.20\times$), `DEF_DOWN` ($1.25\times$), `ATQ_DOWN` ($0.85\times$), `EMPUJE` ($1.15\times$).
-- **Visualización Táctica con Badges Retro en Frontend (`combate-tactico.ts` y `PantallaCombate.tsx`):**
+     - `VEL_UP`: Aceleración táctica autoritativa que otorga $+15\,\%$ de Resonancia táctica inmediata al atacante e incrementa el daño en un $+10\,\%$ ($1.10\times$).
+- **Visualización Táctica con Badges Retro y Reconciliación en Front-End (`combate-tactico.ts` y `PantallaCombate.tsx`):**
   - Mapeo determinista en `TABLA_BADGES_EFECTOS` de las 51 claves con estilo retro pixelado, tipografía monoespaciada e iconos SVG temáticos de Lucide (`Flame`, `Skull`, `Snowflake`, `Zap`, `ShieldAlert`, `Shield`, `Swords`, `HeartPulse`, `Sparkles`, `ChevronsUp`, `ChevronsDown`).
   - Renderizado contextual en movimientos activos (junto al chip de efectividad elemental) y en movimientos bloqueados del slot 4 (anticipando el efecto al alcanzar el $100\,\%$ de Resonancia).
   - Enriquecimiento accesible de atributos `aria-label` en la botonera de combate.
+  - Sincronización en tiempo real durante la animación de impacto (`animarImpactoJugador`): la barra de salud aliada, la Resonancia y las insignias de estado se actualizan inmediatamente al resolver movimientos de curación (`DRENAJE`, `REGENERACION`, `PURIFICACION`, `LUZ`) o aceleración (`VEL_UP`), eliminando cualquier desfase perceptual antes del contraataque rival.
 - **Certificación de Calidad:**
-  - **113 de 113 pruebas aprobadas** en backend (`pnpm --filter api test`), incluyendo guarda estricta de coherencia entre `EFECTO_A_ESTADO` y `BESTIARIO`.
+  - **115 de 115 pruebas aprobadas** en backend (`pnpm --filter api test`), incluyendo guardas de cobertura universal de los 51 efectos y prueba específica de `VEL_UP`.
   - **64 de 64 pruebas aprobadas** en frontend (`pnpm --filter web test`).
   - **0 antipatrones** en auditoría estática con la herramienta Impeccable.
+
 
 
 

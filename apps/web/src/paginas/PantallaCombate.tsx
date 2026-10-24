@@ -344,6 +344,27 @@ export function PantallaCombate() {
             setRival({
               ...rival,
               hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
+              estados: resultado.estados?.rival ?? rival.estados,
+            });
+          }
+
+          // Si el ataque del jugador curó vitalidad (Drenaje, Regeneración, Luz, Purificación), reflejar en pantalla
+          if (
+            typeof resultado.hpRestanteAliada === "number" &&
+            aliado &&
+            resultado.hpRestanteAliada > aliado.hpActual
+          ) {
+            setAliado({
+              ...aliado,
+              hpActual: Math.min(aliado.hpMaximo, resultado.hpRestanteAliada),
+              resonancia: resultado.resonancia?.aliada ?? aliado.resonancia,
+              estados: resultado.estados?.aliada ?? aliado.estados,
+            });
+          } else if (resultado.resonancia?.aliada !== undefined && aliado) {
+            setAliado({
+              ...aliado,
+              resonancia: resultado.resonancia.aliada,
+              estados: resultado.estados?.aliada ?? aliado.estados,
             });
           }
 

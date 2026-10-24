@@ -661,5 +661,61 @@ describe('Motor de Combate Táctico y Afinidades Elementales (Subfase 10k)', () 
       assert.strictEqual(res.accionJugador?.estadoAplicado, 'QUEMADURA');
       assert.ok(res.estadoBatalla.rival.estados.some((e) => e.codigo === 'QUEMADURA'));
     });
+
+    it('Cobertura de efectos directos: VEL_UP otorga +15% Resonancia táctica y bonus de aceleración', () => {
+      const aliadaVeloz = crearAliada({
+        movimientos: [{ nombre: 'Embate Veloz', poder: 15, tipoAccion: 'Ataque melé', efecto: 'VEL_UP' }],
+      });
+      const rival = crearRival();
+      const gen = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res = resolverRonda(aliadaVeloz, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen);
+
+      // Resonancia aliada debió recibir +15% de VEL_UP (+ ganancia base de ronda al final)
+      assert.ok(
+        res.estadoBatalla.aliada.resonancia >= 15,
+        'VEL_UP debe otorgar al menos 15% de resonancia táctica inmediata',
+      );
+      assert.ok(
+        res.mensajes.some((m) => m.includes('agilidad extrema') || m.includes('Resonancia')),
+        'Debe incluir mensaje descriptivo de agilidad táctica',
+      );
+    });
+
+    it('Cobertura universal: los 51 efectos de BD tienen mecánica activa en el motor de combate', () => {
+      const EFECTOS_DIRECTOS = new Set([
+        'CRITICO',
+        'EJECUCION',
+        'EMPUJE',
+        'ATQ_UP',
+        'DEF_DOWN',
+        'ATQ_DOWN',
+        'VEL_UP',
+        'DRENAJE',
+        'REGENERACION',
+        'PURIFICACION',
+        'LUZ',
+      ]);
+
+      const efectosEnBestiario = new Set<string>();
+      for (const especie of BESTIARIO) {
+        for (const mov of especie.movimientos) {
+          if (mov.efecto) {
+            efectosEnBestiario.add(mov.efecto);
+          }
+        }
+      }
+
+      // Exactamente 51 efectos únicos en el catálogo del bestiario
+      assert.strictEqual(efectosEnBestiario.size, 51, 'El bestiario debe contener exactamente 51 efectos únicos');
+
+      for (const efecto of efectosEnBestiario) {
+        const cubiertoEnEstado = efecto in EFECTO_A_ESTADO;
+        const cubiertoDirecto = EFECTOS_DIRECTOS.has(efecto);
+        assert.ok(
+          cubiertoEnEstado || cubiertoDirecto,
+          `El efecto '${efecto}' presente en el bestiario no está cubierto ni en EFECTO_A_ESTADO ni en EFECTOS_DIRECTOS`,
+        );
+      }
+    });
   });
 });

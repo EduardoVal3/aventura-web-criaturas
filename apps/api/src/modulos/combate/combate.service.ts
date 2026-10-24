@@ -463,6 +463,8 @@ export class CombateService {
         encuentroId: encuentro.id,
         estado: estadoEncuentroFinal,
         turno: combateContinua ? turnoActual + 1 : turnoActual,
+        hpRestanteAliada: resultadoRonda.hpRestanteAliada,
+        hpRestanteRival: resultadoRonda.hpRestanteRival,
         accionJugador: resultadoRonda.accionJugador,
         accionRival: accionRivalFormateada,
         rivalActuoPrimero: resultadoRonda.rivalActuoPrimero,

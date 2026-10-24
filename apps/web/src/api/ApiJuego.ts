@@ -264,6 +264,8 @@ export interface RespuestaAtacar {
   encuentroId: string;
   estado: "EN_CURSO" | "VICTORIA" | "DERROTA";
   turno: number;
+  hpRestanteAliada?: number;
+  hpRestanteRival?: number;
   accionJugador?: AccionCombate | null;
   accionRival?: AccionCombate | null;
   rivalActuoPrimero?: boolean;

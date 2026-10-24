@@ -17,6 +17,7 @@ import {
   Shield,
   Zap,
   Eye,
+  Crown,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/8bit/button";
@@ -71,6 +72,7 @@ export function PantallaExploracion() {
     ataque?: number;
     defensa?: number;
     velocidad?: number;
+    esLegendaria?: boolean;
     mensaje?: string;
   } | null>(null);
 
@@ -128,6 +130,7 @@ export function PantallaExploracion() {
             ataque: rival.ataque,
             defensa: rival.defensa,
             velocidad: rival.velocidad,
+            esLegendaria: Boolean(rival.esLegendaria),
             mensaje: `Tienes un enfrentamiento activo pendiente contra ${rival.nombre}.`,
           });
         }
@@ -194,8 +197,16 @@ export function PantallaExploracion() {
       setBitacoraExploracion((prev) => [nuevaEntrada, ...prev.slice(0, 14)]);
 
       if (resultado.tipoEvento === "ENCUENTRO" && resultado.encuentro?.especie) {
-        reproducirSonido("alerta", 0.6);
         const especie: EspecieEncuentro = resultado.encuentro.especie;
+        const esLegendaria = Boolean(especie.esLegendaria);
+        if (esLegendaria) {
+          reproducirSonido("fanfarria", 0.7);
+          toast.warning("¡AVISTAMIENTO LEGENDARIO! Una criatura mítica se alza en la senda.", {
+            duration: 6000,
+          });
+        } else {
+          reproducirSonido("alerta", 0.6);
+        }
         setRivalActivo({
           slug: especie.slug,
           nombre: especie.nombre,
@@ -205,6 +216,7 @@ export function PantallaExploracion() {
           ataque: especie.ataque,
           defensa: especie.defensa,
           velocidad: especie.velocidad,
+          esLegendaria,
           mensaje: resultado.mensaje,
         });
         setModalEncuentroAbierto(true);
@@ -388,19 +400,38 @@ export function PantallaExploracion() {
 
       {/* 2. Banner Destacado de Combate Activo Pendiente (si existe encuentro en curso) */}
       {rivalActivo && (
-        <div className="bg-red-950/60 border-2 border-red-500 p-3.5 sm:p-4 space-y-3">
+        <div
+          className={`${
+            rivalActivo.esLegendaria
+              ? "bg-amber-950/60 border-2 border-amber-400 anim-halo-legendario shadow-[0_0_16px_rgba(251,191,36,0.35)]"
+              : "bg-red-950/60 border-2 border-red-500"
+          } p-3.5 sm:p-4 space-y-3`}
+        >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Swords className="size-4 sm:size-5 text-red-400 animate-pulse shrink-0" />
-              <h2 className="retro text-xs sm:text-sm text-red-400 uppercase tracking-wider">
-                ¡CRIATURA HOSTIL AL ACECHO!
-              </h2>
-            </div>
+            {rivalActivo.esLegendaria ? (
+              <div className="flex items-center gap-2">
+                <Crown className="size-4 sm:size-5 text-amber-400 animate-bounce shrink-0" />
+                <h2 className="retro text-xs sm:text-sm text-amber-400 uppercase tracking-wider">
+                  ¡CRIATURA LEGENDARIA AL ACECHO!
+                </h2>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Swords className="size-4 sm:size-5 text-red-400 animate-pulse shrink-0" />
+                <h2 className="retro text-xs sm:text-sm text-red-400 uppercase tracking-wider">
+                  ¡CRIATURA HOSTIL AL ACECHO!
+                </h2>
+              </div>
+            )}
             <Badge
               font="retro"
-              className="bg-red-900 text-white border-red-400 text-[9px] sm:text-[10px] shrink-0"
+              className={
+                rivalActivo.esLegendaria
+                  ? "bg-amber-900 text-amber-200 border-amber-400 text-[9px] sm:text-[10px] shrink-0"
+                  : "bg-red-900 text-white border-red-400 text-[9px] sm:text-[10px] shrink-0"
+              }
             >
-              COMBATE PENDIENTE
+              {rivalActivo.esLegendaria ? "ENCUENTRO LEGENDARIO" : "COMBATE PENDIENTE"}
             </Badge>
           </div>
 
@@ -644,16 +675,31 @@ export function PantallaExploracion() {
       <Dialog open={modalEncuentroAbierto} onOpenChange={setModalEncuentroAbierto}>
         <DialogContent
           font="normal"
-          className="!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-[#121927] border-2 border-[#43526d] text-slate-100 !p-0 !gap-0 overflow-hidden"
+          className={`!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-[#121927] border-2 ${
+            rivalActivo?.esLegendaria
+              ? "border-amber-400 anim-halo-legendario shadow-[0_0_20px_rgba(251,191,36,0.4)]"
+              : "border-[#43526d]"
+          } text-slate-100 !p-0 !gap-0 overflow-hidden`}
         >
           {/* Header fijo anclado arriba */}
           <DialogHeader className="shrink-0 px-4 pt-3.5 pb-2 text-center border-b border-[#43526d]/40 relative pr-10">
             <DialogTitle
               font="normal"
-              className="retro text-xs sm:text-sm text-red-400 text-center flex items-center justify-center gap-2 uppercase tracking-wider"
+              className={`retro text-xs sm:text-sm ${
+                rivalActivo?.esLegendaria ? "text-amber-400" : "text-red-400"
+              } text-center flex items-center justify-center gap-2 uppercase tracking-wider`}
             >
-              <Swords className="size-4 text-red-400 animate-pulse shrink-0" />
-              <span>¡CRIATURA SALVAJE!</span>
+              {rivalActivo?.esLegendaria ? (
+                <>
+                  <Crown className="size-4 text-amber-400 animate-bounce shrink-0" />
+                  <span>¡AVISTAMIENTO LEGENDARIO!</span>
+                </>
+              ) : (
+                <>
+                  <Swords className="size-4 text-red-400 animate-pulse shrink-0" />
+                  <span>¡CRIATURA SALVAJE!</span>
+                </>
+              )}
             </DialogTitle>
             <DialogDescription className="font-sans text-[11px] sm:text-xs text-slate-300 text-center mt-0.5 line-clamp-2">
               {rivalActivo?.mensaje ?? "¡Una bestia hostil surge entre la maleza y bloquea tu sendero!"}
@@ -663,7 +709,13 @@ export function PantallaExploracion() {
           {/* Cuerpo scrolleable interior: siempre visible y adaptable */}
           {rivalActivo && (
             <div className="flex-1 min-h-0 overflow-y-auto px-3.5 sm:px-5 py-2.5 space-y-2.5 overscroll-contain">
-              <div className="p-2.5 sm:p-3.5 bg-[#090d16] border-2 border-red-500/50 space-y-2.5 text-center">
+              <div
+                className={`p-2.5 sm:p-3.5 bg-[#090d16] border-2 ${
+                  rivalActivo.esLegendaria
+                    ? "border-amber-400/80 bg-amber-950/20"
+                    : "border-red-500/50"
+                } space-y-2.5 text-center`}
+              >
                 {/* Sprite de la criatura rival con tamaño óptimo retro */}
                 <div className="relative mx-auto size-20 sm:size-24 flex items-center justify-center bg-[#121927]/60 border border-[#43526d]/40">
                   <img
@@ -675,16 +727,27 @@ export function PantallaExploracion() {
                 </div>
 
                 {/* Nombre en Press Start 2P e Insignia de Nivel */}
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <h3 className="retro text-xs sm:text-sm text-[#14d1e8] uppercase tracking-wider truncate">
                     {rivalActivo.nombre}
                   </h3>
-                  <Badge
-                    font="retro"
-                    className="bg-[#1a2332] text-amber-300 border-[#f5b724] text-[9px] sm:text-[10px]"
-                  >
-                    Nv. {rivalActivo.nivel}
-                  </Badge>
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                    <Badge
+                      font="retro"
+                      className="bg-[#1a2332] text-amber-300 border-[#f5b724] text-[9px] sm:text-[10px]"
+                    >
+                      Nv. {rivalActivo.nivel}
+                    </Badge>
+                    {rivalActivo.esLegendaria && (
+                      <Badge
+                        font="retro"
+                        className="bg-amber-500/30 text-amber-300 border-amber-400 text-[9px] sm:text-[10px] flex items-center gap-1"
+                      >
+                        <Crown className="size-2.5 text-amber-400" />
+                        <span>LEGENDARIO</span>
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 {/* Vitalidad de la Criatura Rival */}

@@ -4,6 +4,7 @@ import { AdaptadorCriaturasExternas } from '../externo/adaptador-criaturas-exter
 import {
   BESTIARIO,
   EspecieCanonica,
+  TABLAS_APARICION,
 } from '../externo/bestiario-canonico';
 import {
   CATALOGO_ESPECIES_PROPENSO,
@@ -38,6 +39,7 @@ export interface EspecieEnriquecidaDto {
   descripcion: string;
   arquetipo: ArquetipoEspecie;
   movimientos: MovimientoEnriquecidoDto[];
+  zona: { id: string; nombre: string } | null;
 }
 
 /**
@@ -106,6 +108,8 @@ export class CriaturasService {
       const tipo =
         (typeof crudo?.type === 'object' ? crudo.type.key : crudo?.type) || esp.tipo;
       const tasaCaptura = calcularTasaCaptura(challengeRating);
+      const aparicion = TABLAS_APARICION.find((a) => a.especieSlug === esp.slug);
+      const zona = aparicion ? { id: aparicion.zonaId, nombre: aparicion.zonaId } : null;
 
       return {
         slug: esp.slug,
@@ -131,6 +135,7 @@ export class CriaturasService {
           slot: m.slot,
           efecto: m.efecto,
         })),
+        zona,
       };
     });
 
@@ -156,6 +161,11 @@ export class CriaturasService {
         movimientos: {
           orderBy: { slot: 'asc' },
         },
+        apariciones: {
+          include: { zona: true },
+          orderBy: { zonaId: 'asc' },
+          take: 1,
+        },
       },
       orderBy: [{ challengeRating: 'asc' }, { nombre: 'asc' }],
     });
@@ -174,32 +184,40 @@ export class CriaturasService {
       }
     }
 
-    const especies: EspecieEnriquecidaDto[] = especiesDb.map((esp) => ({
-      slug: esp.slug,
-      keyExterna: esp.idExterno,
-      nombre: esp.nombre,
-      tipo: esp.tipo,
-      elemento: esp.elemento,
-      challengeRating: esp.challengeRating,
-      hpBase: esp.hpBase,
-      ataqueBase: esp.ataqueBase,
-      defensaBase: esp.defensaBase,
-      velocidadBase: esp.velocidadBase,
-      tasaCaptura: esp.tasaCaptura,
-      esEspecial: esp.esEspecial,
-      esLegendaria: esp.esLegendaria,
-      descripcion:
-        esp.descripcion || CATALOGO_ESPECIES_PROPENSO[esp.idExterno]?.descripcion || '',
-      arquetipo: determinarArquetipoEspecie(esp),
-      movimientos: esp.movimientos.map((m) => ({
-        nombre: m.nombre,
-        nombreOriginal: m.nombreOriginal,
-        tipoAccion: m.tipoAccion,
-        poder: m.poder,
-        slot: m.slot,
-        efecto: m.efecto,
-      })),
-    }));
+    const especies: EspecieEnriquecidaDto[] = especiesDb.map((esp) => {
+      const aparicion = (esp as any).apariciones?.[0];
+      const zona = aparicion?.zona
+        ? { id: aparicion.zona.id, nombre: aparicion.zona.nombre }
+        : null;
+
+      return {
+        slug: esp.slug,
+        keyExterna: esp.idExterno,
+        nombre: esp.nombre,
+        tipo: esp.tipo,
+        elemento: esp.elemento,
+        challengeRating: esp.challengeRating,
+        hpBase: esp.hpBase,
+        ataqueBase: esp.ataqueBase,
+        defensaBase: esp.defensaBase,
+        velocidadBase: esp.velocidadBase,
+        tasaCaptura: esp.tasaCaptura,
+        esEspecial: esp.esEspecial,
+        esLegendaria: esp.esLegendaria,
+        descripcion:
+          esp.descripcion || CATALOGO_ESPECIES_PROPENSO[esp.idExterno]?.descripcion || '',
+        arquetipo: determinarArquetipoEspecie(esp),
+        movimientos: esp.movimientos.map((m) => ({
+          nombre: m.nombre,
+          nombreOriginal: m.nombreOriginal,
+          tipoAccion: m.tipoAccion,
+          poder: m.poder,
+          slot: m.slot,
+          efecto: m.efecto,
+        })),
+        zona,
+      };
+    });
 
     return {
       total: especies.length,
@@ -216,6 +234,11 @@ export class CriaturasService {
       include: {
         movimientos: {
           orderBy: { slot: 'asc' },
+        },
+        apariciones: {
+          include: { zona: true },
+          orderBy: { zonaId: 'asc' },
+          take: 1,
         },
       },
     });
@@ -236,6 +259,11 @@ export class CriaturasService {
       });
     }
 
+    const aparicion = (esp as any).apariciones?.[0];
+    const zona = aparicion?.zona
+      ? { id: aparicion.zona.id, nombre: aparicion.zona.nombre }
+      : null;
+
     return {
       slug: esp.slug,
       keyExterna: esp.idExterno,
@@ -261,6 +289,7 @@ export class CriaturasService {
         slot: m.slot,
         efecto: m.efecto,
       })),
+      zona,
     };
   }
 }

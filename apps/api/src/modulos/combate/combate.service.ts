@@ -13,35 +13,29 @@ import {
 } from '../../comun/azar/generador-aleatorio.interface';
 import { ESTADOS_ENCUENTRO, esEstadoTerminal } from './dominio/estado-encuentro';
 import { ProgresoService } from '../progreso/progreso.service';
+import {
+  calcularDano,
+  aplicarDano,
+  calcularDanoElemental,
+  multiplicadorAfinidad,
+  etiquetaEfectividad,
+  TABLA_AFINIDADES,
+  ELEMENTOS,
+  Elemento,
+  EtiquetaEfectividad,
+} from './dominio/motor-combate';
 
-/**
- * Calcula el daño final según la fórmula de equilibrio del juego (§2.1).
- * danoBruto = floor((ataque / max(1, defensa)) * poder * 0.8 + nivel * 0.5)
- * danoFinal = max(1, danoBruto) -> Cumple INV-04
- */
-// simplificacion: factor base 1.0 para compatibilidad con tests unitarios existentes
-export function calcularDano(
-  ataque: number,
-  defensa: number,
-  poder: number,
-  nivel: number,
-  factorVariacion: number = 1.0,
-): number {
-  const danoBruto = (ataque / Math.max(1, defensa)) * poder * 0.8 + nivel * 0.5;
-  const danoConVariacion = Math.floor(danoBruto * factorVariacion);
-  return Math.max(1, danoConVariacion); // Cumple INV-04
-}
-
-/**
- * Aplica daño al HP respetando el intervalo [0, hpMaximo] (§2.1 y INV-03).
- */
-export function aplicarDano(
-  hpPrevio: number,
-  danoFinal: number,
-  hpMaximo: number,
-): number {
-  return Math.max(0, Math.min(hpMaximo, hpPrevio - danoFinal));
-}
+export {
+  calcularDano,
+  aplicarDano,
+  calcularDanoElemental,
+  multiplicadorAfinidad,
+  etiquetaEfectividad,
+  TABLA_AFINIDADES,
+  ELEMENTOS,
+  Elemento,
+  EtiquetaEfectividad,
+};
 
 /**
  * Calcula la probabilidad final de huida acotada (§2.5).

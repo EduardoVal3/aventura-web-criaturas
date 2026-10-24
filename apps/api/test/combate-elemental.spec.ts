@@ -585,5 +585,81 @@ describe('Motor de Combate Táctico y Afinidades Elementales (Subfase 10k)', () 
 
       assert.deepStrictEqual(res1, res2, 'Ambas ejecuciones deben producir resultados profundamente idénticos');
     });
+
+    it('Cobertura de efectos instantáneos: CRITICO y EJECUCION aplican multiplicador superior', () => {
+      const aliadaCrit = crearAliada({
+        ataque: 50,
+        nivel: 10,
+        movimientos: [{ nombre: 'Furia de Manada', poder: 20, tipoAccion: 'Ataque melé', efecto: 'CRITICO' }],
+      });
+      const aliadaNormal = crearAliada({
+        ataque: 50,
+        nivel: 10,
+        movimientos: [{ nombre: 'Ataque Básico', poder: 20, tipoAccion: 'Ataque melé', efecto: null }],
+      });
+      const rival = crearRival({ defensa: 50, hpActual: 100, hpMaximo: 100 });
+
+      // Tiradas con factor de variación idéntico (0.5 -> 1.0)
+      const gen1 = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const resCrit = resolverRonda(aliadaCrit, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen1);
+
+      const gen2 = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const resNormal = resolverRonda(aliadaNormal, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen2);
+
+      assert.ok(
+        (resCrit.accionJugador?.danoCausado ?? 0) > (resNormal.accionJugador?.danoCausado ?? 0),
+        'El movimiento con CRITICO debe infligir mayor daño que el normal',
+      );
+      assert.ok(resCrit.mensajes.some((m) => m.includes('¡Golpe crítico!')));
+    });
+
+    it('Cobertura de efectos: DRENAJE recupera salud sin sobrecurar por encima de hpMaximo (INV-03)', () => {
+      const aliadaHerida = crearAliada({
+        hpActual: 30,
+        hpMaximo: 60,
+        movimientos: [{ nombre: 'Marejada Abisal', poder: 25, tipoAccion: 'Ataque melé', efecto: 'DRENAJE' }],
+      });
+      const rival = crearRival({ hpActual: 50, hpMaximo: 50 });
+      const gen = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res = resolverRonda(aliadaHerida, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen);
+
+      assert.ok(res.hpRestanteAliada > 30, 'La aliada debe haber recuperado HP por el efecto DRENAJE');
+      assert.ok(res.hpRestanteAliada <= 60, 'Cumple INV-03: no debe exceder hpMaximo');
+      assert.ok(res.mensajes.some((m) => m.includes('drenó vitalidad')));
+    });
+
+    it('Cobertura de efectos: REGENERACION y PURIFICACION restauran salud y limpian aflicciones', () => {
+      const aliadaAfligida = crearAliada({
+        hpActual: 20,
+        hpMaximo: 50,
+        movimientos: [{ nombre: 'Galope Astral', poder: 10, tipoAccion: 'Ataque melé', efecto: 'PURIFICACION' }],
+      });
+      const snapshot = estadoVacio('aliada-1');
+      snapshot.aliada.estados = [
+        { codigo: 'VENENO', nombre: 'Veneno', turnosRestantes: 2 },
+        { codigo: 'BASTION', nombre: 'Bastión', turnosRestantes: 3, escudo: 10 },
+      ];
+      const rival = crearRival({ hpActual: 50, hpMaximo: 50 });
+      const gen = new GeneradorAleatorioFijo([0.5, 0.0, 0.5]);
+      const res = resolverRonda(aliadaAfligida, rival, snapshot, { indiceMovimiento: 0 }, gen);
+
+      // PURIFICACION debe retirar VENENO pero mantener BASTION
+      assert.ok(!res.estadoBatalla.aliada.estados.some((e) => e.codigo === 'VENENO'));
+      assert.ok(res.estadoBatalla.aliada.estados.some((e) => e.codigo === 'BASTION'));
+      assert.ok(res.hpRestanteAliada > 20, 'La purificación debe restaurar salud vital');
+    });
+
+    it('Cobertura de EFECTO_A_ESTADO: IGNICION aplica QUEMADURA, ENREDO aplica PARALISIS y ESPINAS aplica BASTION', () => {
+      const aliadaFuego = crearAliada({
+        movimientos: [{ nombre: 'Llama Viva', poder: 15, tipoAccion: 'Ataque melé', efecto: 'IGNICION' }],
+      });
+      const rival = crearRival();
+      // Tiradas: variación jugador (0.5), tirada estado aliada (0.1 < 0.5 -> aplica), índice rival (0.0), variación rival (0.5)
+      const gen = new GeneradorAleatorioFijo([0.5, 0.1, 0.0, 0.5]);
+      const res = resolverRonda(aliadaFuego, rival, estadoVacio('aliada-1'), { indiceMovimiento: 0 }, gen);
+
+      assert.strictEqual(res.accionJugador?.estadoAplicado, 'QUEMADURA');
+      assert.ok(res.estadoBatalla.rival.estados.some((e) => e.codigo === 'QUEMADURA'));
+    });
   });
 });

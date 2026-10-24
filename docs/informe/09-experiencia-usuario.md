@@ -826,6 +826,27 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 - **Regla R1 Estricta:** 100% de interfaces de usuario, botones y controles libres de emojis unicode (uso universal de Lucide SVG).
 - **Regla R2 Estricta:** Commits atómicos en la rama `funcionalidad/fase-10l-ux-combate-tactico-catalogo` con formato semántico en español.
 
+---
+
+### 14.4 Cobertura Integral de Efectos en Combate y Badges Tácticos (Decisión D-12)
+- **Diagnóstico y Auditoría:** Se identificó que la base de datos y el bestiario contienen 51 efectos únicos asociados a los movimientos de las 30 criaturas. Sin embargo, el motor de combate sólo mapeaba 16 claves, dejando los efectos restantes como cadenas informativas sin cómputo numérico en servidor.
+- **Mapeo Autoritativo Exhaustivo en Backend (`motor-combate.ts`):**
+  1. Se expandió `EFECTO_A_ESTADO` a 41 claves que aplican formalmente los 6 estados canónicos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`).
+  2. Se implementaron las 10 mecánicas tácticas instantáneas restantes en `ejecutarTurnoJugador` y `ejecutarTurnoRival`:
+     - `CRITICO` ($1.35\times$) y `EJECUCION` ($1.50\times$).
+     - `DRENAJE`: Recuperación del $30\,\%$ del daño causado sin exceder `hpMaximo` (INV-03).
+     - `REGENERACION`: Curación del $20\,\%$ de salud vital (INV-03).
+     - `PURIFICACION` / `LUZ`: Disipación de estados negativos y restauración del $15\,\%$ de salud.
+     - `ATQ_UP` ($1.20\times$), `DEF_DOWN` ($1.25\times$), `ATQ_DOWN` ($0.85\times$), `EMPUJE` ($1.15\times$).
+- **Visualización Táctica con Badges Retro en Frontend (`combate-tactico.ts` y `PantallaCombate.tsx`):**
+  - Mapeo determinista en `TABLA_BADGES_EFECTOS` de las 51 claves con estilo retro pixelado, tipografía monoespaciada e iconos SVG temáticos de Lucide (`Flame`, `Skull`, `Snowflake`, `Zap`, `ShieldAlert`, `Shield`, `Swords`, `HeartPulse`, `Sparkles`, `ChevronsUp`, `ChevronsDown`).
+  - Renderizado contextual en movimientos activos (junto al chip de efectividad elemental) y en movimientos bloqueados del slot 4 (anticipando el efecto al alcanzar el $100\,\%$ de Resonancia).
+  - Enriquecimiento accesible de atributos `aria-label` en la botonera de combate.
+- **Certificación de Calidad:**
+  - **113 de 113 pruebas aprobadas** en backend (`pnpm --filter api test`), incluyendo guarda estricta de coherencia entre `EFECTO_A_ESTADO` y `BESTIARIO`.
+  - **64 de 64 pruebas aprobadas** en frontend (`pnpm --filter web test`).
+  - **0 antipatrones** en auditoría estática con la herramienta Impeccable.
+
 
 
 

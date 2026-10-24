@@ -480,7 +480,11 @@ export class CombateService {
   /**
    * Resuelve el intento de huida del encuentro.
    */
-  async huir(usuarioId: string, encuentroId: string) {
+  async huir(
+    usuarioId: string,
+    encuentroId: string,
+    turnoEsperado?: number,
+  ) {
     const personaje = await this.obtenerPersonajeAutenticado(usuarioId);
     const { encuentro, ultimoCombate } = await this.validarEncuentroActivo(
       encuentroId,
@@ -548,7 +552,7 @@ export class CombateService {
           tx,
           personaje.id,
           encuentro.id,
-          turnoActual,
+          turnoEsperado,
         );
 
         await tx.encuentro.update({
@@ -642,7 +646,7 @@ export class CombateService {
         tx,
         personaje.id,
         encuentro.id,
-        turnoActual,
+        turnoEsperado,
       );
 
       await tx.criatura.update({

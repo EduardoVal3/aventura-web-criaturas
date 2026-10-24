@@ -40,6 +40,7 @@ export class CombateController {
       usuarioId,
       dto.encuentroId,
       dto.movimientoIndice ?? 0,
+      dto.turnoEsperado,
     );
   }
 
@@ -54,7 +55,11 @@ export class CombateController {
     @UsuarioActual('sub') usuarioId: string,
     @Body() dto: HuirDto,
   ) {
-    return this.combateService.huir(usuarioId, dto.encuentroId);
+    return this.combateService.huir(
+      usuarioId,
+      dto.encuentroId,
+      dto.turnoEsperado,
+    );
   }
 
   @Post('capturar')

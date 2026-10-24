@@ -389,6 +389,7 @@ export class CombateService {
             encuentroId: encuentro.id,
             danoFinal: resultadoRonda.accionJugador?.danoCausado ?? 0,
           },
+          tx,
         );
       } else if (resultadoRonda.resultado === 'ALIADA_DEBILITADA') {
         const criaturasVivasRestantes = await tx.criatura.count({
@@ -417,6 +418,7 @@ export class CombateService {
             'COMBATE',
             `Tu equipo ha sido debilitado por ${encuentro.criaturaRival.especie?.nombre ?? 'Rival'}.`,
             { encuentroId: encuentro.id, derrota: true },
+            tx,
           );
         } else {
           resultadoFinal = 'ALIADA_DEBILITADA';
@@ -582,6 +584,7 @@ export class CombateService {
           'COMBATE',
           `Huida exitosa de combate frente a ${encuentro.criaturaRival.especie?.nombre ?? 'Rival'}.`,
           { encuentroId: encuentro.id },
+          tx,
         );
 
         return {
@@ -686,6 +689,7 @@ export class CombateService {
             'COMBATE',
             `Tu equipo ha sido debilitado por ${encuentro.criaturaRival.especie?.nombre ?? 'Rival'}.`,
             { encuentroId: encuentro.id, derrota: true },
+            tx,
           );
         }
       }

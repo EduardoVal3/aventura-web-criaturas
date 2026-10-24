@@ -820,6 +820,88 @@ describe('Motor de combate, daño y huida (Fase 7a)', () => {
         'El parámetro tx debe coincidir con el cliente transaccional de $transaction',
       );
     });
+
+    it('debe retornar rivalActuoPrimero: true, accionJugador: null y avanzar el turno si la aliada cae pero el combate continúa', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        criatura: {
+          findFirst: async () => ({
+            id: 'aliada-1',
+            personajeId: 'pj-1',
+            nivel: 1,
+            ataque: 10,
+            defensa: 10,
+            hpActual: 10,
+            hpMaximo: 50,
+            velocidad: 10, // Menor que el rival
+            especie: {
+              elemento: 'fuego',
+              movimientos: [
+                { id: 'm-1', nombre: 'Ascua', poder: 10, slot: 1, efecto: null },
+              ],
+            },
+          }),
+          update: async () => ({}),
+          count: async () => 2, // Le quedan otras criaturas vivas en el equipo
+        },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            criaturaRivalId: 'rival-1',
+            estado: 'EN_CURSO',
+            zonaId: null,
+            criaturaRival: {
+              id: 'rival-1',
+              nivel: 5,
+              ataque: 80,
+              defensa: 30,
+              hpActual: 80,
+              hpMaximo: 80,
+              velocidad: 90, // Mayor que la aliada -> rivalActuaPrimero = true
+              especie: {
+                challengeRating: 2,
+                nombre: 'Halcón Feroz',
+                elemento: 'aire',
+                movimientos: [
+                  { id: 'm-r1', nombre: 'Picotazo', poder: 50, slot: 1, efecto: null },
+                ],
+              },
+            },
+            combates: [{ turno: 1, esTurnoJugador: true }],
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            criatura: {
+              update: async () => ({}),
+              count: async () => 2, // Otras criaturas vivas
+            },
+            personaje: { update: async () => ({}) },
+            historial: { create: async () => ({}) },
+            combate: {
+              findFirst: async () => ({ turno: 1 }),
+              create: async () => ({}),
+            },
+            encuentro: { update: async () => ({}) },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const gen = new GeneradorAleatorioFijo([0.5, 0.5]);
+      const servicio = new CombateService(prismaMock, {} as any, gen);
+
+      const res = await servicio.atacar('usr-1', 'enc-1', 0, 2);
+
+      assert.strictEqual(res.rivalActuoPrimero, true);
+      assert.strictEqual(res.accionJugador, null);
+      assert.strictEqual(res.resultadoFinal, 'ALIADA_DEBILITADA');
+      assert.strictEqual(res.estado, 'EN_CURSO');
+      assert.strictEqual(res.turno, 3); // 2 + 1 porque el combate continúa
+    });
   });
 });
 

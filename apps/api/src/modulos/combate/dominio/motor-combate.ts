@@ -701,6 +701,7 @@ export interface ResultadoRonda {
   efectosFinDeTurno: EfectoFinDeTurno[];
   mensajes: string[];
   resultado: 'EN_CURSO' | 'VICTORIA' | 'ALIADA_DEBILITADA';
+  rivalActuoPrimero: boolean;
 }
 
 export interface AccionIntencionJugador {
@@ -1058,6 +1059,7 @@ export function resolverRonda(
         efectosFinDeTurno: [],
         mensajes,
         resultado: 'ALIADA_DEBILITADA',
+        rivalActuoPrimero: true,
       };
     }
 
@@ -1080,6 +1082,7 @@ export function resolverRonda(
         efectosFinDeTurno: [],
         mensajes,
         resultado: 'VICTORIA',
+        rivalActuoPrimero: true,
       };
     }
   } else {
@@ -1102,6 +1105,7 @@ export function resolverRonda(
         efectosFinDeTurno: [],
         mensajes,
         resultado: 'VICTORIA',
+        rivalActuoPrimero: false,
       };
     }
 
@@ -1124,6 +1128,7 @@ export function resolverRonda(
         efectosFinDeTurno: [],
         mensajes,
         resultado: 'ALIADA_DEBILITADA',
+        rivalActuoPrimero: false,
       };
     }
   }
@@ -1222,5 +1227,6 @@ export function resolverRonda(
     efectosFinDeTurno,
     mensajes,
     resultado: 'EN_CURSO',
+    rivalActuoPrimero: Boolean(rivalActuaPrimero),
   };
 }

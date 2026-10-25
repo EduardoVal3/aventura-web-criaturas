@@ -156,3 +156,65 @@ test("Audio y multimedia retro degradan limpiamente y resuelven rutas correctas"
     reproducirSonido("victoria", 0.5);
   });
 });
+
+test("Regla R1: PantallaCombate.tsx no contiene emojis unicode", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const combateCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaCombate.tsx"), "utf-8");
+
+  const regexEmoji = /\p{Extended_Pictographic}/u;
+  const lineas = combateCodigo.split("\n");
+
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    assert.strictEqual(
+      regexEmoji.test(linea),
+      false,
+      `Emoji unicode no permitido en línea ${i + 1} de PantallaCombate: "${linea.trim()}"`,
+    );
+  }
+});
+
+test("Hardening y Ergonomía: PantallaCombate cuenta con estética retro 8bitcn, arena 16-bit, aria-busy y modales sellados", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const combateCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaCombate.tsx"), "utf-8");
+
+  // Hardening y prevención de doble clic
+  assert.ok(
+    combateCodigo.includes("aria-busy={procesandoAccion}"),
+    "PantallaCombate debe declarar aria-busy={procesandoAccion}",
+  );
+  assert.ok(
+    combateCodigo.includes("cerrojoAccion.current = true"),
+    "PantallaCombate debe activar el cerrojo síncrono al iniciar acciones",
+  );
+  assert.ok(
+    combateCodigo.includes("disabled={procesandoAccion"),
+    "PantallaCombate debe deshabilitar los comandos mientras se procesa acción",
+  );
+
+  // Estética retro 8bitcn y arena 16-bit
+  assert.ok(
+    combateCodigo.includes("shadow-[6px_6px_0_0_#000]"),
+    "PantallaCombate debe emplear sombras ortogonales retro de alto contraste",
+  );
+  assert.ok(
+    combateCodigo.includes("border-4 border-black"),
+    "PantallaCombate debe delimitar los contenedores principales con borde retro de 4px",
+  );
+  assert.ok(
+    combateCodigo.includes("w-[calc(100vw-2rem)] sm:max-w-md"),
+    "Los modales retro deben incluir sellado elástico para prevenir desbordamientos horizontales",
+  );
+  assert.ok(
+    combateCodigo.includes("Scroll"),
+    "La bitácora de encuentro debe incorporar el icono Scroll de Lucide",
+  );
+});

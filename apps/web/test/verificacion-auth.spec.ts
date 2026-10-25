@@ -90,7 +90,7 @@ test("Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y PantallaHubUbic
 });
 
 
-test("Regla R1: Cero emojis unicode en PantallaCrearPersonaje.tsx y LayoutPrincipal.tsx", async () => {
+test("Regla R1: Cero emojis unicode en PantallaIngreso.tsx, PantallaCrearPersonaje.tsx y LayoutPrincipal.tsx", async () => {
   const { readFileSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
@@ -99,6 +99,7 @@ test("Regla R1: Cero emojis unicode en PantallaCrearPersonaje.tsx y LayoutPrinci
   const regexEmoji = /\p{Extended_Pictographic}/u;
 
   const archivos = [
+    join(__dirname, "../src/paginas/PantallaIngreso.tsx"),
     join(__dirname, "../src/paginas/PantallaCrearPersonaje.tsx"),
     join(__dirname, "../src/components/LayoutPrincipal.tsx"),
   ];
@@ -114,5 +115,19 @@ test("Regla R1: Cero emojis unicode en PantallaCrearPersonaje.tsx y LayoutPrinci
       );
     }
   }
+});
+
+test("Hardening y Ergonomía: PantallaIngreso cuenta con aria-busy, tipografía bimodal y protección de carga", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const contenido = readFileSync(join(__dirname, "../src/paginas/PantallaIngreso.tsx"), "utf-8");
+
+  assert.ok(contenido.includes('aria-busy={enviando}'), "PantallaIngreso debe declarar aria-busy en el formulario y botón");
+  assert.ok(contenido.includes('font="normal"'), "PantallaIngreso debe aplicar font='normal' en inputs para legibilidad");
+  assert.ok(contenido.includes("Sparkles"), "PantallaIngreso debe usar iconos Lucide en lugar de emojis");
+  assert.ok(contenido.includes("reproducirSonido"), "PantallaIngreso debe reproducir efectos de sonido retro");
 });
 

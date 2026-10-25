@@ -875,6 +875,61 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
   - **64 de 64 pruebas aprobadas** en frontend (`pnpm --filter web test`).
   - **0 antipatrones** en auditoría estática con la herramienta Impeccable.
 
+---
+
+## 15. Sub-Fase 10e: Rediseño Visual de Combate Móvil Impeccable (Zero-Scroll, Arena Diagonal JRPG y Consola Contextual)
+
+### 15.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría visual y ergonómica exhaustiva de `PantallaCombate.tsx` con la skill `impeccable` y la referencia canónica de combate retro pixel-art (`Pixel_art_creature_battle_UI_20261025170540`):
+1. **Falta de Viewport Fijo (Zero-Scroll):** La vista dependía del contenedor global con barras de navegación web superior e inferior redundantes (`LayoutPrincipal.tsx`), forzando scroll vertical en dispositivos móviles y diluyendo la inmersión del jugador.
+2. **Fondo de Escenario Acoplado:** La arena de batalla utilizaba gradientes y rejillas CSS codificadas directamente dentro del cuerpo de la pantalla, sin un sistema desacoplado (`BattlefieldBackground`) capaz de intercambiar escenarios por zona o soportar bucles de video livianos.
+3. **Disposición Visual y HUDs Saturados:** Los bloques de salud y estadísticas desplegaban textos explicativos extensos sobre la arena, restando protagonismo visual a los sprites de las criaturas e impidiendo la clásica composición diagonal JRPG (rival arriba a la derecha, criatura aliada abajo a la izquierda).
+4. **Bitácora Invasiva:** El registro de eventos consumía un panel completo de pergamino en medio de la pantalla, reduciendo el área disponible para la acción táctica.
+5. **Consola Táctica Fragmentada:** La botonera de combate abría modales flotantes superpuestos para cada acción secundaria (objetos, cambio de criatura, captura), generando saltos contextuales abruptos en lugar de sustituir los controles en la misma zona del pulgar (*in-place contextual deck*).
+
+---
+
+### 15.2 Mejoras Implementadas
+
+#### A. Viewport Fijo (Zero-Scroll) y Ergonomía Móvil (100dvh)
+- **Supresión de Navegación Redundante:** Actualización condicional en `LayoutPrincipal.tsx` para rutas de combate (`location.pathname.startsWith('/combate')`), renderizando un contenedor estricto de `h-[100dvh] w-full overflow-hidden` libre de cabeceras o pies de página web.
+- **Menú Discreto de Pausa Retro:** Integración de un botón cuadrado de pausa retro (`[ ⏸️ ]`) en la esquina superior derecha, que despliega un diálogo accesible con opciones secundarias: continuar combate, rendirse/huir, acceso al Kit de Interfaz (`/kit-ui`), Créditos (`/creditos`) y retorno seguro al Hub de localidad.
+- **Pastilla Superior Ornada de Turno:** Indicador centrado con marco dorado biselado retro (`◆ TURNO X: TU TURNO ◆` / `TURNO ENEMIGO`), con animaciones de cambio de estado.
+
+#### B. Sistema Desacoplado de Fondos de Batalla (`BattlefieldBackground`)
+- **Arquitectura de Escenarios:** Creación del componente reutilizable `apps/web/src/components/combate/BattlefieldBackground.tsx` con resolución flexible por `zoneId` o `backgroundUrl`, soporte para bucles de video livianos (`videoUrl` con `<video autoPlay loop muted playsInline />`), y degradación suave hacia el fondo SVG pixel-art de alta resolución `caverna-cristal.svg` en `public/assets/battlegrounds/`.
+- **Capa de Contraste y Viñeta:** Incorporación de viñeta radial oscura y degradados multiplicativos (`mix-blend-multiply bg-black/30`) que aseguran una legibilidad superior de los sprites retro y de las placas HUD.
+
+#### C. Arena Diagonal JRPG y Placas HUD Compactas
+- **Composición Diagonal Canónica:**
+  - **Rival (Arriba a la derecha):** Sprite del rival sobre pedestal sombreado con placa HUD compacta contigua (Nombre, Afinidad elemental, Nivel, barra de salud con porcentaje y botones microscópicos de estados alterados como Bastión o Quemadura con tooltips informativos al toque).
+  - **Jugador (Abajo a la izquierda):** Sprite de la criatura aliada de espaldas/perfil con placa HUD contigua integrada (Nombre, Nivel, afinidad, barra de salud numérica segmentada, medidor de Resonancia y barra de EXP con porcentaje).
+- **Animaciones de Daño y Curación Flotante:** Efectos retro `anim-dano-flotante` y `anim-curacion-flotante` acoplados directamente sobre la posición espacial de cada combatiente.
+
+#### D. Bitácora de Encuentro Expandible (Ticker / Bottom Sheet Drawer)
+- **Modo Colapsado (Ticker):** Barra horizontal biselada de 1 sola línea entre la arena y la consola que exhibe el evento más reciente junto al recuento de eventos (`ej. 13 eventos`) y chevron indicador.
+- **Modo Expandido (Drawer):** Al pulsar el ticker, se despliega hacia arriba una hoja inferior animada (*bottom sheet*) que cubre el tercio inferior sin tapar a las criaturas, permitiendo revisar la cronología completa con desplazamiento interno independiente.
+
+#### E. Consola de Acciones en la Zona del Pulgar (In-Place Contextual Deck)
+- **Máquina de Estados de la Consola (`menuState`):**
+  - **`ROOT`:** Cuadrícula táctil 2x2 de botones retro gruesos optimizados para el pulgar (`[ ⚔️ ATACAR ]` en oro/ámbar, `[ 🎒 USAR OBJETO ]` en cian oscuro, `[ 🔄 CAMBIAR ]` en cian oscuro, `[ 🧪 CAPTURAR ]` en cian oscuro) y barra inferior completa para `[ 🏃 HUIR ]` en carmesí.
+  - **`ATTACK`:** Sustitución inmediata en el mismo espacio por los 4 movimientos tácticos con potencia, chips de efectividad (`¡EFICAZ!`, `RESISTIDO`) y badges de efecto con iconos Lucide.
+  - **`ITEMS`:** Lista táctil de consumibles de curación con previsualización del inventario y botón directo de aplicación.
+  - **`SWAP`:** Relevo ágil del equipo activo con barras de HP individuales.
+  - **`CAPTURE`:** Selector interactivo de talismanes y botón de lanzamiento con cinemática de suspenso e incertidumbre.
+  - **Botón Universal «← Volver»:** Todos los submenús incorporan retorno instantáneo sin fricción al estado raíz.
+
+---
+
+### 15.3 Verificación de Calidad y Cero Regresiones
+- **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
+  - **71 de 71 pruebas aprobadas** (100% de éxito, 0 fallos).
+  - Aprobación estricta de auditorías estáticas de hardening contra doble clic (`cerrojoAccion.current = true`, `aria-busy={procesandoAccion}`, `disabled={procesandoAccion}`).
+- **Regla R1 Estricta:** Verificación de 0 emojis unicode en `PantallaCombate.tsx`, `BattlefieldBackground.tsx` y `LayoutPrincipal.tsx` (uso exclusivo de iconos SVG vectoriales de Lucide).
+- **Compilación de Producción (`pnpm --filter web build`):**
+  - 0 errores TypeScript en modo estricto, bundle generado en Vite en 1.79s.
+
+
 
 
 

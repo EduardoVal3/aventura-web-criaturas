@@ -1,7 +1,19 @@
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { Toaster } from "@/components/ui/sonner";
 
 export function LayoutPrincipal() {
+  const location = useLocation();
+  const esCombate = location.pathname.startsWith("/combate");
+
+  if (esCombate) {
+    return (
+      <div className="h-screen h-[100dvh] w-full overflow-hidden bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full">
+        <Outlet />
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full overflow-x-hidden">
       <header className="border-b border-border bg-card/80 backdrop-blur-xs sticky top-0 z-40 px-3 py-2.5 sm:px-6 sm:py-3">

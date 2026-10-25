@@ -3,7 +3,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  LogIn,
+  AlertCircle,
+  Sparkles,
+  Mail,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
 
 import {
   Card,
@@ -25,6 +34,7 @@ import {
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import { ErrorApi } from "@/api";
 import { reproducirSonido } from "@/lib/assets";
+import { cn } from "@/lib/utils";
 
 export function PantallaIngreso() {
   const navigate = useNavigate();
@@ -71,24 +81,34 @@ export function PantallaIngreso() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] py-8 px-2 sm:px-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-2xl border-4">
-          <CardHeader className="text-center space-y-2 pb-4">
+    <div className="relative min-h-[calc(100vh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-3 sm:px-6">
+      <div className="w-full max-w-sm sm:max-w-md mx-auto">
+        <Card className="shadow-2xl border-4 bg-card/95 backdrop-blur-xs">
+          <CardHeader className="text-center space-y-2 pb-4 pt-6 px-4 sm:px-6">
+            {/* Insignia temática retro sin emojis unicode (Regla R1) */}
             <div className="flex justify-center mb-1">
               <Badge
                 variant="outline"
-                className="retro text-[10px] tracking-wider text-primary border-primary bg-primary/10 px-2 py-0.5"
+                className="retro text-[10px] tracking-wider text-primary border-primary/80 bg-primary/10 px-2.5 py-1 inline-flex items-center gap-1.5"
               >
-                🔮 RETORNO AL REINO
+                <Sparkles className="size-3 text-primary shrink-0" aria-hidden="true" />
+                <span>RETORNO AL REINO</span>
               </Badge>
             </div>
+
             <CardTitle className="retro text-base sm:text-lg text-primary tracking-wide leading-relaxed">
               Portal de Ingreso
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground leading-normal max-w-xs mx-auto">
-              Accede a tu cuenta para continuar tu travesía y gestionar tus criaturas en Aethelgard.
+
+            <CardDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto font-sans">
+              Introduce tus credenciales de aventurero para cruzar el umbral y reanudar tu travesía en Aethelgard.
             </CardDescription>
+
+            {/* Separador ornamental retro */}
+            <div
+              className="w-full h-1 bg-gradient-to-r from-transparent via-border to-transparent mt-2"
+              aria-hidden="true"
+            />
           </CardHeader>
 
           <form
@@ -96,11 +116,15 @@ export function PantallaIngreso() {
             noValidate
             aria-busy={enviando}
           >
-            <CardContent className="space-y-4 pt-2">
+            <CardContent className="space-y-4 pt-1 px-4 sm:px-6">
               {/* Campo Correo Electrónico */}
               <div className="space-y-1.5">
-                <Label htmlFor="correo" className="text-xs font-semibold text-foreground">
-                  Correo electrónico
+                <Label
+                  htmlFor="correo"
+                  className="text-xs font-semibold text-foreground/90 uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  <Mail className="size-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+                  <span>Correo electrónico</span>
                 </Label>
                 <Input
                   id="correo"
@@ -108,6 +132,8 @@ export function PantallaIngreso() {
                   placeholder="explorador@ejemplo.com"
                   autoComplete="email"
                   disabled={enviando}
+                  font="normal"
+                  className="font-sans text-sm h-10 px-3 bg-background/60 focus-visible:bg-background transition-colors"
                   aria-invalid={!!errors.correo}
                   aria-describedby={errors.correo ? "error-correo" : undefined}
                   {...register("correo")}
@@ -115,7 +141,7 @@ export function PantallaIngreso() {
                 {errors.correo && (
                   <div
                     id="error-correo"
-                    className="flex items-center gap-1.5 text-xs text-destructive font-medium pt-0.5"
+                    className="flex items-center gap-1.5 text-xs text-destructive font-medium pt-0.5 font-sans"
                     role="alert"
                   >
                     <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
@@ -127,9 +153,16 @@ export function PantallaIngreso() {
               {/* Campo Contraseña con Visibilidad Alternable */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="clave" className="text-xs font-semibold text-foreground">
-                    Contraseña
+                  <Label
+                    htmlFor="clave"
+                    className="text-xs font-semibold text-foreground/90 uppercase tracking-wider flex items-center gap-1.5"
+                  >
+                    <Lock className="size-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+                    <span>Contraseña</span>
                   </Label>
+                  <span className="text-[10px] text-muted-foreground/80 font-sans">
+                    Llave secreta
+                  </span>
                 </div>
                 <div className="relative">
                   <Input
@@ -138,7 +171,8 @@ export function PantallaIngreso() {
                     placeholder="Ingresa tu contraseña"
                     autoComplete="current-password"
                     disabled={enviando}
-                    className="pr-12"
+                    font="normal"
+                    className="font-sans text-sm h-10 pl-3 pr-11 bg-background/60 focus-visible:bg-background transition-colors"
                     aria-invalid={!!errors.clave}
                     aria-describedby={errors.clave ? "error-clave" : undefined}
                     {...register("clave")}
@@ -150,21 +184,21 @@ export function PantallaIngreso() {
                       setMostrarClave((prev) => !prev);
                     }}
                     disabled={enviando}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground focus:outline-hidden transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 size-7 flex items-center justify-center text-muted-foreground hover:text-foreground focus-visible:text-primary focus-visible:outline-hidden disabled:opacity-40 transition-colors cursor-pointer"
                     aria-label={mostrarClave ? "Ocultar contraseña" : "Mostrar contraseña"}
                     title={mostrarClave ? "Ocultar contraseña" : "Mostrar contraseña"}
                   >
                     {mostrarClave ? (
-                      <EyeOff className="size-4" aria-hidden="true" />
+                      <EyeOff className="size-4 shrink-0" aria-hidden="true" />
                     ) : (
-                      <Eye className="size-4" aria-hidden="true" />
+                      <Eye className="size-4 shrink-0" aria-hidden="true" />
                     )}
                   </button>
                 </div>
                 {errors.clave && (
                   <div
                     id="error-clave"
-                    className="flex items-center gap-1.5 text-xs text-destructive font-medium pt-0.5"
+                    className="flex items-center gap-1.5 text-xs text-destructive font-medium pt-0.5 font-sans"
                     role="alert"
                   >
                     <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
@@ -174,33 +208,38 @@ export function PantallaIngreso() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3 pt-3">
+            <CardFooter className="flex flex-col gap-3 pt-3 pb-6 px-4 sm:px-6">
               {/* Botón de envío con prevención de doble clic y estado de carga */}
               <Button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 py-3"
+                className="w-full flex items-center justify-center gap-2 py-3.5 h-12 text-sm shadow-md active:translate-y-1 cursor-pointer"
                 disabled={enviando}
                 aria-busy={enviando}
               >
                 {enviando ? (
                   <>
-                    <Spinner className="size-4" />
-                    <span className="retro text-xs">INICIANDO SESIÓN...</span>
+                    <Spinner className="size-4 shrink-0" />
+                    <span className="retro text-xs tracking-wider">INICIANDO SESIÓN...</span>
                   </>
                 ) : (
                   <>
-                    <LogIn className="size-4" aria-hidden="true" />
-                    <span className="retro text-xs">INICIAR SESIÓN</span>
+                    <LogIn className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="retro text-xs tracking-wider">INICIAR SESIÓN</span>
                   </>
                 )}
               </Button>
 
-              {/* Enlaces secundarios de navegación */}
-              <div className="flex flex-col sm:flex-row items-center justify-between w-full text-xs text-muted-foreground gap-2 pt-2 border-t border-border/80">
+              {/* Enlaces secundarios de navegación protegidos contra clics durante envío */}
+              <div
+                className={cn(
+                  "flex flex-col sm:flex-row items-center justify-between w-full text-xs text-muted-foreground gap-2.5 pt-3 border-t border-border/80 font-sans",
+                  enviando && "pointer-events-none opacity-50"
+                )}
+              >
                 <Link
                   to="/registro"
                   onClick={() => reproducirSonido("click", 0.3)}
-                  className="text-primary underline underline-offset-4 hover:opacity-80 font-medium"
+                  className="text-primary underline underline-offset-4 hover:opacity-80 font-medium transition-opacity"
                 >
                   ¿No tienes cuenta? Regístrate
                 </Link>
@@ -215,6 +254,12 @@ export function PantallaIngreso() {
             </CardFooter>
           </form>
         </Card>
+
+        {/* Nota de pie evocativa del universo de Aethelgard */}
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/75 font-sans select-none">
+          <ShieldCheck className="size-3.5 text-primary/75 shrink-0" aria-hidden="true" />
+          <span>Conexión asegurada con el Reino de Aethelgard</span>
+        </div>
       </div>
     </div>
   );

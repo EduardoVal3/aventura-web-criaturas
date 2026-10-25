@@ -19,16 +19,21 @@ Previo a la intervención, las vistas de autenticación cumplían con el contrat
 ### 1.2 Mejoras Implementadas
 
 #### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
-- **Insignias Temáticas 8-Bit:** Inclusión de insignias pixeladas (`Badge`) con las leyendas `⚔️ GREMIO DE AVENTUREROS` en registro y `🔮 RETORNO AL REINO` en ingreso.
-- **Tipografía Bimodal Equilibrada:**
+- **Insignias Temáticas 8-Bit y Cumplimiento Estricto de Regla R1:**
+  - Erradicación absoluta de emojis unicode en controles y encabezados retro (reemplazando `🔮` por el icono SVG `Sparkles` de Lucide con clase `text-primary`).
+  - Insignia heráldica pixelada (`Badge`) con la leyenda `RETORNO AL REINO` enmarcada con micro-separador ornamental de degradado y borde pixel de alto contraste.
+  - Indicador inferior de seguridad gremial con `ShieldCheck` ("Conexión asegurada con el Reino de Aethelgard").
+- **Tipografía Bimodal Equilibrada (docs/DESIGN.md §3):**
   - Encabezados principales, insignias y botones renderizados con `Press Start 2P` (`.retro`), respetando una escala contenida (`text-base sm:text-lg`).
-  - Etiquetas, mensajes de error y notas descriptivas renderizados con `Geist Sans` para garantizar lectura fluida sin fatiga visual.
-- **Micro-inspección de Robustez de Contraseña:** Indicadores visuales en tiempo real para el cumplimiento de longitud mínima, presencia de dígito y carácter especial.
+  - Campos de entrada de datos (`Input`) configurados explícitamente con `font="normal"` (`Geist Sans`), asegurando lectura inmediata de correos y contraseñas sin truncamiento pixelado ni fatiga visual.
+  - Etiquetas enriquecidas con iconos contextuales SVG (`Mail`, `Lock`) y mensajes de error y notas descriptivas en `Geist Sans`.
+- **Micro-inspección de Robustez de Contraseña:** Indicadores visuales en tiempo real en registro para el cumplimiento de longitud mínima, presencia de dígito y carácter especial.
 
 #### B. Componentes Táctiles 8bitcn/ui y Prevención de Doble Clic
 - Integración coordinada de `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Input`, `Label`, `Button`, `Badge` y `Spinner`.
 - **Prevención Estricta de Doble Clic (Harden):** Guarda inmediata ante mutaciones en vuelo (`if (enviando) return;`), desactivación de inputs, y botones con `disabled={enviando}`, `aria-busy={enviando}` y visualización de `Spinner` retro.
-- **Visibilidad Alternable de Contraseña:** Controles accesibles con `aria-label` descriptivo para conmutar entre texto plano y máscara de caracteres con efectos de clic interactivos.
+- **Protección de Navegación Secundaria en Envío:** Enlaces de retorno y navegación secundaria (`/registro`, `/creditos`) atenuados y protegidos con `pointer-events-none` durante la petición asíncrona.
+- **Visibilidad Alternable de Contraseña:** Controles accesibles con `aria-label` descriptivo para conmutar entre texto plano y máscara de caracteres con efectos de clic interactivos y área táctil optimizada para móviles (360px-420px).
 
 #### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
 - Consumo centralizado de la función `reproducirSonido(nombre, volumen)` de `apps/web/src/lib/assets.ts`:
@@ -44,9 +49,9 @@ Previo a la intervención, las vistas de autenticación cumplían con el contrat
 ---
 
 ### 1.3 Verificación de Calidad y Cero Regresiones
-- **Detector Impeccable:** Ejecutado mecánicamente con 0 defectos reportados (`[]`).
+- **Detector Impeccable:** Ejecutado con 0 defectos reportados.
 - **Linter Web (`oxlint`):** 0 errores.
-- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 3 pruebas aprobadas verificando esquemas de validación Zod y helpers de recursos multimedia.
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 5 pruebas aprobadas verificando esquemas de validación Zod, helpers de recursos multimedia, ausencia estricta de emojis unicode en `PantallaIngreso.tsx`, `PantallaCrearPersonaje.tsx` y `LayoutPrincipal.tsx` (Regla R1), y hardening con `aria-busy` y tipografía bimodal.
 - **Pruebas Backend y Seguridad (`pnpm --filter api test`):** 35 pruebas aprobadas, cubriendo salvaguardas S-1 a S-7 e invariantes del sistema sin regresiones.
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa con TypeScript estricto y Vite.
 

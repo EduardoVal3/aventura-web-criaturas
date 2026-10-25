@@ -67,6 +67,68 @@ test("Opciones de criaturas iniciales poseen estadísticas completas y sprites v
     );
   }
 
-  // Comprueba resolución de fallback seguro
+// Comprueba resolución de fallback seguro
   assert.strictEqual(obtenerImagenCriatura(null), RUTAS_PLACEHOLDERS.criatura);
 });
+
+test("Hardening y Ergonomía: PantallaCrearPersonaje cuenta con aria-busy, estética retro 8bitcn, mini-barras y protección de envío", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const contenido = readFileSync(
+    join(__dirname, "../src/paginas/PantallaCrearPersonaje.tsx"),
+    "utf-8",
+  );
+
+  assert.ok(
+    contenido.includes("aria-busy={enviando}"),
+    "PantallaCrearPersonaje debe declarar aria-busy en el formulario y botón",
+  );
+  assert.ok(
+    contenido.includes("retro text-[10px]"),
+    "PantallaCrearPersonaje debe aplicar estética retro en inputs y controles",
+  );
+  assert.ok(
+    contenido.includes("border-2") &&
+      contenido.includes("border-black") &&
+      contenido.includes("shadow-[4px_4px_0_0_#000]"),
+    "PantallaCrearPersonaje debe aplicar borde pixelado retro 8bitcn en las tarjetas",
+  );
+  assert.ok(
+    contenido.includes("border-primary bg-primary/10 shadow-[6px_6px_0_0_#000]"),
+    "PantallaCrearPersonaje debe aplicar halo luminoso sutil en la tarjeta activa",
+  );
+  assert.ok(
+    contenido.includes("ELEGIDO"),
+    "PantallaCrearPersonaje debe exponer insignia ELEGIDO en la criatura activa",
+  );
+  assert.ok(
+    contenido.includes("Heart") &&
+      contenido.includes("Swords") &&
+      contenido.includes("Shield") &&
+      contenido.includes("Zap"),
+    "PantallaCrearPersonaje debe renderizar iconos Lucide para HP, ATQ, DEF y VEL",
+  );
+  assert.ok(
+    contenido.includes("pointer-events-none opacity-50"),
+    "PantallaCrearPersonaje debe proteger controles de navegación secundaria durante el envío",
+  );
+  assert.ok(
+    contenido.includes("reproducirSonido"),
+    "PantallaCrearPersonaje debe reproducir efectos acústicos retro",
+  );
+
+  // Verificación estricta de Regla R1: cero emojis unicode
+  const regexEmoji = /\p{Extended_Pictographic}/u;
+  const lineas = contenido.split("\n");
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+    assert.ok(
+      !regexEmoji.test(linea),
+      `Se encontró emoji unicode prohibido por Regla R1 en PantallaCrearPersonaje.tsx:${i + 1} -> ${linea.trim()}`,
+    );
+  }
+});
+

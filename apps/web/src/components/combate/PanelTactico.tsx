@@ -7,8 +7,8 @@ import {
   Shield,
   Sparkles,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+import { Button } from "../ui/8bit/button";
+import { Badge } from "../ui/8bit/badge";
 import type { EstadoActivo } from "../../api/ApiJuego";
 import {
   bloquesResonancia,
@@ -32,10 +32,10 @@ export function BarraResonancia({
 
   return (
     <div
-      className={`p-2 bg-abismo border-2 transition-all duration-300 ${
+      className={`p-2 bg-[#090d16] border-2 transition-all duration-300 ${
         esCompleta
-          ? "border-amber-400 anim-pulso-resonancia motion-reduce:animate-none bg-amber-500/10"
-          : "border-pixel"
+          ? "border-amber-400 anim-pulso-resonancia motion-reduce:animate-none bg-amber-500/10 shadow-[2px_2px_0_0_#f59e0b]"
+          : "border-black shadow-[2px_2px_0_0_#000]"
       }`}
     >
       <div className="flex items-center justify-between mb-1.5">
@@ -46,7 +46,8 @@ export function BarraResonancia({
           {esCompleta && (
             <Badge
               variant="outline"
-              className="text-[9px] font-mono px-1 py-0 border-amber-400 text-amber-300 bg-amber-500/20"
+              font="retro"
+              className="text-[9px] px-1 py-0 border-black shadow-[1px_1px_0_0_#000] text-amber-300 bg-amber-500/20"
             >
               ¡100 %!
             </Badge>
@@ -64,7 +65,7 @@ export function BarraResonancia({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.min(100, Math.floor(resonancia))}
-        className="grid grid-cols-10 gap-1 h-3 w-full bg-bastion/80 p-0.5 border border-pixel"
+        className="grid grid-cols-10 gap-1 h-3 w-full bg-[#121927] p-0.5 border border-black shadow-[inset_1px_1px_0_0_#000]"
       >
         {Array.from({ length: 10 }).map((_, i) => {
           const activo = i < bloques;
@@ -76,7 +77,7 @@ export function BarraResonancia({
                   ? esCompleta
                     ? "bg-amber-300 shadow-[0_0_4px_#f59e0b]"
                     : "bg-amber-400/90"
-                  : "bg-abismo/60 border border-pixel/30"
+                  : "bg-[#090d16]/70 border border-black/40"
               }`}
             />
           );
@@ -91,7 +92,7 @@ export function BarraResonancia({
             disabled={deshabilitado}
             aria-busy={deshabilitado}
             onClick={onDesatarInsignia}
-            className="w-full h-8 text-[11px] font-bold tracking-wider bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-black hover:from-amber-400 hover:to-amber-300 border-2 border-pixel shadow-pixel-sm active:scale-[0.98] transition-all"
+            className="w-full h-8 text-[11px] font-bold tracking-wider bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-black hover:from-amber-400 hover:to-amber-300 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 transition-all"
           >
             <Sparkles className="size-3.5 mr-1.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
             <span>Desatar Insignia</span>
@@ -144,7 +145,7 @@ export function InsigniasEstado({ estados = [] }: InsigniasEstadoProps) {
               key={`${desc.codigo}-${i}`}
               role="listitem"
               aria-label={desc.descripcion}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-mono font-medium ${estiloColor} transition-all`}
+              className={`flex items-center gap-1 px-1.5 py-0.5 border border-black shadow-[1px_1px_0_0_#000] text-[10px] font-mono font-medium ${estiloColor} transition-all`}
             >
               <IconoComp className="size-3 shrink-0" aria-hidden="true" />
               <span className="truncate">{desc.nombre}</span>

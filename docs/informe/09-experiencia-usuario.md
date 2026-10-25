@@ -261,7 +261,8 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 3. **Botonera Táctica Rudimentaria:** Solo existían acciones básicas sin opciones para seleccionar movimientos específicos, consumir pociones de vitalidad en combate, relevar el liderazgo de criaturas o seleccionar talismanes específicos de captura.
 4. **Cálculo de Progresión Incoherente (Riesgo de Invariante §2.4):** Existía riesgo de duplicidad de fórmulas matemáticas de nivel y experiencia en el front-end, violando la regla de servidor autoritativo (A-8).
 5. **Desbordamientos Horizontales en Modales:** Los modales de resolución (Victoria, Captura y Derrota) causaban scroll horizontal no deseado al apilar botones largos con tipografía pixelada `Press Start 2P`.
-6. **Ausencia de Acústica Táctica:** Las acciones críticas (impacto de ataques y éxito de captura) carecían de efectos de sonido sintetizados.
+6. **Inconsistencias Estéticas con `docs/DESIGN.md`:** Presencia de esquinas redondeadas (`rounded`, `rounded-full`), sombras difuminadas gaussianas y pedestales con `blur` que contradecían el estilo pixel-art de consola clásica de 8/16 bits.
+7. **Ausencia de Acústica Táctica:** Las acciones críticas (impacto de ataques y éxito de captura) carecían de efectos de sonido sintetizados y feedback táctil consistente en botones secundarios.
 
 ---
 
@@ -269,23 +270,25 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 
 #### A. Arena de Batalla Diagonal 16-Bit y Perspectiva Retro (`docs/DESIGN.md` §2)
 - **Disposición Espacial Clásica:** Rediseño completo de la arena con perspectiva diagonal:
-  - *Rival Hostil:* Situado en el cuadrante superior derecho sobre un pedestal circular de sombra (`bg-black/30`), exhibiendo su sprite pixelado, barra de salud segmentada y badge de nivel.
-  - *Criatura Aliada:* Posicionada en el primer plano inferior izquierdo encarando diagonalmente al oponente, con tarjeta de estado persistente, medidor numérico de vitalidad (HP actual / HP total) y barra de experiencia porcentual.
+  - *Rival Hostil:* Situado en el cuadrante superior derecho sobre una plataforma de combate escalonada 16-bit (`bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000]`), exhibiendo su sprite pixelado con `.pixelated`, placa HUD con borde pixelado, barra de salud segmentada y badge de nivel.
+  - *Criatura Aliada:* Posicionada en el primer plano inferior izquierdo encarando diagonalmente al oponente, con tarjeta de estado persistente (`border-4 border-black shadow-[4px_4px_0_0_#000]`), medidor numérico de vitalidad (HP actual / HP total), barra de resonancia táctica de 10 bloques y barra de experiencia porcentual.
+- **Atmósfera Inmersiva de Arena:** Fondo de fantasía oscura (`#090d16`) con cuadrícula retro CRT y gradiente de penumbra que enmarca los combatientes con máximo contraste.
+- **Erradicación de Curvas y Desenfoques:** Supresión total de clases `rounded`, `rounded-full` y `blur` en la arena, pedestales y contenedores de incertidumbre de captura, reemplazándolos por marcos ortogonales geométricos.
 - **Micro-animaciones Físicas de Combate:**
   - `anim-sacudida` y `anim-parpadeo-dano` ante impactos físicos.
   - Indicadores numéricos de daño flotante con código de color dinámico (carmesí para daño recibido, esmeralda para curación).
-  - Secuencia de incertidumbre en captura (`anim-captura-incertidumbre`) con balanceo de talismán antes de revelar el veredicto del servidor.
+  - Secuencia de incertidumbre en captura (`anim-captura-incertidumbre`) con balanceo de talismán en marco retro antes de revelar el veredicto del servidor.
 
 #### B. Panel Táctil Extendido de 5 Comandos RPG y Prevención de Doble Acción (Hardening S-5)
-- **Comandos Tácticos Accesibles:**
-  1. *Atacar:* Selector interactivo de movimientos con indicación de poder base y tipo de ataque.
-  2. *Usar Objeto:* Modal retro con filtrado exclusivo de ítems curativos del inventario, restaurando vitalidad con animación esmeralda y feedback flotante inmediato.
-  3. *Cambiar Criatura:* Selector táctico de miembros del equipo con HP disponible y XP individual para relevar el liderazgo de combate mediante `PATCH /equipo/orden`.
-  4. *Capturar:* Selector interactivo de talismanes disponibles con animación de incertidumbre y balanceo antes de revelar éxito o contraataque.
-  5. *Huir:* Diálogo modal retro de confirmación con probabilidad probabilística acotada. Ante fallo en huir, el contraataque rival se anima y refleja inmediatamente en la barra de salud sin requerir recargar la página.
+- **Comandos Tácticos Accesibles (100% SVG Lucide, Cero Emojis Unicode R1):**
+  1. *Atacar (`Swords`):* Selector interactivo de movimientos desplegando los 4 slots tácticos (M1 a M4) con chips de efectividad (`¡EFICAZ!`, `RESISTIDO`), badges de estados aplicados y bloqueo de M4 cuando la resonancia es menor al 100%.
+  2. *Usar Objeto (`HeartPulse`):* Modal retro con filtrado exclusivo de ítems curativos del inventario, restaurando vitalidad con animación esmeralda y feedback flotante inmediato.
+  3. *Cambiar Criatura (`ArrowLeftRight`):* Selector táctico de miembros del equipo con HP disponible y XP individual para relevar el liderazgo de combate mediante `PATCH /equipo/orden`.
+  4. *Capturar (`Sparkles`):* Selector interactivo de talismanes disponibles con animación de incertidumbre y balanceo antes de revelar éxito o contraataque.
+  5. *Huir (`LogOut`):* Diálogo modal retro de confirmación con probabilidad probabilística acotada. Ante fallo en huir, el contraataque rival se anima y refleja inmediatamente en la barra de salud sin requerir recargar la página.
 - **Hardening contra Acciones Dobles (S-5):**
-  - Guarda reactiva de cadencia visual (~800 ms) entre turnos.
-  - Botones con `disabled={enAccion}`, `aria-busy={enAccion}` y spinners retro que imposibilitan enviar paquetes concurrentes fuera de turno al servidor.
+  - Guarda reactiva de cadencia visual (`cerrojoAccion.current = true`) y control de estado asíncrono (`procesandoAccion`).
+  - Botones con `disabled={procesandoAccion}`, `aria-busy={procesandoAccion}` y spinners retro que imposibilitan enviar paquetes concurrentes fuera de turno al servidor.
 
 #### C. Reanudación Fiel de Encuentros y Preservación de Estado
 - **Enriquecimiento del Backend (`GET /encuentros/activo`):**
@@ -298,27 +301,34 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 - **Cliente Front-End Ligero:** La vista React actúa como cliente presentacional puro, consumiendo los campos `experiencia`, `porcentajeXp` y límites devueltos por la API sin formular cálculos locales de balance.
 
 #### E. Sellado de Modales contra Desbordamiento Tipográfico (`Press Start 2P`)
-- **Adaptación Responsiva sin Overflow:** Contenedor `DialogContent` y `AlertDialogContent` ajustados con `w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden`.
-- **Apilado Vertical Inteligente:** Botones de acción en el pie de los modales estructurados con `flex flex-col gap-2.5 w-full`, eliminando colisiones horizontales y asegurando legibilidad total en resoluciones móviles (320px–425px).
+- **Adaptación Responsiva sin Overflow:** Contenedores `DialogContent` y `AlertDialogContent` estructurados con `border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden` y paneles internos con scroll vertical elástico.
+- **Apilado Vertical Inteligente:** Botones de acción en el pie de los modales estructurados con `flex flex-col sm:flex-row gap-2 w-full`, eliminando colisiones horizontales y asegurando legibilidad total en resoluciones móviles (320px–425px).
 - **Sanitización de Glifos:** Supresión de caracteres acentuados mayúsculos incompatibles en la tipografía pixelada.
 
 #### F. Audio Retro Sintetizado Nativo Web Audio API
-- Incorporación en `apps/web/src/lib/assets.ts` de sintetizadores nativos mediante osciladores Web Audio API:
+- Incorporación en `apps/web/src/lib/assets.ts` de sintetizadores nativos mediante osciladores Web Audio API con disparadores acústicos en cada acción:
+  - `'click'`: Pulsación física en botones de comandos y cierre de modales.
+  - `'seleccionar'`: Conmutación de talismán de captura o navegación.
   - `'golpe'`: Onda diente de sierra (`sawtooth`) con curva de caída de frecuencia percusiva.
   - `'captura'`: Arpegio ascendente de onda cuadrada (`square`) para fanfarria de domesticación exitosa.
+  - `'victoria'`: Fanfarria melódica de triunfo en combate.
+  - `'error'`: Notificación acústica de fallo en captura o huida bloqueada.
 
 ---
 
 ### 5.3 Verificación de Calidad y Cero Regresiones
-- **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-combate.spec.ts`):** 4 pruebas unitarias exhaustivas validando:
+- **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-combate.spec.ts`):** 6 pruebas unitarias exhaustivas validando:
   1. Contrato enriquecido de combate y reanudación fiel de encuentros.
   2. Lógica del panel táctico de 5 comandos.
   3. Respuestas de huida con contraataque inmediato.
   4. Síntesis acústica nativa para efectos de combate.
-- **Suite Total Web (`pnpm --filter web test`):** 20 de 20 pruebas aprobadas (100% éxito).
+  5. Cumplimiento estricto de la Regla R1: cero emojis unicode en `PantallaCombate.tsx`.
+  6. Hardening y ergonomía: estética retro 8bitcn, arena 16-bit, `aria-busy` y modales sellados.
+- **Suite Total Web (`pnpm --filter web test`):** 71 de 71 pruebas aprobadas (100% éxito).
 - **Pruebas Backend y Balance (`pnpm --filter api test`):** 36 de 36 pruebas aprobadas, incluyendo la prueba unitaria `apps/api/test/progreso-tienda.spec.ts` que valida el cálculo de progresión en servidor.
-- **Compilación de Producción (`pnpm --filter web build`):** Compilación limpia sin errores TypeScript en Vite.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación limpia sin errores TypeScript en Vite en 1.51s.
 - **Linter Web (`oxlint`):** 0 errores.
+- **Auditoría Mecánica Impeccable (`detect.mjs`):** 0 defectos encontrados en `PantallaCombate.tsx`.
 
 ---
 

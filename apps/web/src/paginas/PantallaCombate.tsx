@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Spinner } from "@/components/ui/8bit/spinner";
-import EnemyHealthDisplay from "@/components/ui/8bit/enemy-health-display";
 import HealthBar from "@/components/ui/8bit/health-bar";
 import XpBar from "@/components/ui/8bit/xp-bar";
 import {
@@ -66,6 +65,9 @@ import {
   Swords,
   HeartPulse,
   Trophy,
+  LogOut,
+  ArrowLeftRight,
+  Scroll,
 } from "lucide-react";
 import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
 import {
@@ -754,15 +756,18 @@ export function PantallaCombate() {
   if (cargando || !rival || !aliado) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] gap-3">
-        <Spinner className="size-8 text-primary" />
-        <p className="text-xs sm:text-sm font-semibold text-muted-foreground animate-pulse font-mono">
-          Sincronizando estado del combate con el servidor...
-        </p>
+        <div className="bg-card border-4 border-black p-6 shadow-[6px_6px_0_0_#000] flex flex-col items-center gap-3">
+          <Spinner className="size-8 text-[#14d1e8]" />
+          <p className="text-xs sm:text-sm font-bold text-muted-foreground animate-pulse retro">
+            Sincronizando estado del combate con el servidor...
+          </p>
+        </div>
       </div>
     );
   }
 
-  const porcentajeHpAliado = Math.round((aliado.hpActual / aliado.hpMaximo) * 100);
+  const porcentajeHpAliado = Math.max(0, Math.min(100, Math.round((aliado.hpActual / aliado.hpMaximo) * 100)));
+  const porcentajeHpRival = Math.max(0, Math.min(100, Math.round((rival.hpActual / rival.hpMaximo) * 100)));
   const esTurnoJugador = encuentro?.esTurnoJugador ?? true;
   const movimientosAliados = aliado.movimientos && aliado.movimientos.length > 0
     ? aliado.movimientos
@@ -770,28 +775,28 @@ export function PantallaCombate() {
   const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto py-2 sm:py-4 px-2 sm:px-0">
-      {/* Barra de Estado Superior */}
-      <div className="flex items-center justify-between px-2 py-1.5 bg-bastion border-2 border-pixel shadow-pixel-sm">
+    <div className="space-y-4 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-0">
+      {/* Barra de Estado Superior Retro */}
+      <div className="flex items-center justify-between px-3 py-2 bg-card border-2 sm:border-4 border-black shadow-[4px_4px_0_0_#000]">
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-[10px] uppercase font-mono">
+          <Badge variant="outline" font="retro" className="text-[9px] sm:text-[10px] uppercase border-black shadow-[1px_1px_0_0_#000]">
             Encuentro Silvestre
           </Badge>
-          <span className="text-xs font-mono text-muted-foreground">
-            Turno {encuentro?.turno ?? 1}
+          <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground">
+            TURNO {encuentro?.turno ?? 1}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {procesandoAccion ? (
-            <Badge variant="secondary" className="text-[10px] animate-pulse">
-              Procesando acción...
+            <Badge variant="secondary" font="retro" className="text-[9px] animate-pulse border-black shadow-[1px_1px_0_0_#000]">
+              Procesando...
             </Badge>
           ) : esTurnoJugador && !combateFinalizado ? (
-            <Badge variant="default" className="text-[10px] bg-primary text-primary-foreground anim-pulso-turno">
+            <Badge variant="default" font="retro" className="text-[9px] bg-emerald-600 text-white anim-pulso-turno border-black shadow-[1px_1px_0_0_#000]">
               Tu Turno
             </Badge>
           ) : (
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
               Turno Rival
             </Badge>
           )}
@@ -799,14 +804,16 @@ export function PantallaCombate() {
       </div>
 
       {/* CAMPO DE BATALLA ESTILO RPG CLÁSICO (16-bit Battle Arena) */}
-      <div className="relative w-full rounded border-4 border-pixel bg-abismo p-4 sm:p-6 overflow-hidden shadow-pixel-md min-h-[320px] sm:min-h-[380px] flex flex-col justify-between">
-        {/* Textura y efecto ambiental retro */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/20 via-transparent to-black/60 pointer-events-none" />
+      <div className="relative w-full border-4 border-black bg-[#090d16] p-4 sm:p-6 overflow-hidden shadow-[6px_6px_0_0_#000] min-h-[360px] sm:min-h-[440px] flex flex-col justify-between">
+        {/* Fondo de fantasía oscura y cuadrícula retro de arena */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/25 via-[#090d16]/80 to-[#05070b] pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,rgba(0,0,0,0.7)_100%)] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-[repeating-linear-gradient(0deg,rgba(20,209,232,0.03)_0px,rgba(20,209,232,0.03)_1px,transparent_1px,transparent_16px)] pointer-events-none" />
 
         {/* Capa de Incertidumbre de Captura */}
         {secuenciaCaptura && (
-          <div className="absolute inset-0 z-30 bg-black/75 flex flex-col items-center justify-center gap-4 anim-revelacion-evento">
-            <div className="size-20 sm:size-24 rounded-full border-4 border-pixel-dorado bg-bastion flex items-center justify-center anim-captura-incertidumbre shadow-pixel-lg">
+          <div className="absolute inset-0 z-30 bg-black/85 flex flex-col items-center justify-center gap-4 anim-revelacion-evento">
+            <div className="size-20 sm:size-24 border-4 border-black bg-bastion flex items-center justify-center anim-captura-incertidumbre shadow-[4px_4px_0_0_#000]">
               <img
                 src={obtenerImagenObjeto(talismanSeleccionado)}
                 alt="Talismán lanzado"
@@ -815,7 +822,7 @@ export function PantallaCombate() {
               />
             </div>
             <div className="text-center space-y-1">
-              <p className="retro text-xs sm:text-sm text-pixel-dorado tracking-wider">
+              <p className="retro text-xs sm:text-sm text-amber-300 tracking-wider">
                 Sintonizando talismán...
               </p>
               <p className="text-[11px] text-muted-foreground font-mono">
@@ -828,15 +835,15 @@ export function PantallaCombate() {
         {/* SECTOR RIVAL: Fondo / Arriba-Derecha */}
         <div className="relative z-10 flex flex-col items-end sm:flex-row sm:items-start sm:justify-end gap-3 sm:gap-6 self-end w-full sm:w-auto">
           {/* Placa de Vitalidad del Rival */}
-          <div className="w-full sm:w-64 bg-bastion border-2 border-pixel p-2.5 shadow-pixel-sm space-y-1.5">
-            <div className="flex items-center justify-between gap-1">
+          <div className="w-full sm:w-72 bg-card border-2 sm:border-4 border-black p-3 shadow-[4px_4px_0_0_#000] space-y-2">
+            <div className="flex items-center justify-between gap-1 pb-1 border-b border-black/40">
               <div className="flex items-center gap-1.5 min-w-0 truncate">
                 {rival.esLegendaria && (
                   <span title="Criatura Legendaria" className="shrink-0">
                     <Crown className="size-3.5 text-amber-400 animate-pulse motion-reduce:animate-none" aria-hidden="true" />
                   </span>
                 )}
-                <span className="font-bold text-xs truncate text-destructive">
+                <span className="font-bold text-xs truncate text-destructive retro">
                   {rival.nombre}
                 </span>
               </div>
@@ -844,25 +851,31 @@ export function PantallaCombate() {
                 {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
                   <Badge
                     variant="outline"
-                    className={`text-[8px] font-mono px-1 py-0 ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
+                    className={`text-[8px] font-mono px-1 py-0 border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
                   >
                     {TRADUCCION_ELEMENTOS[rival.afinidad].nombre}
                   </Badge>
                 )}
-                <Badge variant="outline" className="text-[9px] font-mono">
+                <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
                   Nv. {rival.nivel}
                 </Badge>
               </div>
             </div>
 
-            <EnemyHealthDisplay
-              enemyName={rival.nombre}
-              level={rival.nivel}
-              currentHealth={rival.hpActual}
-              maxHealth={rival.hpMaximo}
-              variant="retro"
-              textColor="red"
-            />
+            {/* Barra de Salud del Rival */}
+            <div className="space-y-1 pt-0.5">
+              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+                <span className="font-bold retro text-[9px] text-destructive">HP</span>
+                <span>
+                  {rival.hpActual} / {rival.hpMaximo}
+                </span>
+              </div>
+              <HealthBar
+                value={porcentajeHpRival}
+                variant="retro"
+                className="h-3 sm:h-3.5 border-black shadow-[1px_1px_0_0_#000]"
+              />
+            </div>
 
             <InsigniasEstado estados={rival.estados} />
           </div>
@@ -870,7 +883,7 @@ export function PantallaCombate() {
           {/* Sprite del Rival con pedestal y efecto de daño */}
           <div className="relative flex flex-col items-center">
             {danoFlotanteRival !== null && (
-              <span className="absolute -top-6 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
+              <span className="absolute -top-7 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
                 -{danoFlotanteRival}
               </span>
             )}
@@ -884,8 +897,10 @@ export function PantallaCombate() {
                 className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.7)]"
               />
             </div>
-            {/* Pedestal de sombra */}
-            <div className="w-24 sm:w-32 h-3 sm:h-4 bg-bastion/80 border border-pixel rounded-full -mt-2 -z-0 blur-[0.5px]" />
+            {/* Pedestal de combate retro 16-bit */}
+            <div className="w-28 sm:w-36 h-3 bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000] -mt-2 -z-0 flex items-center justify-center">
+              <div className="w-full h-0.5 bg-[#1a2332]" />
+            </div>
           </div>
         </div>
 
@@ -894,12 +909,12 @@ export function PantallaCombate() {
           {/* Sprite del Aliado con pedestal y efecto de impacto/curación */}
           <div className="relative flex flex-col items-center order-2 sm:order-1">
             {danoFlotanteAliado !== null && (
-              <span className="absolute -top-6 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
+              <span className="absolute -top-7 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
                 -{danoFlotanteAliado}
               </span>
             )}
             {curacionFlotanteAliado !== null && (
-              <span className="absolute -top-6 text-base sm:text-lg font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
+              <span className="absolute -top-7 text-base sm:text-lg font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
                 +{curacionFlotanteAliado} HP
               </span>
             )}
@@ -913,27 +928,29 @@ export function PantallaCombate() {
                 className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]"
               />
             </div>
-            {/* Pedestal de sombra */}
-            <div className="w-28 sm:w-36 h-3 sm:h-4 bg-bastion/80 border border-pixel rounded-full -mt-2 -z-0 blur-[0.5px]" />
+            {/* Pedestal de combate retro 16-bit */}
+            <div className="w-32 sm:w-40 h-3 bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000] -mt-2 -z-0 flex items-center justify-center">
+              <div className="w-full h-0.5 bg-[#1a2332]" />
+            </div>
           </div>
 
           {/* Placa de Vitalidad y XP del Aliado */}
-          <div className="w-full sm:w-72 bg-bastion border-2 border-pixel p-3 shadow-pixel-sm space-y-2 order-1 sm:order-2">
-            <div className="flex items-center justify-between gap-1">
+          <div className="w-full sm:w-80 bg-card border-2 sm:border-4 border-black p-3 shadow-[4px_4px_0_0_#000] space-y-2 order-1 sm:order-2">
+            <div className="flex items-center justify-between gap-1 pb-1 border-b border-black/40">
               <div className="flex items-center gap-1.5 min-w-0 truncate">
-                <span className="font-bold text-xs sm:text-sm text-primary tracking-wide truncate">
+                <span className="font-bold text-xs sm:text-sm text-[#14d1e8] tracking-wide truncate retro">
                   {aliado.nombre}
                 </span>
                 {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
                   <Badge
                     variant="outline"
-                    className={`text-[9px] font-mono px-1 py-0 shrink-0 ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
+                    className={`text-[8px] font-mono px-1 py-0 border-black shadow-[1px_1px_0_0_#000] shrink-0 ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
                   >
                     {TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}
                   </Badge>
                 )}
               </div>
-              <Badge variant="outline" className="text-[10px] font-mono shrink-0">
+              <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000] shrink-0">
                 Nv. {aliado.nivel}
               </Badge>
             </div>
@@ -941,7 +958,7 @@ export function PantallaCombate() {
             {/* Barra de Salud del Aliado */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-                <span>HP</span>
+                <span className="font-bold retro text-[9px] text-[#22c55e]">HP</span>
                 <span>
                   {aliado.hpActual} / {aliado.hpMaximo}
                 </span>
@@ -949,7 +966,7 @@ export function PantallaCombate() {
               <HealthBar
                 value={porcentajeHpAliado}
                 variant="retro"
-                className="h-3 sm:h-3.5"
+                className="h-3 sm:h-3.5 border-black shadow-[1px_1px_0_0_#000]"
               />
             </div>
 
@@ -966,13 +983,13 @@ export function PantallaCombate() {
             {/* Barra de Experiencia (XP) precisa según escalado de nivel (§2.4) */}
             <div className="space-y-1 pt-0.5">
               <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                <span>EXP</span>
+                <span className="font-bold retro text-[9px] text-purple-400">EXP</span>
                 <span>{porcentajeXp}%</span>
               </div>
               <XpBar
                 value={porcentajeXp}
                 variant="retro"
-                className="h-2.5"
+                className="h-2.5 border-black shadow-[1px_1px_0_0_#000]"
                 levelUpMessage={subioNivel ? "¡SUBIÓ DE NIVEL!" : undefined}
               />
             </div>
@@ -980,33 +997,36 @@ export function PantallaCombate() {
         </div>
       </div>
 
-      {/* BITÁCORA VISUAL DE COMBATE (Consola RPG de Pérgamo) */}
-      <Card className="border-2 border-pixel bg-bastion shadow-pixel-sm">
-        <CardHeader className="p-3 pb-1 border-b border-border/40 flex flex-row items-center justify-between">
-          <CardTitle className="text-xs uppercase font-bold text-muted-foreground tracking-wider retro">
-            Bitácora de Encuentro
-          </CardTitle>
-          <span className="text-[10px] text-muted-foreground font-mono">
-            {bitacoraCombate.length} eventos registrados
-          </span>
+      {/* BITÁCORA VISUAL DE COMBATE (Consola RPG de Pergamino) */}
+      <Card className="border-2 sm:border-4 border-black bg-card shadow-[4px_4px_0_0_#000]">
+        <CardHeader className="p-3 pb-2 border-b-2 border-black bg-[#121927] flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Scroll className="size-4 text-[#14d1e8]" aria-hidden="true" />
+            <CardTitle className="text-xs sm:text-sm uppercase font-bold text-foreground tracking-wider retro">
+              Bitácora de Encuentro
+            </CardTitle>
+          </div>
+          <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
+            {bitacoraCombate.length} eventos
+          </Badge>
         </CardHeader>
-        <CardContent className="p-3 pt-2">
-          <div className="bg-abismo/80 p-2.5 rounded border border-border/40 max-h-32 sm:max-h-36 overflow-y-auto space-y-1.5 text-xs font-mono">
+        <CardContent className="p-3">
+          <div className="bg-[#090d16] p-3 border-2 border-black shadow-[inset_2px_2px_0_0_#000] max-h-36 sm:max-h-40 overflow-y-auto space-y-1.5 text-xs font-mono">
             {bitacoraCombate.map((linea, index) => {
-              const esAliado = linea.includes("Tu criatura") || linea.includes("Usaste");
-              const esRival = linea.includes("El rival") || linea.includes("debilitada");
-              const esCaptura = linea.includes("Captura") || linea.includes("talismán");
+              const esAliado = linea.includes("Tu criatura") || linea.includes("Usaste") || linea.includes("Tu aliada");
+              const esRival = linea.includes("El rival") || linea.includes("salvaje") || linea.includes("debilitada");
+              const esCaptura = linea.includes("Captura") || linea.includes("talismán") || linea.includes("sintonizada");
 
               return (
-                <p key={index} className="leading-relaxed flex items-start gap-1.5">
+                <p key={index} className="leading-relaxed flex items-start gap-2">
                   <span
-                    className={`font-bold ${
+                    className={`font-bold shrink-0 ${
                       esAliado
-                        ? "text-primary"
+                        ? "text-[#14d1e8]"
                         : esRival
                         ? "text-destructive"
                         : esCaptura
-                        ? "text-pixel-dorado"
+                        ? "text-amber-400"
                         : "text-muted-foreground"
                     }`}
                   >
@@ -1028,10 +1048,18 @@ export function PantallaCombate() {
         </CardContent>
 
         {/* PANEL TÁCTICO DE COMANDOS RETRO */}
-        <CardFooter className="p-3 sm:p-4 border-t border-border/40 bg-panel/40">
+        <CardFooter className="p-3 sm:p-4 border-t-2 sm:border-t-4 border-black bg-[#121927]">
           {combateFinalizado ? (
             <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs sm:text-sm font-semibold text-primary text-center sm:text-left">
+              <span
+                className={`text-xs sm:text-sm font-bold text-center sm:text-left retro ${
+                  estadoFinal === "VICTORIA"
+                    ? "text-emerald-400"
+                    : estadoFinal === "CAPTURADO"
+                    ? "text-[#14d1e8]"
+                    : "text-destructive"
+                }`}
+              >
                 {estadoFinal === "VICTORIA"
                   ? "¡Victoria consumada! El camino está despejado."
                   : estadoFinal === "CAPTURADO"
@@ -1041,26 +1069,37 @@ export function PantallaCombate() {
               <div className="flex gap-2 w-full sm:w-auto">
                 {estadoFinal === "DERROTA" ? (
                   <Button
-                    onClick={() => navigate("/curacion")}
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/curacion");
+                    }}
                     variant="destructive"
-                    className="w-full sm:w-auto text-xs"
+                    className="w-full sm:w-auto text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                   >
-                    Ir a Centro de Curación
+                    <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
+                    <span>Ir a Curación</span>
                   </Button>
                 ) : (
                   <>
                     <Button
-                      onClick={() => navigate("/exploracion")}
-                      className="flex-1 sm:flex-none text-xs"
+                      onClick={() => {
+                        reproducirSonido("click", 0.4);
+                        navigate("/exploracion");
+                      }}
+                      className="flex-1 sm:flex-none text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                     >
-                      Continuar Explorando
+                      <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+                      <span>Continuar</span>
                     </Button>
                     <Button
-                      onClick={() => navigate("/hub")}
+                      onClick={() => {
+                        reproducirSonido("click", 0.4);
+                        navigate("/hub");
+                      }}
                       variant="outline"
-                      className="flex-1 sm:flex-none text-xs"
+                      className="flex-1 sm:flex-none text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                     >
-                      Volver al Hub
+                      <span>Volver al Hub</span>
                     </Button>
                   </>
                 )}
@@ -1070,21 +1109,27 @@ export function PantallaCombate() {
             <div className="w-full space-y-2">
               {/* Desplegable de Movimientos cuando se presiona Atacar */}
               {panelMovimientosAbierto && (
-                <div className="p-2 bg-abismo border-2 border-primary/70 rounded space-y-2 anim-revelacion-evento">
-                  <div className="flex items-center justify-between pb-1 border-b border-border/30">
-                    <span className="text-[11px] font-bold text-primary retro">
-                      Selecciona un Movimiento:
-                    </span>
+                <div className="p-3 bg-[#090d16] border-2 sm:border-4 border-black shadow-[4px_4px_0_0_#000] space-y-2.5 anim-revelacion-evento mb-2">
+                  <div className="flex items-center justify-between pb-2 border-b-2 border-black">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="size-3.5 text-[#14d1e8]" aria-hidden="true" />
+                      <span className="text-[10px] sm:text-xs font-bold text-[#14d1e8] retro">
+                        Selecciona un Movimiento:
+                      </span>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setPanelMovimientosAbierto(false)}
-                      className="h-6 px-2 text-[10px]"
+                      onClick={() => {
+                        reproducirSonido("click", 0.35);
+                        setPanelMovimientosAbierto(false);
+                      }}
+                      className="h-6 px-2 text-[10px] retro hover:bg-black/40"
                     >
-                      Cancelar
+                      Cerrar
                     </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {slotsTacticos.map((slotItem) => {
                       const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
                       const esFuriaSlot4 = esInsignia;
@@ -1115,19 +1160,19 @@ export function PantallaCombate() {
                               ? `${nombreMov} bloqueado. Requiere Resonancia 100 %${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
                               : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
                           }
-                          className={`flex flex-col items-start justify-between text-xs min-h-[62px] p-2 border border-pixel transition-all ${
+                          className={`flex flex-col items-start justify-between text-xs min-h-[64px] p-2.5 border-2 border-black shadow-[2px_2px_0_0_#000] transition-all ${
                             estaBloqueado
-                              ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed border-border/80 text-muted-foreground"
+                              ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
                               : esInsignia
-                              ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia motion-reduce:animate-none"
-                              : "hover:border-primary active:scale-[0.98]"
+                              ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia motion-reduce:animate-none shadow-[2px_2px_0_0_#f59e0b]"
+                              : "hover:border-primary active:translate-y-0.5 active:shadow-[1px_1px_0_0_#000]"
                           }`}
                         >
                           <div className="flex items-center justify-between w-full gap-1 min-w-0">
                             <div className="flex items-center gap-1.5 min-w-0 truncate">
                               <Badge
                                 variant="outline"
-                                className={`text-[9px] font-mono shrink-0 px-1 py-0 ${
+                                className={`text-[9px] font-mono shrink-0 px-1 py-0 border-black shadow-[1px_1px_0_0_#000] ${
                                   estaBloqueado
                                     ? "border-border text-muted-foreground"
                                     : esInsignia
@@ -1158,7 +1203,7 @@ export function PantallaCombate() {
                                 {badgeEfecto && (
                                   <Badge
                                     variant="outline"
-                                    className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 rounded-none shrink-0 opacity-80 ${badgeEfecto.claseEstilo}`}
+                                    className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0 opacity-80 ${badgeEfecto.claseEstilo}`}
                                     title={`Efecto: ${badgeEfecto.nombre}`}
                                   >
                                     {(() => {
@@ -1177,7 +1222,7 @@ export function PantallaCombate() {
                                   {textoChip === "¡EFICAZ!" && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5 rounded-none shrink-0"
+                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0"
                                     >
                                       <ChevronsUp className="size-2.5" aria-hidden="true" />
                                       {textoChip}
@@ -1186,7 +1231,7 @@ export function PantallaCombate() {
                                   {textoChip === "RESISTIDO" && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5 rounded-none shrink-0"
+                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0"
                                     >
                                       <ChevronsDown className="size-2.5" aria-hidden="true" />
                                       {textoChip}
@@ -1195,7 +1240,7 @@ export function PantallaCombate() {
                                   {badgeEfecto && (
                                     <Badge
                                       variant="outline"
-                                      className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 rounded-none shrink-0 ${badgeEfecto.claseEstilo}`}
+                                      className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0 ${badgeEfecto.claseEstilo}`}
                                       title={`Efecto: ${badgeEfecto.nombre}`}
                                     >
                                       {(() => {
@@ -1208,7 +1253,7 @@ export function PantallaCombate() {
                                     </Badge>
                                   )}
                                 </div>
-                                <span className="text-[9px] font-mono text-muted-foreground ml-auto shrink-0">
+                                <span className="text-[9px] font-mono text-muted-foreground ml-auto shrink-0 font-bold">
                                   Pot. {poder}
                                 </span>
                               </>
@@ -1226,42 +1271,63 @@ export function PantallaCombate() {
                 {/* 1. Atacar */}
                 <Button
                   disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => setPanelMovimientosAbierto((prev) => !prev)}
-                  className={`text-xs ${
-                    panelMovimientosAbierto ? "border-2 border-primary bg-primary/20" : ""
-                  }`}
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    setPanelMovimientosAbierto((prev) => !prev);
+                  }}
+                  variant={panelMovimientosAbierto ? "default" : "secondary"}
+                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
-                  {procesandoAccion ? <Spinner className="size-3.5" /> : "Atacar"}
+                  {procesandoAccion ? (
+                    <Spinner className="size-3.5" />
+                  ) : (
+                    <>
+                      <Swords className="size-3.5 mr-1.5 text-primary" aria-hidden="true" />
+                      <span>Atacar</span>
+                    </>
+                  )}
                 </Button>
 
                 {/* 2. Usar Objeto */}
                 <Button
                   variant="secondary"
                   disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => setModalObjetosAbierto(true)}
-                  className="text-xs"
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    setModalObjetosAbierto(true);
+                  }}
+                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
-                  Usar Objeto
+                  <HeartPulse className="size-3.5 mr-1.5 text-emerald-400" aria-hidden="true" />
+                  <span>Objeto</span>
                 </Button>
 
                 {/* 3. Cambiar Criatura */}
                 <Button
                   variant="secondary"
                   disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => setModalCambioCriaturaAbierto(true)}
-                  className="text-xs"
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    setModalCambioCriaturaAbierto(true);
+                  }}
+                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
-                  Cambiar
+                  <ArrowLeftRight className="size-3.5 mr-1.5 text-[#14d1e8]" aria-hidden="true" />
+                  <span>Cambiar</span>
                 </Button>
 
                 {/* 4. Capturar */}
                 <Button
                   variant="outline"
                   disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => setModalCapturaAbierto(true)}
-                  className="text-xs border-pixel-dorado/70 text-amber-300 hover:bg-amber-950/20"
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    setModalCapturaAbierto(true);
+                  }}
+                  className="text-xs border-2 border-black bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
-                  Capturar
+                  <Sparkles className="size-3.5 mr-1.5 text-amber-400" aria-hidden="true" />
+                  <span>Capturar</span>
                 </Button>
 
                 {/* 5. Huir */}
@@ -1270,23 +1336,36 @@ export function PantallaCombate() {
                     <Button
                       variant="destructive"
                       disabled={procesandoAccion || !esTurnoJugador}
-                      className="text-xs col-span-2 sm:col-span-1"
+                      onClick={() => reproducirSonido("click", 0.4)}
+                      className="text-xs col-span-2 sm:col-span-1 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                     >
-                      Huir
+                      <LogOut className="size-3.5 mr-1.5" aria-hidden="true" />
+                      <span>Huir</span>
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="border-2 border-pixel">
+                  <AlertDialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="text-sm">
-                        ¿Intentar escapar del combate?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <LogOut className="size-4 text-destructive" aria-hidden="true" />
+                        <AlertDialogTitle className="text-sm font-bold retro text-destructive">
+                          ¿Intentar escapar del combate?
+                        </AlertDialogTitle>
+                      </div>
+                      <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
                         La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival. Si fallas, el rival contraatacará de inmediato.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex gap-2">
-                      <AlertDialogCancel className="text-xs">Permanecer</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleHuir} className="text-xs">
+                    <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+                      <AlertDialogCancel
+                        onClick={() => reproducirSonido("click", 0.35)}
+                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+                      >
+                        Permanecer
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleHuir}
+                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-destructive hover:bg-destructive/90 text-white"
+                      >
                         Confirmar Huida
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -1300,27 +1379,33 @@ export function PantallaCombate() {
 
       {/* MODAL RETRO: SELECCIÓN DE TALISMÁN DE CAPTURA */}
       <Dialog open={modalCapturaAbierto} onOpenChange={setModalCapturaAbierto}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
           <DialogHeader>
-            <DialogTitle className="text-sm sm:text-base font-bold text-pixel-dorado retro">
-              Lanzar Talismán de Captura
-            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-amber-400" aria-hidden="true" />
+              <DialogTitle className="text-sm sm:text-base font-bold text-amber-400 retro">
+                Lanzar Talismán de Captura
+              </DialogTitle>
+            </div>
             <DialogDescription className="text-xs text-muted-foreground">
-              Elige el orbe o talismán que usarás para sintonizar a {rival.nombre}.
+              Elige el talismán que usarás para sintonizar a {rival.nombre}.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2">
+          <div className="space-y-2 py-2 max-h-60 overflow-y-auto">
             {talismanes.length === 0 ? (
-              <div className="p-4 bg-muted/20 border border-border/40 text-center space-y-2 rounded">
+              <div className="p-4 bg-muted/20 border-2 border-black text-center space-y-2">
                 <p className="text-xs text-muted-foreground">
                   No tienes talismanes de captura en tu inventario.
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate("/tienda")}
-                  className="text-xs"
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    navigate("/tienda");
+                  }}
+                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
                   Visitar la Tienda
                 </Button>
@@ -1329,10 +1414,10 @@ export function PantallaCombate() {
               talismanes.map((item) => (
                 <label
                   key={item.codigo}
-                  className={`flex items-center justify-between p-3 border-2 rounded cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between p-3 border-2 border-black cursor-pointer transition-colors shadow-[2px_2px_0_0_#000] ${
                     talismanSeleccionado === item.codigo
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/10 shadow-[3px_3px_0_0_#000]"
+                      : "bg-[#121927] hover:border-primary/50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -1341,7 +1426,10 @@ export function PantallaCombate() {
                       name="talisman"
                       value={item.codigo}
                       checked={talismanSeleccionado === item.codigo}
-                      onChange={() => setTalismanSeleccionado(item.codigo)}
+                      onChange={() => {
+                        reproducirSonido("seleccionar", 0.35);
+                        setTalismanSeleccionado(item.codigo);
+                      }}
                       className="accent-primary"
                     />
                     <img
@@ -1354,7 +1442,7 @@ export function PantallaCombate() {
                       {item.nombre}
                     </span>
                   </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono">
+                  <Badge variant="secondary" className="text-[10px] font-mono border-black shadow-[1px_1px_0_0_#000]">
                     x{item.cantidad}
                   </Badge>
                 </label>
@@ -1364,16 +1452,20 @@ export function PantallaCombate() {
 
           <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
             <Button
-              className="flex-1 text-xs py-2"
+              className="flex-1 text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
               disabled={talismanes.length === 0 || procesandoAccion}
               onClick={ejecutarCaptura}
             >
-              Lanzar Talismán
+              <Sparkles className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Lanzar Talismán</span>
             </Button>
             <Button
               variant="outline"
-              className="flex-1 text-xs py-2"
-              onClick={() => setModalCapturaAbierto(false)}
+              className="flex-1 text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalCapturaAbierto(false);
+              }}
             >
               Cancelar
             </Button>
@@ -1383,27 +1475,33 @@ export function PantallaCombate() {
 
       {/* MODAL RETRO: OBJETOS CURATIVOS */}
       <Dialog open={modalObjetosAbierto} onOpenChange={setModalObjetosAbierto}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
           <DialogHeader>
-            <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
-              Bolsa de Pociones y Curación
-            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <HeartPulse className="size-4 text-emerald-400" aria-hidden="true" />
+              <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
+                Bolsa de Pociones y Curación
+              </DialogTitle>
+            </div>
             <DialogDescription className="text-xs text-muted-foreground">
               Aplica un consumible sobre {aliado.nombre} ({aliado.hpActual}/{aliado.hpMaximo} HP).
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2">
+          <div className="space-y-2 py-2 max-h-60 overflow-y-auto">
             {itemsCuracion.length === 0 ? (
-              <div className="p-4 bg-muted/20 border border-border/40 text-center space-y-2 rounded">
+              <div className="p-4 bg-muted/20 border-2 border-black text-center space-y-2">
                 <p className="text-xs text-muted-foreground">
                   No posees consumibles de curación en tu inventario.
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate("/tienda")}
-                  className="text-xs"
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    navigate("/tienda");
+                  }}
+                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                 >
                   Ir a la Tienda
                 </Button>
@@ -1412,7 +1510,7 @@ export function PantallaCombate() {
               itemsCuracion.map((item) => (
                 <div
                   key={item.codigo}
-                  className="flex items-center justify-between p-3 border-2 border-border/60 rounded bg-panel/30"
+                  className="flex items-center justify-between p-3 border-2 border-black bg-[#121927] shadow-[2px_2px_0_0_#000]"
                 >
                   <div className="flex items-center gap-3">
                     <img
@@ -1434,7 +1532,7 @@ export function PantallaCombate() {
                     size="sm"
                     disabled={procesandoAccion || aliado.hpActual >= aliado.hpMaximo}
                     onClick={() => handleUsarObjetoCuracion(item.codigo)}
-                    className="text-xs"
+                    className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                   >
                     Usar (+HP)
                   </Button>
@@ -1446,8 +1544,11 @@ export function PantallaCombate() {
           <div className="pt-2 w-full">
             <Button
               variant="outline"
-              className="w-full text-xs py-2"
-              onClick={() => setModalObjetosAbierto(false)}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalObjetosAbierto(false);
+              }}
             >
               Cerrar
             </Button>
@@ -1457,11 +1558,14 @@ export function PantallaCombate() {
 
       {/* MODAL RETRO: CAMBIAR CRIATURA ACTIVA */}
       <Dialog open={modalCambioCriaturaAbierto} onOpenChange={setModalCambioCriaturaAbierto}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-2 border-pixel bg-bastion">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
           <DialogHeader>
-            <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
-              Relevar Criatura en Combate
-            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <ArrowLeftRight className="size-4 text-[#14d1e8]" aria-hidden="true" />
+              <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
+                Relevar Criatura en Combate
+              </DialogTitle>
+            </div>
             <DialogDescription className="text-xs text-muted-foreground">
               Selecciona una compañera activa de tu equipo para relevar al frente.
             </DialogDescription>
@@ -1469,7 +1573,7 @@ export function PantallaCombate() {
 
           <div className="space-y-2 py-2 max-h-64 overflow-y-auto">
             {equipoCriaturas.filter((c) => c.criaturaId !== aliado.criaturaId).length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4">
+              <p className="text-xs text-muted-foreground text-center py-4 font-mono">
                 No tienes otras criaturas en tu equipo activo.
               </p>
             ) : (
@@ -1481,10 +1585,10 @@ export function PantallaCombate() {
                   return (
                     <div
                       key={comp.criaturaId}
-                      className={`flex items-center justify-between p-2.5 border-2 rounded ${
+                      className={`flex items-center justify-between p-2.5 border-2 border-black shadow-[2px_2px_0_0_#000] ${
                         debilitada
-                          ? "opacity-50 border-destructive/40 bg-destructive/5"
-                          : "border-border/60 bg-panel/30"
+                          ? "opacity-50 bg-destructive/5"
+                          : "bg-[#121927]"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1495,7 +1599,7 @@ export function PantallaCombate() {
                           className="size-8 pixelated object-contain"
                         />
                         <div>
-                          <p className="font-semibold text-xs">{comp.nombre}</p>
+                          <p className="font-semibold text-xs text-foreground">{comp.nombre}</p>
                           <span className="text-[10px] font-mono text-muted-foreground">
                             Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP · {xpIndividual}% EXP
                           </span>
@@ -1505,7 +1609,7 @@ export function PantallaCombate() {
                         size="sm"
                         disabled={debilitada || procesandoAccion}
                         onClick={() => handleCambiarCriatura(comp.criaturaId)}
-                        className="text-xs"
+                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                       >
                         {debilitada ? "Debilitada" : "Relevar"}
                       </Button>
@@ -1518,8 +1622,11 @@ export function PantallaCombate() {
           <div className="pt-2 w-full">
             <Button
               variant="outline"
-              className="w-full text-xs py-2"
-              onClick={() => setModalCambioCriaturaAbierto(false)}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalCambioCriaturaAbierto(false);
+              }}
             >
               Cancelar
             </Button>
@@ -1529,12 +1636,12 @@ export function PantallaCombate() {
 
       {/* DIÁLOGO CINEMÁTICO DE VICTORIA RETRO */}
       <Dialog open={estadoFinal === "VICTORIA"} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-pixel-dorado bg-bastion anim-revelacion-evento">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
-            <div className="mx-auto size-12 rounded bg-pixel-dorado/20 border-2 border-pixel-dorado flex items-center justify-center anim-pulso-turno">
-              <Trophy className="size-6 text-amber-400" aria-hidden="true" />
+            <div className="mx-auto size-14 bg-amber-500/20 border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-pulso-turno">
+              <Trophy className="size-7 text-amber-400" aria-hidden="true" />
             </div>
-            <DialogTitle className="text-sm sm:text-base font-bold text-pixel-dorado retro tracking-wider">
+            <DialogTitle className="text-sm sm:text-base font-bold text-amber-400 retro tracking-wider">
               ¡VICTORIA EN COMBATE!
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1543,7 +1650,7 @@ export function PantallaCombate() {
           </DialogHeader>
 
           {recompensasVictoria && (
-            <div className="p-3 bg-abismo border-2 border-pixel space-y-2 rounded">
+            <div className="p-3.5 bg-[#090d16] border-2 border-black shadow-[inset_2px_2px_0_0_#000] space-y-2.5">
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-muted-foreground">Experiencia Ganada:</span>
                 <span className="font-bold text-purple-400">
@@ -1552,7 +1659,7 @@ export function PantallaCombate() {
               </div>
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="text-muted-foreground">Monedas Obtenidas:</span>
-                <span className="font-bold text-pixel-dorado">
+                <span className="font-bold text-amber-300">
                   +{recompensasVictoria.monedasGanadas} Monedas
                 </span>
               </div>
@@ -1563,11 +1670,11 @@ export function PantallaCombate() {
                     Nv. {recompensasVictoria.nivelNuevo ?? aliado?.nivel} ({porcentajeXp}%)
                   </span>
                 </div>
-                <XpBar value={porcentajeXp} variant="retro" className="h-2.5" />
+                <XpBar value={porcentajeXp} variant="retro" className="h-2.5 border-black shadow-[1px_1px_0_0_#000]" />
               </div>
               {recompensasVictoria.subioNivel && (
-                <div className="p-2 bg-pixel-dorado/10 border border-pixel-dorado text-center rounded anim-pulso-turno">
-                  <p className="retro text-[11px] text-pixel-dorado">
+                <div className="p-2 bg-amber-500/20 border-2 border-black shadow-[2px_2px_0_0_#000] text-center anim-pulso-turno">
+                  <p className="retro text-[10px] text-amber-300">
                     ¡SUBIDA DE NIVEL! Nv. {recompensasVictoria.nivelNuevo ?? ((aliado?.nivel ?? 1) + 1)}
                   </p>
                 </div>
@@ -1575,19 +1682,26 @@ export function PantallaCombate() {
             </div>
           )}
 
-          <div className="flex flex-col gap-2.5 pt-3 w-full">
+          <div className="flex flex-col gap-2 pt-2 w-full">
             <Button
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/exploracion")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/exploracion");
+              }}
             >
-              Continuar Explorando
+              <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Continuar Explorando</span>
             </Button>
             <Button
               variant="outline"
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/hub")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/hub");
+              }}
             >
-              Volver al Hub
+              <span>Volver al Hub</span>
             </Button>
           </div>
         </DialogContent>
@@ -1595,9 +1709,9 @@ export function PantallaCombate() {
 
       {/* DIÁLOGO CINEMÁTICO DE CAPTURA RETRO */}
       <Dialog open={estadoFinal === "CAPTURADO"} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-primary bg-bastion anim-revelacion-evento">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
-            <div className="mx-auto size-20 rounded border-2 border-primary bg-abismo flex items-center justify-center anim-captura-exito">
+            <div className="mx-auto size-20 border-2 border-black bg-[#090d16] shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-captura-exito">
               <img
                 src={obtenerImagenCriatura(rival.slug)}
                 alt={rival.nombre}
@@ -1605,7 +1719,7 @@ export function PantallaCombate() {
                 className="size-16 pixelated object-contain"
               />
             </div>
-            <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
+            <DialogTitle className="text-sm sm:text-base font-bold text-[#14d1e8] retro">
               ¡CRIATURA CAPTURADA!
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1614,19 +1728,26 @@ export function PantallaCombate() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-2.5 pt-3 w-full">
+          <div className="flex flex-col gap-2 pt-2 w-full">
             <Button
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/exploracion")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/exploracion");
+              }}
             >
-              Continuar Explorando
+              <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Continuar Explorando</span>
             </Button>
             <Button
               variant="outline"
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/equipo")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/equipo");
+              }}
             >
-              Ver en Equipo
+              <span>Ver en Equipo</span>
             </Button>
           </div>
         </DialogContent>
@@ -1634,10 +1755,10 @@ export function PantallaCombate() {
 
       {/* DIÁLOGO CINEMÁTICO DE DERROTA RETRO */}
       <Dialog open={estadoFinal === "DERROTA"} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md w-[92vw] border-4 border-destructive/80 bg-bastion anim-revelacion-evento">
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento">
           <DialogHeader className="text-center space-y-2">
-            <div className="mx-auto size-12 rounded bg-destructive/20 border-2 border-destructive flex items-center justify-center anim-sacudida">
-              <Swords className="size-6 text-destructive" aria-hidden="true" />
+            <div className="mx-auto size-14 bg-destructive/20 border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-sacudida">
+              <Swords className="size-7 text-destructive" aria-hidden="true" />
             </div>
             <DialogTitle className="text-sm sm:text-base font-bold text-destructive retro">
               EQUIPO DEBILITADO
@@ -1647,20 +1768,27 @@ export function PantallaCombate() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-2.5 pt-3 w-full">
+          <div className="flex flex-col gap-2 pt-2 w-full">
             <Button
               variant="destructive"
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/curacion")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/curacion");
+              }}
             >
-              Ir a Centro de Curación
+              <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Ir a Centro de Curación</span>
             </Button>
             <Button
               variant="outline"
-              className="w-full text-xs py-2"
-              onClick={() => navigate("/hub")}
+              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/hub");
+              }}
             >
-              Volver al Hub
+              <span>Volver al Hub</span>
             </Button>
           </div>
         </DialogContent>

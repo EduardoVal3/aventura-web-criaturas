@@ -117,7 +117,7 @@ test("Regla R1: Cero emojis unicode en PantallaIngreso.tsx, PantallaCrearPersona
   }
 });
 
-test("Hardening y Ergonomía: PantallaIngreso cuenta con aria-busy, tipografía bimodal y protección de carga", async () => {
+test("Hardening y Ergonomía: PantallaIngreso cuenta con aria-busy, estética retro 8bitcn y protección de carga", async () => {
   const { readFileSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
@@ -126,7 +126,7 @@ test("Hardening y Ergonomía: PantallaIngreso cuenta con aria-busy, tipografía 
   const contenido = readFileSync(join(__dirname, "../src/paginas/PantallaIngreso.tsx"), "utf-8");
 
   assert.ok(contenido.includes('aria-busy={enviando}'), "PantallaIngreso debe declarar aria-busy en el formulario y botón");
-  assert.ok(contenido.includes('font="normal"'), "PantallaIngreso debe aplicar font='normal' en inputs para legibilidad");
+  assert.ok(contenido.includes("retro text-[10px]"), "PantallaIngreso debe aplicar estética retro en inputs y controles");
   assert.ok(contenido.includes("Sparkles"), "PantallaIngreso debe usar iconos Lucide en lugar de emojis");
   assert.ok(contenido.includes("reproducirSonido"), "PantallaIngreso debe reproducir efectos de sonido retro");
 });

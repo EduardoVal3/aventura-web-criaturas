@@ -23,10 +23,10 @@ Previo a la intervención, las vistas de autenticación cumplían con el contrat
   - Erradicación absoluta de emojis unicode en controles y encabezados retro (reemplazando `🔮` por el icono SVG `Sparkles` de Lucide con clase `text-primary`).
   - Insignia heráldica pixelada (`Badge`) con la leyenda `RETORNO AL REINO` enmarcada con micro-separador ornamental de degradado y borde pixel de alto contraste.
   - Indicador inferior de seguridad gremial con `ShieldCheck` ("Conexión asegurada con el Reino de Aethelgard").
-- **Tipografía Bimodal Equilibrada (docs/DESIGN.md §3):**
-  - Encabezados principales, insignias y botones renderizados con `Press Start 2P` (`.retro`), respetando una escala contenida (`text-base sm:text-lg`).
-  - Campos de entrada de datos (`Input`) configurados explícitamente con `font="normal"` (`Geist Sans`), asegurando lectura inmediata de correos y contraseñas sin truncamiento pixelado ni fatiga visual.
-  - Etiquetas enriquecidas con iconos contextuales SVG (`Mail`, `Lock`) y mensajes de error y notas descriptivas en `Geist Sans`.
+- **Estética Retro Integral 8-Bit (8bitcn/ui y Press Start 2P):**
+  - Encabezados principales, insignias, botones, descripciones y controles de formulario renderizados con `Press Start 2P` (`.retro`), respetando una escala visual calibrada (`text-[10px] sm:text-xs`).
+  - Campos de entrada de datos (`Input`) configurados con la variante nativa `retro` de `8bitcn/ui`, logrando la experiencia auténtica de cartucho RPG retro y satisfaciendo los criterios de puntos extra del entregable.
+  - Etiquetas enriquecidas con iconos contextuales SVG (`Mail`, `Lock`) y mensajes de error con micro-escala retro legible (`text-[9px] sm:text-[10px]`).
 - **Micro-inspección de Robustez de Contraseña:** Indicadores visuales en tiempo real en registro para el cumplimiento de longitud mínima, presencia de dígito y carácter especial.
 
 #### B. Componentes Táctiles 8bitcn/ui y Prevención de Doble Clic

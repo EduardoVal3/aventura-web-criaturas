@@ -2,13 +2,6 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/8bit/card";
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Spinner } from "@/components/ui/8bit/spinner";
@@ -23,7 +16,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/8bit/alert-dialog";
 import {
   Dialog,
@@ -68,6 +60,12 @@ import {
   LogOut,
   ArrowLeftRight,
   Scroll,
+  Pause,
+  ChevronUp,
+  X,
+  RotateCcw,
+  BookOpen,
+  Award,
 } from "lucide-react";
 import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
 import {
@@ -75,12 +73,10 @@ import {
   ETIQUETA_EFECTIVIDAD,
   sonidoDeGolpe,
   resolverBadgeEfectoMovimiento,
+  describirEstado,
   type TipoIconoEfecto,
 } from "@/lib/combate-tactico";
-import {
-  BarraResonancia,
-  InsigniasEstado,
-} from "@/components/combate/PanelTactico";
+import { BattlefieldBackground } from "@/components/combate/BattlefieldBackground";
 
 const ICONOS_EFECTO_LUCIDE: Record<
   TipoIconoEfecto,
@@ -99,12 +95,27 @@ const ICONOS_EFECTO_LUCIDE: Record<
   ChevronsDown,
 };
 
+const ICONOS_ESTADO: Record<
+  string,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+> = {
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Sparkles,
+};
+
 interface RecompensasVictoria {
   xpGanada: number;
   monedasGanadas: number;
   subioNivel: boolean;
   nivelNuevo?: number;
 }
+
+type EstadoMenuConsola = "ROOT" | "ATTACK" | "ITEMS" | "SWAP" | "CAPTURE";
 
 export function PantallaCombate() {
   const navigate = useNavigate();
@@ -134,11 +145,15 @@ export function PantallaCombate() {
   const [criaturaCapturada, setCriaturaCapturada] = useState<CriaturaCapturada | null>(null);
   const [destinoCaptura, setDestinoCaptura] = useState<"EQUIPO" | "ALMACEN" | null>(null);
 
-  // Menús tácticos y modales
-  const [panelMovimientosAbierto, setPanelMovimientosAbierto] = useState(false);
-  const [modalObjetosAbierto, setModalObjetosAbierto] = useState(false);
-  const [modalCambioCriaturaAbierto, setModalCambioCriaturaAbierto] = useState(false);
-  const [modalCapturaAbierto, setModalCapturaAbierto] = useState(false);
+  // Consola de acciones contextual in-place (Thumb-zone state machine)
+  const [menuState, setMenuState] = useState<EstadoMenuConsola>("ROOT");
+
+  // Ticker y drawer expandible de bitácora
+  const [bitacoraAbierta, setBitacoraAbierta] = useState(false);
+
+  // Modales secundarios de combate
+  const [modalPausaAbierto, setModalPausaAbierto] = useState(false);
+  const [dialogoHuirAbierto, setDialogoHuirAbierto] = useState(false);
 
   // Inventario y equipo
   const [talismanes, setTalismanes] = useState<ItemInventario[]>([]);
@@ -313,7 +328,7 @@ export function PantallaCombate() {
     if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
     cerrojoAccion.current = true;
-    setPanelMovimientosAbierto(false);
+    setMenuState("ROOT");
     setProcesandoAccion(true);
     reproducirSonido("click");
 
@@ -350,7 +365,7 @@ export function PantallaCombate() {
             });
           }
 
-          // Si el ataque del jugador curó vitalidad (Drenaje, Regeneración, Luz, Purificación), reflejar en pantalla
+          // Si el ataque del jugador curó vitalidad, reflejar en pantalla
           if (
             typeof resultado.hpRestanteAliada === "number" &&
             aliado &&
@@ -430,10 +445,8 @@ export function PantallaCombate() {
 
       // Secuencia cronológica estricta según prioridad de velocidad
       if (resultado.rivalActuoPrimero) {
-        // 1. El rival actuó primero
         await animarContraataqueRival();
 
-        // 2. Si la aliada quedó debilitada antes de responder
         if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
           if (resultado.estado === "DERROTA") {
             reproducirSonido("error");
@@ -448,12 +461,10 @@ export function PantallaCombate() {
           return;
         }
 
-        // 3. Si sobrevivió, la aliada responde con su ataque
         if (resultado.accionJugador) {
           await animarImpactoJugador();
         }
       } else {
-        // 1. La aliada actuó primero
         if (resultado.accionJugador) {
           await animarImpactoJugador();
         }
@@ -463,7 +474,6 @@ export function PantallaCombate() {
           return;
         }
 
-        // 2. El rival contraataca
         if (resultado.accionRival) {
           await animarContraataqueRival();
         }
@@ -483,18 +493,15 @@ export function PantallaCombate() {
         }
       }
 
-      // 4. Si terminó en victoria tras la respuesta
       if (resultado.estado === "VICTORIA") {
         procesarVictoria();
         return;
       }
 
-      // 5. Efectos fin de turno (DoT de quemadura/veneno)
       if (resultado.efectosFinDeTurno && resultado.efectosFinDeTurno.length > 0) {
         await reproducirContraataqueYDoT(null, resultado.efectosFinDeTurno);
       }
 
-      // 6. Reconciliación fiel de estado con el servidor (D-7)
       if (resultado.estado === "EN_CURSO") {
         await refrescarCombate();
       }
@@ -517,7 +524,7 @@ export function PantallaCombate() {
   const handleUsarObjetoCuracion = async (itemCodigo: string) => {
     if (!aliado || procesandoAccion || combateFinalizado) return;
 
-    setModalObjetosAbierto(false);
+    setMenuState("ROOT");
     setProcesandoAccion(true);
     reproducirSonido("click");
 
@@ -566,7 +573,7 @@ export function PantallaCombate() {
   const handleCambiarCriatura = async (nuevaCriaturaId: string) => {
     if (procesandoAccion || combateFinalizado) return;
 
-    setModalCambioCriaturaAbierto(false);
+    setMenuState("ROOT");
     setProcesandoAccion(true);
     reproducirSonido("click");
 
@@ -585,7 +592,6 @@ export function PantallaCombate() {
       reproducirSonido("confirmar");
       toast.success("¡Criatura al frente cambiada con éxito!");
 
-      // Recargar datos actualizados del encuentro con la nueva criatura líder y su XP exacta
       await refrescarCombate();
 
       const criaturaNueva = equipoCriaturas.find((c) => c.criaturaId === nuevaCriaturaId);
@@ -604,17 +610,16 @@ export function PantallaCombate() {
     }
   };
 
-  // Secuencia de Captura con Suspenso Visual e Incertidumbre (impeccable animate)
+  // Secuencia de Captura con Suspenso Visual e Incertidumbre
   const ejecutarCaptura = async () => {
     if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
     cerrojoAccion.current = true;
-    setModalCapturaAbierto(false);
+    setMenuState("ROOT");
     setProcesandoAccion(true);
     setSecuenciaCaptura(true);
     reproducirSonido("seleccionar");
 
-    // Suspenso visual de tirada de dados retro con pulsos de incertidumbre (1200 ms)
     await new Promise((resolver) => setTimeout(resolver, 1200));
 
     try {
@@ -669,7 +674,6 @@ export function PantallaCombate() {
           await refrescarCombate();
         }
 
-        // Refrescar inventario de talismanes
         const inv = await api.obtenerInventario();
         setTalismanes(inv.items.filter((i) => i.tipo === "CAPTURA" && i.cantidad > 0));
       }
@@ -689,11 +693,13 @@ export function PantallaCombate() {
     }
   };
 
-  // Manejador de Huida del Combate con aplicación inmediata de daño de contraataque
+  // Manejador de Huida del Combate
   const handleHuir = async () => {
     if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
 
     cerrojoAccion.current = true;
+    setDialogoHuirAbierto(false);
+    setModalPausaAbierto(false);
     setProcesandoAccion(true);
     reproducirSonido("click");
 
@@ -755,7 +761,7 @@ export function PantallaCombate() {
 
   if (cargando || !rival || !aliado) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[55vh] gap-3">
+      <div className="flex flex-col items-center justify-center h-full h-[100dvh] w-full bg-[#070a13] gap-3">
         <div className="bg-card border-4 border-black p-6 shadow-[6px_6px_0_0_#000] flex flex-col items-center gap-3">
           <Spinner className="size-8 text-[#14d1e8]" />
           <p className="text-xs sm:text-sm font-bold text-muted-foreground animate-pulse retro">
@@ -775,40 +781,38 @@ export function PantallaCombate() {
   const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
   return (
-    <div className="space-y-4 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-0">
-      {/* Barra de Estado Superior Retro */}
-      <div className="flex items-center justify-between px-3 py-2 bg-card border-2 sm:border-4 border-black shadow-[4px_4px_0_0_#000]">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" font="retro" className="text-[9px] sm:text-[10px] uppercase border-black shadow-[1px_1px_0_0_#000]">
-            Encuentro Silvestre
-          </Badge>
-          <span className="text-[10px] sm:text-xs font-mono font-bold text-muted-foreground">
-            TURNO {encuentro?.turno ?? 1}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {procesandoAccion ? (
-            <Badge variant="secondary" font="retro" className="text-[9px] animate-pulse border-black shadow-[1px_1px_0_0_#000]">
-              Procesando...
-            </Badge>
-          ) : esTurnoJugador && !combateFinalizado ? (
-            <Badge variant="default" font="retro" className="text-[9px] bg-emerald-600 text-white anim-pulso-turno border-black shadow-[1px_1px_0_0_#000]">
-              Tu Turno
-            </Badge>
-          ) : (
-            <Badge variant="secondary" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
-              Turno Rival
-            </Badge>
-          )}
-        </div>
-      </div>
+    <div className="relative h-full h-[100dvh] w-full max-w-lg mx-auto flex flex-col justify-between overflow-hidden select-none bg-[#090d16] border-x-0 sm:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
+      {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
+      <BattlefieldBackground
+        zoneId={encuentro?.encuentroId}
+        className="flex-1 w-full relative min-h-0"
+      >
+        {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
+        <div className="flex items-center justify-between px-3 pt-2.5 pb-1 z-20">
+          <div className="w-8" />
+          {/* Pastilla Central Ornada de Turno Retro */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#0b1424]/95 border-2 border-[#d4af37] shadow-[2px_2px_0_0_#000]">
+            <span className="text-[#ffd700] text-[9px] retro">◆</span>
+            <span className="text-[10px] sm:text-xs font-bold text-[#ffd700] retro uppercase tracking-wider">
+              TURNO {encuentro?.turno ?? 1}: {procesandoAccion ? "ACCION..." : esTurnoJugador && !combateFinalizado ? "TU TURNO" : "TURNO ENEMIGO"}
+            </span>
+            <span className="text-[#ffd700] text-[9px] retro">◆</span>
+          </div>
 
-      {/* CAMPO DE BATALLA ESTILO RPG CLÁSICO (16-bit Battle Arena) */}
-      <div className="relative w-full border-4 border-black bg-[#090d16] p-4 sm:p-6 overflow-hidden shadow-[6px_6px_0_0_#000] min-h-[360px] sm:min-h-[440px] flex flex-col justify-between">
-        {/* Fondo de fantasía oscura y cuadrícula retro de arena */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/25 via-[#090d16]/80 to-[#05070b] pointer-events-none" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,rgba(0,0,0,0.7)_100%)] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-[repeating-linear-gradient(0deg,rgba(20,209,232,0.03)_0px,rgba(20,209,232,0.03)_1px,transparent_1px,transparent_16px)] pointer-events-none" />
+          {/* Botón de Pausa Retro en la Esquina Superior Derecha */}
+          <Button
+            size="sm"
+            variant="outline"
+            aria-label="Pausa y opciones secundarias de combate"
+            onClick={() => {
+              reproducirSonido("click", 0.4);
+              setModalPausaAbierto(true);
+            }}
+            className="size-8 p-0 border-2 border-black bg-[#121927] hover:bg-[#1c273c] text-foreground shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+          >
+            <Pause className="size-4 text-[#14d1e8]" aria-hidden="true" />
+          </Button>
+        </div>
 
         {/* Capa de Incertidumbre de Captura */}
         {secuenciaCaptura && (
@@ -832,193 +836,277 @@ export function PantallaCombate() {
           </div>
         )}
 
-        {/* SECTOR RIVAL: Fondo / Arriba-Derecha */}
-        <div className="relative z-10 flex flex-col items-end sm:flex-row sm:items-start sm:justify-end gap-3 sm:gap-6 self-end w-full sm:w-auto">
-          {/* Placa de Vitalidad del Rival */}
-          <div className="w-full sm:w-72 bg-card border-2 sm:border-4 border-black p-3 shadow-[4px_4px_0_0_#000] space-y-2">
-            <div className="flex items-center justify-between gap-1 pb-1 border-b border-black/40">
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
-                {rival.esLegendaria && (
-                  <span title="Criatura Legendaria" className="shrink-0">
-                    <Crown className="size-3.5 text-amber-400 animate-pulse motion-reduce:animate-none" aria-hidden="true" />
+        {/* ARENA DE COMBATE: Disposición Diagonal Clásica JRPG */}
+        <div className="flex-1 w-full px-3 py-1 flex flex-col justify-between relative z-10 overflow-hidden">
+          {/* SECTOR RIVAL: Arriba a la derecha */}
+          <div className="flex items-start justify-end gap-2 sm:gap-3 self-end w-full max-w-[92%] sm:max-w-[85%] pt-1">
+            {/* Placa HUD Flotante Compacta del Rival */}
+            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[210px] space-y-1">
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 min-w-0 truncate">
+                  {rival.esLegendaria && (
+                    <Crown className="size-3 text-amber-400 shrink-0" aria-hidden="true" />
+                  )}
+                  <span className="font-bold text-[10px] sm:text-[11px] truncate text-foreground retro">
+                    {rival.nombre}
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono font-bold text-muted-foreground shrink-0">
+                  Lv.{rival.nivel}
+                </span>
+              </div>
+
+              {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-[8px] font-mono px-1 py-0 border border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
+                  >
+                    [{TRADUCCION_ELEMENTOS[rival.afinidad].nombre}]
+                  </span>
+                </div>
+              )}
+
+              {/* Barra de Salud del Rival con Porcentaje */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[9px] font-bold text-red-400 font-mono">HP</span>
+                <div className="flex-1">
+                  <HealthBar
+                    value={porcentajeHpRival}
+                    variant="retro"
+                    className="h-2 border-black shadow-[1px_1px_0_0_#000]"
+                  />
+                </div>
+                <span className="text-[9px] font-mono text-muted-foreground shrink-0 font-bold">
+                  {porcentajeHpRival}%
+                </span>
+              </div>
+
+              {/* Insignias de Estado del Rival (Tocar para ver descripción) */}
+              {rival.estados && rival.estados.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap pt-0.5" role="list">
+                  {rival.estados.map((st, idx) => {
+                    const desc = describirEstado(st);
+                    const IconoComp = ICONOS_ESTADO[desc.icono] ?? Shield;
+                    return (
+                      <button
+                        key={`${st.codigo}-${idx}`}
+                        type="button"
+                        onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
+                        className="flex items-center gap-0.5 px-1 py-0.2 border border-black bg-blue-500/20 text-blue-300 text-[8px] font-mono active:scale-95 transition-transform"
+                        title={`${desc.nombre}: ${desc.descripcion}`}
+                      >
+                        <IconoComp className="size-2.5" aria-hidden="true" />
+                        <span>[{desc.nombre}]</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Sprite del Rival con Pedestal y Daño Flotante */}
+            <div className="relative flex flex-col items-center shrink-0">
+              {danoFlotanteRival !== null && (
+                <span className="absolute -top-5 text-sm sm:text-base font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
+                  -{danoFlotanteRival}
+                </span>
+              )}
+              <div
+                className={`size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival}`}
+              >
+                <img
+                  src={obtenerImagenCriatura(rival.slug)}
+                  alt={rival.nombre}
+                  onError={(e) => manejarErrorImagen(e, "criatura")}
+                  className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]"
+                />
+              </div>
+              <div className="w-16 sm:w-20 h-2 bg-black/60 rounded-full blur-[1px] -mt-1 -z-0" />
+            </div>
+          </div>
+
+          {/* SECTOR ALIADO: Abajo a la izquierda */}
+          <div className="flex items-end justify-start gap-2 sm:gap-3 self-start w-full max-w-[92%] sm:max-w-[85%] pb-1">
+            {/* Sprite del Aliado (de espaldas/perfil hacia el rival) */}
+            <div className="relative flex flex-col items-center shrink-0">
+              {danoFlotanteAliado !== null && (
+                <span className="absolute -top-5 text-sm sm:text-base font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
+                  -{danoFlotanteAliado}
+                </span>
+              )}
+              {curacionFlotanteAliado !== null && (
+                <span className="absolute -top-5 text-sm sm:text-base font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
+                  +{curacionFlotanteAliado} HP
+                </span>
+              )}
+              <div
+                className={`size-24 sm:size-32 flex items-center justify-center transition-transform ${animacionAliado}`}
+              >
+                <img
+                  src={obtenerImagenCriatura(aliado.slug)}
+                  alt={aliado.nombre}
+                  onError={(e) => manejarErrorImagen(e, "criatura")}
+                  className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)] scale-x-[-1]"
+                />
+              </div>
+              <div className="w-20 sm:w-24 h-2 bg-black/60 rounded-full blur-[1px] -mt-1 -z-0" />
+            </div>
+
+            {/* Placa HUD Flotante Compacta del Aliado */}
+            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[225px] space-y-1">
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1 min-w-0 truncate">
+                  <span className="font-bold text-[10px] sm:text-[11px] truncate text-foreground retro">
+                    {aliado.nombre}
+                  </span>
+                  <span className="text-[9px] font-mono font-bold text-muted-foreground shrink-0">
+                    Lv.{aliado.nivel}
+                  </span>
+                </div>
+                {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
+                  <span
+                    className={`text-[8px] font-mono px-1 py-0 border border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
+                  >
+                    [{TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}]
                   </span>
                 )}
-                <span className="font-bold text-xs truncate text-destructive retro">
-                  {rival.nombre}
+              </div>
+
+              {/* Barra de Salud del Aliado con Valores Numéricos */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[9px] font-bold text-red-400 font-mono">HP</span>
+                <div className="flex-1">
+                  <HealthBar
+                    value={porcentajeHpAliado}
+                    variant="retro"
+                    className="h-2 border-black shadow-[1px_1px_0_0_#000]"
+                  />
+                </div>
+                <span className="text-[9px] font-mono text-muted-foreground shrink-0 font-bold">
+                  {aliado.hpActual}/{aliado.hpMaximo}
                 </span>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
-                  <Badge
-                    variant="outline"
-                    className={`text-[8px] font-mono px-1 py-0 border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
-                  >
-                    {TRADUCCION_ELEMENTOS[rival.afinidad].nombre}
-                  </Badge>
-                )}
-                <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
-                  Nv. {rival.nivel}
-                </Badge>
-              </div>
-            </div>
 
-            {/* Barra de Salud del Rival */}
-            <div className="space-y-1 pt-0.5">
-              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                <span className="font-bold retro text-[9px] text-destructive">HP</span>
-                <span>
-                  {rival.hpActual} / {rival.hpMaximo}
+              {/* Medidor de Resonancia */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] font-bold text-cyan-400 font-mono">Resonancia</span>
+                <div className="flex-1 bg-[#121927] border border-black h-2 overflow-hidden shadow-[inset_1px_1px_0_0_#000]">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      aliado.resonancia && aliado.resonancia >= 100
+                        ? "bg-amber-300 anim-pulso-resonancia"
+                        : "bg-cyan-400"
+                    }`}
+                    style={{ width: `${Math.min(100, aliado.resonancia ?? 0)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Barra de Experiencia (EXP) */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[8px] font-bold text-amber-400 font-mono">EXP</span>
+                <div className="flex-1">
+                  <XpBar
+                    value={porcentajeXp}
+                    variant="retro"
+                    className="h-1.5 border-black shadow-[1px_1px_0_0_#000]"
+                    levelUpMessage={subioNivel ? "¡SUBIÓ DE NIVEL!" : undefined}
+                  />
+                </div>
+                <span className="text-[8px] font-mono text-muted-foreground shrink-0 font-bold">
+                  {porcentajeXp}%
                 </span>
               </div>
-              <HealthBar
-                value={porcentajeHpRival}
-                variant="retro"
-                className="h-3 sm:h-3.5 border-black shadow-[1px_1px_0_0_#000]"
-              />
-            </div>
 
-            <InsigniasEstado estados={rival.estados} />
-          </div>
-
-          {/* Sprite del Rival con pedestal y efecto de daño */}
-          <div className="relative flex flex-col items-center">
-            {danoFlotanteRival !== null && (
-              <span className="absolute -top-7 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                -{danoFlotanteRival}
-              </span>
-            )}
-            <div
-              className={`size-28 sm:size-36 flex items-center justify-center transition-transform ${animacionRival}`}
-            >
-              <img
-                src={obtenerImagenCriatura(rival.slug)}
-                alt={rival.nombre}
-                onError={(e) => manejarErrorImagen(e, "criatura")}
-                className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.7)]"
-              />
-            </div>
-            {/* Pedestal de combate retro 16-bit */}
-            <div className="w-28 sm:w-36 h-3 bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000] -mt-2 -z-0 flex items-center justify-center">
-              <div className="w-full h-0.5 bg-[#1a2332]" />
+              {/* Estados Activos Aliados */}
+              {aliado.estados && aliado.estados.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap pt-0.5" role="list">
+                  {aliado.estados.map((st, idx) => {
+                    const desc = describirEstado(st);
+                    const IconoComp = ICONOS_ESTADO[desc.icono] ?? Shield;
+                    return (
+                      <button
+                        key={`${st.codigo}-${idx}`}
+                        type="button"
+                        onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
+                        className="flex items-center gap-0.5 px-1 py-0.2 border border-black bg-blue-500/20 text-blue-300 text-[8px] font-mono active:scale-95 transition-transform"
+                        title={`${desc.nombre}: ${desc.descripcion}`}
+                      >
+                        <IconoComp className="size-2.5" aria-hidden="true" />
+                        <span>[{desc.nombre}]</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
+      </BattlefieldBackground>
 
-        {/* SECTOR ALIADO: Primer Plano / Abajo-Izquierda */}
-        <div className="relative z-10 flex flex-col items-start sm:flex-row sm:items-end gap-3 sm:gap-6 self-start w-full sm:w-auto mt-4 sm:mt-0">
-          {/* Sprite del Aliado con pedestal y efecto de impacto/curación */}
-          <div className="relative flex flex-col items-center order-2 sm:order-1">
-            {danoFlotanteAliado !== null && (
-              <span className="absolute -top-7 text-base sm:text-lg font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                -{danoFlotanteAliado}
-              </span>
-            )}
-            {curacionFlotanteAliado !== null && (
-              <span className="absolute -top-7 text-base sm:text-lg font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
-                +{curacionFlotanteAliado} HP
-              </span>
-            )}
-            <div
-              className={`size-32 sm:size-40 flex items-center justify-center transition-transform ${animacionAliado}`}
-            >
-              <img
-                src={obtenerImagenCriatura(aliado.slug)}
-                alt={aliado.nombre}
-                onError={(e) => manejarErrorImagen(e, "criatura")}
-                className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]"
-              />
-            </div>
-            {/* Pedestal de combate retro 16-bit */}
-            <div className="w-32 sm:w-40 h-3 bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000] -mt-2 -z-0 flex items-center justify-center">
-              <div className="w-full h-0.5 bg-[#1a2332]" />
-            </div>
+      {/* 2. BITÁCORA DE ENCUENTRO: Ticker Colapsado de 1 Sola Línea */}
+      <div className="px-2 py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black">
+        <button
+          type="button"
+          onClick={() => {
+            reproducirSonido("click", 0.35);
+            setBitacoraAbierta((prev) => !prev);
+          }}
+          className="w-full bg-[#0b1322] border-2 border-[#d4af37] px-3 py-1.5 shadow-[2px_2px_0_0_#000] flex items-center justify-between text-left active:translate-y-0.5 transition-all group"
+          aria-expanded={bitacoraAbierta}
+          aria-label="Abrir bitácora de eventos de combate"
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+            <Scroll className="size-3.5 text-[#14d1e8] shrink-0" aria-hidden="true" />
+            <p className="text-[11px] sm:text-xs font-mono text-amber-200 truncate font-semibold">
+              {bitacoraCombate[0] ?? "El combate ha comenzado."}
+            </p>
           </div>
-
-          {/* Placa de Vitalidad y XP del Aliado */}
-          <div className="w-full sm:w-80 bg-card border-2 sm:border-4 border-black p-3 shadow-[4px_4px_0_0_#000] space-y-2 order-1 sm:order-2">
-            <div className="flex items-center justify-between gap-1 pb-1 border-b border-black/40">
-              <div className="flex items-center gap-1.5 min-w-0 truncate">
-                <span className="font-bold text-xs sm:text-sm text-[#14d1e8] tracking-wide truncate retro">
-                  {aliado.nombre}
-                </span>
-                {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
-                  <Badge
-                    variant="outline"
-                    className={`text-[8px] font-mono px-1 py-0 border-black shadow-[1px_1px_0_0_#000] shrink-0 ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
-                  >
-                    {TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}
-                  </Badge>
-                )}
-              </div>
-              <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000] shrink-0">
-                Nv. {aliado.nivel}
-              </Badge>
-            </div>
-
-            {/* Barra de Salud del Aliado */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-                <span className="font-bold retro text-[9px] text-[#22c55e]">HP</span>
-                <span>
-                  {aliado.hpActual} / {aliado.hpMaximo}
-                </span>
-              </div>
-              <HealthBar
-                value={porcentajeHpAliado}
-                variant="retro"
-                className="h-3 sm:h-3.5 border-black shadow-[1px_1px_0_0_#000]"
-              />
-            </div>
-
-            {/* Barra de Resonancia Táctica (10 Bloques Ámbar) */}
-            <BarraResonancia
-              resonancia={aliado.resonancia ?? 0}
-              deshabilitado={procesandoAccion || !esTurnoJugador}
-              onDesatarInsignia={() => handleAtacar(3)}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[9px] font-mono text-muted-foreground bg-black/50 px-1.5 py-0.5 border border-black">
+              {bitacoraCombate.length} eventos
+            </span>
+            <ChevronUp
+              className={`size-3.5 text-amber-300 transition-transform ${bitacoraAbierta ? "rotate-180" : ""}`}
+              aria-hidden="true"
             />
-
-            {/* Insignias de Estados Activos Aliados */}
-            <InsigniasEstado estados={aliado.estados} />
-
-            {/* Barra de Experiencia (XP) precisa según escalado de nivel (§2.4) */}
-            <div className="space-y-1 pt-0.5">
-              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-                <span className="font-bold retro text-[9px] text-purple-400">EXP</span>
-                <span>{porcentajeXp}%</span>
-              </div>
-              <XpBar
-                value={porcentajeXp}
-                variant="retro"
-                className="h-2.5 border-black shadow-[1px_1px_0_0_#000]"
-                levelUpMessage={subioNivel ? "¡SUBIÓ DE NIVEL!" : undefined}
-              />
-            </div>
           </div>
-        </div>
+        </button>
       </div>
 
-      {/* BITÁCORA VISUAL DE COMBATE (Consola RPG de Pergamino) */}
-      <Card className="border-2 sm:border-4 border-black bg-card shadow-[4px_4px_0_0_#000]">
-        <CardHeader className="p-3 pb-2 border-b-2 border-black bg-[#121927] flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scroll className="size-4 text-[#14d1e8]" aria-hidden="true" />
-            <CardTitle className="text-xs sm:text-sm uppercase font-bold text-foreground tracking-wider retro">
-              Bitácora de Encuentro
-            </CardTitle>
+      {/* 3. DRAWER EXPANDIBLE: Bottom Sheet de Historial Completo */}
+      {bitacoraAbierta && (
+        <div className="absolute inset-x-0 bottom-0 top-[38%] z-30 bg-[#090d16]/98 border-t-4 border-black p-3 flex flex-col shadow-[0_-6px_12px_rgba(0,0,0,0.85)] anim-revelacion-evento backdrop-blur-md">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-black mb-2">
+            <div className="flex items-center gap-2">
+              <Scroll className="size-4 text-[#14d1e8]" aria-hidden="true" />
+              <span className="text-xs font-bold text-foreground retro uppercase tracking-wider">
+                Bitácora de Encuentro
+              </span>
+              <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
+                {bitacoraCombate.length} eventos
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setBitacoraAbierta(false);
+              }}
+              className="h-6 px-2 text-[10px] retro hover:bg-black/40"
+            >
+              <X className="size-3.5 mr-1" aria-hidden="true" />
+              Cerrar
+            </Button>
           </div>
-          <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
-            {bitacoraCombate.length} eventos
-          </Badge>
-        </CardHeader>
-        <CardContent className="p-3">
-          <div className="bg-[#090d16] p-3 border-2 border-black shadow-[inset_2px_2px_0_0_#000] max-h-36 sm:max-h-40 overflow-y-auto space-y-1.5 text-xs font-mono">
+          <div className="flex-1 overflow-y-auto space-y-1.5 text-xs font-mono p-1">
             {bitacoraCombate.map((linea, index) => {
               const esAliado = linea.includes("Tu criatura") || linea.includes("Usaste") || linea.includes("Tu aliada");
               const esRival = linea.includes("El rival") || linea.includes("salvaje") || linea.includes("debilitada");
               const esCaptura = linea.includes("Captura") || linea.includes("talismán") || linea.includes("sintonizada");
-
               return (
-                <p key={index} className="leading-relaxed flex items-start gap-2">
+                <div key={index} className="flex items-start gap-1.5 leading-relaxed">
                   <span
                     className={`font-bold shrink-0 ${
                       esAliado
@@ -1032,607 +1120,580 @@ export function PantallaCombate() {
                   >
                     ›
                   </span>
-                  <span
-                    className={
-                      index === 0
-                        ? "text-foreground font-semibold"
-                        : "text-muted-foreground"
-                    }
-                  >
+                  <span className={index === 0 ? "text-foreground font-semibold" : "text-muted-foreground"}>
                     {linea}
                   </span>
-                </p>
+                </div>
               );
             })}
           </div>
-        </CardContent>
+        </div>
+      )}
 
-        {/* PANEL TÁCTICO DE COMANDOS RETRO */}
-        <CardFooter className="p-3 sm:p-4 border-t-2 sm:border-t-4 border-black bg-[#121927]">
-          {combateFinalizado ? (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span
-                className={`text-xs sm:text-sm font-bold text-center sm:text-left retro ${
-                  estadoFinal === "VICTORIA"
-                    ? "text-emerald-400"
-                    : estadoFinal === "CAPTURADO"
-                    ? "text-[#14d1e8]"
-                    : "text-destructive"
-                }`}
-              >
-                {estadoFinal === "VICTORIA"
-                  ? "¡Victoria consumada! El camino está despejado."
+      {/* 4. CONSOLA DE ACCIONES EN LA ZONA DEL PULGAR (In-Place Contextual Deck) */}
+      <div className="px-2.5 pb-3 pt-1.5 bg-[#090d16] z-20">
+        {combateFinalizado ? (
+          /* Estado de Resolución Posterior al Combate */
+          <div className="space-y-2 py-1">
+            <div
+              className={`p-2 border-2 border-black text-center retro text-xs sm:text-sm font-bold shadow-[2px_2px_0_0_#000] ${
+                estadoFinal === "VICTORIA"
+                  ? "bg-emerald-950/60 text-emerald-400 border-emerald-500/60"
                   : estadoFinal === "CAPTURADO"
-                  ? "¡Criatura capturada con éxito!"
-                  : "Tu equipo ha quedado debilitado en combate."}
-              </span>
-              <div className="flex gap-2 w-full sm:w-auto">
-                {estadoFinal === "DERROTA" ? (
+                  ? "bg-cyan-950/60 text-[#14d1e8] border-cyan-500/60"
+                  : "bg-red-950/60 text-destructive border-destructive/60"
+              }`}
+            >
+              {estadoFinal === "VICTORIA"
+                ? "¡Victoria consumada! El camino está despejado."
+                : estadoFinal === "CAPTURADO"
+                ? "¡Criatura capturada con éxito!"
+                : "Tu equipo ha quedado debilitado en combate."}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {estadoFinal === "DERROTA" ? (
+                <Button
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    navigate("/curacion");
+                  }}
+                  variant="destructive"
+                  className="col-span-2 text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+                >
+                  <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
+                  <span>Ir a Curación</span>
+                </Button>
+              ) : (
+                <>
                   <Button
                     onClick={() => {
                       reproducirSonido("click", 0.4);
-                      navigate("/curacion");
+                      navigate("/exploracion");
                     }}
-                    variant="destructive"
-                    className="w-full sm:w-auto text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+                    className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
                   >
-                    <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
-                    <span>Ir a Curación</span>
+                    <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+                    <span>Continuar</span>
                   </Button>
+                  <Button
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/hub");
+                    }}
+                    variant="outline"
+                    className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+                  >
+                    <span>Volver al Hub</span>
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ) : menuState === "ROOT" ? (
+          /* Estado Raíz: Botonera Clásica Retro (2x2 + Huir Inferior) */
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              {/* 1. Atacar (Oro/Ámbar prominente) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("ATTACK");
+                }}
+                className="h-14 bg-[#d97706] hover:bg-[#b45309] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {procesandoAccion ? (
+                  <Spinner className="size-4" />
                 ) : (
                   <>
-                    <Button
-                      onClick={() => {
-                        reproducirSonido("click", 0.4);
-                        navigate("/exploracion");
-                      }}
-                      className="flex-1 sm:flex-none text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                    >
-                      <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
-                      <span>Continuar</span>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        reproducirSonido("click", 0.4);
-                        navigate("/hub");
-                      }}
-                      variant="outline"
-                      className="flex-1 sm:flex-none text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                    >
-                      <span>Volver al Hub</span>
-                    </Button>
+                    <Swords className="size-4 text-white" aria-hidden="true" />
+                    <span>ATACAR</span>
                   </>
                 )}
-              </div>
+              </button>
+
+              {/* 2. Usar Objeto (Cian Oscuro) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("ITEMS");
+                }}
+                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <HeartPulse className="size-4 text-emerald-300" aria-hidden="true" />
+                <span>USAR OBJETO</span>
+              </button>
+
+              {/* 3. Cambiar Criatura (Cian Oscuro) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("SWAP");
+                }}
+                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ArrowLeftRight className="size-4 text-[#14d1e8]" aria-hidden="true" />
+                <span>CAMBIAR</span>
+              </button>
+
+              {/* 4. Capturar (Cian Oscuro) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("CAPTURE");
+                }}
+                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Sparkles className="size-4 text-amber-300" aria-hidden="true" />
+                <span>CAPTURAR</span>
+              </button>
             </div>
-          ) : (
-            <div className="w-full space-y-2">
-              {/* Desplegable de Movimientos cuando se presiona Atacar */}
-              {panelMovimientosAbierto && (
-                <div className="p-3 bg-[#090d16] border-2 sm:border-4 border-black shadow-[4px_4px_0_0_#000] space-y-2.5 anim-revelacion-evento mb-2">
-                  <div className="flex items-center justify-between pb-2 border-b-2 border-black">
-                    <div className="flex items-center gap-1.5">
-                      <Sparkles className="size-3.5 text-[#14d1e8]" aria-hidden="true" />
-                      <span className="text-[10px] sm:text-xs font-bold text-[#14d1e8] retro">
-                        Selecciona un Movimiento:
-                      </span>
+
+            {/* 5. Huir (Barra inferior completa en carmesí) */}
+            <button
+              type="button"
+              disabled={procesandoAccion || !esTurnoJugador}
+              aria-busy={procesandoAccion}
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                setDialogoHuirAbierto(true);
+              }}
+              className="w-full h-10 bg-[#8c1d28] hover:bg-[#6d141d] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <LogOut className="size-3.5 text-white" aria-hidden="true" />
+              <span>HUIR</span>
+            </button>
+          </div>
+        ) : menuState === "ATTACK" ? (
+          /* Submenú Contextual In-Place: Selección de 4 Movimientos */
+          <div className="space-y-1.5 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1 border-b border-black">
+              <span className="text-[10px] font-bold text-amber-300 retro">
+                Elige un Movimiento:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-6 px-2 text-[10px] retro"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5">
+              {slotsTacticos.map((slotItem) => {
+                const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
+                const esFuriaSlot4 = esInsignia;
+                const estaBloqueado = bloqueado;
+                const nombreMov = mov?.nombre ?? (esInsignia ? "Movimiento Insignia" : `Movimiento ${slot}`);
+                const poder = mov?.poder ?? 10;
+                const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
+                const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
+                const badgeEfecto = resolverBadgeEfectoMovimiento(mov?.efecto, mov?.estadoAplicado);
+
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled={procesandoAccion || estaBloqueado}
+                    aria-disabled={estaBloqueado}
+                    aria-busy={procesandoAccion}
+                    onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
+                    className={`flex flex-col items-start justify-between min-h-[56px] p-2 border-2 border-black shadow-[2px_2px_0_0_#000] text-left transition-all ${
+                      estaBloqueado
+                        ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
+                        : esInsignia
+                        ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia text-amber-200"
+                        : "bg-[#121927] hover:border-primary text-foreground active:translate-y-0.5"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full gap-1 min-w-0">
+                      <div className="flex items-center gap-1 min-w-0 truncate">
+                        <span className="text-[8px] font-mono px-1 py-0 border border-black bg-black/40 text-foreground">
+                          M{slot}
+                        </span>
+                        <span className="font-semibold truncate text-[10px] font-mono">
+                          {nombreMov}
+                        </span>
+                      </div>
+                      {estaBloqueado ? (
+                        <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
+                      ) : esInsignia ? (
+                        <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
+                      ) : null}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        reproducirSonido("click", 0.35);
-                        setPanelMovimientosAbierto(false);
-                      }}
-                      className="h-6 px-2 text-[10px] retro hover:bg-black/40"
-                    >
-                      Cerrar
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {slotsTacticos.map((slotItem) => {
-                      const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
-                      const esFuriaSlot4 = esInsignia;
-                      const estaBloqueado = bloqueado;
-                      const nombreMov =
-                        mov?.nombre ??
-                        (esInsignia ? "Movimiento Insignia" : `Movimiento ${slot}`);
-                      const poder = mov?.poder ?? 10;
-                      const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival
-                        ?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
-                      const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
-                      const badgeEfecto = resolverBadgeEfectoMovimiento(
-                        mov?.efecto,
-                        mov?.estadoAplicado,
-                      );
 
-                      return (
-                        <Button
-                          key={slot}
-                          variant={estaBloqueado ? "outline" : esInsignia ? "default" : "secondary"}
-                          size="sm"
-                          disabled={procesandoAccion || estaBloqueado}
-                          aria-disabled={estaBloqueado}
-                          aria-busy={procesandoAccion}
-                          onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
-                          aria-label={
-                            estaBloqueado
-                              ? `${nombreMov} bloqueado. Requiere Resonancia 100 %${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
-                              : `${nombreMov}, Potencia ${poder}${textoChip ? `, ${textoChip}` : ""}${badgeEfecto ? `, Efecto: ${badgeEfecto.nombre}` : ""}`
-                          }
-                          className={`flex flex-col items-start justify-between text-xs min-h-[64px] p-2.5 border-2 border-black shadow-[2px_2px_0_0_#000] transition-all ${
-                            estaBloqueado
-                              ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
-                              : esInsignia
-                              ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia motion-reduce:animate-none shadow-[2px_2px_0_0_#f59e0b]"
-                              : "hover:border-primary active:translate-y-0.5 active:shadow-[1px_1px_0_0_#000]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full gap-1 min-w-0">
-                            <div className="flex items-center gap-1.5 min-w-0 truncate">
-                              <Badge
-                                variant="outline"
-                                className={`text-[9px] font-mono shrink-0 px-1 py-0 border-black shadow-[1px_1px_0_0_#000] ${
-                                  estaBloqueado
-                                    ? "border-border text-muted-foreground"
-                                    : esInsignia
-                                    ? "border-amber-400 text-amber-300 bg-amber-500/20"
-                                    : "border-border text-foreground"
-                                }`}
-                              >
-                                M{slot}
-                              </Badge>
-                              <span className="font-semibold truncate text-[11px]">
-                                {nombreMov}
+                    <div className="flex items-center justify-between w-full mt-1 min-w-0 gap-1">
+                      {estaBloqueado ? (
+                        <span className="text-[8px] font-mono text-amber-300/80 truncate">
+                          Requiere Resonancia 100 %
+                          {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
+                        </span>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                            {textoChip === "¡EFICAZ!" && (
+                              <span className="text-[7px] font-mono px-1 border border-emerald-500 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5">
+                                <ChevronsUp className="size-2" aria-hidden="true" />
+                                {textoChip}
                               </span>
-                            </div>
-                            {estaBloqueado ? (
-                              <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
-                            ) : esInsignia ? (
-                              <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
-                            ) : null}
-                          </div>
-
-                          <div className="flex items-center justify-between w-full mt-1 min-w-0 gap-1">
-                            {estaBloqueado ? (
-                              <div className="flex items-center justify-between w-full gap-1 min-w-0">
-                                <span className="text-[9px] font-mono text-amber-300/80 truncate">
-                                  Requiere Resonancia 100 %
-                                  {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
-                                </span>
-                                {badgeEfecto && (
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0 opacity-80 ${badgeEfecto.claseEstilo}`}
-                                    title={`Efecto: ${badgeEfecto.nombre}`}
-                                  >
-                                    {(() => {
-                                      const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
-                                      return <IconoComp className="size-2.5 shrink-0" aria-hidden="true" />;
-                                    })()}
-                                    <span className="truncate max-w-[55px] sm:max-w-[75px]">
-                                      {badgeEfecto.nombre}
-                                    </span>
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-1 min-w-0 flex-wrap">
-                                  {textoChip === "¡EFICAZ!" && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-emerald-500/70 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0"
-                                    >
-                                      <ChevronsUp className="size-2.5" aria-hidden="true" />
-                                      {textoChip}
-                                    </Badge>
-                                  )}
-                                  {textoChip === "RESISTIDO" && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-[8px] font-mono px-1 py-0 border-stone-500/70 text-stone-300 bg-stone-500/10 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0"
-                                    >
-                                      <ChevronsDown className="size-2.5" aria-hidden="true" />
-                                      {textoChip}
-                                    </Badge>
-                                  )}
-                                  {badgeEfecto && (
-                                    <Badge
-                                      variant="outline"
-                                      className={`text-[8px] font-mono px-1 py-0 flex items-center gap-0.5 border-black shadow-[1px_1px_0_0_#000] shrink-0 ${badgeEfecto.claseEstilo}`}
-                                      title={`Efecto: ${badgeEfecto.nombre}`}
-                                    >
-                                      {(() => {
-                                        const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
-                                        return <IconoComp className="size-2.5 shrink-0" aria-hidden="true" />;
-                                      })()}
-                                      <span className="truncate max-w-[65px] sm:max-w-[85px]">
-                                        {badgeEfecto.nombre}
-                                      </span>
-                                    </Badge>
-                                  )}
-                                </div>
-                                <span className="text-[9px] font-mono text-muted-foreground ml-auto shrink-0 font-bold">
-                                  Pot. {poder}
-                                </span>
-                              </>
+                            )}
+                            {textoChip === "RESISTIDO" && (
+                              <span className="text-[7px] font-mono px-1 border border-stone-500 text-stone-300 bg-stone-500/10 flex items-center gap-0.5">
+                                <ChevronsDown className="size-2" aria-hidden="true" />
+                                {textoChip}
+                              </span>
+                            )}
+                            {badgeEfecto && (
+                              <span className="text-[7px] font-mono px-1 border border-black bg-black/30 text-cyan-300 truncate max-w-[65px] flex items-center gap-0.5">
+                                {(() => {
+                                  const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
+                                  return <IconoComp className="size-2 shrink-0" aria-hidden="true" />;
+                                })()}
+                                <span>{badgeEfecto.nombre}</span>
+                              </span>
                             )}
                           </div>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Botonera Principal de 5 Comandos */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full">
-                {/* 1. Atacar */}
-                <Button
-                  disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    setPanelMovimientosAbierto((prev) => !prev);
-                  }}
-                  variant={panelMovimientosAbierto ? "default" : "secondary"}
-                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  {procesandoAccion ? (
-                    <Spinner className="size-3.5" />
-                  ) : (
-                    <>
-                      <Swords className="size-3.5 mr-1.5 text-primary" aria-hidden="true" />
-                      <span>Atacar</span>
-                    </>
-                  )}
-                </Button>
-
-                {/* 2. Usar Objeto */}
-                <Button
-                  variant="secondary"
-                  disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    setModalObjetosAbierto(true);
-                  }}
-                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  <HeartPulse className="size-3.5 mr-1.5 text-emerald-400" aria-hidden="true" />
-                  <span>Objeto</span>
-                </Button>
-
-                {/* 3. Cambiar Criatura */}
-                <Button
-                  variant="secondary"
-                  disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    setModalCambioCriaturaAbierto(true);
-                  }}
-                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  <ArrowLeftRight className="size-3.5 mr-1.5 text-[#14d1e8]" aria-hidden="true" />
-                  <span>Cambiar</span>
-                </Button>
-
-                {/* 4. Capturar */}
-                <Button
-                  variant="outline"
-                  disabled={procesandoAccion || !esTurnoJugador}
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    setModalCapturaAbierto(true);
-                  }}
-                  className="text-xs border-2 border-black bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  <Sparkles className="size-3.5 mr-1.5 text-amber-400" aria-hidden="true" />
-                  <span>Capturar</span>
-                </Button>
-
-                {/* 5. Huir */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      disabled={procesandoAccion || !esTurnoJugador}
-                      onClick={() => reproducirSonido("click", 0.4)}
-                      className="text-xs col-span-2 sm:col-span-1 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                    >
-                      <LogOut className="size-3.5 mr-1.5" aria-hidden="true" />
-                      <span>Huir</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
-                    <AlertDialogHeader>
-                      <div className="flex items-center gap-2">
-                        <LogOut className="size-4 text-destructive" aria-hidden="true" />
-                        <AlertDialogTitle className="text-sm font-bold retro text-destructive">
-                          ¿Intentar escapar del combate?
-                        </AlertDialogTitle>
-                      </div>
-                      <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                        La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival. Si fallas, el rival contraatacará de inmediato.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
-                      <AlertDialogCancel
-                        onClick={() => reproducirSonido("click", 0.35)}
-                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                      >
-                        Permanecer
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleHuir}
-                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-destructive hover:bg-destructive/90 text-white"
-                      >
-                        Confirmar Huida
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+                          <span className="text-[8px] font-mono text-muted-foreground ml-auto shrink-0 font-bold">
+                            Pot. {poder}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          )}
-        </CardFooter>
-      </Card>
-
-      {/* MODAL RETRO: SELECCIÓN DE TALISMÁN DE CAPTURA */}
-      <Dialog open={modalCapturaAbierto} onOpenChange={setModalCapturaAbierto}>
-        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-4 text-amber-400" aria-hidden="true" />
-              <DialogTitle className="text-sm sm:text-base font-bold text-amber-400 retro">
-                Lanzar Talismán de Captura
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Elige el talismán que usarás para sintonizar a {rival.nombre}.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2 py-2 max-h-60 overflow-y-auto">
-            {talismanes.length === 0 ? (
-              <div className="p-4 bg-muted/20 border-2 border-black text-center space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  No tienes talismanes de captura en tu inventario.
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    navigate("/tienda");
-                  }}
-                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  Visitar la Tienda
-                </Button>
-              </div>
-            ) : (
-              talismanes.map((item) => (
-                <label
-                  key={item.codigo}
-                  className={`flex items-center justify-between p-3 border-2 border-black cursor-pointer transition-colors shadow-[2px_2px_0_0_#000] ${
-                    talismanSeleccionado === item.codigo
-                      ? "border-primary bg-primary/10 shadow-[3px_3px_0_0_#000]"
-                      : "bg-[#121927] hover:border-primary/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="talisman"
-                      value={item.codigo}
-                      checked={talismanSeleccionado === item.codigo}
-                      onChange={() => {
-                        reproducirSonido("seleccionar", 0.35);
-                        setTalismanSeleccionado(item.codigo);
-                      }}
-                      className="accent-primary"
-                    />
-                    <img
-                      src={obtenerImagenObjeto(item.codigo)}
-                      alt={item.nombre}
-                      onError={(e) => manejarErrorImagen(e, "objeto")}
-                      className="size-7 pixelated object-contain"
-                    />
-                    <span className="font-semibold text-xs text-foreground">
-                      {item.nombre}
-                    </span>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px] font-mono border-black shadow-[1px_1px_0_0_#000]">
-                    x{item.cantidad}
-                  </Badge>
-                </label>
-              ))
-            )}
           </div>
+        ) : menuState === "ITEMS" ? (
+          /* Submenú Contextual In-Place: Objetos Curativos */
+          <div className="space-y-1.5 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1 border-b border-black">
+              <span className="text-[10px] font-bold text-emerald-400 retro">
+                Bolsa de Pociones y Curación:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-6 px-2 text-[10px] retro"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-2 w-full">
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {itemsCuracion.length === 0 ? (
+                <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    No posees consumibles de curación en tu inventario.
+                  </p>
+                </div>
+              ) : (
+                itemsCuracion.map((item) => (
+                  <div
+                    key={item.codigo}
+                    className="flex items-center justify-between p-1.5 border-2 border-black bg-[#121927] shadow-[2px_2px_0_0_#000]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={obtenerImagenObjeto(item.codigo)}
+                        alt={item.nombre}
+                        onError={(e) => manejarErrorImagen(e, "objeto")}
+                        className="size-6 pixelated object-contain"
+                      />
+                      <div>
+                        <p className="font-semibold text-[10px] text-foreground font-mono">
+                          {item.nombre}
+                        </p>
+                        <span className="text-[9px] text-muted-foreground font-mono">
+                          Disponibles: x{item.cantidad}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={procesandoAccion || aliado.hpActual >= aliado.hpMaximo}
+                      onClick={() => handleUsarObjetoCuracion(item.codigo)}
+                      className="text-[10px] h-7 px-2 border-2 border-black shadow-[1px_1px_0_0_#000] active:translate-y-0.5"
+                    >
+                      Usar (+HP)
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : menuState === "SWAP" ? (
+          /* Submenú Contextual In-Place: Relevo de Criatura */
+          <div className="space-y-1.5 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1 border-b border-black">
+              <span className="text-[10px] font-bold text-[#14d1e8] retro">
+                Relevar Criatura al Frente:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-6 px-2 text-[10px] retro"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {equipoCriaturas.filter((c) => c.criaturaId !== aliado.criaturaId).length === 0 ? (
+                <p className="text-[10px] text-muted-foreground text-center py-2 font-mono">
+                  No tienes otras criaturas en tu equipo activo.
+                </p>
+              ) : (
+                equipoCriaturas
+                  .filter((c) => c.criaturaId !== aliado.criaturaId)
+                  .map((comp) => {
+                    const debilitada = comp.hpActual <= 0;
+                    return (
+                      <div
+                        key={comp.criaturaId}
+                        className={`flex items-center justify-between p-1.5 border-2 border-black shadow-[2px_2px_0_0_#000] ${
+                          debilitada ? "opacity-50 bg-destructive/5" : "bg-[#121927]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={obtenerImagenCriatura(comp.slug)}
+                            alt={comp.nombre}
+                            onError={(e) => manejarErrorImagen(e, "criatura")}
+                            className="size-7 pixelated object-contain"
+                          />
+                          <div>
+                            <p className="font-semibold text-[10px] text-foreground font-mono">
+                              {comp.nombre}
+                            </p>
+                            <span className="text-[9px] font-mono text-muted-foreground">
+                              Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={debilitada || procesandoAccion}
+                          onClick={() => handleCambiarCriatura(comp.criaturaId)}
+                          className="text-[10px] h-7 px-2 border-2 border-black shadow-[1px_1px_0_0_#000] active:translate-y-0.5"
+                        >
+                          {debilitada ? "Caída" : "Relevar"}
+                        </Button>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Submenú Contextual In-Place: Talismán de Captura */
+          <div className="space-y-1.5 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1 border-b border-black">
+              <span className="text-[10px] font-bold text-amber-300 retro">
+                Lanzar Talismán de Captura:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-6 px-2 text-[10px] retro"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {talismanes.length === 0 ? (
+                <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    No tienes talismanes de captura en tu inventario.
+                  </p>
+                </div>
+              ) : (
+                talismanes.map((item) => (
+                  <label
+                    key={item.codigo}
+                    className={`flex items-center justify-between p-2 border-2 border-black cursor-pointer shadow-[2px_2px_0_0_#000] ${
+                      talismanSeleccionado === item.codigo
+                        ? "border-primary bg-primary/10 shadow-[2px_2px_0_0_#000]"
+                        : "bg-[#121927] hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="talisman"
+                        value={item.codigo}
+                        checked={talismanSeleccionado === item.codigo}
+                        onChange={() => {
+                          reproducirSonido("seleccionar", 0.35);
+                          setTalismanSeleccionado(item.codigo);
+                        }}
+                        className="accent-primary"
+                      />
+                      <img
+                        src={obtenerImagenObjeto(item.codigo)}
+                        alt={item.nombre}
+                        onError={(e) => manejarErrorImagen(e, "objeto")}
+                        className="size-6 pixelated object-contain"
+                      />
+                      <span className="font-semibold text-[10px] text-foreground font-mono">
+                        {item.nombre}
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="text-[9px] font-mono border-black shadow-[1px_1px_0_0_#000]">
+                      x{item.cantidad}
+                    </Badge>
+                  </label>
+                ))
+              )}
+            </div>
+
             <Button
-              className="flex-1 text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              className="w-full h-8 text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-amber-600 hover:bg-amber-500 text-white"
               disabled={talismanes.length === 0 || procesandoAccion}
               onClick={ejecutarCaptura}
             >
               <Sparkles className="size-3.5 mr-1.5" aria-hidden="true" />
               <span>Lanzar Talismán</span>
             </Button>
-            <Button
-              variant="outline"
-              className="flex-1 text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-              onClick={() => {
-                reproducirSonido("click", 0.35);
-                setModalCapturaAbierto(false);
-              }}
-            >
-              Cancelar
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
 
-      {/* MODAL RETRO: OBJETOS CURATIVOS */}
-      <Dialog open={modalObjetosAbierto} onOpenChange={setModalObjetosAbierto}>
-        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
+      {/* MODAL DISCRETO DE PAUSA (Opciones Secundarias Retro) */}
+      <Dialog open={modalPausaAbierto} onOpenChange={setModalPausaAbierto}>
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <HeartPulse className="size-4 text-emerald-400" aria-hidden="true" />
-              <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
-                Bolsa de Pociones y Curación
+              <Pause className="size-4 text-[#14d1e8]" aria-hidden="true" />
+              <DialogTitle className="text-sm sm:text-base font-bold text-foreground retro">
+                Menú de Pausa
               </DialogTitle>
             </div>
             <DialogDescription className="text-xs text-muted-foreground">
-              Aplica un consumible sobre {aliado.nombre} ({aliado.hpActual}/{aliado.hpMaximo} HP).
+              Opciones secundarias y navegación del encuentro activo en Aethelgard.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2 max-h-60 overflow-y-auto">
-            {itemsCuracion.length === 0 ? (
-              <div className="p-4 bg-muted/20 border-2 border-black text-center space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  No posees consumibles de curación en tu inventario.
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    navigate("/tienda");
-                  }}
-                  className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                >
-                  Ir a la Tienda
-                </Button>
-              </div>
-            ) : (
-              itemsCuracion.map((item) => (
-                <div
-                  key={item.codigo}
-                  className="flex items-center justify-between p-3 border-2 border-black bg-[#121927] shadow-[2px_2px_0_0_#000]"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={obtenerImagenObjeto(item.codigo)}
-                      alt={item.nombre}
-                      onError={(e) => manejarErrorImagen(e, "objeto")}
-                      className="size-7 pixelated object-contain"
-                    />
-                    <div>
-                      <p className="font-semibold text-xs text-foreground">
-                        {item.nombre}
-                      </p>
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        Disponibles: {item.cantidad}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    disabled={procesandoAccion || aliado.hpActual >= aliado.hpMaximo}
-                    onClick={() => handleUsarObjetoCuracion(item.codigo)}
-                    className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                  >
-                    Usar (+HP)
-                  </Button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="pt-2 w-full">
+          <div className="space-y-2 py-1">
             <Button
-              variant="outline"
-              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
               onClick={() => {
                 reproducirSonido("click", 0.35);
-                setModalObjetosAbierto(false);
+                setModalPausaAbierto(false);
               }}
+              className="w-full text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
             >
-              Cerrar
+              Continuar Combate
             </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
-      {/* MODAL RETRO: CAMBIAR CRIATURA ACTIVA */}
-      <Dialog open={modalCambioCriaturaAbierto} onOpenChange={setModalCambioCriaturaAbierto}>
-        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <ArrowLeftRight className="size-4 text-[#14d1e8]" aria-hidden="true" />
-              <DialogTitle className="text-sm sm:text-base font-bold text-primary retro">
-                Relevar Criatura en Combate
-              </DialogTitle>
+            <Button
+              variant="outline"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalPausaAbierto(false);
+                setDialogoHuirAbierto(true);
+              }}
+              className="w-full text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="size-3.5 mr-1.5" aria-hidden="true" />
+              Huir / Rendirse
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/40">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  navigate("/kit-ui");
+                }}
+                className="text-[11px] border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              >
+                <BookOpen className="size-3.5 mr-1" aria-hidden="true" />
+                Kit de Interfaz
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  navigate("/creditos");
+                }}
+                className="text-[11px] border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              >
+                <Award className="size-3.5 mr-1" aria-hidden="true" />
+                Créditos
+              </Button>
             </div>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Selecciona una compañera activa de tu equipo para relevar al frente.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-2 py-2 max-h-64 overflow-y-auto">
-            {equipoCriaturas.filter((c) => c.criaturaId !== aliado.criaturaId).length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-4 font-mono">
-                No tienes otras criaturas en tu equipo activo.
-              </p>
-            ) : (
-              equipoCriaturas
-                .filter((c) => c.criaturaId !== aliado.criaturaId)
-                .map((comp) => {
-                  const debilitada = comp.hpActual <= 0;
-                  const xpIndividual = comp.porcentajeXp ?? 0;
-                  return (
-                    <div
-                      key={comp.criaturaId}
-                      className={`flex items-center justify-between p-2.5 border-2 border-black shadow-[2px_2px_0_0_#000] ${
-                        debilitada
-                          ? "opacity-50 bg-destructive/5"
-                          : "bg-[#121927]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={obtenerImagenCriatura(comp.slug)}
-                          alt={comp.nombre}
-                          onError={(e) => manejarErrorImagen(e, "criatura")}
-                          className="size-8 pixelated object-contain"
-                        />
-                        <div>
-                          <p className="font-semibold text-xs text-foreground">{comp.nombre}</p>
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP · {xpIndividual}% EXP
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        disabled={debilitada || procesandoAccion}
-                        onClick={() => handleCambiarCriatura(comp.criaturaId)}
-                        className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-                      >
-                        {debilitada ? "Debilitada" : "Relevar"}
-                      </Button>
-                    </div>
-                  );
-                })
-            )}
-          </div>
-
-          <div className="pt-2 w-full">
-            <Button
-              variant="outline"
-              className="w-full text-xs py-2 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
-              onClick={() => {
-                reproducirSonido("click", 0.35);
-                setModalCambioCriaturaAbierto(false);
-              }}
-            >
-              Cancelar
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* MODAL RETRO: CONFIRMACIÓN DE HUIDA */}
+      <AlertDialog open={dialogoHuirAbierto} onOpenChange={setDialogoHuirAbierto}>
+        <AlertDialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2">
+              <LogOut className="size-4 text-destructive" aria-hidden="true" />
+              <AlertDialogTitle className="text-sm font-bold retro text-destructive">
+                ¿Intentar escapar del combate?
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival. Si fallas, el rival contraatacará de inmediato.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+            <AlertDialogCancel
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setDialogoHuirAbierto(false);
+              }}
+              className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+            >
+              Permanecer
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleHuir}
+              className="text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-destructive hover:bg-destructive/90 text-white"
+            >
+              Confirmar Huida
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* DIÁLOGO CINEMÁTICO DE VICTORIA RETRO */}
       <Dialog open={estadoFinal === "VICTORIA"} onOpenChange={() => {}}>

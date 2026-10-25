@@ -90,7 +90,7 @@ test("Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y PantallaHubUbic
 });
 
 
-test("Regla R1: Cero emojis unicode en PantallaIngreso.tsx, PantallaCrearPersonaje.tsx y LayoutPrincipal.tsx", async () => {
+test("Regla R1: Cero emojis unicode en PantallaIngreso.tsx, PantallaRegistro.tsx, PantallaCrearPersonaje.tsx y LayoutPrincipal.tsx", async () => {
   const { readFileSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
@@ -100,6 +100,7 @@ test("Regla R1: Cero emojis unicode en PantallaIngreso.tsx, PantallaCrearPersona
 
   const archivos = [
     join(__dirname, "../src/paginas/PantallaIngreso.tsx"),
+    join(__dirname, "../src/paginas/PantallaRegistro.tsx"),
     join(__dirname, "../src/paginas/PantallaCrearPersonaje.tsx"),
     join(__dirname, "../src/components/LayoutPrincipal.tsx"),
   ];
@@ -130,4 +131,21 @@ test("Hardening y Ergonomía: PantallaIngreso cuenta con aria-busy, estética re
   assert.ok(contenido.includes("Sparkles"), "PantallaIngreso debe usar iconos Lucide en lugar de emojis");
   assert.ok(contenido.includes("reproducirSonido"), "PantallaIngreso debe reproducir efectos de sonido retro");
 });
+
+test("Hardening y Ergonomía: PantallaRegistro cuenta con aria-busy, estética retro 8bitcn y protección de carga", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const contenido = readFileSync(join(__dirname, "../src/paginas/PantallaRegistro.tsx"), "utf-8");
+
+  assert.ok(contenido.includes('aria-busy={enviando}'), "PantallaRegistro debe declarar aria-busy en el formulario y botón");
+  assert.ok(contenido.includes("retro text-[10px]"), "PantallaRegistro debe aplicar estética retro en inputs y controles");
+  assert.ok(contenido.includes("Swords"), "PantallaRegistro debe usar iconos Lucide Swords en lugar de emojis");
+  assert.ok(contenido.includes("reproducirSonido"), "PantallaRegistro debe reproducir efectos de sonido retro");
+  assert.ok(contenido.includes("requisitos-clave"), "PantallaRegistro debe incluir panel de requisitos de clave");
+  assert.ok(contenido.includes("pointer-events-none opacity-50"), "PantallaRegistro debe proteger enlaces secundarios durante el envío");
+});
+
 

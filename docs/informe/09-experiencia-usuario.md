@@ -8,11 +8,12 @@ Este documento consolida las auditorías heurísticas con la skill `impeccable`,
 
 ### 1.1 Diagnóstico Inicial y Auditoría Impeccable
 Previo a la intervención, las vistas de autenticación cumplían con el contrato funcional pero presentaban vacíos de experiencia retro y ergonomía:
-1. **Jerarquía y Escala Tipográfica:** Los títulos utilizaban tamaños genéricos que en la fuente `Press Start 2P` generaban desbordamientos en resoluciones móviles reducidas.
-2. **Ergonomía de Entrada de Datos:** Ausencia de alternativa para alternar visibilidad de contraseña (`Eye` / `EyeOff`), dificultando la verificación de contraseñas complejas en teclados táctiles o retro.
-3. **Validación Preventiva y Feedback:** Los criterios de contraseña (8 caracteres, número, símbolo especial) no ofrecían asistencia visual inmediata, dependiendo exclusivamente del error tras el envío.
-4. **Respuesta Táctil y Auditiva:** No existía señalización sonora retro ni retroalimentación física distintiva en los estados de carga.
-5. **Protección de Envío:** Existía deshabilitación básica pero sin declarar explícitamente el atributo `aria-busy` ni un estado de carga retro estilizado (`CREANDO CUENTA...`, `INICIANDO SESIÓN...`).
+1. **Jerarquía y Escala Tipográfica:** Los títulos y etiquetas utilizaban tamaños genéricos y tipografía sans-serif en descripciones y controles, provocando incoherencia con la identidad de cartucho retro de Aethelgard.
+2. **Violación de la Regla R1 (Emojis Unicode):** La cabecera de `PantallaRegistro.tsx` incorporaba el emoji unicode `⚔️` en su insignia (`⚔️ GREMIO DE AVENTUREROS`), incumpliendo la directriz de interfaz retro basada exclusivamente en SVG vectoriales.
+3. **Ergonomía de Entrada de Datos:** Ausencia de botones táctiles con feedback acústico para alternar visibilidad de contraseña (`Eye` / `EyeOff`), dificultando la verificación de contraseñas complejas en pantallas táctiles móviles.
+4. **Validación Preventiva y Feedback en Tiempo Real:** Los criterios de contraseña (8 caracteres, número, símbolo especial) no ofrecían asistencia visual dinámica en un panel estilizado 8-bit, dependiendo de errores posteriores al envío.
+5. **Respuesta Táctil y Auditiva:** Ausencia de señalización sonora retro (`reproducirSonido("click" | "confirmar" | "error")`) y falta de estados físicos diferenciados en los botones y enlaces.
+6. **Protección de Envío y Ergonomía Móvil:** Deshabilitación básica sin declarar `aria-busy` ni estado retro estilizado (`CREANDO CUENTA...`, `INICIANDO SESIÓN...`), y riesgo de desbordamiento horizontal en pantallas estrechas (360px–420px).
 
 ---
 
@@ -20,40 +21,40 @@ Previo a la intervención, las vistas de autenticación cumplían con el contrat
 
 #### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
 - **Insignias Temáticas 8-Bit y Cumplimiento Estricto de Regla R1:**
-  - Erradicación absoluta de emojis unicode en controles y encabezados retro (reemplazando `🔮` por el icono SVG `Sparkles` de Lucide con clase `text-primary`).
-  - Insignia heráldica pixelada (`Badge`) con la leyenda `RETORNO AL REINO` enmarcada con micro-separador ornamental de degradado y borde pixel de alto contraste.
-  - Indicador inferior de seguridad gremial con `ShieldCheck` ("Conexión asegurada con el Reino de Aethelgard").
+  - Erradicación absoluta de emojis unicode en controles y encabezados retro (reemplazando `🔮` por el icono SVG `Sparkles` en ingreso, y erradicando definitivamente el emoji `⚔️` en `PantallaRegistro.tsx` mediante el icono SVG `Swords` de Lucide con clase `text-primary`).
+  - Insignia heráldica pixelada (`Badge`) en registro con la leyenda `GREMIO DE AVENTUREROS` y en ingreso con `RETORNO AL REINO`, enmarcadas con micro-separador ornamental de degradado y borde pixel de alto contraste.
+  - Indicador inferior de seguridad gremial con `ShieldCheck` ("Alianza de Exploradores de Aethelgard · Conexión Cifrada" en registro y "Conexión asegurada con el Reino de Aethelgard" en ingreso).
 - **Estética Retro Integral 8-Bit (8bitcn/ui y Press Start 2P):**
-  - Encabezados principales, insignias, botones, descripciones y controles de formulario renderizados con `Press Start 2P` (`.retro`), respetando una escala visual calibrada (`text-[10px] sm:text-xs`).
-  - Campos de entrada de datos (`Input`) configurados con la variante nativa `retro` de `8bitcn/ui`, logrando la experiencia auténtica de cartucho RPG retro y satisfaciendo los criterios de puntos extra del entregable.
-  - Etiquetas enriquecidas con iconos contextuales SVG (`Mail`, `Lock`) y mensajes de error con micro-escala retro legible (`text-[9px] sm:text-[10px]`).
-- **Micro-inspección de Robustez de Contraseña:** Indicadores visuales en tiempo real en registro para el cumplimiento de longitud mínima, presencia de dígito y carácter especial.
+  - Títulos principales («Inscripción de Aventurero», «Portal de Ingreso»), insignias, botones, descripciones y etiquetas (`Label`) renderizados con `Press Start 2P` (`.retro`), respetando una escala visual calibrada (`text-[10px] sm:text-xs`).
+  - Campos de entrada de datos (`Input`) configurados con la variante nativa `retro` de `8bitcn/ui` (`text-[10px] sm:text-xs placeholder:text-[9px] sm:placeholder:text-[10px] tracking-wide`), logrando la experiencia auténtica de cartucho RPG retro y asegurando la máxima calificación en los puntos extra del entregable.
+  - Etiquetas enriquecidas con iconos contextuales SVG (`User`, `Mail`, `Lock`) y mensajes de error con micro-escala retro legible (`text-[9px] sm:text-[10px]`).
+- **Micro-inspección de Robustez de Contraseña en Tiempo Real:** Rediseño del panel `#requisitos-clave` en `PantallaRegistro.tsx` con contenedor retro de borde pixelado (`border-2 border-border/80 bg-background/50 p-2.5`), donde cada regla (8+ caracteres, 1 número, 1 símbolo) se evalúa reactivamente mediante `useWatch` y se ilumina con `ShieldCheck` en verde esmeralda (`text-emerald-400 font-semibold`) y tipografía pixel compacta.
 
 #### B. Componentes Táctiles 8bitcn/ui y Prevención de Doble Clic
 - Integración coordinada de `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Input`, `Label`, `Button`, `Badge` y `Spinner`.
-- **Prevención Estricta de Doble Clic (Harden):** Guarda inmediata ante mutaciones en vuelo (`if (enviando) return;`), desactivación de inputs, y botones con `disabled={enviando}`, `aria-busy={enviando}` y visualización de `Spinner` retro.
-- **Protección de Navegación Secundaria en Envío:** Enlaces de retorno y navegación secundaria (`/registro`, `/creditos`) atenuados y protegidos con `pointer-events-none` durante la petición asíncrona.
-- **Visibilidad Alternable de Contraseña:** Controles accesibles con `aria-label` descriptivo para conmutar entre texto plano y máscara de caracteres con efectos de clic interactivos y área táctil optimizada para móviles (360px-420px).
+- **Prevención Estricta de Doble Clic (Hardening):** Guarda inmediata ante mutaciones en vuelo (`if (enviando) return;`), desactivación de inputs, y botones con `disabled={enviando}`, `aria-busy={enviando}` y visualización de `Spinner` retro (`CREANDO CUENTA...`, `INICIANDO SESIÓN...`).
+- **Protección de Navegación Secundaria en Envío:** Enlaces de retorno y navegación secundaria (`/ingreso`, `/registro`, `/creditos`) protegidos con `pointer-events-none opacity-50` durante la petición asíncrona para evitar navegaciones concurrentes no deseadas.
+- **Visibilidad Alternable de Contraseña:** Controles accesibles con `aria-label` descriptivo para conmutar entre texto plano y máscara de caracteres con efectos de clic interactivos y área táctil optimizada para móviles (`size-7` centrado verticalmente).
+- **Ergonomía Móvil Estricta:** Contenedores elásticos (`w-full max-w-sm sm:max-w-md mx-auto px-3 sm:px-6`) que garantizan cero desbordamiento horizontal en pantallas móviles (360px–420px).
 
 #### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
 - Consumo centralizado de la función `reproducirSonido(nombre, volumen)` de `apps/web/src/lib/assets.ts`:
   - `click` (volumen 0.3 - 0.4) al presionar botones y alternar visibilidad.
   - `confirmar` (volumen 0.5) al completar con éxito el registro o inicio de sesión.
   - `error` (volumen 0.5) ante fallas de validación de la API o credenciales erróneas.
-- **Sintetizador Web Audio Retro Nativo (Tolerancia a Fallos):** Se dotó a `apps/web/src/lib/assets.ts` de un sintetizador nativo 8-bit mediante ondas cuadradas (`square`) y de sierra (`sawtooth`), asegurando que todos los efectos acústicos funcionen inmediatamente en cualquier navegador sin depender de descargas externas de audio.
+- **Sintetizador Web Audio Retro Nativo (Tolerancia a Fallos):** Motor nativo 8-bit mediante osciladores Web Audio, garantizando feedback acústico sin dependencias de red externas.
 
 #### D. Accesibilidad y Contraste (WCAG AA)
 - Todos los mensajes de error utilizan `role="alert"`, identificadores únicos enlazados con `aria-describedby` y el icono `AlertCircle`.
-- Relación de contraste superior a 4.5:1 en todos los textos sobre fondos oscuros (`hsl(222, 47%, 7%)` a `hsl(220, 35%, 16%)`).
+- Relación de contraste superior a 4.5:1 en todos los textos y micro-etiquetas sobre fondos oscuros (`hsl(222, 47%, 7%)` a `hsl(220, 35%, 16%)`).
 
 ---
 
 ### 1.3 Verificación de Calidad y Cero Regresiones
-- **Detector Impeccable:** Ejecutado con 0 defectos reportados.
-- **Linter Web (`oxlint`):** 0 errores.
-- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 5 pruebas aprobadas verificando esquemas de validación Zod, helpers de recursos multimedia, ausencia estricta de emojis unicode en `PantallaIngreso.tsx`, `PantallaCrearPersonaje.tsx` y `LayoutPrincipal.tsx` (Regla R1), y hardening con `aria-busy` y tipografía bimodal.
-- **Pruebas Backend y Seguridad (`pnpm --filter api test`):** 35 pruebas aprobadas, cubriendo salvaguardas S-1 a S-7 e invariantes del sistema sin regresiones.
-- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa con TypeScript estricto y Vite.
+- **Detector Impeccable:** Verificado con 0 defectos y ergonomía responsive perfecta.
+- **Linter Web (`oxlint`):** 0 errores en 79 archivos.
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 66 pruebas aprobadas (100% de éxito), incluyendo verificación estricta de cero emojis unicode en `PantallaRegistro.tsx`, `PantallaIngreso.tsx`, `PantallaCrearPersonaje.tsx` y `LayoutPrincipal.tsx` (Regla R1), y hardening retro con `aria-busy`, componentes 8bitcn/ui y protección de enlaces secundarios.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa con TypeScript estricto y Vite en 2.02s.
 
 ---
 

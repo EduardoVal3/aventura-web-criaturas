@@ -116,60 +116,68 @@ La auditoría heurística con la skill `impeccable` y los estándares de `docs/D
 ## 3. Sub-Fase 10c: Hub de Ubicación y Navegación del Mundo (`PantallaHubUbicacion.tsx`)
 
 ### 3.1 Diagnóstico Inicial y Auditoría Impeccable
-La versión previa del Hub de Ubicación cumplía la funcionalidad básica pero presentaba limitaciones significativas de inmersión y ergonomía:
-1. **Ausencia de Atmósfera Visual y Paisaje:** La localidad se representaba como una tarjeta genérica con fondo plano, desaprovechando los activos visuales de zonas y reduciendo la inmersión del explorador.
-2. **Jerarquía Tipográfica Plana:** Títulos y textos descriptivos carecían de diferenciación entre la estética pixelada (`retro`) y la ergonomía de lectura (`font-sans`), generando saturación visual.
-3. **Falta de Micro-interacción en Rutas de Viaje:** El desplazamiento entre zonas ocurría de forma inmediata al hacer clic, con riesgo de viajes accidentales y sin un modal retro accesible que confirmara el destino o detallara los requisitos de zonas bloqueadas.
-4. **Respuesta Acústica Ausente:** La navegación entre servicios y la ejecución de viajes no emitían feedback auditivo sincronizado.
+La auditoría heurística y técnica con la skill `impeccable` y los estándares de `docs/DESIGN.md` identificó las siguientes oportunidades de mejora visual, retro y ergonómica en el Hub de Ubicación ("Campamento y Plaza del Gremio"):
+1. **Jerarquía Visual y Atmósfera Central:** La pantalla utilizaba bordes estándar tenues (`border-2 border-[#43526d]`) sin la contundencia física de los cartuchos clásicos de consola RPG 8-bit (NES.css / RPG UI), perdiendo la sensación de ser el centro neurálgico de la expedición.
+2. **Retícula Geométrica y Espaciado (4px/8px):** Disparidades en la retícula de espaciado entre el hero paisajístico, el panel superior de métricas y las cuadrículas de servicios y rutas de viaje, requiriendo alineación uniforme con los tokens ortogonales del sistema.
+3. **Métricas del Aventurero Poco Resaltadas:** Las tarjetas de métricas (Explorador, Monedas de Oro, Equipo Activo y Almacén) carecían de relieve táctil, sombras proyectadas duras y escalas de color solar y verde vital claramente diferenciadas.
+4. **Distinción Táctil en la Cuadrícula de Servicios (`SERVICIOS_HUB`):** Los 8 accesos a instalaciones del gremio presentaban tarjetas visualmente uniformes, sin micro-animación de pulsación física al hacer clic ni contenedores de icono con relieve retro individualizado.
+5. **Rutas de Conexión y Modales de Viaje:** Las tarjetas de senderos requerían mayor contraste entre destinos accesibles y restringidos; asimismo, los modales `AlertDialog` demandaban marcos retro de alto contraste (`border-4 border-black shadow-[8px_8px_0_0_#000]`), títulos retro y sellado contra desbordamiento horizontal en móviles estrechos (360px–420px).
+6. **Hardening contra Mutaciones en Vuelo:** Necesidad de prevenir doble viaje (`viajando`, botón deshabilitado con `aria-busy={viajando}` y `<Loader2 className="animate-spin" />` + texto retro `VIAJANDO...`) y proteger enlaces de navegación durante la petición.
+7. **Cumplimiento Estricto de la Regla R1:** Garantizar la ausencia absoluta de emojis unicode en la vista, apoyándose exclusivamente en iconos SVG de Lucide (`Compass`, `Coins`, `Users`, `Package`, `Store`, `Map`, `Sparkles`, `ShieldCheck`, `Skull`, `Lock`, `ArrowRight`, `LogOut`, `Loader2`) con textos 100% en español.
 
 ---
 
 ### 3.2 Mejoras Implementadas
 
-#### A. Atmósfera Oscura Retro y Paisaje Panorámico (`docs/DESIGN.md` §2)
-- **Hero de Asentamiento con Ilustración WebP y Fallback SVG:** Integración de la vista panorámica de la zona mediante `obtenerImagenZona(...)` y `sanitizarSlugZona(...)`, con degradado de fusión hacia la base Bastión (`#121927`) y fallback a `placeholder-zona.svg`.
-- **Cero Emojis Unicode (Regla Estricta):** Erradicación total de emojis en badges, botones y textos, reemplazándolos por iconografía vectorial SVG de Lucide (`ShieldCheck`, `Skull`, `Coins`, `Users`, `Package`, `Store`, `Map`, `Compass`, `Lock`, `ArrowRight`, `LogOut`, `Loader2`).
-- **Insignia de Seguridad de Zona:** Badge temático en la esquina del hero (`LOCALIDAD SEGURA` en verde esmeralda o `ZONA HOSTIL` en rojo alerta).
+#### A. Hero Panorámico con Marco 8-Bit de Alto Contraste (`docs/DESIGN.md` §2)
+- **Marco de Consola Clásica:** Enmarcado integral de la cabecera del asentamiento con borde pixelado retro (`border-4 border-black shadow-[6px_6px_0_0_#000] bg-card`), transmitiendo de inmediato la estética de cartucho clásico.
+- **Ilustración de Paisaje Regional con Fallback SVG:** Renderizado WebP con `obtenerImagenZona(...)` y sanitización kebab-case, degradado de contraste hacia el abismo (`bg-gradient-to-t from-black/90 via-black/40 to-black/30`) y degradación limpia ante desconexión.
+- **Insignias Flotantes de Seguridad y Escape Retro:**
+  - Badges con relieve 8-bit (`border-2 border-black shadow-[2px_2px_0_0_#000]`): `LOCALIDAD SEGURA` en verde esmeralda con `ShieldCheck` o `ZONA HOSTIL` en carmesí con `Skull`.
+  - Botón táctil de salida (`SALIR` con icono `LogOut`) con borde pixelado, respuesta al clic (`active:translate-y-0.5`) y bloqueo durante mutaciones en vuelo.
+- **Tipografía Pixelada y Sombra Proyectada:** Nombre del asentamiento renderizado con `Press Start 2P` (`.retro`), insignia ornamental de Plaza del Gremio con `Sparkles` y sombra proyectada dura (`text-shadow-[2px_2px_0_#000] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]`).
 
-#### B. Panel Superior de Explorador y Cuadrícula de Servicios
-- **Métricas Clave con Iconografía Temática:** Desglose del explorador en 4 tarjetas de datos:
-  - Nombre del explorador (`Compass`).
-  - Monedas acumuladas con icono `Coins` y color oro solar (`#f5b724`).
-  - Equipo activo (`X / 6 aliados`) con icono `Users` en verde vital.
-  - Criaturas en almacén con icono `Package`.
-- **Cuadrícula Interactiva de 8 Servicios (`SERVICIOS_HUB`):**
-  - Módulos para Exploración, Equipo Activo, Almacén, Inventario, Tienda/Bazar, Santuario de Salud, Compendio Open5e y Bitácora.
-  - Efectos táctiles de hover (`scale-[1.02]`, borde cian `#14d1e8`, fondo panel `#1a2332`) y retroalimentación sonora `click`.
-  - Indicador sutil de disponibilidad según los servicios declarados por la zona.
+#### B. Panel de Métricas del Aventurero Táctil y Compacto
+- **4 Cajas de Estado Retro:** Rediseño de las cajas de métricas con el marco táctil `border-2 border-black shadow-[4px_4px_0_0_#000] bg-muted/60 hover:bg-muted/80 transition-colors`:
+  - **Explorador:** Icono `Compass` en cian (`#14d1e8`), micro-etiqueta retro `text-[9px] uppercase tracking-wider` y nombre del personaje truncado con tooltip nativo.
+  - **Monedas de Oro:** Icono `Coins` en oro solar (`#f5b724`), número destacado en oro radiante y sufijo de unidad tipográfica.
+  - **Equipo Activo:** Icono `Users` en verde vital (`text-emerald-400`), contador numérico de compañeros activos (`X / 6 aliados`).
+  - **Almacén:** Icono `Package` en cian (`text-cyan-400`), contador numérico de criaturas en reserva.
 
-#### C. Rutas de Viaje y Modal de Confirmación `AlertDialog`
-- **Tarjetas de Conexión:** Cada destino muestra nombre, nivel sugerido y badge de estado (`ACCESIBLE` vs `BLOQUEADA`).
-- **Micro-interacción de Viaje Seguro:** Los destinos accesibles despliegan un diálogo modal `AlertDialog` retro que solicita confirmación del explorador antes de desplazarse, previniendo viajes no intencionados y mostrando el estado de carga `VIAJANDO...`.
-- **Inspección de Rutas Restringidas (M-PRO):** Las zonas bloqueadas cuentan con diálogo explicativo detallando los requisitos de gremio o experiencia requeridos para su acceso.
-- **Sello contra Desbordamiento y Optimización Tipográfica:**
-  - `AlertDialogContent` configurado con ancho responsivo prioritario (`w-[calc(100vw-2rem)] sm:max-w-md! max-w-md!`) y `overflow-hidden`.
-  - Disposición adaptativa en `AlertDialogFooter` (`flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 w-full`), apilando botones en pantallas estrechas y alineando a la derecha en escritorio sin desbordes.
-  - Corrección de la etiqueta de cancelación a `PERMANECER`, evitando glifos no soportados (como la `Í` acentuada) en la fuente 8-bit `Press Start 2P`.
+#### C. Cuadrícula Interactiva de Servicios del Gremio (`8bitcn/ui`)
+- **8 Instalaciones Modulares:** Exploración, Equipo Activo, Almacén, Inventario, Tienda/Bazar, Santuario de Salud, Compendio Open5e y Bitácora.
+- **Tarjetas Pixeladas con Micro-Animación:** Tarjetas táctiles `border-2 border-black shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:border-[#14d1e8] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000]`:
+  - Contenedor cuadrado para el icono temático (`size-9 sm:size-10 bg-[#1a2332] border-2 border-black shadow-[2px_2px_0_0_#000]`).
+  - Indicador esmeralda de servicio autóctono (`size-2.5 rounded-full bg-emerald-400 border border-black shadow-[0_0_6px_rgba(52,211,153,0.9)]`) frente a acceso general.
+  - Títulos retro compactos (`text-[10px] sm:text-xs text-[#14d1e8] group-hover:text-cyan-300 font-bold`).
+  - Protección de navegación secundaria (`viajando && "pointer-events-none opacity-50"`).
 
-#### D. Audio Retro Centralizado y Tolerancia a Fallos
+#### D. Rutas de Conexión y Modales Retro `AlertDialog` Sellados
+- **Tarjetas de Senderos:** Senderos enmarcados con `border-2 border-black shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000]`, nivel sugerido con `Compass` e insignias de estado (`ACCESIBLE` en verde esmeralda con `ArrowRight` vs `BLOQUEADA` en carmesí con `Lock`).
+- **Modales de Confirmación de Viaje con Marco Grueso Retro:** `AlertDialogContent` acotado contra desbordamiento con `w-[calc(100vw-2rem)] sm:max-w-md! max-w-md! bg-[#121927] border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden`.
+- **Botonera Táctil Retro:** Acciones de confirmación (`EMPRENDER CAMINO`, `COMPRENDIDO`) y cancelación (`PERMANECER`) con `border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5`.
+- **Hardening Antirrebote:** Deshabilitación con `aria-busy={viajando}`, guarda defensiva `if (viajando) return;`, icono `Loader2` giratorio y estado de botón `VIAJANDO...`.
+
+#### E. Audio Retro Centralizado y Tolerancia a Fallos
 - Integración de `reproducirSonido(...)` para eventos de interfaz:
-  - Clic al interactuar con servicios y botones (`0.35`).
-  - Confirmación al iniciar viaje hacia otra zona (`0.5`).
-  - Señalización de error ante bloqueos o fallos de conexión (`0.5`).
+  - Clic al interactuar con servicios y botones de navegación (`0.35`).
+  - Confirmación al emprender viaje hacia otra zona (`0.5`).
+  - Señalización de error ante bloqueos de senda o fallas de red (`0.5`).
 
 ---
 
 ### 3.3 Verificación de Calidad y Cero Regresiones
-- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-hub-mundo.spec.ts`):** 4 pruebas nuevas verificando:
+- **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-hub-mundo.spec.ts` y `verificacion-auth.spec.ts`):** 6 pruebas especializadas verificando:
   1. Configuración, rutas e iconos de los 8 servicios del Hub.
-  2. Lógica de habilitación de servicios según la localidad actual.
-  3. Sanitización de nombres y resolución de paisajes WebP con degradación segura.
+  2. Lógica de habilitación de servicios según localidad actual.
+  3. Sanitización de nombres y resolución de paisajes WebP con fallback.
   4. Estructura y reglas de conexiones de viaje bloqueadas vs accesibles.
-- **Suite Total Web (`pnpm --filter web test`):** 10 de 10 pruebas aprobadas (100% éxito).
-- **Compilación de Producción (`pnpm --filter web build`):** 0 errores de TypeScript y empaquetado Vite exitoso.
-- **Linter Web (`oxlint`):** 0 errores.
-- **Suite Backend (`pnpm --filter api test`):** 35 de 35 pruebas aprobadas sin regresiones.
-- **Validación Visual en Navegador (`browser_subagent`):** Flujo completo verificado en vivo sobre `/hub` con captura de pantalla y comprobación de modales, badges y servicios.
+  5. Regla R1: Cero emojis unicode en `PantallaHubUbicacion.tsx`.
+  6. Hardening y ergonomía: verificación estática de `aria-busy`, guarda `if (viajando) return;`, marco de hero 8-bit `border-4 border-black shadow-[6px_6px_0_0_#000]`, panel táctil `border-2 border-black shadow-[4px_4px_0_0_#000]`, modales `border-4 border-black shadow-[8px_8px_0_0_#000]` y sello `w-[calc(100vw-2rem)]`.
+- **Suite Total Web (`pnpm --filter web test`):** 69 de 69 pruebas aprobadas al 100%.
+- **Linter Web (`oxlint`):** 0 errores en 79 archivos.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa en TypeScript estricto y Vite en 2.03s con cero errores de tipos.
+
 
 ---
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { sanitizarSlugZona } from "@/lib/assets";
+import { useState, useEffect } from "react";
+import { RUTAS_PLACEHOLDERS, sanitizarSlugZona } from "@/lib/assets";
 
 export interface BattlefieldBackgroundProps {
   /**
@@ -25,10 +25,12 @@ export interface BattlefieldBackgroundProps {
 }
 
 const FONDO_POR_DEFECTO = "/assets/battlegrounds/caverna-cristal.svg";
+const FONDO_PLACEHOLDER_ZONA = RUTAS_PLACEHOLDERS.zona;
 
 /**
  * Componente desacoplado para la renderización del escenario de batalla (Battlefield Background System).
- * Soporta loops de video, imágenes optimizadas (.webp) y degradación fluida hacia SVG canónico.
+ * Resuelve la imagen con fallback en cascada: webp de zona -> caverna cristal svg -> placeholder zona svg.
+ * Garantiza visibilidad en el stacking context (z-0 en lugar de -z-10 para evitar ocultarse tras el fondo del contenedor).
  */
 export function BattlefieldBackground({
   zoneId,
@@ -37,19 +39,35 @@ export function BattlefieldBackground({
   className = "",
   children,
 }: BattlefieldBackgroundProps) {
-  const [errorCarga, setErrorCarga] = useState(false);
+  // Nivel de fallback: 0 = fuente inicial, 1 = caverna cristal svg, 2 = placeholder zona svg
+  const [pasoFallback, setPasoFallback] = useState(0);
 
-  // Resolución de la fuente visual priorizando prop directa, slug de zona o fallback de cristal
-  const fuenteImagen = errorCarga
-    ? FONDO_POR_DEFECTO
-    : backgroundUrl ||
-      (zoneId
-        ? `/assets/battlegrounds/${sanitizarSlugZona(zoneId)}.webp`
-        : FONDO_POR_DEFECTO);
+  const fuenteInicial =
+    backgroundUrl ||
+    (zoneId && zoneId.trim().length > 0 && zoneId !== "encuentro"
+      ? `/assets/battlegrounds/${sanitizarSlugZona(zoneId)}.webp`
+      : FONDO_POR_DEFECTO);
+
+  const [fuenteActual, setFuenteActual] = useState(fuenteInicial);
+
+  useEffect(() => {
+    setPasoFallback(0);
+    setFuenteActual(fuenteInicial);
+  }, [fuenteInicial]);
+
+  const manejarError = () => {
+    if (pasoFallback === 0) {
+      setPasoFallback(1);
+      setFuenteActual(FONDO_POR_DEFECTO);
+    } else if (pasoFallback === 1) {
+      setPasoFallback(2);
+      setFuenteActual(FONDO_PLACEHOLDER_ZONA);
+    }
+  };
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden select-none ${className}`}
+      className={`relative w-full h-full overflow-hidden select-none bg-[#090d16] ${className}`}
       data-testid="battlefield-background"
     >
       {/* 1. Capa de Video Animado Ligero si se especifica */}
@@ -59,33 +77,30 @@ export function BattlefieldBackground({
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover -z-10"
+          className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
           src={videoUrl}
         />
       ) : (
-        /* 2. Capa de Imagen (.webp estático/animado o SVG retro) */
+        /* 2. Capa de Imagen SVG / WebP con z-0 visible */
         <img
-          src={fuenteImagen}
+          src={fuenteActual}
           alt="Escenario de combate"
-          onError={() => {
-            // simplificacion: si falla el archivo webp de zona, degradar al SVG canónico de caverna de cristal
-            if (!errorCarga) setErrorCarga(true);
-          }}
-          className="absolute inset-0 w-full h-full object-cover -z-10 pixelated pointer-events-none"
+          onError={manejarError}
+          className="absolute inset-0 w-full h-full object-cover z-0 pixelated pointer-events-none"
         />
       )}
 
       {/* 3. Capa de viñeta y gradiente para garantizar legibilidad de HUDs y sprites pixel-art */}
       <div
-        className="absolute inset-0 bg-black/30 mix-blend-multiply pointer-events-none z-0"
+        className="absolute inset-0 bg-black/25 mix-blend-multiply pointer-events-none z-[1]"
         aria-hidden="true"
       />
       <div
-        className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-0"
+        className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-[1]"
         aria-hidden="true"
       />
 
-      {/* 4. Contenido de la arena montado encima */}
+      {/* 4. Contenido de la arena montado encima con z-10 */}
       <div className="relative z-10 w-full h-full flex flex-col justify-between">
         {children}
       </div>

@@ -80,35 +80,51 @@ export interface DescripcionEstado {
   turnos: number;
   etiqueta: string;
   descripcion: string;
+  claseEstilo: string;
 }
+
+export const ESTILOS_ESTADO: Record<CodigoEstado, string> = {
+  QUEMADURA: "border-red-500/80 text-red-400 bg-red-500/15",
+  VENENO: "border-emerald-500/80 text-emerald-400 bg-emerald-500/15",
+  ESCARCHA: "border-cyan-500/80 text-cyan-400 bg-cyan-500/15",
+  PARALISIS: "border-amber-400/80 text-amber-300 bg-amber-400/15",
+  PETRIFICACION: "border-stone-400/80 text-stone-300 bg-stone-500/25",
+  BASTION: "border-blue-400/80 text-blue-300 bg-blue-500/15",
+};
 
 const DESCRIPCIONES_BASE_ESTADO: Record<
   CodigoEstado,
-  { icono: IconoEstadoLucide; descripcion: string }
+  { icono: IconoEstadoLucide; descripcion: string; claseEstilo: string }
 > = {
   QUEMADURA: {
     icono: "Flame",
     descripcion: "Daño ígneo residual al final de cada ronda",
+    claseEstilo: ESTILOS_ESTADO.QUEMADURA,
   },
   VENENO: {
     icono: "Skull",
     descripcion: "Daño tóxico continuo al final de cada ronda",
+    claseEstilo: ESTILOS_ESTADO.VENENO,
   },
   ESCARCHA: {
     icono: "Snowflake",
     descripcion: "Ralentiza el tiempo de reacción y entumece al portador",
+    claseEstilo: ESTILOS_ESTADO.ESCARCHA,
   },
   PARALISIS: {
     icono: "Zap",
     descripcion: "Descargas que provocan riesgo de perder el turno de acción",
+    claseEstilo: ESTILOS_ESTADO.PARALISIS,
   },
   PETRIFICACION: {
     icono: "ShieldAlert",
     descripcion: "Endurecimiento pétreo severo que bloquea movimientos",
+    claseEstilo: ESTILOS_ESTADO.PETRIFICACION,
   },
   BASTION: {
     icono: "Shield",
     descripcion: "Barrera mística protectora que absorbe daño entrante",
+    claseEstilo: ESTILOS_ESTADO.BASTION,
   },
 };
 
@@ -119,6 +135,7 @@ export function describirEstado(estado: EstadoActivo): DescripcionEstado {
   const config = DESCRIPCIONES_BASE_ESTADO[estado.codigo] ?? {
     icono: "ShieldAlert" as IconoEstadoLucide,
     descripcion: "Alteración táctica en combate",
+    claseEstilo: "border-muted-foreground/60 text-muted-foreground bg-muted/20",
   };
 
   const turnos = estado.turnosRestantes;
@@ -136,6 +153,7 @@ export function describirEstado(estado: EstadoActivo): DescripcionEstado {
     turnos,
     etiqueta,
     descripcion,
+    claseEstilo: config.claseEstilo,
   };
 }
 
@@ -173,265 +191,286 @@ export interface BadgeEfectoMovimiento {
 const TABLA_BADGES_EFECTOS: Readonly<
   Record<string, { nombre: string; icono: TipoIconoEfecto; claseEstilo: string }>
 > = Object.freeze({
+  // Estados y variantes de fuego
   QUEMADURA: {
     nombre: "Quemadura",
     icono: "Flame",
-    claseEstilo: "border-red-500/70 text-red-400 bg-red-500/15",
+    claseEstilo: "border-red-500/80 text-red-400 bg-red-500/15",
   },
   QUEMADURA_GRAVE: {
     nombre: "Quemadura+",
     icono: "Flame",
-    claseEstilo: "border-red-500/80 text-red-300 bg-red-500/20",
+    claseEstilo: "border-red-500 text-red-300 bg-red-500/25",
   },
-  VENENO: {
-    nombre: "Veneno",
-    icono: "Skull",
-    claseEstilo: "border-emerald-500/70 text-emerald-400 bg-emerald-500/15",
-  },
-  VENENO_GRAVE: {
-    nombre: "Veneno+",
-    icono: "Skull",
-    claseEstilo: "border-emerald-500/80 text-emerald-300 bg-emerald-500/20",
-  },
-  ESCARCHA: {
-    nombre: "Escarcha",
-    icono: "Snowflake",
-    claseEstilo: "border-cyan-500/70 text-cyan-400 bg-cyan-500/15",
-  },
-  ENFRIAMIENTO: {
-    nombre: "Escarcha",
-    icono: "Snowflake",
-    claseEstilo: "border-cyan-500/70 text-cyan-400 bg-cyan-500/15",
-  },
-  CONGELACION: {
-    nombre: "Congelación",
-    icono: "Snowflake",
-    claseEstilo: "border-cyan-500/80 text-cyan-300 bg-cyan-500/20",
-  },
-  LENTITUD: {
-    nombre: "Lentitud",
-    icono: "Snowflake",
-    claseEstilo: "border-sky-500/70 text-sky-300 bg-sky-500/15",
-  },
-  PARALISIS: {
-    nombre: "Parálisis",
-    icono: "Zap",
-    claseEstilo: "border-amber-400/70 text-amber-300 bg-amber-400/15",
-  },
-  STUN: {
-    nombre: "Aturdimiento",
-    icono: "Zap",
-    claseEstilo: "border-amber-400/70 text-amber-300 bg-amber-400/15",
-  },
-  ATURDIMIENTO: {
-    nombre: "Aturdimiento",
-    icono: "Zap",
-    claseEstilo: "border-amber-400/70 text-amber-300 bg-amber-400/15",
-  },
-  PETRIFICACION: {
-    nombre: "Petrificación",
-    icono: "ShieldAlert",
-    claseEstilo: "border-stone-400/70 text-stone-300 bg-stone-500/20",
-  },
-  PETRIFICACION_LEVE: {
-    nombre: "Petrif. Leve",
-    icono: "ShieldAlert",
-    claseEstilo: "border-stone-400/60 text-stone-300 bg-stone-500/15",
-  },
-  BASTION: {
-    nombre: "Bastión",
-    icono: "Shield",
-    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
-  },
-  BARRERA: {
-    nombre: "Barrera",
-    icono: "Shield",
-    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
-  },
-  FORTALEZA: {
-    nombre: "Fortaleza",
-    icono: "Shield",
-    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
-  },
-  BLOQUEO: {
-    nombre: "Bloqueo",
-    icono: "Shield",
-    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
-  },
-  CRITICO: {
-    nombre: "Crítico",
-    icono: "Swords",
-    claseEstilo: "border-rose-400/70 text-rose-300 bg-rose-500/15",
-  },
-  DRENAJE: {
-    nombre: "Drenaje",
-    icono: "HeartPulse",
-    claseEstilo: "border-purple-400/70 text-purple-300 bg-purple-500/15",
-  },
-  ATQ_UP: {
-    nombre: "Ataque +",
-    icono: "ChevronsUp",
-    claseEstilo: "border-red-400/70 text-red-300 bg-red-500/15",
-  },
-  ATQ_DOWN: {
-    nombre: "Ataque -",
-    icono: "ChevronsDown",
-    claseEstilo: "border-orange-400/70 text-orange-300 bg-orange-500/15",
-  },
-  DEF_UP: {
-    nombre: "Defensa +",
-    icono: "Shield",
-    claseEstilo: "border-sky-400/70 text-sky-300 bg-sky-500/15",
-  },
-  DEF_DOWN: {
-    nombre: "Defensa -",
-    icono: "ShieldAlert",
-    claseEstilo: "border-stone-400/70 text-stone-300 bg-stone-500/15",
-  },
-  VEL_UP: {
-    nombre: "Velocidad +",
-    icono: "Zap",
-    claseEstilo: "border-teal-400/70 text-teal-300 bg-teal-500/15",
-  },
-  EVASION_UP: {
-    nombre: "Evasión +",
-    icono: "Sparkles",
-    claseEstilo: "border-indigo-400/70 text-indigo-300 bg-indigo-500/15",
-  },
-  EMPUJE: {
-    nombre: "Empuje",
-    icono: "Swords",
-    claseEstilo: "border-amber-500/70 text-amber-300 bg-amber-500/15",
-  },
-  ESPINAS: {
-    nombre: "Espinas",
-    icono: "ShieldAlert",
-    claseEstilo: "border-lime-500/70 text-lime-300 bg-lime-500/15",
-  },
-  REGENERACION: {
-    nombre: "Regeneración",
-    icono: "HeartPulse",
-    claseEstilo: "border-emerald-400/70 text-emerald-300 bg-emerald-500/15",
-  },
-  ENREDO: {
-    nombre: "Enredo",
-    icono: "Snowflake",
-    claseEstilo: "border-amber-600/70 text-amber-300 bg-amber-600/15",
-  },
-  CONFUSION: {
-    nombre: "Confusión",
-    icono: "Sparkles",
-    claseEstilo: "border-fuchsia-400/70 text-fuchsia-300 bg-fuchsia-500/15",
-  },
-  CEGUERA: {
-    nombre: "Ceguera",
-    icono: "Sparkles",
-    claseEstilo: "border-zinc-500/70 text-zinc-300 bg-zinc-600/15",
-  },
-  LUZ: {
-    nombre: "Luz",
-    icono: "Sparkles",
-    claseEstilo: "border-yellow-300/70 text-yellow-200 bg-yellow-400/15",
-  },
-  PURIFICACION: {
-    nombre: "Purificación",
-    icono: "Sparkles",
-    claseEstilo: "border-yellow-300/70 text-yellow-200 bg-yellow-400/15",
-  },
-  INVISIBILIDAD: {
-    nombre: "Invisibilidad",
-    icono: "Sparkles",
-    claseEstilo: "border-slate-400/70 text-slate-300 bg-slate-500/15",
-  },
-  CONDENA: {
-    nombre: "Condena",
-    icono: "Skull",
-    claseEstilo: "border-violet-400/70 text-violet-300 bg-violet-500/15",
-  },
-  HERIDA: {
-    nombre: "Herida",
-    icono: "Swords",
-    claseEstilo: "border-red-500/70 text-red-300 bg-red-500/15",
-  },
-  EJECUCION: {
-    nombre: "Ejecución",
-    icono: "Swords",
-    claseEstilo: "border-rose-500/80 text-rose-300 bg-rose-600/25",
-  },
-  SOBRECARGA_LEGENDARIA: {
-    nombre: "Sobrecarga",
-    icono: "Sparkles",
-    claseEstilo: "border-amber-400 text-amber-300 bg-amber-500/20",
-  },
-  DEVASTACION_LEGENDARIA: {
-    nombre: "Devastación",
+  IGNICION: {
+    nombre: "Ignición",
     icono: "Flame",
-    claseEstilo: "border-orange-400 text-orange-300 bg-orange-500/20",
+    claseEstilo: "border-orange-500/80 text-orange-400 bg-orange-500/15",
+  },
+  COMBUSTION: {
+    nombre: "Combustión",
+    icono: "Flame",
+    claseEstilo: "border-red-600/80 text-red-300 bg-red-600/20",
   },
   BOMBARDEO: {
     nombre: "Bombardeo",
+    icono: "Flame",
+    claseEstilo: "border-amber-600/80 text-amber-400 bg-amber-600/20",
+  },
+  TRAMPA_FUEGO: {
+    nombre: "Trampa Ígnea",
     icono: "Flame",
     claseEstilo: "border-orange-500/80 text-orange-300 bg-orange-500/20",
   },
   CALAMIDAD: {
     nombre: "Calamidad",
     icono: "Flame",
-    claseEstilo: "border-rose-500/80 text-rose-300 bg-rose-500/20",
+    claseEstilo: "border-rose-600/80 text-rose-300 bg-rose-600/25",
   },
-  COMBUSTION: {
-    nombre: "Combustión",
+  DEVASTACION_LEGENDARIA: {
+    nombre: "Devastación",
     icono: "Flame",
-    claseEstilo: "border-red-500/80 text-red-300 bg-red-500/20",
+    claseEstilo: "border-amber-500 text-amber-300 bg-amber-500/25 shadow-[0_0_8px_rgba(245,158,11,0.3)]",
   },
-  IGNICION: {
-    nombre: "Ignición",
-    icono: "Flame",
-    claseEstilo: "border-red-500/70 text-red-400 bg-red-500/15",
-  },
-  TRAMPA_FUEGO: {
-    nombre: "Trampa Ígnea",
-    icono: "Flame",
-    claseEstilo: "border-orange-500/70 text-orange-400 bg-orange-500/15",
-  },
-  DESGARRO: {
-    nombre: "Desgarro",
+
+  // Estados y variantes de veneno
+  VENENO: {
+    nombre: "Veneno",
     icono: "Skull",
-    claseEstilo: "border-red-500/70 text-red-300 bg-red-500/15",
+    claseEstilo: "border-emerald-500/80 text-emerald-400 bg-emerald-500/15",
   },
-  DESFASADO: {
-    nombre: "Desfasado",
-    icono: "Shield",
-    claseEstilo: "border-indigo-400/70 text-indigo-300 bg-indigo-500/15",
+  VENENO_GRAVE: {
+    nombre: "Veneno+",
+    icono: "Skull",
+    claseEstilo: "border-emerald-400 text-emerald-300 bg-emerald-500/25",
   },
-  DISTANCIA: {
-    nombre: "Distancia",
-    icono: "Zap",
-    claseEstilo: "border-slate-400/70 text-slate-300 bg-slate-500/15",
+
+  // Escarcha, frío y agua
+  ESCARCHA: {
+    nombre: "Escarcha",
+    icono: "Snowflake",
+    claseEstilo: "border-cyan-500/80 text-cyan-400 bg-cyan-500/15",
+  },
+  ENFRIAMIENTO: {
+    nombre: "Escarcha",
+    icono: "Snowflake",
+    claseEstilo: "border-cyan-500/80 text-cyan-400 bg-cyan-500/15",
+  },
+  CONGELACION: {
+    nombre: "Congelación",
+    icono: "Snowflake",
+    claseEstilo: "border-cyan-400 text-cyan-200 bg-cyan-500/25",
+  },
+  LENTITUD: {
+    nombre: "Lentitud",
+    icono: "Snowflake",
+    claseEstilo: "border-sky-500/80 text-sky-300 bg-sky-500/15",
   },
   MAREJADA: {
     nombre: "Marejada",
     icono: "Snowflake",
-    claseEstilo: "border-blue-400/70 text-blue-300 bg-blue-500/15",
+    claseEstilo: "border-blue-500/80 text-blue-300 bg-blue-500/20",
   },
-  MIEDO: {
-    nombre: "Miedo",
+
+  // Rayo, parálisis y aturdimiento
+  PARALISIS: {
+    nombre: "Parálisis",
     icono: "Zap",
-    claseEstilo: "border-purple-400/70 text-purple-300 bg-purple-500/15",
+    claseEstilo: "border-amber-400/80 text-amber-300 bg-amber-400/15",
   },
-  TERROR: {
-    nombre: "Terror",
+  STUN: {
+    nombre: "Aturdimiento",
     icono: "Zap",
-    claseEstilo: "border-purple-500/70 text-purple-300 bg-purple-600/15",
+    claseEstilo: "border-yellow-400/80 text-yellow-300 bg-yellow-400/15",
   },
-  RETRIBUCION: {
-    nombre: "Retribución",
-    icono: "Shield",
-    claseEstilo: "border-amber-500/70 text-amber-300 bg-amber-500/15",
+  ATURDIMIENTO: {
+    nombre: "Aturdimiento",
+    icono: "Zap",
+    claseEstilo: "border-yellow-400/80 text-yellow-300 bg-yellow-400/15",
+  },
+  SOBRECARGA_LEGENDARIA: {
+    nombre: "Sobrecarga",
+    icono: "Sparkles",
+    claseEstilo: "border-yellow-300 text-yellow-200 bg-yellow-400/25 shadow-[0_0_8px_rgba(253,224,71,0.3)]",
+  },
+
+  // Piedra, tierra y petrificación
+  PETRIFICACION: {
+    nombre: "Petrificación",
+    icono: "ShieldAlert",
+    claseEstilo: "border-stone-400/80 text-stone-300 bg-stone-500/25",
+  },
+  PETRIFICACION_LEVE: {
+    nombre: "Petrif. Leve",
+    icono: "ShieldAlert",
+    claseEstilo: "border-stone-500/70 text-stone-300 bg-stone-500/15",
   },
   SISMICO: {
     nombre: "Sísmico",
     icono: "ShieldAlert",
-    claseEstilo: "border-amber-700/70 text-amber-300 bg-amber-800/15",
+    claseEstilo: "border-amber-800/80 text-amber-200 bg-amber-900/30",
+  },
+
+  // Escudo, protección y defensas
+  BASTION: {
+    nombre: "Bastión",
+    icono: "Shield",
+    claseEstilo: "border-blue-400/80 text-blue-300 bg-blue-500/15",
+  },
+  BARRERA: {
+    nombre: "Barrera",
+    icono: "Shield",
+    claseEstilo: "border-blue-500/80 text-blue-300 bg-blue-500/20",
+  },
+  FORTALEZA: {
+    nombre: "Fortaleza",
+    icono: "Shield",
+    claseEstilo: "border-indigo-500/80 text-indigo-300 bg-indigo-500/20",
+  },
+  BLOQUEO: {
+    nombre: "Bloqueo",
+    icono: "Shield",
+    claseEstilo: "border-blue-400/80 text-blue-200 bg-blue-600/20",
+  },
+
+  // Modificadores de estadísticas (Buffs)
+  ATQ_UP: {
+    nombre: "Ataque +",
+    icono: "ChevronsUp",
+    claseEstilo: "border-red-400/80 text-red-300 bg-red-500/15",
+  },
+  DEF_UP: {
+    nombre: "Defensa +",
+    icono: "Shield",
+    claseEstilo: "border-sky-400/80 text-sky-300 bg-sky-500/15",
+  },
+  VEL_UP: {
+    nombre: "Velocidad +",
+    icono: "Zap",
+    claseEstilo: "border-teal-400/80 text-teal-300 bg-teal-500/15",
+  },
+  EVASION_UP: {
+    nombre: "Evasión +",
+    icono: "Sparkles",
+    claseEstilo: "border-indigo-400/80 text-indigo-300 bg-indigo-500/15",
+  },
+  REGENERACION: {
+    nombre: "Regeneración",
+    icono: "HeartPulse",
+    claseEstilo: "border-emerald-400/80 text-emerald-300 bg-emerald-500/20",
+  },
+
+  // Perjuicios de estadísticas y control (Debuffs)
+  ATQ_DOWN: {
+    nombre: "Ataque -",
+    icono: "ChevronsDown",
+    claseEstilo: "border-orange-500/80 text-orange-300 bg-orange-600/15",
+  },
+  DEF_DOWN: {
+    nombre: "Defensa -",
+    icono: "ShieldAlert",
+    claseEstilo: "border-stone-400/80 text-stone-300 bg-stone-600/20",
+  },
+  ENREDO: {
+    nombre: "Enredo",
+    icono: "ShieldAlert",
+    claseEstilo: "border-lime-700/80 text-lime-300 bg-lime-900/25",
+  },
+  CONFUSION: {
+    nombre: "Confusión",
+    icono: "Sparkles",
+    claseEstilo: "border-fuchsia-400/80 text-fuchsia-300 bg-fuchsia-500/20",
+  },
+  CEGUERA: {
+    nombre: "Ceguera",
+    icono: "Sparkles",
+    claseEstilo: "border-zinc-500/80 text-zinc-300 bg-zinc-700/25",
+  },
+  MIEDO: {
+    nombre: "Miedo",
+    icono: "Zap",
+    claseEstilo: "border-purple-400/80 text-purple-300 bg-purple-500/20",
+  },
+  TERROR: {
+    nombre: "Terror",
+    icono: "Zap",
+    claseEstilo: "border-purple-500/80 text-purple-200 bg-purple-700/25",
+  },
+  CONDENA: {
+    nombre: "Condena",
+    icono: "Skull",
+    claseEstilo: "border-violet-400/80 text-violet-300 bg-violet-600/25",
+  },
+
+  // Sacro, luz y purificación
+  LUZ: {
+    nombre: "Luz",
+    icono: "Sparkles",
+    claseEstilo: "border-yellow-300/80 text-yellow-200 bg-yellow-400/20",
+  },
+  PURIFICACION: {
+    nombre: "Purificación",
+    icono: "Sparkles",
+    claseEstilo: "border-yellow-200/90 text-yellow-100 bg-yellow-400/25",
+  },
+
+  // Evasión y posicionamiento
+  INVISIBILIDAD: {
+    nombre: "Invisibilidad",
+    icono: "Sparkles",
+    claseEstilo: "border-slate-400/80 text-slate-300 bg-slate-600/25",
+  },
+  DESFASADO: {
+    nombre: "Desfasado",
+    icono: "Shield",
+    claseEstilo: "border-indigo-400/80 text-indigo-300 bg-indigo-600/20",
+  },
+  DISTANCIA: {
+    nombre: "Distancia",
+    icono: "Zap",
+    claseEstilo: "border-cyan-600/80 text-cyan-300 bg-cyan-700/20",
+  },
+
+  // Ataques físicos, sangrado y remate
+  CRITICO: {
+    nombre: "Crítico",
+    icono: "Swords",
+    claseEstilo: "border-rose-400/80 text-rose-300 bg-rose-500/20",
+  },
+  HERIDA: {
+    nombre: "Herida",
+    icono: "Swords",
+    claseEstilo: "border-red-500/80 text-red-300 bg-red-600/20",
+  },
+  DESGARRO: {
+    nombre: "Desgarro",
+    icono: "Skull",
+    claseEstilo: "border-rose-500/80 text-rose-300 bg-rose-700/25",
+  },
+  EJECUCION: {
+    nombre: "Ejecución",
+    icono: "Swords",
+    claseEstilo: "border-red-500 text-red-200 bg-red-700/35",
+  },
+  EMPUJE: {
+    nombre: "Empuje",
+    icono: "Swords",
+    claseEstilo: "border-amber-600/80 text-amber-300 bg-amber-600/20",
+  },
+  ESPINAS: {
+    nombre: "Espinas",
+    icono: "ShieldAlert",
+    claseEstilo: "border-lime-500/80 text-lime-300 bg-lime-600/20",
+  },
+  RETRIBUCION: {
+    nombre: "Retribución",
+    icono: "Shield",
+    claseEstilo: "border-amber-500/80 text-amber-200 bg-amber-600/25",
+  },
+  DRENAJE: {
+    nombre: "Drenaje",
+    icono: "HeartPulse",
+    claseEstilo: "border-purple-400/80 text-purple-300 bg-purple-600/25",
   },
 });
 

@@ -912,22 +912,36 @@ Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría vis
 
 #### E. Consola de Acciones en la Zona del Pulgar (In-Place Contextual Deck)
 - **Máquina de Estados de la Consola (`menuState`):**
-  - **`ROOT`:** Cuadrícula táctil 2x2 de botones retro gruesos optimizados para el pulgar (`[ ⚔️ ATACAR ]` en oro/ámbar, `[ 🎒 USAR OBJETO ]` en cian oscuro, `[ 🔄 CAMBIAR ]` en cian oscuro, `[ 🧪 CAPTURAR ]` en cian oscuro) y barra inferior completa para `[ 🏃 HUIR ]` en carmesí.
-  - **`ATTACK`:** Sustitución inmediata en el mismo espacio por los 4 movimientos tácticos con potencia, chips de efectividad (`¡EFICAZ!`, `RESISTIDO`) y badges de efecto con iconos Lucide.
+  - **`ROOT`:** Cuadrícula táctil 2x2 de botones retro gruesos optimizados para el pulgar (`[ ATACAR ]` en oro/ámbar, `[ USAR OBJETO ]` en cian oscuro, `[ CAMBIAR ]` en cian oscuro, `[ CAPTURAR ]` en cian oscuro) y barra inferior completa para `[ HUIR ]` en carmesí.
+  - **`ATTACK`:** Sustitución inmediata en el mismo espacio por los 4 movimientos tácticos con potencia, chips de efectividad (`¡EFICAZ!`, `RESISTIDO`) y badges de efecto tematizados con colores distintivos por familia elemental/mecánica.
   - **`ITEMS`:** Lista táctil de consumibles de curación con previsualización del inventario y botón directo de aplicación.
   - **`SWAP`:** Relevo ágil del equipo activo con barras de HP individuales.
   - **`CAPTURE`:** Selector interactivo de talismanes y botón de lanzamiento con cinemática de suspenso e incertidumbre.
   - **Botón Universal «← Volver»:** Todos los submenús incorporan retorno instantáneo sin fricción al estado raíz.
+
+#### F. Calibración Cromática Temática de Badges de Efectos y Estados Tácticos
+- **Auditoría Integral de Efectos (52 entradas):** Se analizaron exhaustivamente los 51 efectos mecánicos del bestiario canónico más el estado base `ESCARCHA`, agrupándolos por familias cromáticas de alto contraste para interfaz oscura:
+  - *Fuego y Quemaduras:* `QUEMADURA`, `QUEMADURA_GRAVE`, `IGNICION`, `COMBUSTION`, `BOMBARDEO`, `TRAMPA_FUEGO`, `CALAMIDAD`, `DEVASTACION_LEGENDARIA` en tonos rojo escarlata, naranja ígneo y ámbar volcánico (`border-red-500/80 text-red-400 bg-red-500/15`, `border-orange-500/80 text-orange-400 bg-orange-500/15`).
+  - *Veneno y Toxicidad:* `VENENO` y `VENENO_GRAVE` en verde esmeralda tóxico (`border-emerald-500/80 text-emerald-400 bg-emerald-500/15`).
+  - *Frío, Escarcha y Mareas:* `ESCARCHA`, `ENFRIAMIENTO`, `CONGELACION`, `LENTITUD` y `MAREJADA` en cian glaciar y azul océano (`border-cyan-500/80 text-cyan-400 bg-cyan-500/15`, `border-blue-500/80 text-blue-300 bg-blue-500/20`).
+  - *Electricidad, Parálisis y Control:* `PARALISIS`, `STUN`, `ATURDIMIENTO` y `SOBRECARGA_LEGENDARIA` en ámbar eléctrico y amarillo chispa (`border-amber-400/80 text-amber-300 bg-amber-400/15`, `border-yellow-400/80 text-yellow-300 bg-yellow-400/15`).
+  - *Tierra, Piedra y Petrificación:* `PETRIFICACION`, `PETRIFICACION_LEVE` y `SISMICO` en gris piedra basáltica y ámbar geológico (`border-stone-400/80 text-stone-300 bg-stone-500/25`, `border-amber-800/80 text-amber-200 bg-amber-900/30`).
+  - *Defensa y Bastión:* `BASTION`, `BARRERA`, `FORTALEZA` y `BLOQUEO` en zafiro e índigo protector (`border-blue-400/80 text-blue-300 bg-blue-500/15`).
+  - *Mejoras y Modificadores (Buffs/Debuffs):* Diferenciación cromática nítida para `ATQ_UP` (rojo), `DEF_UP` (celeste), `VEL_UP` (turquesa), `EVASION_UP` (índigo), `REGENERACION` (verde sanación), `ATQ_DOWN` (naranja), `DEF_DOWN` (piedra debilitada), `ENREDO` (lima bosque oscuro), `CONFUSION` (fucsia mental), `CEGUERA` (zinc humo), `MIEDO`/`TERROR` (púrpura sombrío) y `CONDENA` (violeta maldito).
+  - *Sacro y Luz:* `LUZ` y `PURIFICACION` en amarillo dorado resplandeciente (`border-yellow-300/80 text-yellow-200 bg-yellow-400/20`).
+  - *Ataques Físicos y Sangrado:* `CRITICO` (rosa carmesí), `HERIDA`/`DESGARRO` (rojo hemorragia), `EJECUCION` (rojo oscuro de remate), `EMPUJE` (ámbar cinético), `ESPINAS` (lima reactivo) y `DRENAJE` (púrpura vampírico).
+- **Centralización en `combate-tactico.ts`:** Se incorporó el campo `claseEstilo: string` a la interfaz `DescripcionEstado`, exportando el mapa canónico `ESTILOS_ESTADO`. La función `describirEstado(estado)` ahora retorna la clase estilística optimizada para consumo directo de cualquier componente visual (`PantallaCombate`, `PanelTactico`).
+- **Erradicación de Estilos Hardcodeados en `PantallaCombate.tsx`:** Se sustituyeron las clases estáticas genéricas (`bg-blue-500/20 text-blue-300` en insignias de rival y aliado, y `border-black bg-black/30 text-cyan-300` en la consola de ataque) por `${desc.claseEstilo}` y `${badgeEfecto.claseEstilo}` con sombras pixeladas retro `shadow-[1px_1px_0_0_#000]`.
 
 ---
 
 ### 15.3 Verificación de Calidad y Cero Regresiones
 - **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
   - **71 de 71 pruebas aprobadas** (100% de éxito, 0 fallos).
-  - Aprobación estricta de auditorías estáticas de hardening contra doble clic (`cerrojoAccion.current = true`, `aria-busy={procesandoAccion}`, `disabled={procesandoAccion}`).
+  - Verificación en `test/verificacion-combate-tactico.spec.ts` de la presencia y correspondencia cromática de `claseEstilo` en `describirEstado()` y `resolverBadgeEfectoMovimiento()`.
 - **Regla R1 Estricta:** Verificación de 0 emojis unicode en `PantallaCombate.tsx`, `BattlefieldBackground.tsx` y `LayoutPrincipal.tsx` (uso exclusivo de iconos SVG vectoriales de Lucide).
 - **Compilación de Producción (`pnpm --filter web build`):**
-  - 0 errores TypeScript en modo estricto, bundle generado en Vite en 1.79s.
+  - 0 errores TypeScript en modo estricto, bundle generado en Vite limpiamente.
 
 
 

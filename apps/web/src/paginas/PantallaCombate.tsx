@@ -891,7 +891,7 @@ export function PantallaCombate() {
                         key={`${st.codigo}-${idx}`}
                         type="button"
                         onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
-                        className="flex items-center gap-0.5 px-1 py-0.2 border border-black bg-blue-500/20 text-blue-300 text-[8px] font-mono active:scale-95 transition-transform"
+                        className={`flex items-center gap-0.5 px-1 py-0.2 border text-[8px] font-mono shadow-[1px_1px_0_0_#000] active:scale-95 transition-transform ${desc.claseEstilo}`}
                         title={`${desc.nombre}: ${desc.descripcion}`}
                       >
                         <IconoComp className="size-2.5" aria-hidden="true" />
@@ -1028,7 +1028,7 @@ export function PantallaCombate() {
                         key={`${st.codigo}-${idx}`}
                         type="button"
                         onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
-                        className="flex items-center gap-0.5 px-1 py-0.2 border border-black bg-blue-500/20 text-blue-300 text-[8px] font-mono active:scale-95 transition-transform"
+                        className={`flex items-center gap-0.5 px-1 py-0.2 border text-[8px] font-mono shadow-[1px_1px_0_0_#000] active:scale-95 transition-transform ${desc.claseEstilo}`}
                         title={`${desc.nombre}: ${desc.descripcion}`}
                       >
                         <IconoComp className="size-2.5" aria-hidden="true" />
@@ -1361,7 +1361,9 @@ export function PantallaCombate() {
                               </span>
                             )}
                             {badgeEfecto && (
-                              <span className="text-[7px] font-mono px-1 border border-black bg-black/30 text-cyan-300 truncate max-w-[65px] flex items-center gap-0.5">
+                              <span
+                                className={`text-[7px] font-mono px-1 border truncate max-w-[85px] flex items-center gap-0.5 shadow-[1px_1px_0_0_#000] ${badgeEfecto.claseEstilo}`}
+                              >
                                 {(() => {
                                   const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
                                   return <IconoComp className="size-2 shrink-0" aria-hidden="true" />;

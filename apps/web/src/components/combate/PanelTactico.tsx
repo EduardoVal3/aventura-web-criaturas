@@ -138,7 +138,9 @@ export function InsigniasEstado({ estados = [] }: InsigniasEstadoProps) {
         {descripciones.map((desc, i) => {
           const IconoComp = ICONOS_MAPA[desc.icono] ?? ShieldAlert;
           const estiloColor =
-            ESTILOS_ESTADO[desc.codigo] ?? "bg-primary/10 text-primary border-primary/30";
+            desc.claseEstilo ??
+            ESTILOS_ESTADO[desc.codigo] ??
+            "bg-primary/10 text-primary border-primary/30";
 
           return (
             <div

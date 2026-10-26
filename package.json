@@ -7,7 +7,8 @@
   },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
-    "dev": "docker compose up -d postgres && pnpm -r --parallel run dev",
+    "dev": "node -e \"const r = require('child_process').spawnSync('docker', ['compose', 'up', '-d', 'postgres'], { stdio: 'inherit' }); if (r.status !== 0) console.log('Aviso: Docker no disponible, usando PostgreSQL local en el puerto configurado.');\" && pnpm -r --parallel run dev",
+    "dev:local": "pnpm -r --parallel run dev",
     "test": "pnpm --filter api test",
     "graphify": "py -m graphify extract . --code-only && py -m graphify export html && py -m graphify tree",
     "graphify:update": "py -m graphify update .",

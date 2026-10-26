@@ -4,7 +4,7 @@ Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión 
 **Proyecto Integrador — ISC-305 Programación Web (III PAC 2026).**
 
 > **Estado actual del proyecto:** **Fases 0 a 10 completadas en la rama `desarrollo`.**  
-> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL 17 + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), 4 zonas desbloqueables, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación y estética retro 8-bit/16-bit.
+> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), 4 zonas desbloqueables, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación y estética retro 8-bit/16-bit.
 
 ---
 
@@ -12,7 +12,7 @@ Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión 
 
 1. [¿De qué trata el proyecto y cómo está construido?](#1-de-qué-trata-el-proyecto-y-cómo-está-construido)
 2. [Requisitos previos](#2-requisitos-previos)
-3. [Instalación y arranque paso a paso (Cero errores)](#3-instalación-y-arranque-paso-a-paso-cero-errores)
+3. [Instalación y arranque paso a paso (Con Docker o con PostgreSQL local)](#3-instalación-y-arranque-paso-a-paso-con-docker-o-con-postgresql-local)
 4. [Estructura del monorepo](#4-estructura-del-monorepo)
 5. [Reglas de oro para contribuir (Lectura obligatoria para el equipo)](#5-reglas-de-oro-para-contribuir-lectura-obligatoria-para-el-equipo)
 6. [Flujo de Git y Pull Requests (Todo va hacia `desarrollo`, NUNCA a `main`)](#6-flujo-de-git-y-pull-requests-todo-va-hacia-desarrollo-nunca-a-main)
@@ -44,12 +44,14 @@ Asegúrate de tener instaladas las siguientes herramientas antes de clonar el pr
 
 - **Node.js:** `v24.0.0` o superior (`node -v`)
 - **pnpm:** `v10.28.1` (`corepack enable && corepack prepare pnpm@10.28.1 --activate` o `npm i -g pnpm@10.28.1`)
-- **Docker Desktop:** En ejecución (necesario para levantar el contenedor de PostgreSQL 17 y, en la Fase 11, el API Gateway)
+- **Base de datos PostgreSQL (elige UNA de las dos opciones):**
+  - **Opción A (Sin Docker):** Tener **PostgreSQL** (v15, v16 o v17) instalado localmente en tu computadora.
+  - **Opción B (Con Docker):** Tener **Docker Desktop** instalado y en ejecución.
 - **Git:** Configurado con tu nombre y correo (`git config --global user.name` y `git config --global user.email`)
 
 ---
 
-## 3. Instalación y arranque paso a paso (Cero errores)
+## 3. Instalación y arranque paso a paso (Con Docker o con PostgreSQL local)
 
 > [!IMPORTANT]
 > **¡Atención al clonar!** La rama activa de trabajo del equipo es **`desarrollo`**. La rama `main` solo recibe cierres de avance calificados, por lo que al clonar debes cambiarte inmediatamente a `desarrollo`.
@@ -81,7 +83,8 @@ cp .env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
 ```
 
-*(Opcional)* Si cambias `POSTGRES_PASSWORD` en `.env`, asegúrate de actualizar exactamente la misma contraseña dentro de `DATABASE_URL` tanto en `.env` como en `apps/api/.env`.
+- **Si usas PostgreSQL instalado localmente (sin Docker):** Abre `.env` y `apps/api/.env` y reemplaza `cambiar_esta_contrasena` por la contraseña real de tu usuario `postgres` local (tanto en `POSTGRES_PASSWORD` como dentro de la cadena `DATABASE_URL`).
+- **Si usas Docker:** Puedes dejar la contraseña que viene en la plantilla o ajustarla (siempre que coincida en `.env` y `apps/api/.env`).
 
 ### Paso 3: Instalar dependencias y activar los hooks de protección de Git
 
@@ -90,28 +93,38 @@ pnpm install
 ```
 > Al ejecutar `pnpm install`, el script `prepare` configura automáticamente `.githooks/` como ruta de hooks de Git. Estos hooks **bloquean cualquier intento de hacer commit directo en `main`** y **validan que todos los mensajes de commit cumplan el formato en español**.
 
-### Paso 4: Levantar PostgreSQL, ejecutar migraciones y poblar el catálogo (Seed)
+### Paso 4: Preparar la base de datos, migraciones y catálogo (Seed)
 
-Ejecuta esto la primera vez (o cuando haya nuevas migraciones en `apps/api/prisma/migrations`):
+Elige **una** de las dos alternativas según tu entorno:
 
-```bash
-# 1. Levantar el contenedor de PostgreSQL en segundo plano
-docker compose up -d postgres
+#### Alternativa A: Usando PostgreSQL instalado en local (sin Docker)
+1. Asegúrate de que el servicio de PostgreSQL esté corriendo en tu máquina y crea la base de datos `aventura_criaturas` (desde pgAdmin o en terminal con `psql -U postgres -c "CREATE DATABASE aventura_criaturas;"`).
+2. Ejecuta las migraciones y el seed:
+   ```bash
+   pnpm --filter api exec prisma migrate deploy
+   pnpm --filter api exec prisma generate
+   pnpm --filter api exec prisma db seed
+   ```
 
-# 2. Aplicar las migraciones de Prisma en la base de datos local
-pnpm --filter api exec prisma migrate deploy
-
-# 3. Generar el cliente de Prisma y cargar las 4 zonas, 30 especies, movimientos y objetos del bazar
-pnpm --filter api exec prisma generate
-pnpm --filter api exec prisma db seed
-```
+#### Alternativa B: Usando Docker Desktop
+1. Levanta el contenedor de PostgreSQL y aplica las migraciones y el seed:
+   ```bash
+   docker compose up -d postgres
+   pnpm --filter api exec prisma migrate deploy
+   pnpm --filter api exec prisma generate
+   pnpm --filter api exec prisma db seed
+   ```
 
 ### Paso 5: Iniciar el entorno de desarrollo
 
-Desde la raíz del monorepo, un solo comando levanta PostgreSQL (si estaba apagado), el Back-End en NestJS y el Front-End en Vite en paralelo:
+Desde la raíz del monorepo puedes arrancar tanto el Back-End como el Front-End en paralelo:
 
 ```bash
+# Intenta levantar el contenedor de Docker si tienes Docker activo; si no tienes Docker, usa tu PostgreSQL local automáticamente:
 pnpm dev
+
+# O si prefieres saltar por completo la verificación de Docker y usar directo tu PostgreSQL local:
+pnpm dev:local
 ```
 
 - **Aplicación Web (Front-End):** [http://localhost:5173](http://localhost:5173)
@@ -151,7 +164,7 @@ aventura-web-criaturas/
 ├── datos/
 │   └── open5e-srd-2024-seleccion.json # Snapshot base de criaturas SRD 5.2
 ├── docs/                          # Documentación técnica, reglas, diseño e informe incremental
-├── docker-compose.yml             # Definición de servicios en contenedores (PostgreSQL / Gateway)
+├── docker-compose.yml             # Definición opcional de contenedor PostgreSQL / Gateway
 └── package.json                   # Scripts globales del workspace pnpm
 ```
 
@@ -397,7 +410,8 @@ Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hace
 
 | Comando | Descripción |
 | :--- | :--- |
-| `pnpm dev` | Levanta PostgreSQL en Docker y arranca en paralelo el Back-End (`:3000`) y el Front-End (`:5173`). |
+| `pnpm dev` | Intenta levantar PostgreSQL en Docker (si tienes Docker activo) o usa tu PostgreSQL local automáticamente, y arranca en paralelo el Back-End (`:3000`) y el Front-End (`:5173`). |
+| `pnpm dev:local` | Arranca directamente el Back-End (`:3000`) y el Front-End (`:5173`) usando tu instalación local de PostgreSQL (sin invocar Docker). |
 | `pnpm --filter api test` | Ejecuta todas las pruebas unitarias del servidor NestJS (motor de combate, captura, equipo, progreso, etc.). |
 | `pnpm --filter api test:e2e` | Ejecuta las pruebas de integración extremo a extremo (requiere PostgreSQL activo). |
 | `pnpm --filter web test` | Ejecuta todas las pruebas unitarias del Front-End. |
@@ -406,7 +420,7 @@ Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hace
 | `pnpm --filter api build` | Compila el Back-End de NestJS en `apps/api/dist`. |
 | `pnpm --filter api exec prisma migrate deploy` | Aplica las migraciones pendientes en la base de datos PostgreSQL local. |
 | `pnpm --filter api exec prisma db seed` | Ejecuta `apps/api/prisma/seed.ts` para sembrar zonas, especies canónicas, movimientos y objetos. |
-| `docker compose ps` | Verifica el estado de los contenedores de Docker del proyecto. |
+| `docker compose ps` | Verifica el estado de los contenedores de Docker del proyecto (si usas Docker). |
 
 ---
 

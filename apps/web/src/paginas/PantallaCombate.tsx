@@ -781,10 +781,9 @@ export function PantallaCombate() {
   const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
   return (
-    <div className="relative h-full h-[100dvh] w-full max-w-lg mx-auto flex flex-col justify-between overflow-hidden select-none bg-[#090d16] border-x-0 sm:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
+    <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
-        zoneId={encuentro?.encuentroId}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
@@ -1193,7 +1192,7 @@ export function PantallaCombate() {
         ) : menuState === "ROOT" ? (
           /* Estado Raíz: Botonera Clásica Retro (2x2 + Huir Inferior) */
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {/* 1. Atacar (Oro/Ámbar prominente) */}
               <button
                 type="button"
@@ -1203,7 +1202,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("ATTACK");
                 }}
-                className="h-14 bg-[#d97706] hover:bg-[#b45309] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-14 sm:h-16 bg-[#d97706] hover:bg-[#b45309] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {procesandoAccion ? (
                   <Spinner className="size-4" />
@@ -1224,7 +1223,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("ITEMS");
                 }}
-                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-14 sm:h-16 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <HeartPulse className="size-4 text-emerald-300" aria-hidden="true" />
                 <span>USAR OBJETO</span>
@@ -1239,7 +1238,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("SWAP");
                 }}
-                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-14 sm:h-16 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <ArrowLeftRight className="size-4 text-[#14d1e8]" aria-hidden="true" />
                 <span>CAMBIAR</span>
@@ -1254,27 +1253,27 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("CAPTURE");
                 }}
-                className="h-14 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-14 sm:h-16 bg-[#0e4b5c] hover:bg-[#0a3744] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="size-4 text-amber-300" aria-hidden="true" />
                 <span>CAPTURAR</span>
               </button>
-            </div>
 
-            {/* 5. Huir (Barra inferior completa en carmesí) */}
-            <button
-              type="button"
-              disabled={procesandoAccion || !esTurnoJugador}
-              aria-busy={procesandoAccion}
-              onClick={() => {
-                reproducirSonido("click", 0.4);
-                setDialogoHuirAbierto(true);
-              }}
-              className="w-full h-10 bg-[#8c1d28] hover:bg-[#6d141d] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <LogOut className="size-3.5 text-white" aria-hidden="true" />
-              <span>HUIR</span>
-            </button>
+              {/* 5. Huir (En móvil ancho completo; en desktop col-span-1) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setDialogoHuirAbierto(true);
+                }}
+                className="h-11 sm:h-16 col-span-2 sm:col-span-1 bg-[#8c1d28] hover:bg-[#6d141d] text-white border-4 border-black shadow-[4px_4px_0_0_#000] font-retro text-xs sm:text-sm flex items-center justify-center gap-2 active:translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <LogOut className="size-3.5 text-white" aria-hidden="true" />
+                <span>HUIR</span>
+              </button>
+            </div>
           </div>
         ) : menuState === "ATTACK" ? (
           /* Submenú Contextual In-Place: Selección de 4 Movimientos */
@@ -1297,7 +1296,7 @@ export function PantallaCombate() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {slotsTacticos.map((slotItem) => {
                 const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
                 const esFuriaSlot4 = esInsignia;

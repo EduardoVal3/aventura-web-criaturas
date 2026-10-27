@@ -2,7 +2,7 @@
 
 Este documento define las reglas técnicas, nombres exactos de archivo y **Prompts Maestros bloqueados** para que cualquier integrante del equipo genere los recursos visuales del juego manteniendo **exactamente la misma línea artística retro oscura (16-bit / HD-2D)** sin mezclar estilos incompatibles.
 
-> **Carga automática:** El código en [`apps/web/src/lib/assets.ts`](../../src/lib/assets.ts) y [`BattlefieldBackground.tsx`](../../src/components/combate/BattlefieldBackground.tsx) ya está programado para detectar y mostrar automáticamente cada imagen apenas se guarde en su carpeta con el nombre exacto en formato `.webp`. Mientras un archivo no exista, el juego muestra su *placeholder* SVG sin romperse.
+> **Carga automática multiformato (`.webp`, `.png`, `.jpg`, `.jpeg`):** El código en [`apps/web/src/lib/assets.ts`](../../src/lib/assets.ts) y [`BattlefieldBackground.tsx`](../../src/components/combate/BattlefieldBackground.tsx) busca automáticamente el archivo en orden `.webp` → `.png` → `.jpg` → `.jpeg` (se recomienda `.webp` o `.png` en criaturas y objetos para conservar el fondo transparente). Mientras un archivo no exista, el juego muestra su *placeholder* SVG sin romperse.
 
 ---
 

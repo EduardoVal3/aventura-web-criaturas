@@ -104,6 +104,19 @@ export function manejarErrorImagen(
   tipo: keyof typeof RUTAS_PLACEHOLDERS = 'criatura',
 ) {
   const img = evento.currentTarget;
+  // Prueba en cascada (.webp -> .png -> .jpg -> .jpeg) antes de caer al placeholder SVG
+  if (/\.webp$/i.test(img.src)) {
+    img.src = img.src.replace(/\.webp$/i, '.png');
+    return;
+  }
+  if (/\.png$/i.test(img.src)) {
+    img.src = img.src.replace(/\.png$/i, '.jpg');
+    return;
+  }
+  if (/\.jpg$/i.test(img.src)) {
+    img.src = img.src.replace(/\.jpg$/i, '.jpeg');
+    return;
+  }
   const fallback = RUTAS_PLACEHOLDERS[tipo] || RUTAS_PLACEHOLDERS.criatura;
   // Desconectar el handler para prevenir bucles si el recurso o fallback falla
   img.onerror = null;

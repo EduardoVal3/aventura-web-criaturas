@@ -56,6 +56,18 @@ export function BattlefieldBackground({
   }, [fuenteInicial]);
 
   const manejarError = () => {
+    if (/\.webp$/i.test(fuenteActual)) {
+      setFuenteActual(fuenteActual.replace(/\.webp$/i, ".png"));
+      return;
+    }
+    if (/\.png$/i.test(fuenteActual)) {
+      setFuenteActual(fuenteActual.replace(/\.png$/i, ".jpg"));
+      return;
+    }
+    if (/\.jpg$/i.test(fuenteActual)) {
+      setFuenteActual(fuenteActual.replace(/\.jpg$/i, ".jpeg"));
+      return;
+    }
     if (pasoFallback === 0) {
       setPasoFallback(1);
       setFuenteActual(FONDO_POR_DEFECTO);

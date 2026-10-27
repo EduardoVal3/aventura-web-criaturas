@@ -346,9 +346,19 @@ No le pidas al agente que lea todo el repositorio a ciegas. En tu primer mensaje
 
 ### 9.2 Las partes que AÚN FALTAN por realizar (Trabajo en equipo)
 
-Aquí es donde entra el trabajo coordinado del grupo para cerrar el proyecto al 100% con los puntos extra y preparar la defensa final:
+Aquí es donde entra el trabajo coordinado del grupo para cerrar el proyecto al 100% con dirección de arte, los puntos extra y la defensa final:
 
-#### Pendiente 1 — Fase 11: Extras de Puntos (+5 puntos sobre la nota)
+#### Pendiente 1 — Dirección de Arte, Prompt Maestro y Generación de Assets Visuales (`apps/web/public/assets/`)
+
+Actualmente el juego utiliza *placeholders* SVG automáticos (`placeholder-criatura.svg`, `placeholder-zona.svg`, `placeholder-objeto.svg`) mientras se generan los artes definitivos. El sistema en [`apps/web/src/lib/assets.ts`](apps/web/src/lib/assets.ts) ya está programado para cargar automáticamente las imágenes `.webp` apenas se coloquen en sus carpetas (ver especificaciones en [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md)).
+
+- **Qué falta definir y producir en equipo:**
+  1. **Diseñar el Prompt Maestro de Dirección de Arte:** Definir una estructura de prompt base que mantenga coherencia absoluta con la historia oscura/arcana de *Aethelgard* ([`docs/diseno-juego.md`](docs/diseno-juego.md)) y la paleta retro 8-bit/16-bit ([`docs/DESIGN.md`](docs/DESIGN.md)).
+  2. **Sprites e ilustraciones de las 30 Criaturas (`apps/web/public/assets/criaturas/<slug>.webp`, 512×512 px):** Cada una de las 30 especies de [`docs/catalogo-criaturas.md`](docs/catalogo-criaturas.md) debe verse increíble, imponente, intimidante y sumamente llamativa, de modo que su sola apariencia en el catálogo o en un encuentro salvaje motive al jugador a querer capturarla. El diseño debe reflejar su elemento (`FUEGO`, `AGUA`, `NATURA`, `SOMBRA`, `LUZ`) y su escala de poder desde `J-1 (Común)` hasta `J-4 (Legendaria)`.
+  3. **Paisajes de las 4 Zonas (`apps/web/public/assets/zonas/<slug>.webp`, 800×450 px, 16:9) y Fondos de Combate (`battlegrounds/`):** Ilustraciones panorámicas retro para cada región de Aethelgard con la misma línea visual.
+  4. **Iconos de Objetos del Bazar (`apps/web/public/assets/objetos/<slug>.webp`, 256×256 px):** Artes retro para los talismanes de captura y las pociones de curación.
+
+#### Pendiente 2 — Fase 11: Extras de Puntos (+5 puntos sobre la nota)
 
 Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hacen PR hacia `desarrollo`:
 
@@ -369,7 +379,7 @@ Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hace
      - Verificar consistencia cromática, contraste, comportamiento responsive en móvil y escritorio y ausencia de regresiones.
      - Elaborar la matriz de verificación de componentes y capturas de evidencia para la demostración en **`docs/informe/10-extras.md`**.
 
-#### Pendiente 2 — Fase 12: Entrega Final, Informe Consolidado y Defensa (`FIN`)
+#### Pendiente 3 — Fase 12: Entrega Final, Informe Consolidado y Defensa (`FIN`)
 
 - **Rama:** `documentacion/fase-12-entrega-final`
 - **Qué hay que hacer:**
@@ -391,7 +401,7 @@ Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hace
      - **Integrante 7:** Economía del jugador, Bazar (Tienda), Inventario de consumibles y Santuario de Curación (`M-INV`, `M-CUR`).
      - **Integrante 8:** Historial de encuentros, Catálogo de especies descubiertas, sistema visual `8bitcn/ui` y API Gateway Kong (`M-HIS`, `X-UI`, `X-API`).
 
-#### Pendiente 3 — Fase 13 (Opcional): Presencia Multijugador con WebSockets
+#### Pendiente 4 — Fase 13 (Opcional): Presencia Multijugador con WebSockets
 
 - **Rama:** `funcionalidad/fase-13-presencia-multijugador`
 - *Nota:* Esta fase es completamente opcional (el enunciado indica que no se requiere tiempo real y solo se aborda si las Fases 11 y 12 ya están 100% cerradas y sobra tiempo). Consiste en un `ZonaGateway` con `@nestjs/websockets` autenticado por JWT para mostrar en memoria qué otros jugadores están conectados en la misma zona.
@@ -400,7 +410,7 @@ Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hace
 
 ### 9.3 El flujo final de cierre hacia `main`
 
-1. Todos los PRs de las Fases 11 y 12 se revisan e integran con **merge commit** hacia la rama **`desarrollo`**.
+1. Todos los PRs de assets, Fase 11 y Fase 12 se revisan e integran con **merge commit** hacia la rama **`desarrollo`**.
 2. Se verifica en `desarrollo` que todas las pruebas unitarias, pruebas e2e y el build de producción estén en verde (`pnpm --filter api test`, `pnpm --filter api test:e2e`, `pnpm --filter web test`, `pnpm --filter web build`).
 3. **Solo cuando todo el equipo haya terminado y verificado `desarrollo`**, se abre el **único Pull Request final de cierre** desde `desarrollo` hacia `main` (`base: main` ← `compare: desarrollo`), se integra con **merge commit** y se etiqueta la entrega oficial con el tag `version-1.0.0`.
 

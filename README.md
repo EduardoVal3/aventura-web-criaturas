@@ -4,7 +4,7 @@ Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión 
 **Proyecto Integrador — ISC-305 Programación Web (III PAC 2026).**
 
 > **Estado actual del proyecto:** **Fases 0 a 10 completadas en la rama `desarrollo`.**  
-> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), 4 zonas desbloqueables, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación y estética retro 8-bit/16-bit.
+> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), 6 zonas desbloqueables, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación y estética retro 8-bit/16-bit.
 
 ---
 
@@ -353,9 +353,9 @@ Aquí es donde entra el trabajo coordinado del grupo para cerrar el proyecto al 
 Actualmente el juego utiliza *placeholders* SVG automáticos (`placeholder-criatura.svg`, `placeholder-zona.svg`, `placeholder-objeto.svg`) mientras se generan los artes definitivos. El sistema en [`apps/web/src/lib/assets.ts`](apps/web/src/lib/assets.ts) ya está programado para cargar automáticamente las imágenes `.webp` apenas se coloquen en sus carpetas (ver especificaciones en [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md)).
 
 - **Qué falta definir y producir en equipo:**
-  1. **Diseñar el Prompt Maestro de Dirección de Arte:** Definir una estructura de prompt base que mantenga coherencia absoluta con la historia oscura/arcana de *Aethelgard* ([`docs/diseno-juego.md`](docs/diseno-juego.md)) y la paleta retro 8-bit/16-bit ([`docs/DESIGN.md`](docs/DESIGN.md)).
-  2. **Sprites e ilustraciones de las 30 Criaturas (`apps/web/public/assets/criaturas/<slug>.webp`, 512×512 px):** Cada una de las 30 especies de [`docs/catalogo-criaturas.md`](docs/catalogo-criaturas.md) debe verse increíble, imponente, intimidante y sumamente llamativa, de modo que su sola apariencia en el catálogo o en un encuentro salvaje motive al jugador a querer capturarla. El diseño debe reflejar su elemento (`FUEGO`, `AGUA`, `NATURA`, `SOMBRA`, `LUZ`) y su escala de poder desde `J-1 (Común)` hasta `J-4 (Legendaria)`.
-  3. **Paisajes de las 4 Zonas (`apps/web/public/assets/zonas/<slug>.webp`, 800×450 px, 16:9) y Fondos de Combate (`battlegrounds/`):** Ilustraciones panorámicas retro para cada región de Aethelgard con la misma línea visual.
+  1. **Usar los Prompts Maestros de [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md):** Todos los prompts ya están listos y bloqueados estéticamente en ese archivo para que nadie mezcle estilos distintos.
+  2. **Sprites de las 30 Criaturas MIRANDO A LA IZQUIERDA (`apps/web/public/assets/criaturas/<slug>.webp`, 512×512 px, fondo transparente):** **Obligatorio generarlas mirando hacia la izquierda (`facing LEFT`)**, porque en combate el enemigo mira a la izquierda y la criatura aliada se invierte sola con CSS (`scale-x-[-1]`) para mirar a la derecha.
+  3. **Paisajes de las 6 Zonas (`apps/web/public/assets/zonas/<slug>.webp`) + sus 6 Zonas de Combate (`apps/web/public/assets/battlegrounds/<slug>.webp`, 800×450 px, 16:9):** En [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md) están los prompts individuales listos para copiar y pegar de cada una de las 6 zonas y sus 6 arenas de combate.
   4. **Iconos de Objetos del Bazar (`apps/web/public/assets/objetos/<slug>.webp`, 256×256 px):** Artes retro para los talismanes de captura y las pociones de curación.
 
 #### Pendiente 2 — Fase 11: Extras de Puntos (+5 puntos sobre la nota)

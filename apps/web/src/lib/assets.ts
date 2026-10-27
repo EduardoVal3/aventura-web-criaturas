@@ -1,6 +1,6 @@
 /**
  * Utilidades para la resolución de recursos multimedia locales y retro en Aethelgard.
- * Los archivos generados en Google Flow se colocan en /assets/[tipo]/[slug].webp.
+ * Los archivos generados se colocan en /assets/[tipo]/[slug].webp.
  * Si el archivo aún no existe, resuelve hacia los placeholders SVG sin romper la UI.
  */
 
@@ -9,6 +9,53 @@ export const RUTAS_PLACEHOLDERS = {
   zona: '/assets/placeholder-zona.svg',
   objeto: '/assets/placeholder-objeto.svg',
 } as const;
+
+const MAPA_ZONA_POR_CRIATURA: Record<string, string> = {
+  // ZON-01: Praderas del Amanecer
+  'lobo-estepario': 'praderas-del-amanecer',
+  'vibora-rocosa': 'praderas-del-amanecer',
+  'ciervo-lunar': 'praderas-del-amanecer',
+  'halcon-ceniza': 'praderas-del-amanecer',
+  'oso-fresno': 'praderas-del-amanecer',
+  // ZON-02: Riberas del Lago Espejo
+  'cangrejo-abismal': 'riberas-del-lago-espejo',
+  'anguila-penumbra': 'riberas-del-lago-espejo',
+  'quelonio-lacustre': 'riberas-del-lago-espejo',
+  'tiburon-arrecife': 'riberas-del-lago-espejo',
+  'mantarraya-espectral': 'riberas-del-lago-espejo',
+  // ZON-03: Bosque Susurrante
+  'arana-gigante': 'bosque-susurrante',
+  'jabali-espinoso': 'bosque-susurrante',
+  'basilisco': 'bosque-susurrante',
+  'treant-anciano': 'bosque-susurrante',
+  'mantis-sombria': 'bosque-susurrante',
+  // ZON-04: Paso de los Riscos
+  'gargola': 'paso-de-los-riscos',
+  'esqueleto-guerrero': 'paso-de-los-riscos',
+  'escorpion-obsidiana': 'paso-de-los-riscos',
+  'espectro-ceniza': 'paso-de-los-riscos',
+  'golem-granito': 'paso-de-los-riscos',
+  // ZON-05: Cueva Umbría
+  'elemental-fuego': 'cueva-umbria',
+  'salamandra-magma': 'cueva-umbria',
+  'pesadilla': 'cueva-umbria',
+  'quimera-tricefala': 'cueva-umbria',
+  'behir-abismo': 'cueva-umbria',
+  // ZON-06: Pico de la Cumbre
+  'yeti': 'pico-de-la-cumbre',
+  'lobo-invernal': 'pico-de-la-cumbre',
+  'elemental-agua': 'pico-de-la-cumbre',
+  'tigre-dientes-sable': 'pico-de-la-cumbre',
+  'remorhaz-glaciar': 'pico-de-la-cumbre',
+};
+
+/**
+ * Resuelve el slug de la zona de combate a partir del slug de la criatura rival.
+ */
+export function obtenerSlugZonaPorCriatura(slugCriatura?: string | null): string | null {
+  if (!slugCriatura) return null;
+  return MAPA_ZONA_POR_CRIATURA[slugCriatura] ?? null;
+}
 
 /**
  * Obtiene la ruta de la imagen de una criatura por su slug.
@@ -261,4 +308,3 @@ export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API.
   }
 }
-

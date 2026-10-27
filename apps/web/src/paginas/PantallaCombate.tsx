@@ -39,6 +39,7 @@ import {
 import {
   obtenerImagenCriatura,
   obtenerImagenObjeto,
+  obtenerSlugZonaPorCriatura,
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
@@ -784,6 +785,7 @@ export function PantallaCombate() {
     <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
+        zoneId={obtenerSlugZonaPorCriatura(rival.slug)}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}

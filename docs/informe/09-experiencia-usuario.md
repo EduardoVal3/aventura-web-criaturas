@@ -1636,3 +1636,38 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 - **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (`34` advertencias preexistentes en componentes previos, `500 ms`).
 - **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con `0` errores en **`4.04 s`**.
 - **Inspección visual directa sobre láminas de control:** Verificación en comparación `BOX` vs `BICUBIC` vs `LANCZOS` sobre paisajes, mosaico `15/15` en `800x450` sin bandas negras y láminas de contraste claro/oscuro (`#090d16`) + máscara alfa pura para los 4 objetos sin artefactos de borde.
+
+---
+
+## 24. Calibración de Escenarios Reales, Mapa Volcánico, Ataques Precisos y Audio Ambiente
+
+### 24.1 Problemas Detectados Tras la Integración de Escenarios WebP
+1. **Superposición CSS sobre las ilustraciones de combate (`BattlefieldBackground.tsx`):** La rejilla 2.5D y pilares procedurales se renderizaban también cuando la imagen `.webp` real ya estaba cargada, tapando la iluminación y el relieve natural de los escenarios.
+2. **Desalineación de criaturas y cartas HUD según la arena (`PantallaCombate.tsx`):** Cada una de las 6 arenas (`/assets/battlegrounds/*.webp`) ubica sus plataformas a distintas alturas y márgenes (por ejemplo, `riberas-del-lago-espejo.webp` tiene la orilla aliada mucho más baja a `x: 22%` y el acantilado rival a `y: 51%`, mientras que `paso-de-los-riscos.webp` termina su saliente rocoso antes del borde derecho). Una única disposición flexbox fija hacía que en ciertas zonas los sprites flotaran o quedaran desplazados respecto a la roca.
+3. **Proyectiles saliendo detrás de las cartas y ataques físicos sin impacto visible (`PantallaCombate.tsx` + `index.css`):**
+   - Los proyectiles usaban coordenadas CSS fijas (`22% -> 74%`) y un `z-index` en el contenedor padre, provocando que en algunas arenas nacieran detrás de la carta HUD del aliado o del rival.
+   - Los ataques clasificados como `FISICO` solo ejecutaban una ligera embestida sin destello de impacto sobre el objetivo.
+4. **Identidad visual del mapa de islas y HUD (`MapaInteractivoCanvas.tsx`, `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`):**
+   - Las islas del mapa usaban figuras geométricas planas en vez de mostrar las ilustraciones reales de `/assets/zonas/*.webp`.
+   - El fondo azul plano del mapa y del puente de viaje no aprovechaba la estética *dark fantasy* de Aethelgard, y el HUD superior no mostraba una vista previa de la zona actual ni del destino al viajar.
+   - Faltaba acompañamiento sonoro ambiental suave diferenciando exploración (`hub`) y combate (`combate`).
+
+### 24.2 Soluciones y Mejoras Implementadas
+
+| Archivo | Mejoras y Soluciones Aplicadas |
+| --- | --- |
+| `apps/web/src/components/combate/BattlefieldBackground.tsx` | Cuando `pasoFallback === 0` y no hay video, la arena `.webp` se muestra a opacidad completa (`opacity-100`) sin capas CSS encima; el escenario procedural 2.5D queda únicamente como respaldo si falla la carga de imagen. |
+| `apps/web/src/lib/battlegrounds.ts` *(nuevo)* | Tabla `CALIBRACION_ARENAS_ZONA` y helper `obtenerCalibracionArena(zoneId)` con coordenadas calibradas para cada uno de los 6 escenarios `800x450` (`bosque-susurrante`, `cueva-umbria`, `paso-de-los-riscos`, `pico-de-la-cumbre`, `praderas-del-amanecer`, `riberas-del-lago-espejo`) y anclaje de cartas HUD en esquinas libres. |
+| `apps/web/src/paginas/PantallaCombate.tsx` | Posicionamiento absoluto por plataforma con `clamp(...)` para evitar recortes en móvil; reemplazo de óvalos CSS por sombras de contacto sutiles; proyectiles (`proyectilActivo`) y destellos de impacto (`impactoVisual`) montados dentro de la arena en `z-40` por encima de las cartas HUD (`z-20`) usando coordenadas reales origen-destino; activación de audio ambiente de combate. |
+| `apps/web/src/index.css` | Unificación de `.anim-proyectil-aliado` / `.anim-proyectil-rival` mediante variables CSS dinámicas (`--origen-x`, `--origen-y`, `--destino-x`, `--destino-y`) y nueva animación `.anim-impacto-golpe` para todo tipo de ataque. |
+| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Precarga y recorte elíptico de las 9 ilustraciones reales de `/assets/zonas/*.webp` sobre la superficie de cada isla; sustitución del mar azul por un abismo de obsidiana con ríos de magma pulsante, brasas ascendentes y peñascos iluminados; anillo rúnico rotatorio alrededor de la isla actual. |
+| `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Miniatura panorámica `16:9` de la zona actual en el HUD superior (actualizada dinámicamente al viajar), animación de respiración en el retrato del líder y activación de audio ambiente del hub. |
+| `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Vista previa de la zona destino (`DESTINO`) junto al lienzo animado; abismo de magma vivo bajo el puente, antorchas que se encienden al paso de la criatura, estela cian de movimiento y destello de portal al llegar. |
+| `apps/web/src/lib/assets.ts` | Motor de audio ambiente suave con Web Audio API (`iniciarMusicaAmbiente("hub" \| "combate")`, `detenerMusicaAmbiente`) con filtro paso-bajo, baja ganancia y sincronización con `establecerSonidoSilenciado` / `alternarSonidoSilenciado`. |
+
+### 24.3 Verificación Completa Pre-Push
+- `pnpm.cmd --filter web exec tsc -b --noEmit`: 0 errores de compilación TypeScript.
+- `pnpm.cmd --filter web test`: **99 de 99 pruebas aprobadas** (`0` fallos).
+- `pnpm.cmd --filter web lint`: **0 errores** bajo `oxlint` (37 advertencias preexistentes).
+- `pnpm.cmd --filter web build`: compilación de producción (`tsc -b && vite build`) completada exitosamente.
+- **Reglas de negocio:** Las reglas del combate por turnos, contratos de API y esquema de base de datos permanecen intactos.

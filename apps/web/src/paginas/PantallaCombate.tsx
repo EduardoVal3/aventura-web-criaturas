@@ -37,12 +37,15 @@ import {
   ErrorApi,
 } from "@/api";
 import {
+  detenerMusicaAmbiente,
+  iniciarMusicaAmbiente,
   obtenerImagenCriatura,
   obtenerImagenObjeto,
   obtenerSlugZonaPorCriatura,
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
+import { obtenerCalibracionArena } from "@/lib/battlegrounds";
 import {
   Lock,
   Crown,
@@ -145,6 +148,10 @@ export function PantallaCombate() {
     direccion: "aliado-a-rival" | "rival-a-aliado";
     claseColor: string;
   } | null>(null);
+  const [impactoVisual, setImpactoVisual] = useState<{
+    objetivo: "rival" | "aliado";
+    claseColor: string;
+  } | null>(null);
   const [auraAliado, setAuraAliado] = useState(false);
   const [avisoAtaqueRival, setAvisoAtaqueRival] = useState<string | null>(null);
   const [curacionFlotanteAliado, setCuracionFlotanteAliado] = useState<number | null>(null);
@@ -173,6 +180,11 @@ export function PantallaCombate() {
   const [itemsCuracion, setItemsCuracion] = useState<ItemInventario[]>([]);
   const [equipoCriaturas, setEquipoCriaturas] = useState<CriaturaEquipo[]>([]);
   const [talismanSeleccionado, setTalismanSeleccionado] = useState<string>("talisman-basico");
+
+  useEffect(() => {
+    iniciarMusicaAmbiente("combate");
+    return () => detenerMusicaAmbiente();
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -353,6 +365,11 @@ export function PantallaCombate() {
         setAvisoAtaqueRival(null);
 
         reproducirSonido(sonidoDeGolpe(contraataque));
+        setImpactoVisual({
+          objetivo: "aliado",
+          claseColor: colorProyectilPorAfinidad(rival?.afinidad),
+        });
+        setTimeout(() => setImpactoVisual(null), 320);
         setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
         setDanoFlotanteAliado(contraataque.danoCausado);
         setEtiquetaFlotanteAliado(resolverEtiquetaImpacto(contraataque));
@@ -474,6 +491,14 @@ export function PantallaCombate() {
           }
 
           reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+          setImpactoVisual({
+            objetivo: "rival",
+            claseColor:
+              coreografia === "INSIGNIA"
+                ? "bg-amber-300 border-amber-500 shadow-[0_0_20px_#fbbf24]"
+                : colorProyectilPorAfinidad(aliado?.afinidad),
+          });
+          setTimeout(() => setImpactoVisual(null), 320);
           setAnimacionRival("anim-sacudida anim-parpadeo-dano");
           setDanoFlotanteRival(resultado.accionJugador.danoCausado);
           setEtiquetaFlotanteRival(resolverEtiquetaImpacto(resultado.accionJugador));
@@ -916,11 +941,14 @@ export function PantallaCombate() {
     : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE", slot: 1 }];
   const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
+  const zonaCombateId = obtenerSlugZonaPorCriatura(rival.slug);
+  const calibracionArena = obtenerCalibracionArena(zonaCombateId);
+
   return (
     <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
-        zoneId={obtenerSlugZonaPorCriatura(rival.slug)}
+        zoneId={zonaCombateId}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
@@ -979,18 +1007,6 @@ export function PantallaCombate() {
           />
         )}
 
-        {/* Proyectil Pixel-Art en vuelo diagonal */}
-        {proyectilActivo && (
-          <div
-            aria-hidden="true"
-            className={`absolute z-30 size-5 sm:size-6 border-2 pointer-events-none ${proyectilActivo.claseColor} ${
-              proyectilActivo.direccion === "aliado-a-rival"
-                ? "anim-proyectil-aliado"
-                : "anim-proyectil-rival"
-            }`}
-          />
-        )}
-
         {/* Aviso Central Inconfundible del Ataque Enemigo */}
         {avisoAtaqueRival && (
           <div
@@ -1004,14 +1020,73 @@ export function PantallaCombate() {
           </div>
         )}
 
-        {/* ARENA DE COMBATE: Disposición Diagonal Clásica JRPG */}
+        {/* ARENA DE COMBATE: Posicionamiento milimétrico calibrado por escenario */}
         <div
-          className={`flex-1 w-full px-3 py-1 flex flex-col justify-between relative z-10 overflow-hidden transition-transform duration-300 ${sacudidaArena ? "anim-sacudida" : ""} ${zoomArena ? "scale-[1.04]" : "scale-100"}`}
+          className={`flex-1 w-full relative z-10 overflow-hidden transition-transform duration-300 ${sacudidaArena ? "anim-sacudida" : ""} ${zoomArena ? "scale-[1.04]" : "scale-100"}`}
         >
-          {/* SECTOR RIVAL: Arriba a la derecha */}
-          <div className="flex items-start justify-end gap-2 sm:gap-3 self-end w-full max-w-[95%] sm:max-w-[85%] pt-1">
-            {/* Placa HUD Flotante Compacta del Rival */}
-            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[225px] sm:max-w-[260px] space-y-1.5">
+          {/* Proyectil Pixel-Art en vuelo exacto entre plataformas (por encima de cartas HUD) */}
+          {proyectilActivo && (
+            <div
+              aria-hidden="true"
+              style={
+                {
+                  "--origen-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.aliado.x
+                      : calibracionArena.rival.x
+                  }%`,
+                  "--origen-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(20, calibracionArena.aliado.y - 14)
+                      : Math.max(16, calibracionArena.rival.y - 12)
+                  }%`,
+                  "--destino-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.rival.x
+                      : calibracionArena.aliado.x
+                  }%`,
+                  "--destino-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(16, calibracionArena.rival.y - 12)
+                      : Math.max(20, calibracionArena.aliado.y - 14)
+                  }%`,
+                } as React.CSSProperties
+              }
+              className={`absolute z-40 size-6 sm:size-7 border-2 pointer-events-none ${proyectilActivo.claseColor} ${
+                proyectilActivo.direccion === "aliado-a-rival"
+                  ? "anim-proyectil-aliado"
+                  : "anim-proyectil-rival"
+              }`}
+            />
+          )}
+
+          {/* Destello de impacto pixel-art sobre la criatura objetivo */}
+          {impactoVisual && (
+            <div
+              aria-hidden="true"
+              style={{
+                left: `${
+                  impactoVisual.objetivo === "rival"
+                    ? calibracionArena.rival.x
+                    : calibracionArena.aliado.x
+                }%`,
+                top: `${
+                  impactoVisual.objetivo === "rival"
+                    ? Math.max(16, calibracionArena.rival.y - 12)
+                    : Math.max(20, calibracionArena.aliado.y - 14)
+                }%`,
+              }}
+              className={`absolute z-40 size-12 sm:size-16 border-2 pointer-events-none anim-impacto-golpe ${impactoVisual.claseColor}`}
+            />
+          )}
+          {/* Placa HUD Flotante Compacta del Rival (anclada sin cubrir plataformas) */}
+          <div
+            style={{
+              top: `${calibracionArena.cartaRival.top}%`,
+              left: `${calibracionArena.cartaRival.left}%`,
+            }}
+            className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+          >
               <div className="flex items-start justify-between gap-1.5">
                 <div className="flex items-center gap-1 min-w-0 flex-1">
                   {rival.esLegendaria && (
@@ -1074,8 +1149,14 @@ export function PantallaCombate() {
               )}
             </div>
 
-            {/* Sprite del Rival con Pedestal y Daño Flotante */}
-            <div className="relative flex flex-col items-center shrink-0">
+            {/* Sprite del Rival apoyado exactamente en la plataforma elevada de la zona */}
+            <div
+              style={{
+                left: `clamp(56px, ${calibracionArena.rival.x}%, calc(100% - 56px))`,
+                top: `clamp(88px, ${calibracionArena.rival.y}%, calc(100% - 24px))`,
+              }}
+              className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+            >
               {danoFlotanteRival !== null && (
                 <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
                   {etiquetaFlotanteRival && (
@@ -1099,15 +1180,18 @@ export function PantallaCombate() {
                   className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_10px_10px_rgba(0,0,0,0.85)]"
                 />
               </div>
-              {/* Plataforma 2.5D lejana bajo el rival */}
-              <div className="w-24 sm:w-32 h-4 sm:h-5 rounded-[100%] border-2 border-[#14d1e8]/60 bg-[#0b1f33]/85 shadow-[0_6px_0_0_#000] -mt-2 z-0" />
+              {/* Sombra de contacto sutil sobre la plataforma elevada del escenario */}
+              <div className="w-20 sm:w-28 h-2.5 bg-black/55 rounded-full blur-[2px] -mt-2 z-0" />
             </div>
-          </div>
 
-          {/* SECTOR ALIADO: Abajo a la izquierda */}
-          <div className="flex items-end justify-start gap-2 sm:gap-3 self-start w-full max-w-[95%] sm:max-w-[85%] pb-1">
-            {/* Sprite del Aliado (de espaldas/perfil hacia el rival) */}
-            <div className="relative flex flex-col items-center shrink-0">
+          {/* Sprite del Aliado apoyado exactamente en la plataforma en primer plano */}
+          <div
+            style={{
+              left: `clamp(56px, ${calibracionArena.aliado.x}%, calc(100% - 56px))`,
+              top: `clamp(110px, ${calibracionArena.aliado.y}%, calc(100% - 6px))`,
+            }}
+            className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+          >
               {danoFlotanteAliado !== null && (
                 <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
                   {etiquetaFlotanteAliado && (
@@ -1145,12 +1229,18 @@ export function PantallaCombate() {
                   className={`max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)] ${esPlaceholderAliado || !aliado.slug ? "" : "scale-x-[-1]"}`}
                 />
               </div>
-              {/* Plataforma 2.5D en primer plano bajo el aliado */}
-              <div className="w-28 sm:w-36 h-5 sm:h-6 rounded-[100%] border-2 border-emerald-400/60 bg-[#0d2622]/85 shadow-[0_7px_0_0_#000] -mt-2 z-0" />
+              {/* Sombra de contacto sutil sobre la plataforma en primer plano del escenario */}
+              <div className="w-24 sm:w-32 h-3 bg-black/60 rounded-full blur-[2px] -mt-2 z-0" />
             </div>
 
-            {/* Placa HUD Flotante Compacta del Aliado */}
-            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[225px] sm:max-w-[260px] space-y-1.5">
+            {/* Placa HUD Flotante Compacta del Aliado (anclada sin cubrir plataformas) */}
+            <div
+              style={{
+                bottom: `${calibracionArena.cartaAliado.bottom}%`,
+                right: `${calibracionArena.cartaAliado.right}%`,
+              }}
+              className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+            >
               <div className="flex items-start justify-between gap-1.5">
                 <span className="font-bold text-[8px] sm:text-[9px] leading-tight break-words text-foreground retro flex-1 min-w-0">
                   {aliado.nombre}
@@ -1241,7 +1331,6 @@ export function PantallaCombate() {
                 </div>
               )}
             </div>
-          </div>
         </div>
       </BattlefieldBackground>
 

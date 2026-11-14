@@ -4,8 +4,11 @@ import { Progress } from "@/components/ui/8bit/progress";
 import { obtenerConfiguracionIsla } from "@/lib/mapa-mundo";
 import {
   RUTAS_PLACEHOLDERS,
+  manejarErrorImagen,
   obtenerImagenCriatura,
+  obtenerImagenZona,
   reproducirSonido,
+  sanitizarSlugZona,
 } from "@/lib/assets";
 import type { LiderMapaInfo } from "./MapaInteractivoCanvas";
 
@@ -113,13 +116,16 @@ export function TransicionViaje2D({
       ctx.fillRect(W - nieblaOffset, 128, 180, 22);
       ctx.fillRect((W * 0.5 - nieblaOffset + W) % W, 146, 140, 18);
 
-      // Océano abisal inferior
-      ctx.fillStyle = "#060d18";
+      // Abismo volcánico inferior con río de magma y brasas ascendentes
+      const pulsoLava = 0.65 + Math.sin(ahora * 0.005) * 0.3;
+      ctx.fillStyle = "#160708";
       ctx.fillRect(0, 198, W, 62);
-      ctx.fillStyle = "rgba(56, 189, 248, 0.18)";
-      for (let wx = 0; wx < W; wx += 48) {
-        const offset = Math.sin(ahora * 0.006 + wx) * 4;
-        ctx.fillRect(wx + offset, 214, 22, 2);
+      ctx.fillStyle = `rgba(234, 88, 12, ${0.42 * pulsoLava})`;
+      ctx.fillRect(0, 212, W, 22);
+      ctx.fillStyle = `rgba(251, 191, 36, ${0.55 * pulsoLava})`;
+      for (let wx = 0; wx < W; wx += 44) {
+        const offset = Math.sin(ahora * 0.006 + wx) * 5;
+        ctx.fillRect(wx + offset, 220, 20, 3);
       }
 
       // Tierra de la isla origen (izquierda)
@@ -134,25 +140,35 @@ export function TransicionViaje2D({
       ctx.fillStyle = islaDestino.colorSuelo;
       ctx.fillRect(494, 178, 146, 14);
 
-      // Puente viejo de madera oscura con faroles parpadeantes
+      // Puente viejo de madera oscura con faroles que se encienden al pasar el líder
+      const posX = 70 + t * 500;
       ctx.fillStyle = "#26180e";
       ctx.fillRect(140, 184, 360, 12);
       ctx.fillStyle = "#47311e";
       for (let px = 144; px < 496; px += 18) {
         ctx.fillRect(px, 181, 14, 8);
       }
-      // Postes del puente y faroles ámbar
-      const brilloFarol = 0.65 + Math.sin(ahora * 0.015) * 0.35;
+      const brilloFarol = 0.72 + Math.sin(ahora * 0.015) * 0.28;
       for (let px = 150; px <= 490; px += 68) {
+        const encendida = posX >= px - 14;
         ctx.fillStyle = "#1c120a";
         ctx.fillRect(px, 160, 6, 28);
-        ctx.fillStyle = `rgba(245, 158, 11, ${brilloFarol})`;
-        ctx.fillRect(px - 1, 154, 8, 6);
+        if (encendida) {
+          ctx.fillStyle = `rgba(251, 146, 60, ${0.3 * brilloFarol})`;
+          ctx.beginPath();
+          ctx.arc(px + 3, 157, 13, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = `rgba(253, 224, 71, ${brilloFarol})`;
+          ctx.fillRect(px - 1, 154, 8, 6);
+        } else {
+          ctx.fillStyle = "rgba(148, 163, 184, 0.35)";
+          ctx.fillRect(px, 155, 6, 5);
+        }
       }
       ctx.fillStyle = "#3b2718";
       ctx.fillRect(150, 168, 344, 4);
 
-      // Partículas de polvo detrás de la criatura
+      // Estela de energía y polvo detrás de la criatura
       for (let i = particulas.length - 1; i >= 0; i--) {
         const p = particulas[i];
         p.x += p.vx;
@@ -162,12 +178,21 @@ export function TransicionViaje2D({
           particulas.splice(i, 1);
           continue;
         }
-        ctx.fillStyle = `rgba(226, 232, 240, ${p.vida * 0.7})`;
-        ctx.fillRect(p.x, p.y, 4, 4);
+        ctx.fillStyle = `rgba(20, 209, 232, ${p.vida * 0.85})`;
+        ctx.fillRect(p.x, p.y, 5, 5);
+      }
+
+      // Destello de portal al llegar a la isla destino
+      if (t > 0.82) {
+        const intensidadPortal = (t - 0.82) / 0.18;
+        ctx.strokeStyle = `rgba(20, 209, 232, ${intensidadPortal * 0.85})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(570, 152, 26 + intensidadPortal * 14, 38 + intensidadPortal * 10, 0, 0, Math.PI * 2);
+        ctx.stroke();
       }
 
       // Criatura líder caminando/saltando de izquierda a derecha
-      const posX = 70 + t * 500;
       const salto = Math.abs(Math.sin(t * Math.PI * 10)) * 12;
       const posY = 178 - salto;
 
@@ -248,14 +273,33 @@ export function TransicionViaje2D({
           )}
         </div>
 
-        {/* Lienzo 2D animado */}
-        <div className="border-4 border-black bg-[#090d16] shadow-[inset_2px_2px_0_0_#000] overflow-hidden">
-          <canvas
-            ref={canvasRef}
-            width={640}
-            height={260}
-            className="w-full h-auto block"
-          />
+        {/* Vista previa de la zona destino + Lienzo 2D animado */}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3 items-stretch">
+          <div className="border-4 border-black bg-[#090d16] shadow-[inset_2px_2px_0_0_#000] overflow-hidden">
+            <canvas
+              ref={canvasRef}
+              width={640}
+              height={260}
+              className="w-full h-full object-cover block"
+            />
+          </div>
+          <div className="border-4 border-black bg-[#090d16] shadow-[4px_4px_0_0_#000] overflow-hidden relative min-h-[110px]">
+            <img
+              src={obtenerImagenZona(sanitizarSlugZona(destinoNombre))}
+              alt={`Zona destino: ${destinoNombre}`}
+              decoding="async"
+              onError={(e) => manejarErrorImagen(e, "zona")}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-2">
+              <span className="retro text-[7px] text-[#14d1e8] tracking-wider">
+                DESTINO
+              </span>
+              <span className="retro text-[9px] text-white font-bold leading-tight truncate">
+                {destinoNombre}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Origen -> Destino y barra de carga */}

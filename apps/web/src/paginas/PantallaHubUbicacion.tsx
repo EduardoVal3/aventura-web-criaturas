@@ -54,6 +54,8 @@ import {
 } from "@/api";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import {
+  detenerMusicaAmbiente,
+  iniciarMusicaAmbiente,
   manejarErrorImagen,
   obtenerImagenCriatura,
   obtenerImagenZona,
@@ -106,6 +108,11 @@ export function PantallaHubUbicacion() {
     setUbicacion(datosUbicacion);
     setPersonaje(datosPersonaje);
     setEquipo(datosEquipo?.criaturas ?? []);
+  }, []);
+
+  useEffect(() => {
+    iniciarMusicaAmbiente("hub");
+    return () => detenerMusicaAmbiente();
   }, []);
 
   useEffect(() => {
@@ -395,20 +402,32 @@ export function PantallaHubUbicacion() {
           aria-label="HUD superior del explorador"
           className="relative z-20 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3 flex items-start justify-between gap-2"
         >
-          {/* Ficha del Jugador (estilo retrato RPG superior izquierda) */}
-          <div className="pointer-events-auto bg-gradient-to-r from-[#0b1322]/95 via-[#132038]/95 to-[#0b1322]/95 backdrop-blur-xs border-2 border-[#14d1e8]/80 outline outline-2 outline-black shadow-[6px_6px_0_0_#000] px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 max-w-[66vw] sm:max-w-md">
+          {/* Ficha del Jugador + Miniatura de Zona Actual (HUD superior) */}
+          <div className="pointer-events-auto bg-gradient-to-r from-[#0b1322]/95 via-[#132038]/95 to-[#0b1322]/95 backdrop-blur-xs border-2 border-[#14d1e8]/80 outline outline-2 outline-black shadow-[6px_6px_0_0_#000] px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 max-w-[72vw] sm:max-w-xl">
             <div className="relative size-10 sm:size-12 bg-[#070b14] border-2 border-amber-400 shadow-[inset_0_0_10px_rgba(20,209,232,0.35)] p-0.5 shrink-0 flex items-center justify-center">
               <img
                 src={obtenerImagenCriatura(lider?.especieSlug)}
                 alt={lider?.nombre || "Líder"}
                 onError={(e) => manejarErrorImagen(e, "criatura")}
-                className="w-full h-full object-contain scale-x-[-1]"
+                className="w-full h-full object-contain scale-x-[-1] anim-respiracion-combate"
               />
               {ubicacion.poderEquipo && (
                 <span className="retro text-[6.5px] bg-amber-400 text-black font-bold px-1 border border-black absolute -bottom-1.5 -right-1.5">
                   NV.{ubicacion.poderEquipo.nivelMaximoEquipo}
                 </span>
               )}
+            </div>
+            <div className="relative w-14 sm:w-24 aspect-video bg-[#070b14] border-2 border-[#14d1e8]/70 shadow-[2px_2px_0_0_#000] overflow-hidden shrink-0">
+              <img
+                src={obtenerImagenZona(sanitizarSlugZona(ubicacion.nombre))}
+                alt={`Vista de ${ubicacion.nombre}`}
+                decoding="async"
+                onError={(e) => manejarErrorImagen(e, "zona")}
+                className="w-full h-full object-cover"
+              />
+              <span className="retro text-[5.5px] bg-black/80 text-[#14d1e8] px-1 py-0.5 absolute bottom-0 left-0 right-0 truncate text-center">
+                ZONA
+              </span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">

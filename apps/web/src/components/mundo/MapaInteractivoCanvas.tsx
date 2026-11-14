@@ -27,7 +27,9 @@ import {
   estaSonidoSilenciado,
   manejarErrorImagen,
   obtenerImagenCriatura,
+  obtenerImagenZona,
   reproducirSonido,
+  sanitizarSlugZona,
 } from "@/lib/assets";
 import { cn } from "@/lib/utils";
 
@@ -113,6 +115,7 @@ function dibujarIslaPixel(
   tiempo: number,
   esActual: boolean,
   desbloqueada: boolean,
+  imagenZona?: HTMLImageElement | null,
 ) {
   ctx.save();
   ctx.translate(isla.x, isla.y);
@@ -148,17 +151,48 @@ function dibujarIslaPixel(
     ctx.fillRect(gx, isla.radioY * 0.52, 4, 24);
   }
 
-  // Plataforma superior elevada del bioma
+  // Plataforma superior elevada del bioma (con ilustración real de la zona si ya cargó)
+  const rxTop = isla.radioX - 6;
+  const ryTop = isla.radioY * 0.86;
   ctx.fillStyle = isla.colorSuelo;
   ctx.beginPath();
-  ctx.ellipse(0, -4, isla.radioX - 6, isla.radioY * 0.86, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -4, rxTop, ryTop, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  const tieneImagenZona = Boolean(
+    imagenZona && imagenZona.complete && imagenZona.naturalWidth > 0,
+  );
+  if (tieneImagenZona && imagenZona) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, -4, rxTop, ryTop, 0, 0, Math.PI * 2);
+    ctx.clip();
+
+    const anchoCaja = rxTop * 2;
+    const altoCaja = ryTop * 2;
+    const escala = Math.max(
+      anchoCaja / imagenZona.naturalWidth,
+      altoCaja / imagenZona.naturalHeight,
+    );
+    const dw = imagenZona.naturalWidth * escala;
+    const dh = imagenZona.naturalHeight * escala;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(imagenZona, -dw / 2, -4 - dh / 2, dw, dh);
+    ctx.imageSmoothingEnabled = false;
+
+    // Oscurecimiento sutil para distinguir zonas bloqueadas y resaltar el borde
+    ctx.fillStyle = desbloqueada
+      ? "rgba(5, 8, 15, 0.14)"
+      : "rgba(5, 8, 15, 0.56)";
+    ctx.fillRect(-rxTop - 2, -4 - ryTop - 2, anchoCaja + 4, altoCaja + 4);
+    ctx.restore();
+  }
+
   // Bisel iluminado superior + contorno pixelado
-  ctx.strokeStyle = esActual ? "#14d1e8" : "rgba(255, 255, 255, 0.14)";
+  ctx.strokeStyle = esActual ? "#14d1e8" : "rgba(255, 255, 255, 0.18)";
   ctx.lineWidth = esActual ? 3.5 : 2;
   ctx.beginPath();
-  ctx.ellipse(0, -4, isla.radioX - 6, isla.radioY * 0.86, 0, Math.PI * 1.05, Math.PI * 1.95);
+  ctx.ellipse(0, -4, rxTop, ryTop, 0, Math.PI * 1.05, Math.PI * 1.95);
   ctx.stroke();
 
   ctx.strokeStyle = esActual ? "#14d1e8" : "#05070c";
@@ -167,10 +201,23 @@ function dibujarIslaPixel(
   ctx.ellipse(0, -2, isla.radioX, isla.radioY * 0.92, 0, 0, Math.PI * 2);
   ctx.stroke();
 
+  // Anillo rúnico animado alrededor de la isla actual
+  if (esActual) {
+    ctx.save();
+    ctx.setLineDash([12, 10]);
+    ctx.lineDashOffset = -(tiempo * 0.03);
+    ctx.strokeStyle = "rgba(20, 209, 232, 0.75)";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.ellipse(0, -2, isla.radioX + 10, isla.radioY * 0.92 + 7, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   const parpadeo = 0.65 + Math.sin(tiempo * 0.006 + isla.y) * 0.35;
 
-  // Detalles tenebrosos por bioma (16-bit dark fantasy)
-  switch (isla.bioma) {
+  // Detalles tenebrosos por bioma (fallback solo si aún no cargó la imagen real)
+  if (!tieneImagenZona) switch (isla.bioma) {
     case "puerto": {
       // Muelle viejo de madera
       ctx.fillStyle = "#3b2718";
@@ -371,6 +418,16 @@ export function MapaInteractivoCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mapaImagenRef = useRef<HTMLImageElement | null>(null);
   const mapaImagenListaRef = useRef(false);
+  const imagenesZonasRef = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  useEffect(() => {
+    for (const nodo of nodos) {
+      if (imagenesZonasRef.current.has(nodo.id)) continue;
+      const img = new Image();
+      img.src = obtenerImagenZona(sanitizarSlugZona(nodo.nombre));
+      imagenesZonasRef.current.set(nodo.id, img);
+    }
+  }, [nodos]);
 
   const [tamanoContenedor, setTamanoContenedor] = useState({ ancho: 900, alto: 540 });
   const [camara, setCamara] = useState<CamaraMapa>({ x: 600, y: 380, zoom: 0.9 });
@@ -474,8 +531,8 @@ export function MapaInteractivoCanvas({
       ctx.scale(dpr, dpr);
       ctx.imageSmoothingEnabled = false;
 
-      // Fondo oceánico abisal oscuro (dark fantasy)
-      ctx.fillStyle = "#070d18";
+      // Fondo abisal de obsidiana y magma (dark fantasy)
+      ctx.fillStyle = "#0b0608";
       ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
 
       // Transformación de cámara centrada
@@ -492,28 +549,86 @@ export function MapaInteractivoCanvas({
           DIMENSIONES_MAPA_MUNDO.alto,
         );
       } else {
-        // Ondas tenebrosas en el mar nocturno
-        const desplazamientoOla = Math.sin(tiempo * 0.0014) * 16;
-        ctx.fillStyle = "rgba(30, 58, 95, 0.38)";
-        for (let oy = 40; oy < DIMENSIONES_MAPA_MUNDO.alto; oy += 90) {
-          for (let ox = 40; ox < DIMENSIONES_MAPA_MUNDO.ancho; ox += 150) {
-            ctx.fillRect(ox + desplazamientoOla, oy, 26, 3);
-            ctx.fillRect(ox + 60 - desplazamientoOla, oy + 36, 18, 3);
+        // Ríos y grietas de magma pulsante bajo las islas flotantes
+        const pulsoMagma = 0.55 + Math.sin(tiempo * 0.0022) * 0.25;
+        ctx.save();
+        ctx.lineCap = "round";
+        const riosMagma = [
+          [
+            [40, 140],
+            [360, 250],
+            [720, 180],
+            [1140, 320],
+          ],
+          [
+            [80, 560],
+            [450, 440],
+            [810, 580],
+            [1180, 470],
+          ],
+          [
+            [260, 40],
+            [520, 360],
+            [640, 700],
+          ],
+        ];
+        for (const ruta of riosMagma) {
+          ctx.strokeStyle = `rgba(185, 28, 28, ${0.28 * pulsoMagma})`;
+          ctx.lineWidth = 42;
+          ctx.beginPath();
+          ruta.forEach(([rx, ry], idx) => (idx === 0 ? ctx.moveTo(rx, ry) : ctx.lineTo(rx, ry)));
+          ctx.stroke();
+
+          ctx.strokeStyle = `rgba(249, 115, 22, ${0.42 * pulsoMagma})`;
+          ctx.lineWidth = 14;
+          ctx.beginPath();
+          ruta.forEach(([rx, ry], idx) => (idx === 0 ? ctx.moveTo(rx, ry) : ctx.lineTo(rx, ry)));
+          ctx.stroke();
+
+          ctx.strokeStyle = `rgba(251, 191, 36, ${0.45 * pulsoMagma})`;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ruta.forEach(([rx, ry], idx) => (idx === 0 ? ctx.moveTo(rx, ry) : ctx.lineTo(rx, ry)));
+          ctx.stroke();
+        }
+
+        // Burbujas y vetas de lava animadas en el abismo
+        const desplazamientoMagma = Math.sin(tiempo * 0.0014) * 14;
+        for (let oy = 55; oy < DIMENSIONES_MAPA_MUNDO.alto; oy += 95) {
+          for (let ox = 45; ox < DIMENSIONES_MAPA_MUNDO.ancho; ox += 155) {
+            ctx.fillStyle = `rgba(234, 88, 12, ${0.32 * pulsoMagma})`;
+            ctx.fillRect(ox + desplazamientoMagma, oy, 24, 3);
+            ctx.fillStyle = `rgba(251, 191, 36, ${0.28 * pulsoMagma})`;
+            ctx.fillRect(ox + 64 - desplazamientoMagma, oy + 36, 12, 3);
           }
         }
 
-        // Peñascos e islotes oscuros
+        // Brasas ascendentes flotando por todo el mapa
+        for (let b = 0; b < 26; b++) {
+          const faseBrasa = (tiempo * 0.00018 + b * 0.13) % 1;
+          const bx = ((b * 97 + Math.sin(tiempo * 0.001 + b) * 18) % DIMENSIONES_MAPA_MUNDO.ancho);
+          const by = DIMENSIONES_MAPA_MUNDO.alto - faseBrasa * DIMENSIONES_MAPA_MUNDO.alto;
+          ctx.fillStyle = b % 2 === 0 ? "rgba(251, 146, 60, 0.55)" : "rgba(253, 224, 71, 0.48)";
+          ctx.fillRect(Math.round(bx), Math.round(by), b % 3 === 0 ? 4 : 3, b % 3 === 0 ? 4 : 3);
+        }
+        ctx.restore();
+
+        // Peñascos de basalto sobre el magma
         for (const [ix, iy] of [
           [160, 125],
           [320, 175],
           [130, 625],
           [1060, 560],
         ]) {
-          ctx.fillStyle = "#05080f";
+          ctx.fillStyle = "rgba(234, 88, 12, 0.25)";
+          ctx.beginPath();
+          ctx.ellipse(ix, iy + 2, 31, 20, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#140c0e";
           ctx.beginPath();
           ctx.ellipse(ix, iy, 28, 18, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#262322";
+          ctx.fillStyle = "#292023";
           ctx.beginPath();
           ctx.ellipse(ix, iy - 4, 22, 13, 0, 0, Math.PI * 2);
           ctx.fill();
@@ -610,6 +725,7 @@ export function MapaInteractivoCanvas({
             tiempo,
             nodo.id === ubicacionActualId,
             nodo.desbloqueada,
+            imagenesZonasRef.current.get(nodo.id),
           );
           dibujarParticulasBioma(ctx, isla, tiempo, nodo.desbloqueada);
         }

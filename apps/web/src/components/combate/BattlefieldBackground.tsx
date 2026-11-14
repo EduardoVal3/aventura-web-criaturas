@@ -142,64 +142,66 @@ export function BattlefieldBackground({
           alt="Escenario de combate"
           onError={manejarError}
           className={`absolute inset-0 w-full h-full object-cover z-0 pixelated pointer-events-none ${
-            pasoFallback > 0 ? "opacity-35" : "opacity-85"
+            pasoFallback > 0 ? "opacity-35" : "opacity-100"
           }`}
         />
       )}
 
-      {/* 2. Escenario 2.5D en Perspectiva (cielo, columnas rúnicas y suelo con fuga) */}
-      <div
-        aria-hidden="true"
-        className={`absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b ${tema.cielo} ${
-          pasoFallback > 0 ? "opacity-90" : "opacity-55"
-        }`}
-      />
-
-      {/* Columnas rúnicas laterales en perspectiva para dar marco profundo */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 bottom-[28%] z-[1] pointer-events-none overflow-hidden">
-        <div
-          className="absolute left-3 sm:left-8 top-8 bottom-0 w-7 sm:w-11 border-2 border-black bg-[#0d1726]/85 shadow-[4px_0_0_#000]"
-          style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, 4px 0 0 #000` }}
-        >
+      {/* 2. Escenario 2.5D Procedural solo cuando no hay ilustración WebP real */}
+      {pasoFallback > 0 && !videoUrl && (
+        <>
           <div
-            className="mx-auto mt-6 w-2 sm:w-3 h-12 sm:h-16 opacity-80"
-            style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
+            aria-hidden="true"
+            className={`absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b ${tema.cielo} opacity-90`}
           />
-        </div>
-        <div
-          className="absolute right-3 sm:right-8 top-10 bottom-0 w-6 sm:w-10 border-2 border-black bg-[#0d1726]/85 shadow-[-4px_0_0_#000]"
-          style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, -4px 0 0 #000` }}
-        >
+
+          {/* Columnas rúnicas laterales en perspectiva */}
+          <div aria-hidden="true" className="absolute inset-x-0 top-0 bottom-[28%] z-[1] pointer-events-none overflow-hidden">
+            <div
+              className="absolute left-3 sm:left-8 top-8 bottom-0 w-7 sm:w-11 border-2 border-black bg-[#0d1726]/85 shadow-[4px_0_0_#000]"
+              style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, 4px 0 0 #000` }}
+            >
+              <div
+                className="mx-auto mt-6 w-2 sm:w-3 h-12 sm:h-16 opacity-80"
+                style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
+              />
+            </div>
+            <div
+              className="absolute right-3 sm:right-8 top-10 bottom-0 w-6 sm:w-10 border-2 border-black bg-[#0d1726]/85 shadow-[-4px_0_0_#000]"
+              style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, -4px 0 0 #000` }}
+            >
+              <div
+                className="mx-auto mt-8 w-2 sm:w-2.5 h-10 sm:h-14 opacity-75"
+                style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
+              />
+            </div>
+          </div>
+
+          {/* Suelo 2.5D con fuga en perspectiva CSS */}
           <div
-            className="mx-auto mt-8 w-2 sm:w-2.5 h-10 sm:h-14 opacity-75"
-            style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
-          />
-        </div>
-      </div>
+            aria-hidden="true"
+            className="absolute inset-x-[-20%] bottom-[-8%] h-[58%] z-[2] pointer-events-none overflow-hidden"
+            style={{ perspective: "460px" }}
+          >
+            <div
+              className="w-full h-full border-t-2"
+              style={{
+                transform: "rotateX(58deg)",
+                transformOrigin: "bottom center",
+                borderColor: tema.acento,
+                backgroundColor: tema.sueloPrincipal,
+                backgroundImage: `linear-gradient(to right, ${tema.rejilla} 2px, transparent 2px), linear-gradient(to bottom, ${tema.rejilla} 2px, transparent 2px)`,
+                backgroundSize: "52px 52px",
+                boxShadow: `inset 0 24px 48px rgba(0,0,0,0.65)`,
+              }}
+            />
+          </div>
+        </>
+      )}
 
-      {/* Suelo 2.5D con fuga en perspectiva CSS */}
+      {/* 3. Viñeta sutil para legibilidad de HUDs sobre la ilustración real */}
       <div
-        aria-hidden="true"
-        className="absolute inset-x-[-20%] bottom-[-8%] h-[58%] z-[2] pointer-events-none overflow-hidden"
-        style={{ perspective: "460px" }}
-      >
-        <div
-          className="w-full h-full border-t-2"
-          style={{
-            transform: "rotateX(58deg)",
-            transformOrigin: "bottom center",
-            borderColor: tema.acento,
-            backgroundColor: tema.sueloPrincipal,
-            backgroundImage: `linear-gradient(to right, ${tema.rejilla} 2px, transparent 2px), linear-gradient(to bottom, ${tema.rejilla} 2px, transparent 2px)`,
-            backgroundSize: "52px 52px",
-            boxShadow: `inset 0 24px 48px rgba(0,0,0,0.65)`,
-          }}
-        />
-      </div>
-
-      {/* 3. Capa de viñeta y gradiente para garantizar legibilidad de HUDs y sprites */}
-      <div
-        className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/65 pointer-events-none z-[3]"
+        className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/45 pointer-events-none z-[3]"
         aria-hidden="true"
       />
 

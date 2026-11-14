@@ -398,6 +398,9 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
     join(__dirname, "../src/components/mundo/BannerUbicacionActual.tsx"),
     join(__dirname, "../src/components/mundo/TarjetaSenderoConexion.tsx"),
     join(__dirname, "../src/components/mundo/MinimapaRedTerritorial.tsx"),
+    join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
+    join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"),
+    join(__dirname, "../src/lib/mapa-mundo.ts"),
   ];
 
   const regexEmoji = /\p{Extended_Pictographic}/u;
@@ -421,6 +424,21 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
   assert.ok(hubCodigo.includes("MapaInteractivoCanvas"), "PantallaHubUbicacion debe renderizar MapaInteractivoCanvas");
   assert.ok(hubCodigo.includes("TransicionViaje2D"), "PantallaHubUbicacion debe renderizar TransicionViaje2D");
   assert.ok(hubCodigo.includes("formatearRangoFauna"), "PantallaHubUbicacion debe usar formatearRangoFauna");
+  assert.ok(hubCodigo.includes("requisitoCartografia"), "PantallaHubUbicacion debe contemplar requisitoCartografia");
+  assert.ok(hubCodigo.includes("requisitoNivelEquipo"), "PantallaHubUbicacion debe contemplar requisitoNivelEquipo");
+  assert.ok(hubCodigo.includes("especiesHabitantes"), "PantallaHubUbicacion debe desplegar especiesHabitantes del hábitat");
+  assert.ok(hubCodigo.includes("rangoDomador"), "PantallaHubUbicacion debe desplegar rangoDomador del equipo");
+  assert.ok(hubCodigo.includes("finalizarViajeSiListo"), "PantallaHubUbicacion debe sincronizar animación 2D y API sin condición de carrera");
+  assert.ok(hubCodigo.includes("export default PantallaHubUbicacion"), "PantallaHubUbicacion debe conservar exportación por defecto");
+
+  // Verificación de las 9 islas en mapa-mundo.ts (Subfase 10o)
+  const { CONFIGURACION_ISLAS_MAPA } = await import("../src/lib/mapa-mundo.ts");
+  for (const nodo of TOPOLOGIA_AETHELGARD) {
+    assert.ok(
+      CONFIGURACION_ISLAS_MAPA[nodo.id],
+      `CONFIGURACION_ISLAS_MAPA debe definir coordenadas y paleta para ${nodo.id}`,
+    );
+  }
 
   // Verificación semántica en PantallaExploracion
   const expCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaExploracion.tsx"), "utf-8");

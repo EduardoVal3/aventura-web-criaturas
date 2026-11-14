@@ -5,8 +5,9 @@ import { reproducirSonido } from "@/lib/assets";
 export function LayoutPrincipal() {
   const location = useLocation();
   const esCombate = location.pathname.startsWith("/combate");
+  const esHub = location.pathname === "/hub" || location.pathname.startsWith("/hub/");
 
-  if (esCombate) {
+  if (esCombate || esHub) {
     return (
       <div className="h-screen h-[100dvh] w-full overflow-hidden bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full">
         <Outlet />

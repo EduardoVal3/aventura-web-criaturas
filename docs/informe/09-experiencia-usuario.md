@@ -1523,3 +1523,62 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 - **Inspección visual directa sobre láminas de control:** Verificación en comparación `BOX` vs `BICUBIC` vs `LANCZOS` sobre paisajes, mosaico `15/15` en `800x450` sin bandas negras y láminas de contraste claro/oscuro (`#090d16`) + máscara alfa pura para los 4 objetos sin artefactos de borde.
 
 
+---
+
+## 23. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
+
+### 23.1 Problema que Resuelve y Objetivo
+Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjetas de rutas, la experiencia seguía percibiéndose como una página web tradicional con scroll vertical en lugar de un videojuego RPG. Esta mejora migra el Hub (`/hub`) a una **interfaz de juego a pantalla completa (`100dvh`)** con estética **16-bit dark fantasy (tenebrosa)**, permitiendo explorar el archipiélago de Aethelgard directamente sobre un lienzo interactivo, inspeccionar cada isla antes de decidir si viajar y presenciar una transición animada 2D con la criatura líder del equipo al desplazarse entre zonas.
+
+---
+
+### 23.2 Arquitectura e Implementación
+
+#### A. Cartografía Virtual y Paleta Tenebrosa (`apps/web/src/lib/mapa-mundo.ts`)
+- **Espacio Lógico de 9 Islas:** Define `DIMENSIONES_MAPA_MUNDO` (`1200 × 760` unidades) y `CONFIGURACION_ISLAS_MAPA` para los 9 nodos canónicos (`LOC-01` a `LOC-03`, `ZON-01` a `ZON-06`) conectados según `CONEXIONES_AETHELGARD`.
+- **Ambientación Oscura (Dark Fantasy):** Cada bioma cuenta con paleta nocturna (`colorSuelo`, `colorBorde`, `colorCielo`, `colorAcento`) acorde a `apps/web/public/assets/README.md`: mar abisal oscuro, puerto con cabañas sombrías, estepa crepuscular con monolitos rúnicos, lago bioluminiscente, bosque maldito, riscos de obsidiana, bastión gótico, volcán con lava pulsante y cumbres lunares.
+
+#### B. Mapa Navegable en `<canvas>` (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`)
+- **Capas `absolute` + `relative`:** El `<canvas>` ocupa el fondo con `position: absolute; inset: 0`, mientras los marcadores de cada isla y los controles de cámara flotan en una capa `relative` sincronizada.
+- **Navegación y Zoom Responsive:**
+  - Paneo libre mediante `PointerEvents` (arrastre con ratón o pantalla táctil en móvil).
+  - Zoom con rueda del ratón (`0.55x` a `2.0x`) y botonera flotante (`+`, `-`, `Centrar`), con centrado automático en la ubicación actual al cargar o cambiar de tamaño de pantalla.
+- **Renderizado 2D Provisional y Soporte de Arte Final:**
+  - Dibuja olas nocturnas, peñascos, puentes de madera desgastada (continuos si la ruta está desbloqueada, punteados si está sellada), niebla desplazándose y detalles animados por bioma (faroles ámbar parpadeantes, runas, esporas espectrales y lava).
+  - Si el equipo coloca una ilustración definitiva en `/assets/zonas/mapa-mundo.webp`, el canvas la carga automáticamente como fondo; mientras tanto opera con el renderizado procedural 16-bit.
+  - Muestra el sprite de la **criatura líder** (`equipo[0]`) con el distintivo `TÚ AQUÍ` sobre la isla actual.
+  - Viñeta radial calibrada a las dimensiones reales del canvas escaladas por `devicePixelRatio` (`canvas.width`, `canvas.height`) para evitar cortes rectangulares en pantallas con escalado DPI.
+
+#### C. Pantalla de Carga / Transición Animada 2D (`apps/web/src/components/mundo/TransicionViaje2D.tsx`)
+- **Escena Nocturna de Travesía (~1.85 s):** Al confirmar un viaje (`api.viajar()`), despliega un `<canvas>` 2D con transición de cielo entre el bioma origen y destino, luna pálida, niebla en parallax, mar abisal y un puente viejo iluminado por faroles ámbar parpadeantes.
+- **Animación del Líder y Audio Retro:** El sprite de la criatura líder (obtenido de `api.obtenerEquipo()`, invertido horizontalmente con `ctx.scale(-1, 1)` porque los sprites canónicos miran a la izquierda, con fallback seguro a `placeholder-criatura.svg`) avanza saltando por el puente generando partículas de polvo y disparando `reproducirSonido("paso")` durante el trayecto y `reproducirSonido("confirmar")` al llegar.
+
+#### D. Hub a Pantalla Completa y HUD Flotante (`LayoutPrincipal.tsx` y `PantallaHubUbicacion.tsx`)
+- **Viewport de Juego (`100dvh`):** `LayoutPrincipal.tsx` aplica el modo sin scroll ni cabecera/pie web a `/hub` (igual que `/combate`).
+- **HUD Flotante `relative`:**
+  - **Superior:** Ficha del explorador (avatar del líder, nombre, nivel máximo, ubicación actual y `%` de progreso), saldo de monedas y botón de engrane (`Settings`) con acceso a `Kit de interfaz`, `Créditos` y cierre de sesión (`SALIR`).
+  - **Laterales:** Accesos rápidos flotantes a `Compendio`, `Bitácora`, `Almacén` (izquierda) y `Santuario`, `Tienda / Bazar`, `Inventario` (derecha), indicando con candado cuando un servicio no está habilitado en la localidad actual.
+  - **Inferior (Dock):** Ranuras rápidas del equipo activo (enlace a `/equipo`) y botón principal central **`EXPLORAR`** (en zonas silvestres) o **`VIAJAR`** (en localidades seguras).
+- **Modal de Decisión de Viaje (`AlertDialog`):** Al hacer clic en cualquier isla del mapa se abre un cuadro retro `8bitcn/ui` con vista previa de la zona, rango de fauna, barra de cartografía, requisitos de desbloqueo y acciones según estado (`EMPRENDER CAMINO`, `DESBLOQUEAR SENDA`, `EXPLORAR ZONA` o `PERMANECER`).
+- **Soberanía del Servidor Intacta:** No se modificó ningún endpoint ni regla de negocio en `apps/api`; toda validación de viaje, desbloqueo y equipo sigue residiendo en el Back-End.
+
+---
+
+### 23.3 Control de Archivos (Agregados y Modificados)
+
+| Estado | Archivo | Propósito |
+| :---: | :--- | :--- |
+| **Agregado** | `apps/web/src/lib/mapa-mundo.ts` | Coordenadas virtuales (`1200×760`) y paletas dark-fantasy de las 9 islas. |
+| **Agregado** | `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Mapa interactivo en `<canvas>` (`absolute`) con paneo, zoom, niebla, viñeta DPR y nodos `relative`. |
+| **Agregado** | `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Pantalla de carga 2D animada con la criatura líder cruzando el puente y sonido retro. |
+| **Editado** | `apps/web/src/components/LayoutPrincipal.tsx` | Habilita pantalla completa `100dvh` para la ruta `/hub`. |
+| **Editado** | `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Migra el Hub al HUD flotante sobre el mapa interactivo y conecta `TransicionViaje2D`. |
+| **Editado** | `apps/web/test/verificacion-hub-mundo.spec.ts` | Actualiza las aserciones estáticas para validar `MapaInteractivoCanvas` y `TransicionViaje2D`. |
+
+---
+
+### 23.4 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript.
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`).

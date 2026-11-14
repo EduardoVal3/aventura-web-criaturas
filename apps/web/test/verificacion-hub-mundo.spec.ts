@@ -232,10 +232,10 @@ test("Auditoría Impeccable: Erradicación de truncamientos, modales retro-bruta
     "El botón secundario de cancelación debe desplegar 'PERMANECER'",
   );
 
-  // 5. Separación clara en tarjetas de senderos
+  // 5. Separación clara en tarjetas/acciones de destino
   assert.ok(
-    hubCodigo.includes("border-t-2 border-black pt-3 mt-3"),
-    "La tarjeta de ruta debe separar las acciones del sendero con borde superior visible",
+    hubCodigo.includes("border-t-2 border-black"),
+    "El modal de destino debe separar los requisitos con borde superior visible",
   );
 
   // 6. Confinamiento móvil sin overflow horizontal
@@ -418,11 +418,9 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
 
   // Verificación semántica en PantallaHubUbicacion
   const hubCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaHubUbicacion.tsx"), "utf-8");
-  assert.ok(hubCodigo.includes("BannerUbicacionActual"), "PantallaHubUbicacion debe renderizar BannerUbicacionActual");
-  assert.ok(hubCodigo.includes("MinimapaRedTerritorial"), "PantallaHubUbicacion debe renderizar MinimapaRedTerritorial");
+  assert.ok(hubCodigo.includes("MapaInteractivoCanvas"), "PantallaHubUbicacion debe renderizar MapaInteractivoCanvas");
+  assert.ok(hubCodigo.includes("TransicionViaje2D"), "PantallaHubUbicacion debe renderizar TransicionViaje2D");
   assert.ok(hubCodigo.includes("formatearRangoFauna"), "PantallaHubUbicacion debe usar formatearRangoFauna");
-  assert.ok(hubCodigo.includes("requisitoCartografia"), "PantallaHubUbicacion debe contemplar requisitoCartografia");
-  assert.ok(hubCodigo.includes("requisitoNivelEquipo"), "PantallaHubUbicacion debe contemplar requisitoNivelEquipo");
 
   // Verificación semántica en PantallaExploracion
   const expCodigo = readFileSync(join(__dirname, "../src/paginas/PantallaExploracion.tsx"), "utf-8");

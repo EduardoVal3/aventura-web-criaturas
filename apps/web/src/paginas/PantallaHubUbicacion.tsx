@@ -54,7 +54,6 @@ import {
 } from "@/api";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import {
-  RUTAS_PLACEHOLDERS,
   manejarErrorImagen,
   obtenerImagenCriatura,
   obtenerImagenZona,
@@ -397,7 +396,7 @@ export function PantallaHubUbicacion() {
               <img
                 src={obtenerImagenCriatura(lider?.especieSlug)}
                 alt={lider?.nombre || "Líder"}
-                onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
+                onError={(e) => manejarErrorImagen(e, "criatura")}
                 className="w-full h-full object-contain scale-x-[-1]"
               />
             </div>
@@ -546,7 +545,7 @@ export function PantallaHubUbicacion() {
                         <img
                           src={obtenerImagenCriatura(criatura.slug)}
                           alt={criatura.nombre}
-                          onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
+                          onError={(e) => manejarErrorImagen(e, "criatura")}
                           className="w-8 h-8 sm:w-10 sm:h-10 object-contain scale-x-[-1]"
                         />
                         <span className="retro text-[6px] sm:text-[7px] bg-black/90 text-amber-300 px-1 border border-black absolute -bottom-1 -right-1">
@@ -649,7 +648,7 @@ export function PantallaHubUbicacion() {
                 <img
                   src={obtenerImagenZona(slugSeleccionado)}
                   alt={nodoSeleccionado.nombre}
-                  onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.zona)}
+                  onError={(e) => manejarErrorImagen(e, "zona")}
                   className="w-full h-full object-cover"
                 />
                 {!nodoSeleccionado.desbloqueada && (

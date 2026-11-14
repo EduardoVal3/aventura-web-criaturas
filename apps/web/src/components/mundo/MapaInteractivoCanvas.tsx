@@ -9,7 +9,6 @@ import {
   type ConfiguracionIslaMapa,
 } from "@/lib/mapa-mundo";
 import {
-  RUTAS_PLACEHOLDERS,
   manejarErrorImagen,
   obtenerImagenCriatura,
   reproducirSonido,
@@ -648,7 +647,7 @@ export function MapaInteractivoCanvas({
                     <img
                       src={obtenerImagenCriatura(lider?.especieSlug)}
                       alt={lider?.nombre || "Líder"}
-                      onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
+                      onError={(e) => manejarErrorImagen(e, "criatura")}
                       className="w-full h-full object-contain scale-x-[-1]"
                     />
                   </div>

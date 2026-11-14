@@ -121,38 +121,50 @@ function dibujarIslaPixel(
     ctx.globalAlpha = 0.55;
   }
 
-  // Aura fantasmal / oleaje sombrío alrededor de la isla
+  // Sombra proyectada profunda en el mar (perspectiva 2.5D)
   const pulso = Math.sin(tiempo * 0.0025 + isla.x * 0.01) * 3;
   ctx.fillStyle = esActual
-    ? "rgba(20, 209, 232, 0.18)"
-    : "rgba(15, 23, 42, 0.55)";
+    ? "rgba(20, 209, 232, 0.22)"
+    : "rgba(3, 6, 14, 0.72)";
   ctx.beginPath();
-  ctx.ellipse(0, 8, isla.radioX + 12 + pulso, isla.radioY + 10 + pulso * 0.6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 28, isla.radioX + 14 + pulso, isla.radioY + 8 + pulso * 0.6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Abismo / acantilado inferior
-  ctx.fillStyle = "#05070c";
+  // Pared frontal del acantilado 2.5D (altura visible)
+  ctx.fillStyle = "#080b12";
   ctx.beginPath();
-  ctx.ellipse(0, 14, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 22, isla.radioX, isla.radioY * 0.92, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Borde costero oscuro
+  // Estrato rocoso medio del acantilado
   ctx.fillStyle = isla.colorBorde;
   ctx.beginPath();
-  ctx.ellipse(0, 5, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 12, isla.radioX, isla.radioY * 0.92, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Superficie principal del bioma
+  // Estrías verticales del acantilado para reforzar volumen 2.5D
+  ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+  for (let gx = -isla.radioX + 24; gx <= isla.radioX - 24; gx += 26) {
+    ctx.fillRect(gx, isla.radioY * 0.52, 4, 24);
+  }
+
+  // Plataforma superior elevada del bioma
   ctx.fillStyle = isla.colorSuelo;
   ctx.beginPath();
-  ctx.ellipse(0, -2, isla.radioX - 10, isla.radioY - 10, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -4, isla.radioX - 6, isla.radioY * 0.86, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Contorno pixelado oscuro (o cian brillante si es ubicación actual)
+  // Bisel iluminado superior + contorno pixelado
+  ctx.strokeStyle = esActual ? "#14d1e8" : "rgba(255, 255, 255, 0.14)";
+  ctx.lineWidth = esActual ? 3.5 : 2;
+  ctx.beginPath();
+  ctx.ellipse(0, -4, isla.radioX - 6, isla.radioY * 0.86, 0, Math.PI * 1.05, Math.PI * 1.95);
+  ctx.stroke();
+
   ctx.strokeStyle = esActual ? "#14d1e8" : "#05070c";
   ctx.lineWidth = esActual ? 3.5 : 3;
   ctx.beginPath();
-  ctx.ellipse(0, 2, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -2, isla.radioX, isla.radioY * 0.92, 0, 0, Math.PI * 2);
   ctx.stroke();
 
   const parpadeo = 0.65 + Math.sin(tiempo * 0.006 + isla.y) * 0.35;

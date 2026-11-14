@@ -27,6 +27,48 @@ export interface BattlefieldBackgroundProps {
 const FONDO_POR_DEFECTO = "/assets/battlegrounds/caverna-cristal.svg";
 const FONDO_PLACEHOLDER_ZONA = RUTAS_PLACEHOLDERS.zona;
 
+interface TemaEscenario25D {
+  cielo: string;
+  acento: string;
+  sueloPrincipal: string;
+  rejilla: string;
+}
+
+function resolverTemaEscenario(zoneId?: string | null): TemaEscenario25D {
+  const slug = sanitizarSlugZona(zoneId);
+  if (slug.includes("cueva") || slug.includes("volcan")) {
+    return {
+      cielo: "from-[#1a090d] via-[#2b1015] to-[#090d16]",
+      acento: "#fb923c",
+      sueloPrincipal: "rgba(127, 29, 29, 0.35)",
+      rejilla: "rgba(251, 146, 60, 0.28)",
+    };
+  }
+  if (slug.includes("pico") || slug.includes("cumbre") || slug.includes("glaciar")) {
+    return {
+      cielo: "from-[#0a1829] via-[#132942] to-[#090d16]",
+      acento: "#7dd3fc",
+      sueloPrincipal: "rgba(30, 58, 138, 0.32)",
+      rejilla: "rgba(125, 211, 252, 0.3)",
+    };
+  }
+  if (slug.includes("bosque") || slug.includes("pradera")) {
+    return {
+      cielo: "from-[#091a12] via-[#112a1d] to-[#090d16]",
+      acento: "#34d399",
+      sueloPrincipal: "rgba(20, 83, 45, 0.32)",
+      rejilla: "rgba(52, 211, 153, 0.25)",
+    };
+  }
+  // Por defecto: Caverna rúnica cian (estilo dark-fantasy)
+  return {
+    cielo: "from-[#071124] via-[#0d1f3a] to-[#090d16]",
+    acento: "#14d1e8",
+    sueloPrincipal: "rgba(14, 116, 144, 0.25)",
+    rejilla: "rgba(20, 209, 232, 0.32)",
+  };
+}
+
 /**
  * Componente desacoplado para la renderización del escenario de batalla (Battlefield Background System).
  * Resuelve la imagen con fallback en cascada: webp de zona -> caverna cristal svg -> placeholder zona svg.
@@ -77,12 +119,14 @@ export function BattlefieldBackground({
     }
   };
 
+  const tema = resolverTemaEscenario(zoneId);
+
   return (
     <div
       className={`relative w-full h-full overflow-hidden select-none bg-[#090d16] ${className}`}
       data-testid="battlefield-background"
     >
-      {/* 1. Capa de Video Animado Ligero si se especifica */}
+      {/* 1. Capa de Video o Imagen Base (si existe WebP real de zona) */}
       {videoUrl ? (
         <video
           autoPlay
@@ -93,22 +137,69 @@ export function BattlefieldBackground({
           src={videoUrl}
         />
       ) : (
-        /* 2. Capa de Imagen SVG / WebP con z-0 visible */
         <img
           src={fuenteActual}
           alt="Escenario de combate"
           onError={manejarError}
-          className="absolute inset-0 w-full h-full object-cover z-0 pixelated pointer-events-none"
+          className={`absolute inset-0 w-full h-full object-cover z-0 pixelated pointer-events-none ${
+            pasoFallback > 0 ? "opacity-35" : "opacity-85"
+          }`}
         />
       )}
 
-      {/* 3. Capa de viñeta y gradiente para garantizar legibilidad de HUDs y sprites pixel-art */}
+      {/* 2. Escenario 2.5D en Perspectiva (cielo, columnas rúnicas y suelo con fuga) */}
       <div
-        className="absolute inset-0 bg-black/25 mix-blend-multiply pointer-events-none z-[1]"
         aria-hidden="true"
+        className={`absolute inset-0 z-[1] pointer-events-none bg-gradient-to-b ${tema.cielo} ${
+          pasoFallback > 0 ? "opacity-90" : "opacity-55"
+        }`}
       />
+
+      {/* Columnas rúnicas laterales en perspectiva para dar marco profundo */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 bottom-[28%] z-[1] pointer-events-none overflow-hidden">
+        <div
+          className="absolute left-3 sm:left-8 top-8 bottom-0 w-7 sm:w-11 border-2 border-black bg-[#0d1726]/85 shadow-[4px_0_0_#000]"
+          style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, 4px 0 0 #000` }}
+        >
+          <div
+            className="mx-auto mt-6 w-2 sm:w-3 h-12 sm:h-16 opacity-80"
+            style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
+          />
+        </div>
+        <div
+          className="absolute right-3 sm:right-8 top-10 bottom-0 w-6 sm:w-10 border-2 border-black bg-[#0d1726]/85 shadow-[-4px_0_0_#000]"
+          style={{ boxShadow: `inset 0 0 12px ${tema.rejilla}, -4px 0 0 #000` }}
+        >
+          <div
+            className="mx-auto mt-8 w-2 sm:w-2.5 h-10 sm:h-14 opacity-75"
+            style={{ backgroundColor: tema.acento, boxShadow: `0 0 14px ${tema.acento}` }}
+          />
+        </div>
+      </div>
+
+      {/* Suelo 2.5D con fuga en perspectiva CSS */}
       <div
-        className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none z-[1]"
+        aria-hidden="true"
+        className="absolute inset-x-[-20%] bottom-[-8%] h-[58%] z-[2] pointer-events-none overflow-hidden"
+        style={{ perspective: "460px" }}
+      >
+        <div
+          className="w-full h-full border-t-2"
+          style={{
+            transform: "rotateX(58deg)",
+            transformOrigin: "bottom center",
+            borderColor: tema.acento,
+            backgroundColor: tema.sueloPrincipal,
+            backgroundImage: `linear-gradient(to right, ${tema.rejilla} 2px, transparent 2px), linear-gradient(to bottom, ${tema.rejilla} 2px, transparent 2px)`,
+            backgroundSize: "52px 52px",
+            boxShadow: `inset 0 24px 48px rgba(0,0,0,0.65)`,
+          }}
+        />
+      </div>
+
+      {/* 3. Capa de viñeta y gradiente para garantizar legibilidad de HUDs y sprites */}
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/65 pointer-events-none z-[3]"
         aria-hidden="true"
       />
 

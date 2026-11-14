@@ -1586,6 +1586,15 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 
 ### 23.3 Verificación de Calidad y Cero Regresiones
 - **Verificación de Tipos (`pnpm.cmd --filter web exec tsc -b --noEmit`):** 0 errores.
-- **Pruebas Unitarias Web (`pnpm.cmd --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
-- **Linter Web (`pnpm.cmd --filter web lint`):** 0 errores en 86 archivos.
+- **Pruebas Unitarias Web (`pnpm.cmd --filter web test`):** 97 de 97 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm.cmd --filter web lint`):** 0 errores en 87 archivos.
 - **Compilación de Producción (`pnpm.cmd --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+### 23.4 Ampliación Dinámica por Cartas Tácticas y Coreografía en Arena
+- **Cartas Tácticas Elevables (`PantallaCombate.tsx`):** Los 4 slots del menú `ATACAR` (`C1..C4`) se presentan como cartas tácticas que se elevan al pasar el cursor (`hover:-translate-y-1.5`), indicando su coreografía (`Embestida`, `Proyectil`, `Escudo` o `Insignia`).
+- **Movilidad Diferenciada por Carta (`index.css` + `PantallaCombate.tsx`):**
+  - *Físico:* Embestida diagonal (`anim-embestida-aliado` / `anim-embestida-rival`).
+  - *Elemental:* Proyectil pixel-art (`anim-proyectil-aliado` / `anim-proyectil-rival`) teñido según la afinidad de la criatura.
+  - *Defensivo / Estado:* Aura rúnica pulsante alrededor de la criatura aliada.
+  - *Insignia (Resonancia 100%):* Clímax oscuro sobre la arena, proyectil dorado y mini-zoom cinemático (`scale-[1.04]`).
+- **Arena Viva y Asistente Táctico:** Respiración continua (`anim-respiracion-combate`) en ambos sprites cuando están en reposo y barra de consejo `TÁCTICA:` en la consola raíz según Resonancia, `Bastión`, estados alterados o ventaja elemental.

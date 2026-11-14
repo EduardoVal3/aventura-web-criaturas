@@ -35,13 +35,11 @@ export default function HealthBar({
   const [estela, setEstela] = useState(value);
 
   useEffect(() => {
-    if (value >= estela) {
-      setEstela(value);
-      return;
-    }
+    if (estela === value) return;
+    const retraso = value > estela ? 0 : 180;
     const id = window.setTimeout(() => {
       setEstela(value);
-    }, 180);
+    }, retraso);
     return () => window.clearTimeout(id);
   }, [value, estela]);
 

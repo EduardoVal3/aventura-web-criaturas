@@ -1450,3 +1450,37 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
   - Suite ampliada `apps/web/test/verificacion-hub-mundo.spec.ts` certificando helpers de fauna y riesgo, topología de 9 nodos, erradicación de emojis unicode (R1) e invariantes visuales de componentes 8bitcn/ui.
 - **Linter de Frontend (`pnpm --filter web lint`):** 0 errores oxlint sobre el monorepo.
 - **Compilación de Producción (`pnpm --filter web build`):** 0 errores de tipado TypeScript y empaquetado Vite (`tsc -b && vite build` completado exitosamente).
+
+---
+
+## 21. Optimización Multimedia e Integración de Sprites Canónicos (30 Criaturas)
+
+### 21.1 Diagnóstico Inicial y Auditoría Técnica
+- **Inventario maestro inicial:** Se auditaron las 30 ilustraciones fuente `*_2K.jpg` en `/sprites/` (excluidas de Git en `.gitignore`), todas en `2048x2048 px`, orientación perfil `3/4` mirando estrictamente hacia la izquierda (`0` criaturas requerían espejo manual) y fondo negro con ruido de compresión JPEG, totalizando **`65.62 MB`** (`68,812,242 bytes`, ~`1.83`–`2.73 MB` por archivo).
+- **Auditoría de consumo y dimensiones reales en UI:** Mediante inspección con Graphify y búsqueda sobre `apps/web/src/`, se verificó que las 9 pantallas consumidoras (`PantallaCombate`, `PantallaCatalogo`, `PantallaEquipo`, `PantallaAlmacen`, `PantallaCuracion`, `PantallaExploracion`, `PantallaInventario`, `PantallaCrearPersonaje` y `PaginaCreditos`) ya resuelven `/assets/criaturas/<slug>.webp` mediante `obtenerImagenCriatura` en `apps/web/src/lib/assets.ts` con respaldo `onError` en cascada hacia `placeholder-criatura.svg`, renderizando en contenedores `36 px`–`128 px` (`size-9` a `size-32`) con `object-contain`, `.pixelated` (`image-rendering: pixelated`) y `scale-x-[-1]` automático para el aliado en arena.
+- **Evaluación de alternativas y resolución:** El análisis FFT de las imágenes 2K confirmó tamaños de bloque artístico no enteros respecto a potencias de 2 (`4.6–6.8 px`, ~`300–445 px` efectivos). Se descartaron `PNG` optimizado (~4× más pesado), `AVIF` (decodificación más lenta en grillas de 30 tarjetas) y `NEAREST`/`256 px` (serrucho irregular y pérdida de detalle en extremidades), seleccionando **`512x512 RGBA WebP` (`q=90`, `alpha_quality=100`, `method=6`)** escalado con filtro `BOX` premultiplicado y recorte uniforme `1:1` (`4%` margen) como equilibrio óptimo entre peso y nitidez sobre fondos oscuros (`#090D16`, `#121927`, `#1A2332`).
+
+### 21.2 Mejoras Implementadas
+
+#### A. Identidad Retro Aethelgard y Fidelidad Visual
+- **Preservación de silueta y auras oscuras:** Todas las criaturas conservan su orientación izquierda nativa, proporciones centradas con `4%` de holgura para animaciones de impacto/flotación y sombras proyectadas en arena, y contornos nítidos sobre la paleta oscuro-abismo sin halos negros ni recuadros opacos.
+- **Limpieza selectiva de cavidades sin perforar sombras:** La extracción híbrida evitó explícitamente la perforación de quitina y armadura oscura en especies críticas (`pesadilla`, `arana-gigante`, `mantarraya-espectral`), a la vez que abrió cavidades genuinamente encerradas entre alas, espiras, cuernos y guadañas (`basilisco`, `gargola`, `elemental-fuego`, `mantis-sombria`, `anguila-penumbra`, `behir-abismo`, `treant-anciano`, `remorhaz-glaciar`, `vibora-rocosa`, `lobo-estepario`, `jabali-espinoso`).
+
+#### B. Pipeline Multimedia y Optimización en Cliente (`apps/web`)
+- **Generación de los 30 sprites canónicos:** Mapeo completo 1 a 1 de las 30 fuentes hacia `apps/web/public/assets/criaturas/<slug>.webp`, bajando el peso total de **`65.62 MB`** a **`1.92 MB`** (`2,012,252 bytes`, rango `50.1 KB` en `arana-gigante.webp` a `89.3 KB` en `behir-abismo.webp`, reducción neta del **`97.08%`**) manteniendo `/sprites/` intacto como respaldo maestro local y cero dependencias agregadas a `package.json`.
+- **Decodificación asíncrona en combate:** En `apps/web/src/paginas/PantallaCombate.tsx`, se añadió `decoding="async"` a los sprites principales de rival y aliado para evitar bloqueos del hilo principal al alternar criaturas en relevo o encuentros nuevos; `apps/web/src/lib/assets.ts` se conservó intacto al cubrir ya la resolución `.webp` limpia.
+- **Documentación y decisiones arquitectónicas:** Actualización de [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) y registro de las decisiones **D-19** y **D-20** en [docs/decisiones.md](file:///docs/decisiones.md).
+
+#### C. Integración Multimedia, Entrega HTTP y Audio Retro
+- **Entrega individual sobre atlas:** Se mantuvo el esquema individual `/assets/criaturas/<slug>.webp` aprovechando caché HTTP por criatura y carga diferida (`loading="lazy"`) en grilla, manteniendo las 16 señales de audio Web Audio API de `assets.ts` intactas.
+
+#### D. Reglas de Servidor y Contratos
+- Sin cambios en contratos de API ni migraciones de base de datos; se validó correspondencia exacta de nomenclatura contra el arreglo canónico `BESTIARIO` en `apps/api/src/modulos/externo/bestiario-canonico.ts`.
+
+### 21.3 Verificación de Calidad y Cero Regresiones
+- **Suite de verificación multimedia (`apps/web/test/verificacion-sprites-criaturas.spec.ts`):** Valida automáticamente que los 30 slugs de `BESTIARIO` posean archivo `.webp` propio (`VP8X`, bit de canal alfa activo, exactamente `512x512 px`, rango de tamaño acotado) y que `obtenerImagenCriatura` no caiga al placeholder SVG.
+- **Pruebas Automatizadas Front-End (`pnpm --filter web test`):** **97 de 97 pruebas aprobadas** (0 fallos, 0 omitidas).
+- **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (34 advertencias preexistentes en utilidades previas).
+- **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con 0 errores (`30` archivos `.webp` empaquetados correctamente en `apps/web/dist/assets/criaturas/`).
+- **Auditoría visual por láminas de control y composición simulada:** Inspección visual de los 30 sprites decodificados sobre fondo oscuro de arena (`#121927`), fondo neutro de contraste (`#64748b`) y escena dual de combate con reflejo `scale-x-[-1]`. La verificación interactiva vía Chrome DevTools quedó omitida al no encontrarse una instancia de Chrome con depuración remota activa en el entorno local.
+

@@ -4,6 +4,7 @@ dist/
 dist-ssr/
 *.local
 /sprites
+/faltantes
 
 # Variables de entorno: solo se versiona la plantilla (.env.example)
 .env

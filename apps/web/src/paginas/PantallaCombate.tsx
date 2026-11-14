@@ -963,6 +963,7 @@ export function PantallaCombate() {
                 <img
                   src={obtenerImagenCriatura(rival.slug)}
                   alt={rival.nombre}
+                  decoding="async"
                   onError={(e) => manejarErrorImagen(e, "criatura")}
                   className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]"
                 />
@@ -998,6 +999,7 @@ export function PantallaCombate() {
                 <img
                   src={obtenerImagenCriatura(aliado.slug)}
                   alt={aliado.nombre}
+                  decoding="async"
                   onError={(e) => {
                     setEsPlaceholderAliado(true);
                     manejarErrorImagen(e, "criatura");

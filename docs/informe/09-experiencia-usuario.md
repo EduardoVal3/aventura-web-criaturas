@@ -1453,14 +1453,47 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 
 ---
 
-## 21. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
+## 21. Optimización Multimedia e Integración de Sprites Canónicos (30 Criaturas)
 
-### 21.1 Problema que Resuelve y Objetivo
+### 21.1 Diagnóstico Inicial y Auditoría Técnica
+- **Inventario maestro inicial:** Se auditaron las 30 ilustraciones fuente `*_2K.jpg` en `/sprites/` (excluidas de Git en `.gitignore`), todas en `2048x2048 px`, orientación perfil `3/4` mirando estrictamente hacia la izquierda (`0` criaturas requerían espejo manual) y fondo negro con ruido de compresión JPEG, totalizando **`65.62 MB`** (`68,812,242 bytes`, ~`1.83`–`2.73 MB` por archivo).
+- **Auditoría de consumo y dimensiones reales en UI:** Mediante inspección con Graphify y búsqueda sobre `apps/web/src/`, se verificó que las 9 pantallas consumidoras (`PantallaCombate`, `PantallaCatalogo`, `PantallaEquipo`, `PantallaAlmacen`, `PantallaCuracion`, `PantallaExploracion`, `PantallaInventario`, `PantallaCrearPersonaje` y `PaginaCreditos`) ya resuelven `/assets/criaturas/<slug>.webp` mediante `obtenerImagenCriatura` en `apps/web/src/lib/assets.ts` con respaldo `onError` en cascada hacia `placeholder-criatura.svg`, renderizando en contenedores `36 px`–`128 px` (`size-9` a `size-32`) con `object-contain`, `.pixelated` (`image-rendering: pixelated`) y `scale-x-[-1]` automático para el aliado en arena.
+- **Evaluación de alternativas y resolución:** El análisis FFT de las imágenes 2K confirmó tamaños de bloque artístico no enteros respecto a potencias de 2 (`4.6–6.8 px`, ~`300–445 px` efectivos). Se descartaron `PNG` optimizado (~4× más pesado), `AVIF` (decodificación más lenta en grillas de 30 tarjetas) y `NEAREST`/`256 px` (serrucho irregular y pérdida de detalle en extremidades), seleccionando **`512x512 RGBA WebP` (`q=90`, `alpha_quality=100`, `method=6`)** escalado con filtro `BOX` premultiplicado y recorte uniforme `1:1` (`4%` margen) como equilibrio óptimo entre peso y nitidez sobre fondos oscuros (`#090D16`, `#121927`, `#1A2332`).
+
+### 21.2 Mejoras Implementadas
+
+#### A. Identidad Retro Aethelgard y Fidelidad Visual
+- **Preservación de silueta y disolución de halos oscuros:** Todas las criaturas conservan su orientación izquierda nativa, proporciones centradas con `4%` de holgura para animaciones/pedestales y contornos limpios sobre fondos tanto oscuros como claros. En una segunda iteración (`v4`), se corrigieron visualmente los defectos de borde detectados en web real mediante dos mejoras críticas: (1) una barrera morfológica perimetral (`pasos=5` en `1024 px`) que sella grietas estrechas e impide filtraciones hacia placas de armadura, corteza o escamas (`pesadilla`, `treant-anciano`, `vibora-rocosa`), y (2) protección de materiales mate oscuros (`gargola`, `treant-anciano`) combinada con rampa alfa suave + descontaminación exclusivamente sobre halos luminosos exteriores saturados sobre negro (`remorhaz-glaciar`, `vibora-rocosa`, `elemental-agua`, `basilisco`, `yeti`, `lobo-invernal`, `behir-abismo`, `anguila-penumbra`, `espectro-ceniza`).
+- **Limpieza selectiva de cavidades sin perforar sombras:** La detección de cavidades cerradas exige núcleo puro erosionado `<= 5`, `pct2 >= 72%` y media `<= 1.95`, abriendo solo huecos reales entre alas, espiras, ramas y guadañas sin afectar zonas oscuras sólidas (`mantarraya-espectral`, `arana-gigante`, `pesadilla`).
+
+#### B. Pipeline Multimedia y Optimización en Cliente (`apps/web`)
+- **Generación de los 30 sprites canónicos:** Mapeo completo 1 a 1 de las 30 fuentes hacia `apps/web/public/assets/criaturas/<slug>.webp`, bajando el peso total de **`65.62 MB`** (`68,812,242 bytes`) a **`1.96 MB`** (`2,056,686 bytes`, rango **`51.3 KB`** en `escorpion-obsidiana.webp` a **`93.2 KB`** en `yeti.webp`, reducción neta del **`97.01%`**) manteniendo `/sprites/` intacto como respaldo maestro local y cero dependencias agregadas a `package.json`.
+- **Decodificación asíncrona en combate:** En `apps/web/src/paginas/PantallaCombate.tsx`, se añadió `decoding="async"` a los sprites principales de rival y aliado para evitar bloqueos del hilo principal al alternar criaturas en relevo o encuentros nuevos; `apps/web/src/lib/assets.ts` se conservó intacto al cubrir ya la resolución `.webp` limpia.
+- **Documentación y decisiones arquitectónicas:** Actualización de [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) y registro de las decisiones **D-19** y **D-20** en [docs/decisiones.md](file:///docs/decisiones.md).
+
+#### C. Integración Multimedia, Entrega HTTP y Audio Retro
+- **Entrega individual sobre atlas:** Se mantuvo el esquema individual `/assets/criaturas/<slug>.webp` aprovechando caché HTTP por criatura y carga diferida (`loading="lazy"`) en grilla, manteniendo las 16 señales de audio Web Audio API de `assets.ts` intactas.
+
+#### D. Reglas de Servidor y Contratos
+- Sin cambios en contratos de API ni migraciones de base de datos; se validó correspondencia exacta de nomenclatura contra el arreglo canónico `BESTIARIO` en `apps/api/src/modulos/externo/bestiario-canonico.ts`.
+
+### 21.3 Verificación de Calidad y Cero Regresiones
+- **Suite de verificación multimedia (`apps/web/test/verificacion-sprites-criaturas.spec.ts`):** Valida automáticamente que los 30 slugs de `BESTIARIO` posean archivo `.webp` propio (`VP8X`, bit de canal alfa activo, exactamente `512x512 px`, rango de tamaño acotado) y que `obtenerImagenCriatura` no caiga al placeholder SVG.
+- **Pruebas Automatizadas Front-End (`pnpm --filter web test`):** **97 de 97 pruebas aprobadas** (0 fallos, 0 omitidas).
+- **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (34 advertencias preexistentes en utilidades previas).
+- **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con 0 errores (`30` archivos `.webp` empaquetados correctamente en `apps/web/dist/assets/criaturas/`).
+- **Auditoría visual por láminas de control y composición simulada:** Inspección visual de los 30 sprites decodificados sobre fondo oscuro de arena (`#121927`), fondo neutro de contraste (`#64748b`) y escena dual de combate con reflejo `scale-x-[-1]`. La verificación interactiva vía Chrome DevTools quedó omitida al no encontrarse una instancia de Chrome con depuración remota activa en el entorno local.
+
+---
+
+## 22. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
+
+### 22.1 Problema que Resuelve y Objetivo
 Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjetas de rutas, la experiencia seguía percibiéndose como una página web tradicional con scroll vertical en lugar de un videojuego RPG. Esta mejora migra el Hub (`/hub`) a una **interfaz de juego a pantalla completa (`100dvh`)** con estética **16-bit dark fantasy (tenebrosa)**, permitiendo explorar el archipiélago de Aethelgard directamente sobre un lienzo interactivo, inspeccionar cada isla antes de decidir si viajar y presenciar una transición animada 2D con la criatura líder del equipo al desplazarse entre zonas.
 
 ---
 
-### 21.2 Arquitectura e Implementación
+### 22.2 Arquitectura e Implementación
 
 #### A. Cartografía Virtual y Paleta Tenebrosa (`apps/web/src/lib/mapa-mundo.ts`)
 - **Espacio Lógico de 9 Islas:** Define `DIMENSIONES_MAPA_MUNDO` (`1200 × 760` unidades) y `CONFIGURACION_ISLAS_MAPA` para los 9 nodos canónicos (`LOC-01` a `LOC-03`, `ZON-01` a `ZON-06`) conectados según `CONEXIONES_AETHELGARD`.
@@ -1492,7 +1525,7 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 
 ---
 
-### 21.3 Control de Archivos (Agregados y Modificados)
+### 22.3 Control de Archivos (Agregados y Modificados)
 
 | Estado | Archivo | Propósito |
 | :---: | :--- | :--- |
@@ -1505,7 +1538,7 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 
 ---
 
-### 21.4 Verificación de Calidad y Cero Regresiones
+### 22.4 Verificación de Calidad y Cero Regresiones
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript.
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
@@ -1513,11 +1546,11 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 
 ---
 
-## 22. Adenda de Retroalimentación Visual, "Game Feel" y Control de Audio Retro (Sin Alterar Reglas de Turnos)
+## 23. Adenda de Retroalimentación Visual, "Game Feel" y Control de Audio Retro (Sin Alterar Reglas de Turnos)
 
 Con el objetivo de enriquecer la experiencia visual e interactiva del jugador manteniendo intactas la jugabilidad por turnos y todas las reglas autoritativas del servidor (`apps/api`), se implementaron mejoras en cuatro frentes puramente visuales y sensoriales en `apps/web`.
 
-### 22.1 Mejoras Implementadas
+### 23.1 Mejoras Implementadas
 
 1. **Mapa Interactivo más Vivo e Informativo (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`):**
    - **Tooltip rico al hacer hover o enfocar un nodo:** Despliega una ficha flotante con el nombre de la ubicación, etiqueta del bioma, estado de viaje (actual, conectada, desbloqueable o bloqueada) y servicios disponibles (Santuario/Tienda en localidades seguras; rango de nivel de fauna y porcentaje explorado en zonas salvajes).
@@ -1539,7 +1572,7 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
    - **Persistencia en `localStorage` (`aethelgard_sonido_silenciado`):** Funciones `estaSonidoSilenciado()`, `establecerSonidoSilenciado()` y `alternarSonidoSilenciado()` en `apps/web/src/lib/assets.ts` respetadas automáticamente por `reproducirSonido()`.
    - **Botón accesible Silenciar / Activar (`Volume2` / `VolumeX`):** Integrado en la barra de navegación de `LayoutPrincipal.tsx` y junto a los controles de cámara en `MapaInteractivoCanvas.tsx`.
 
-### 22.2 Control de Archivos Modificados
+### 23.2 Control de Archivos Modificados
 
 | Archivo | Cambio Principal |
 | :--- | :--- |
@@ -1551,7 +1584,7 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 | `apps/web/src/lib/assets.ts` | Persistencia y control global de silencio para el sintetizador Web Audio 8-bit. |
 | `apps/web/src/components/LayoutPrincipal.tsx` | Botón de activar/silenciar sonido retro en la cabecera global. |
 
-### 22.3 Verificación de Calidad y Cero Regresiones
+### 23.3 Verificación de Calidad y Cero Regresiones
 - **Verificación de Tipos (`pnpm.cmd --filter web exec tsc -b --noEmit`):** 0 errores.
 - **Pruebas Unitarias Web (`pnpm.cmd --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
 - **Linter Web (`pnpm.cmd --filter web lint`):** 0 errores en 86 archivos.

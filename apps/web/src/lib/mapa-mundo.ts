@@ -1,5 +1,5 @@
 /**
- * Coordenadas virtuales, paletas de bioma y metadatos visuales del mapa 2D de Aethelgard.
+ * Coordenadas virtuales, paletas de bioma dark-fantasy y metadatos visuales del mapa 2D de Aethelgard.
  * El lienzo base mide 1200 x 760 unidades lógicas y se adapta con paneo y zoom responsive.
  */
 
@@ -18,6 +18,7 @@ export interface ConfiguracionIslaMapa {
   colorSuelo: string;
   colorBorde: string;
   colorCielo: string;
+  colorAcento: string;
   etiquetaCorta: string;
 }
 
@@ -29,9 +30,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 118,
     radioY: 82,
     bioma: "puerto",
-    colorSuelo: "#4d9e48",
-    colorBorde: "#d8b46a",
-    colorCielo: "#1b3a5c",
+    colorSuelo: "#24352a",
+    colorBorde: "#4a3e30",
+    colorCielo: "#090f1c",
+    colorAcento: "#f59e0b",
     etiquetaCorta: "Villa Serena",
   },
   "ZON-01": {
@@ -41,9 +43,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 115,
     radioY: 84,
     bioma: "pradera",
-    colorSuelo: "#6ab04c",
-    colorBorde: "#3e7031",
-    colorCielo: "#3b2c4e",
+    colorSuelo: "#2f3824",
+    colorBorde: "#211d18",
+    colorCielo: "#130d21",
+    colorAcento: "#eab308",
     etiquetaCorta: "Praderas",
   },
   "ZON-02": {
@@ -53,9 +56,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 118,
     radioY: 80,
     bioma: "lago",
-    colorSuelo: "#2f7d7a",
-    colorBorde: "#1b4d52",
-    colorCielo: "#0f2e47",
+    colorSuelo: "#142e36",
+    colorBorde: "#0b1a22",
+    colorCielo: "#06131f",
+    colorAcento: "#14d1e8",
     etiquetaCorta: "Lago Espejo",
   },
   "LOC-02": {
@@ -65,9 +69,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 102,
     radioY: 74,
     bioma: "puesto",
-    colorSuelo: "#5e8c45",
-    colorBorde: "#6e563e",
-    colorCielo: "#233645",
+    colorSuelo: "#2b3025",
+    colorBorde: "#36281e",
+    colorCielo: "#0c131c",
+    colorAcento: "#f59e0b",
     etiquetaCorta: "Puesto del Río",
   },
   "ZON-03": {
@@ -77,9 +82,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 108,
     radioY: 76,
     bioma: "bosque",
-    colorSuelo: "#2c6b45",
-    colorBorde: "#1a422b",
-    colorCielo: "#112b24",
+    colorSuelo: "#11261b",
+    colorBorde: "#09150f",
+    colorCielo: "#071410",
+    colorAcento: "#22c55e",
     etiquetaCorta: "Bosque",
   },
   "ZON-04": {
@@ -89,9 +95,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 96,
     radioY: 66,
     bioma: "riscos",
-    colorSuelo: "#7c756c",
-    colorBorde: "#4a443e",
-    colorCielo: "#2c2838",
+    colorSuelo: "#2c2829",
+    colorBorde: "#1a1718",
+    colorCielo: "#140f1a",
+    colorAcento: "#a855f7",
     etiquetaCorta: "Riscos",
   },
   "LOC-03": {
@@ -101,9 +108,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 106,
     radioY: 72,
     bioma: "bastion",
-    colorSuelo: "#588246",
-    colorBorde: "#6e737b",
-    colorCielo: "#1b2436",
+    colorSuelo: "#262d36",
+    colorBorde: "#171b22",
+    colorCielo: "#090d16",
+    colorAcento: "#38bdf8",
     etiquetaCorta: "Bastión Norte",
   },
   "ZON-05": {
@@ -113,9 +121,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 118,
     radioY: 84,
     bioma: "volcan",
-    colorSuelo: "#362b30",
-    colorBorde: "#1c1518",
-    colorCielo: "#2e1014",
+    colorSuelo: "#1c1317",
+    colorBorde: "#0f090b",
+    colorCielo: "#1b080b",
+    colorAcento: "#ef4444",
     etiquetaCorta: "Cueva Umbría",
   },
   "ZON-06": {
@@ -125,9 +134,10 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
     radioX: 118,
     radioY: 80,
     bioma: "glaciar",
-    colorSuelo: "#dcebf7",
-    colorBorde: "#8fb8d6",
-    colorCielo: "#152b47",
+    colorSuelo: "#2c3d4f",
+    colorBorde: "#17222e",
+    colorCielo: "#081221",
+    colorAcento: "#7dd3fc",
     etiquetaCorta: "La Cumbre",
   },
 };
@@ -141,9 +151,10 @@ export function obtenerConfiguracionIsla(ubicacionId: string): ConfiguracionIsla
       radioX: 100,
       radioY: 70,
       bioma: "pradera",
-      colorSuelo: "#588246",
-      colorBorde: "#3e7031",
-      colorCielo: "#1b2436",
+      colorSuelo: "#24352a",
+      colorBorde: "#1a1718",
+      colorCielo: "#090d16",
+      colorAcento: "#14d1e8",
       etiquetaCorta: ubicacionId,
     }
   );

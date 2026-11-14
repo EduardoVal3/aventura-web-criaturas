@@ -84,28 +84,42 @@ export function TransicionViaje2D({
       const H = 260;
       ctx.imageSmoothingEnabled = false;
 
-      // Cielo con transición horizontal de bioma origen -> destino
+      // Cielo nocturno tenebroso con transición de bioma origen -> destino
       const grad = ctx.createLinearGradient(0, 0, W, 0);
       grad.addColorStop(0, islaOrigen.colorCielo);
       grad.addColorStop(1, islaDestino.colorCielo);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
 
-      // Estrellas / nubes pixeladas en parallax
-      ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+      // Luna pálida espectral
+      ctx.fillStyle = "rgba(226, 232, 240, 0.14)";
+      ctx.beginPath();
+      ctx.arc(520, 56, 32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#cbd5e1";
+      ctx.beginPath();
+      ctx.arc(520, 56, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Estrellas tenues y niebla nocturna en parallax
+      ctx.fillStyle = "rgba(203, 213, 225, 0.35)";
       for (let i = 0; i < 18; i++) {
         const sx = ((i * 73 - t * 90) % W + W) % W;
-        const sy = 18 + (i * 29) % 100;
-        ctx.fillRect(sx, sy, 3, 3);
+        const sy = 16 + (i * 29) % 95;
+        ctx.fillRect(sx, sy, 2, 2);
       }
+      ctx.fillStyle = "rgba(148, 163, 184, 0.08)";
+      const nieblaOffset = (t * 120) % W;
+      ctx.fillRect(W - nieblaOffset, 128, 180, 22);
+      ctx.fillRect((W * 0.5 - nieblaOffset + W) % W, 146, 140, 18);
 
-      // Océano inferior
-      ctx.fillStyle = "#174b82";
+      // Océano abisal inferior
+      ctx.fillStyle = "#060d18";
       ctx.fillRect(0, 198, W, 62);
-      ctx.fillStyle = "#38bdf8";
+      ctx.fillStyle = "rgba(56, 189, 248, 0.18)";
       for (let wx = 0; wx < W; wx += 48) {
-        const offset = Math.sin(ahora * 0.008 + wx) * 4;
-        ctx.fillRect(wx + offset, 214, 22, 3);
+        const offset = Math.sin(ahora * 0.006 + wx) * 4;
+        ctx.fillRect(wx + offset, 214, 22, 2);
       }
 
       // Tierra de la isla origen (izquierda)
@@ -120,19 +134,22 @@ export function TransicionViaje2D({
       ctx.fillStyle = islaDestino.colorSuelo;
       ctx.fillRect(494, 178, 146, 14);
 
-      // Puente de madera conectando ambas islas
-      ctx.fillStyle = "#5c3a1b";
+      // Puente viejo de madera oscura con faroles parpadeantes
+      ctx.fillStyle = "#26180e";
       ctx.fillRect(140, 184, 360, 12);
-      ctx.fillStyle = "#8b5a2b";
+      ctx.fillStyle = "#47311e";
       for (let px = 144; px < 496; px += 18) {
         ctx.fillRect(px, 181, 14, 8);
       }
-      // Postes del puente
-      ctx.fillStyle = "#4a2c18";
+      // Postes del puente y faroles ámbar
+      const brilloFarol = 0.65 + Math.sin(ahora * 0.015) * 0.35;
       for (let px = 150; px <= 490; px += 68) {
-        ctx.fillRect(px, 164, 6, 24);
+        ctx.fillStyle = "#1c120a";
+        ctx.fillRect(px, 160, 6, 28);
+        ctx.fillStyle = `rgba(245, 158, 11, ${brilloFarol})`;
+        ctx.fillRect(px - 1, 154, 8, 6);
       }
-      ctx.fillStyle = "#7c5329";
+      ctx.fillStyle = "#3b2718";
       ctx.fillRect(150, 168, 344, 4);
 
       // Partículas de polvo detrás de la criatura

@@ -54,26 +54,28 @@ function dibujarIslaPixel(
   ctx.translate(isla.x, isla.y);
 
   if (!desbloqueada) {
-    ctx.globalAlpha = 0.65;
+    ctx.globalAlpha = 0.55;
   }
 
-  // Espuma animada alrededor de la isla
-  const pulso = Math.sin(tiempo * 0.003 + isla.x * 0.01) * 3;
-  ctx.fillStyle = "rgba(186, 230, 253, 0.25)";
+  // Aura fantasmal / oleaje sombrío alrededor de la isla
+  const pulso = Math.sin(tiempo * 0.0025 + isla.x * 0.01) * 3;
+  ctx.fillStyle = esActual
+    ? "rgba(20, 209, 232, 0.18)"
+    : "rgba(15, 23, 42, 0.55)";
   ctx.beginPath();
-  ctx.ellipse(0, 8, isla.radioX + 10 + pulso, isla.radioY + 8 + pulso * 0.6, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 8, isla.radioX + 12 + pulso, isla.radioY + 10 + pulso * 0.6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Sombra / acantilado inferior de la isla
-  ctx.fillStyle = "#16202e";
+  // Abismo / acantilado inferior
+  ctx.fillStyle = "#05070c";
   ctx.beginPath();
-  ctx.ellipse(0, 12, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 14, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Borde costero / arena / roca
+  // Borde costero oscuro
   ctx.fillStyle = isla.colorBorde;
   ctx.beginPath();
-  ctx.ellipse(0, 4, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 5, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
   ctx.fill();
 
   // Superficie principal del bioma
@@ -82,89 +84,93 @@ function dibujarIslaPixel(
   ctx.ellipse(0, -2, isla.radioX - 10, isla.radioY - 10, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Contorno pixelado oscuro
-  ctx.strokeStyle = esActual ? "#14d1e8" : "#0b111b";
-  ctx.lineWidth = esActual ? 4 : 3;
+  // Contorno pixelado oscuro (o cian brillante si es ubicación actual)
+  ctx.strokeStyle = esActual ? "#14d1e8" : "#05070c";
+  ctx.lineWidth = esActual ? 3.5 : 3;
   ctx.beginPath();
   ctx.ellipse(0, 2, isla.radioX, isla.radioY, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Detalles temáticos por bioma (provisional 16-bit)
+  const parpadeo = 0.65 + Math.sin(tiempo * 0.006 + isla.y) * 0.35;
+
+  // Detalles tenebrosos por bioma (16-bit dark fantasy)
   switch (isla.bioma) {
     case "puerto": {
-      // Muelle de madera abajo
-      ctx.fillStyle = "#8b5a2b";
+      // Muelle viejo de madera
+      ctx.fillStyle = "#3b2718";
       ctx.fillRect(-10, isla.radioY - 18, 20, 26);
-      ctx.fillStyle = "#5c3a1b";
+      ctx.fillStyle = "#26180e";
       ctx.fillRect(-14, isla.radioY - 6, 28, 6);
-      // Casitas con techo rojo
+      // Cabañas oscuras con ventanas de farol ámbar parpadeante
       for (const [cx, cy] of [
         [-38, -18],
         [18, -22],
         [-8, 12],
       ]) {
-        ctx.fillStyle = "#e8dcc4";
+        ctx.fillStyle = "#3f3832";
         ctx.fillRect(cx - 12, cy, 24, 16);
-        ctx.fillStyle = "#b93829";
+        ctx.fillStyle = "#5c2222";
         ctx.fillRect(cx - 15, cy - 10, 30, 12);
-        ctx.fillStyle = "#4a2c18";
-        ctx.fillRect(cx - 3, cy + 6, 6, 10);
+        ctx.fillStyle = `rgba(245, 158, 11, ${parpadeo})`;
+        ctx.fillRect(cx - 7, cy + 4, 5, 5);
+        ctx.fillRect(cx + 3, cy + 4, 5, 5);
       }
       break;
     }
     case "pradera": {
-      // Camino de tierra + monolitos rúnicos
-      ctx.fillStyle = "#c9a86a";
-      ctx.fillRect(-45, -6, 90, 14);
+      // Sendero sombrío + monolitos con runas brillantes
+      ctx.fillStyle = "#3b3228";
+      ctx.fillRect(-45, -6, 90, 12);
       for (const [mx, my] of [
         [-42, -26],
         [36, 16],
       ]) {
-        ctx.fillStyle = "#64748b";
+        ctx.fillStyle = "#334155";
         ctx.fillRect(mx - 6, my - 14, 12, 24);
-        ctx.fillStyle = "#facc15";
-        ctx.fillRect(mx - 2, my - 6, 4, 8);
+        ctx.fillStyle = `rgba(234, 179, 8, ${parpadeo})`;
+        ctx.fillRect(mx - 2, my - 8, 4, 10);
       }
-      // Árboles
+      // Árboles retorcidos
       for (const [ax, ay] of [
         [24, -30],
         [-28, 22],
       ]) {
-        ctx.fillStyle = "#5c3a1b";
+        ctx.fillStyle = "#261a14";
         ctx.fillRect(ax - 3, ay, 6, 12);
-        ctx.fillStyle = "#2d6a31";
+        ctx.fillStyle = "#1a331d";
         ctx.beginPath();
-        ctx.arc(ax, ay - 6, 14, 0, Math.PI * 2);
+        ctx.arc(ax, ay - 6, 13, 0, Math.PI * 2);
         ctx.fill();
       }
       break;
     }
     case "lago": {
-      // Lago luminoso central
-      ctx.fillStyle = "#0ea5e9";
+      // Lago abisal con brillo espectral cian
+      ctx.fillStyle = "#082f49";
       ctx.beginPath();
-      ctx.ellipse(-6, 4, 42, 24, 0, 0, Math.PI * 2);
+      ctx.ellipse(-6, 4, 44, 25, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#38bdf8";
+      ctx.fillStyle = `rgba(20, 209, 232, ${0.35 * parpadeo})`;
       ctx.beginPath();
-      ctx.ellipse(-10, 0, 22, 10, 0, 0, Math.PI * 2);
+      ctx.ellipse(-10, 0, 24, 11, 0, 0, Math.PI * 2);
       ctx.fill();
       break;
     }
     case "puesto": {
-      // Fuerte de empalizada y torreón
-      ctx.fillStyle = "#7c5329";
+      // Fuerte de empalizada oscura con antorchas
+      ctx.fillStyle = "#3b2718";
       ctx.fillRect(-34, -22, 68, 42);
-      ctx.fillStyle = "#64748b";
-      ctx.fillRect(-22, -32, 44, 34);
       ctx.fillStyle = "#334155";
+      ctx.fillRect(-22, -32, 44, 34);
+      ctx.fillStyle = "#1e293b";
       ctx.fillRect(-26, -38, 52, 8);
-      ctx.fillStyle = "#4a2c18";
-      ctx.fillRect(-7, 2, 14, 18);
+      ctx.fillStyle = `rgba(245, 158, 11, ${parpadeo})`;
+      ctx.fillRect(-28, -14, 5, 5);
+      ctx.fillRect(23, -14, 5, 5);
       break;
     }
     case "bosque": {
-      // Copa densa de pinos oscuros
+      // Pinos oscuros y esporas espectrales
       for (const [tx, ty] of [
         [-38, -14],
         [-10, -28],
@@ -173,31 +179,34 @@ function dibujarIslaPixel(
         [-24, 16],
         [8, 18],
       ]) {
-        ctx.fillStyle = "#143625";
+        ctx.fillStyle = "#071710";
         ctx.beginPath();
         ctx.moveTo(tx, ty - 22);
         ctx.lineTo(tx - 16, ty + 8);
         ctx.lineTo(tx + 16, ty + 8);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = "#1f5438";
+        ctx.fillStyle = "#0f2e1f";
         ctx.beginPath();
         ctx.moveTo(tx, ty - 22);
-        ctx.lineTo(tx - 11, ty);
-        ctx.lineTo(tx + 11, ty);
+        ctx.lineTo(tx - 10, ty);
+        ctx.lineTo(tx + 10, ty);
         ctx.closePath();
         ctx.fill();
       }
+      ctx.fillStyle = `rgba(74, 222, 128, ${0.5 * parpadeo})`;
+      ctx.fillRect(-14, -4, 3, 3);
+      ctx.fillRect(18, 10, 3, 3);
       break;
     }
     case "riscos": {
-      // Rocas escarpadas
+      // Riscos de obsidiana con fisura arcana violeta
       for (const [rx, ry, rw] of [
         [-28, -14, 24],
         [14, -20, 28],
         [-6, 8, 30],
       ]) {
-        ctx.fillStyle = "#57534e";
+        ctx.fillStyle = "#1c1917";
         ctx.beginPath();
         ctx.moveTo(rx, ry - rw * 0.8);
         ctx.lineTo(rx - rw * 0.7, ry + 10);
@@ -205,39 +214,38 @@ function dibujarIslaPixel(
         ctx.closePath();
         ctx.fill();
       }
+      ctx.fillStyle = `rgba(168, 85, 247, ${parpadeo})`;
+      ctx.fillRect(-8, -2, 6, 3);
       break;
     }
     case "bastion": {
-      // Fortaleza de piedra con torres laterales
-      ctx.fillStyle = "#64748b";
+      // Fortaleza gótica oscura
+      ctx.fillStyle = "#334155";
       ctx.fillRect(-36, -26, 72, 44);
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = "#475569";
       ctx.fillRect(-44, -34, 18, 52);
       ctx.fillRect(26, -34, 18, 52);
       ctx.fillRect(-16, -42, 32, 30);
-      // Estandarte azul/dorado
-      ctx.fillStyle = "#14d1e8";
-      ctx.fillRect(-4, -52, 8, 12);
-      ctx.fillStyle = "#1e293b";
+      ctx.fillStyle = `rgba(56, 189, 248, ${parpadeo})`;
+      ctx.fillRect(-4, -52, 8, 10);
+      ctx.fillStyle = "#090d16";
       ctx.fillRect(-8, -2, 16, 20);
       break;
     }
     case "volcan": {
-      // Cono volcánico y ríos de lava
-      ctx.fillStyle = "#261c20";
+      // Volcán oscuro de obsidiana y magma pulsante
+      ctx.fillStyle = "#120c0e";
       ctx.beginPath();
       ctx.moveTo(0, -54);
       ctx.lineTo(-56, 24);
       ctx.lineTo(56, 24);
       ctx.closePath();
       ctx.fill();
-      // Cráter incandescente
-      ctx.fillStyle = "#f04d24";
+      ctx.fillStyle = "#dc2626";
       ctx.beginPath();
       ctx.ellipse(0, -50, 16, 7, 0, 0, Math.PI * 2);
       ctx.fill();
-      // Río de lava animado
-      ctx.strokeStyle = Math.sin(tiempo * 0.005) > 0 ? "#fbbf24" : "#f04d24";
+      ctx.strokeStyle = Math.sin(tiempo * 0.005) > 0 ? "#f97316" : "#b91c1c";
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.moveTo(0, -45);
@@ -248,20 +256,20 @@ function dibujarIslaPixel(
       break;
     }
     case "glaciar": {
-      // Picos nevados y pinos escarchados
+      // Cumbres sombrías bajo luz lunar pálida
       for (const [px, py, ph] of [
         [-20, 12, 54],
         [18, 8, 62],
         [0, 20, 44],
       ]) {
-        ctx.fillStyle = "#6488a8";
+        ctx.fillStyle = "#1e293b";
         ctx.beginPath();
         ctx.moveTo(px, py - ph);
         ctx.lineTo(px - 28, py);
         ctx.lineTo(px + 28, py);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = "#f8fafc";
+        ctx.fillStyle = "#94a3b8";
         ctx.beginPath();
         ctx.moveTo(px, py - ph);
         ctx.lineTo(px - 14, py - ph * 0.52);
@@ -388,8 +396,8 @@ export function MapaInteractivoCanvas({
       ctx.scale(dpr, dpr);
       ctx.imageSmoothingEnabled = false;
 
-      // Fondo oceánico retro oscuro
-      ctx.fillStyle = "#174b82";
+      // Fondo oceánico abisal oscuro (dark fantasy)
+      ctx.fillStyle = "#070d18";
       ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
 
       // Transformación de cámara centrada
@@ -406,34 +414,34 @@ export function MapaInteractivoCanvas({
           DIMENSIONES_MAPA_MUNDO.alto,
         );
       } else {
-        // Olas pixeladas en el océano
-        const desplazamientoOla = Math.sin(tiempo * 0.0018) * 14;
-        ctx.fillStyle = "#1f5f9e";
+        // Ondas tenebrosas en el mar nocturno
+        const desplazamientoOla = Math.sin(tiempo * 0.0014) * 16;
+        ctx.fillStyle = "rgba(30, 58, 95, 0.38)";
         for (let oy = 40; oy < DIMENSIONES_MAPA_MUNDO.alto; oy += 90) {
           for (let ox = 40; ox < DIMENSIONES_MAPA_MUNDO.ancho; ox += 150) {
-            ctx.fillRect(ox + desplazamientoOla, oy, 26, 4);
-            ctx.fillRect(ox + 60 - desplazamientoOla, oy + 36, 18, 4);
+            ctx.fillRect(ox + desplazamientoOla, oy, 26, 3);
+            ctx.fillRect(ox + 60 - desplazamientoOla, oy + 36, 18, 3);
           }
         }
 
-        // Islotes decorativos
+        // Peñascos e islotes oscuros
         for (const [ix, iy] of [
           [160, 125],
           [320, 175],
           [130, 625],
           [1060, 560],
         ]) {
-          ctx.fillStyle = "#2b4257";
+          ctx.fillStyle = "#05080f";
           ctx.beginPath();
           ctx.ellipse(ix, iy, 28, 18, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = "#9a8a68";
+          ctx.fillStyle = "#262322";
           ctx.beginPath();
           ctx.ellipse(ix, iy - 4, 22, 13, 0, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // Puentes de madera entre islas conectadas
+        // Puentes viejos entre islas conectadas
         for (const [origenId, destinoId] of CONEXIONES_AETHELGARD) {
           const origen = CONFIGURACION_ISLAS_MAPA[origenId];
           const destino = CONFIGURACION_ISLAS_MAPA[destinoId];
@@ -448,24 +456,24 @@ export function MapaInteractivoCanvas({
             ctx.setLineDash([10, 8]);
           }
           // Sombra puente
-          ctx.strokeStyle = "#0b111b";
+          ctx.strokeStyle = "#030508";
           ctx.lineWidth = 18;
           ctx.beginPath();
           ctx.moveTo(origen.x, origen.y + 4);
           ctx.lineTo(destino.x, destino.y + 4);
           ctx.stroke();
 
-          // Tablones del puente
-          ctx.strokeStyle = rutaDesbloqueada ? "#8b5a2b" : "#475569";
+          // Tablones oscuros del puente
+          ctx.strokeStyle = rutaDesbloqueada ? "#47311e" : "#27272a";
           ctx.lineWidth = 12;
           ctx.beginPath();
           ctx.moveTo(origen.x, origen.y);
           ctx.lineTo(destino.x, destino.y);
           ctx.stroke();
 
-          // Líneas centrales de madera
+          // Líneas centrales de madera desgastada
           ctx.setLineDash([4, 8]);
-          ctx.strokeStyle = rutaDesbloqueada ? "#c98b4b" : "#64748b";
+          ctx.strokeStyle = rutaDesbloqueada ? "#785333" : "#3f3f46";
           ctx.lineWidth = 8;
           ctx.beginPath();
           ctx.moveTo(origen.x, origen.y);
@@ -486,9 +494,34 @@ export function MapaInteractivoCanvas({
             nodo.desbloqueada,
           );
         }
+
+        // Bancos de niebla pixelada desplazándose lentamente
+        const nieblaX = (tiempo * 0.015) % DIMENSIONES_MAPA_MUNDO.ancho;
+        ctx.fillStyle = "rgba(148, 163, 184, 0.06)";
+        for (let i = 0; i < 6; i++) {
+          const nx = ((nieblaX + i * 230) % (DIMENSIONES_MAPA_MUNDO.ancho + 200)) - 100;
+          const ny = 90 + (i * 115) % 600;
+          ctx.fillRect(nx, ny, 160, 24);
+          ctx.fillRect(nx + 30, ny - 12, 100, 14);
+        }
       }
 
       ctx.restore();
+
+      // Viñeta tenebrosa en los bordes del visor
+      const vineta = ctx.createRadialGradient(
+        tamanoContenedor.ancho / 2,
+        tamanoContenedor.alto / 2,
+        Math.min(tamanoContenedor.ancho, tamanoContenedor.alto) * 0.3,
+        tamanoContenedor.ancho / 2,
+        tamanoContenedor.alto / 2,
+        Math.max(tamanoContenedor.ancho, tamanoContenedor.alto) * 0.72,
+      );
+      vineta.addColorStop(0, "rgba(0, 0, 0, 0)");
+      vineta.addColorStop(1, "rgba(3, 5, 10, 0.68)");
+      ctx.fillStyle = vineta;
+      ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
+
       frameId = requestAnimationFrame(renderizar);
     };
 
@@ -558,7 +591,7 @@ export function MapaInteractivoCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}
-      className="relative w-full h-[54vh] min-h-[380px] sm:h-[60vh] md:h-[64vh] bg-[#174b82] border-4 border-black shadow-[6px_6px_0_0_#000] overflow-hidden select-none cursor-grab active:cursor-grabbing"
+      className="relative w-full h-[54vh] min-h-[380px] sm:h-[60vh] md:h-[64vh] bg-[#070d18] border-4 border-black shadow-[6px_6px_0_0_#000] overflow-hidden select-none cursor-grab active:cursor-grabbing"
     >
       {/* Fondo Canvas con position: absolute */}
       <canvas

@@ -1484,3 +1484,42 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 - **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con 0 errores (`30` archivos `.webp` empaquetados correctamente en `apps/web/dist/assets/criaturas/`).
 - **Auditoría visual por láminas de control y composición simulada:** Inspección visual de los 30 sprites decodificados sobre fondo oscuro de arena (`#121927`), fondo neutro de contraste (`#64748b`) y escena dual de combate con reflejo `scale-x-[-1]`. La verificación interactiva vía Chrome DevTools quedó omitida al no encontrarse una instancia de Chrome con depuración remota activa en el entorno local.
 
+---
+
+## 22. Optimización e Integración Multimedia de Entornos, Arenas de Combate y Objetos del Bazar (19 Recursos)
+
+### 22.1 Diagnóstico Inicial y Auditoría Técnica
+- **Inventario maestro inicial en `/faltantes/` (respaldo local excluido en `.gitignore`):**
+  - *Etapa 1 — Zonas y Localidades (`Etapa-1_Zonas-Villas/`, 9 archivos `.jpg` `2752x1536 px`):* **`25.33 MB`** totales (`~2.59`–`3.21 MB` por escena), cubriendo las 6 zonas silvestres (`ZON-01`..`ZON-06`) y las 3 localidades seguras (`LOC-01`..`LOC-03`).
+  - *Etapa 2 — Escenarios de Combate (`Etapa-2_Zonas-Combates/`, 6 archivos `.jpg` `2752x1536 px`):* **`15.76 MB`** totales (`~2.41`–`2.91 MB` por arena diagonal `ZON-01`..`ZON-06`).
+  - *Etapa 3 — Objetos del Bazar (`Etapa-3_Objetos/`, 4 archivos `.jpg` `2048x2048 px`):* **`7.02 MB`** totales (`~1.45`–`1.99 MB` por ítem) sobre fondo negro `#000000` sin transparencia nativa (`Poción de Curación Menor`, `Poción de Curación Mayor`, `Talismán Básico de Captura`, `Talismán Avanzado de Captura`).
+  - **Peso acumulado original:** **`48.11 MB`** (`50,450,183 bytes`).
+- **Auditoría de consumo en UI y contratos (`apps/web/src`):** Se comprobó mediante inspección directa que `BannerUbicacionActual.tsx`, `PantallaCuracion.tsx` y `PantallaExploracion.tsx` ya resuelven `/assets/zonas/<slug>.webp` mediante `obtenerImagenZona(slugZona)` + `sanitizarSlugZona`; `BattlefieldBackground.tsx` consume `/assets/battlegrounds/<slug>.webp` con respaldo progresivo hacia `caverna-cristal.svg`; y `PantallaCombate.tsx`, `PantallaTienda.tsx`, `PantallaInventario.tsx` y `PantallaExploracion.tsx` consumen `/assets/objetos/<codigo>.webp` con `obtenerImagenObjeto(codigo)` y `loading="lazy"` en listados.
+
+### 22.2 Mejoras Implementadas
+
+#### A. Identidad Retro Aethelgard y Fidelidad Visual
+- **Preservación de proporción `16:9` sin distorsión ni franjas negras:** Se auditó la posible presencia de marcos en `Puesto_Fronterizo_del_Río_(LOC-02).jpg`, verificando que corresponde a viñeta oscura continua y no a *letterboxing*. Al tener las fuentes una relación `2752x1536` (`1.7917`), se aplicó recorte horizontal simétrico al centro (`2731x1536`) antes de reescalar a `800x450 px`, manteniendo las plataformas de suelo despejadas abajo-izquierda y arriba-derecha en las 6 arenas.
+- **Extracción alfa quirúrgica para vidrio, obsidiana y destellos aditivos (`objetos/`):** Se afinó un extractor en `1024x1024` previo al submuestreo premultiplicado a `256x256` que distingue entre material sólido oscuro de baja saturación y halos luminosos externos saturados sobre negro. Esto sella herméticamente la cámara superior de vidrio oscuro de `pocion-menor.webp` y `pocion-mayor.webp` sin perforarla, y conserva los rayos y chispas sueltos de `talisman-avanzado.webp` y `talisman-basico.webp` mediante des-premultiplicación aditiva suave sin generar bloques opacos ni bordes negros sobre fondos claros u oscuros.
+
+#### B. Pipeline Multimedia y Optimización en Cliente (`apps/web`)
+- **`apps/web/public/assets/zonas/` (9 archivos `800x450` `WebP VP8` `q=90`, filtro `BOX`):** De **`25.33 MB`** a **`808.0 KB` (`0.79 MB`)**, ahorro del **`96.88%`** (rango `75.3 KB` en `puesto-fronterizo-del-rio.webp` a `117.9 KB` en `villa-serena.webp`).
+- **`apps/web/public/assets/battlegrounds/` (6 archivos `800x450` `WebP VP8` `q=90`, filtro `BOX`):** De **`15.76 MB`** a **`480.1 KB` (`0.47 MB`)**, ahorro del **`97.03%`** (rango `67.6 KB` en `cueva-umbria.webp` a `96.5 KB` en `praderas-del-amanecer.webp`), conservando `caverna-cristal.svg` intacto como respaldo estructural.
+- **`apps/web/public/assets/objetos/` (4 archivos `256x256` `WebP VP8X` RGBA `q=90` / `alpha_quality=100`):** De **`7.02 MB`** a **`94.2 KB` (`0.09 MB`)**, ahorro del **`98.69%`** (`18.1 KB` a `31.7 KB` c/u, con márgenes de seguridad `>= 13 px` por lado).
+- **Balance total de los 19 recursos:** **`48.11 MB`** (`50,450,183 bytes`) → **`1.35 MB`** (`1,415,486 bytes`), reducción neta del **`97.19%`**, manteniendo `/faltantes/` fuera de control de versiones en `.gitignore` y cero dependencias agregadas a `package.json`.
+- **Sincronización documental y arquitectónica:** Actualización de [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md), [docs/INDICE.md](file:///docs/INDICE.md) y decisión **D-21** en [docs/decisiones.md](file:///docs/decisiones.md).
+
+#### C. Integración Multimedia, Entrega HTTP y Audio Retro
+- Entrega individual por ruta canónica (`/assets/zonas/*.webp`, `/assets/battlegrounds/*.webp`, `/assets/objetos/*.webp`) sin alterar el motor procedural Web Audio API ni los contratos de resolución en `apps/web/src/lib/assets.ts`.
+
+#### D. Reglas de Servidor y Contratos
+- Sin cambios en endpoints ni migraciones de base de datos; nomenclatura verificada 1 a 1 contra las 9 ubicaciones en `MundoService` (`apps/api/src/modulos/mundo/mundo.service.ts`) y los 4 ítems sembrados en `apps/api/prisma/seed.ts`.
+
+### 22.3 Verificación de Calidad y Cero Regresiones
+- **Suite de verificación multimedia (`apps/web/test/verificacion-assets-entornos-objetos.spec.ts`):** Valida automáticamente la correspondencia 1 a 1 de las 9 ubicaciones, 6 arenas y 4 objetos frente a servidor (`MundoService` y `seed.ts`), encabezados WebP `RIFF/WEBP`, chunk `VP8 ` `800x450` en escenarios, `VP8X` con canal alfa `256x256` en ítems, ausencia de caída a placeholders SVG y pesos acotados.
+- **Pruebas Automatizadas Front-End (`pnpm --filter web test`):** **99 de 99 pruebas aprobadas** (`0` fallos, `0` omitidas, `1579.81 ms`).
+- **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (`34` advertencias preexistentes en componentes previos, `500 ms`).
+- **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con `0` errores en **`4.04 s`**.
+- **Inspección visual directa sobre láminas de control:** Verificación en comparación `BOX` vs `BICUBIC` vs `LANCZOS` sobre paisajes, mosaico `15/15` en `800x450` sin bandas negras y láminas de contraste claro/oscuro (`#090d16`) + máscara alfa pura para los 4 objetos sin artefactos de borde.
+
+

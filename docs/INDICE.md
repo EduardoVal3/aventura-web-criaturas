@@ -36,7 +36,7 @@ Consulta estos archivos solo cuando la tarea toque directamente su dominio:
 | **Reglas transversales** | [docs/reglas-de-trabajo.md](file:///docs/reglas-de-trabajo.md) | Antes de iniciar cualquier fase (R1, R2, R3). |
 | **Catálogo Canónico y Especies** | [docs/catalogo-criaturas.md](file:///docs/catalogo-criaturas.md) | Bestiario temático de 30 especies, sets M1..M4, tablas INV-01 y jerarquía y bandas J-1 a J-5. |
 | **Sistema de Diseño Retro** | [docs/DESIGN.md](file:///docs/DESIGN.md) | Paleta HSL retro, tokens, tipografía 8-bit, contrastes y animaciones con Impeccable (Fase 10 y 11). |
-| **Recursos y Multimedia** | [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) · [apps/web/src/lib/assets.ts](file:///apps/web/src/lib/assets.ts) | Convención de nombres, pipeline WebP `512x512` (30 sprites integrados en `criaturas/`), fallback SVG y audio retro. |
+| **Recursos y Multimedia** | [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) · [apps/web/src/lib/assets.ts](file:///apps/web/src/lib/assets.ts) | Convención de nombres, pipeline WebP completo (30 `criaturas/`, 9 `zonas/`, 6 `battlegrounds/` y 4 `objetos/`), fallback SVG y audio retro. |
 | **Servidores MCP** | [docs/mcp.md](file:///docs/mcp.md) | Configuración y límites de MCP. |
 | **Fórmulas y Balance** | `docs/reglas-juego.md` | Daño, captura, XP, pesos y progreso. |
 | **Contrato REST** | `docs/contrato-api.md` | Rutas, DTOs y payloads. |

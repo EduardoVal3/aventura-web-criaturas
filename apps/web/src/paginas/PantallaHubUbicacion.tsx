@@ -369,6 +369,11 @@ export function PantallaHubUbicacion() {
         nodoSeleccionado.faunaNivelMaximo,
       )
     : null;
+  const especiesNodo = nodoSeleccionado
+    ? nodoSeleccionado.id === ubicacion?.ubicacionId
+      ? ubicacion.especiesHabitantes
+      : conexionSeleccionada?.especiesHabitantes
+    : undefined;
 
   return (
     <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden flex flex-col justify-between">
@@ -419,9 +424,12 @@ export function PantallaHubUbicacion() {
                   {personaje?.nombre ?? "Explorador"}
                 </span>
                 {ubicacion.poderEquipo && (
-                  <span className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/80 text-[#14d1e8] px-1.5 py-0.5 border border-[#14d1e8]/40">
+                  <span
+                    title={`Rango de domador: ${ubicacion.poderEquipo.rangoDomador}`}
+                    className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/80 text-[#14d1e8] px-1.5 py-0.5 border border-[#14d1e8]/40 whitespace-nowrap"
+                  >
                     <Crown className="size-2.5" />
-                    NV.{ubicacion.poderEquipo.nivelMaximoEquipo}
+                    NV.{ubicacion.poderEquipo.nivelMaximoEquipo} · {ubicacion.poderEquipo.rangoDomador}
                   </span>
                 )}
               </div>
@@ -616,7 +624,7 @@ export function PantallaHubUbicacion() {
           }
         }}
       >
-        <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100">
+        <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 text-slate-100">
           {nodoSeleccionado && (
             <>
               <AlertDialogHeader className="space-y-2 text-left">
@@ -697,23 +705,92 @@ export function PantallaHubUbicacion() {
                   </div>
                 )}
 
-                {conexionSeleccionada?.requisito && (
-                  <div className="pt-1 flex items-start gap-1.5 text-xs text-slate-300 border-t-2 border-black mt-3">
-                    {conexionSeleccionada.cumpleRequisito ? (
-                      <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="text-[11px] sm:text-xs">{conexionSeleccionada.requisito}</p>
-                      {conexionSeleccionada.cumpleRequisito && (
-                        <Badge className="retro text-[7px] mt-1 bg-amber-950 text-amber-300 border border-amber-400">
-                          LISTA PARA DESBLOQUEAR
-                        </Badge>
-                      )}
+                {/* Previa de Fauna del Hábitat (Subfase 10n) */}
+                {especiesNodo && especiesNodo.length > 0 && (
+                  <div className="bg-black/50 border border-black p-2 space-y-1 mt-1">
+                    <span className="retro text-[7px] sm:text-[8px] text-amber-400 uppercase tracking-widest block">
+                      Fauna del Hábitat:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {especiesNodo.map((esp) => (
+                        <span
+                          key={esp.slug ?? esp.nombre}
+                          className="bg-[#1a2332] border border-black px-1.5 py-0.5 text-[7px] text-slate-200 retro flex items-center gap-1"
+                        >
+                          {esp.nombre}
+                          {esp.esLegendaria && <Crown className="size-2 text-amber-400" />}
+                          {esp.esEspecial && !esp.esLegendaria && <Sparkles className="size-2 text-amber-300" />}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
+
+                {/* Checklist estructurado de desbloqueo territorial (Subfases 10m/10n) */}
+                {conexionSeleccionada?.estaBloqueada ? (
+                  <div className="border-t-2 border-black bg-black/50 p-2.5 space-y-1.5 mt-3">
+                    <div className="flex items-center justify-between gap-2 text-[8px] sm:text-[9px] retro">
+                      <span className="flex items-center gap-1 text-slate-300">
+                        {conexionSeleccionada.cumpleRequisito ? (
+                          <Sparkles className="size-3 text-amber-400 shrink-0" />
+                        ) : (
+                          <Lock className="size-3 text-red-400 shrink-0" />
+                        )}
+                        <span className="font-bold">PROGRESO DE DESBLOQUEO</span>
+                      </span>
+                      <span className={conexionSeleccionada.cumpleRequisito ? "text-amber-400 font-bold" : "text-slate-300"}>
+                        {conexionSeleccionada.progresoActual ?? 0}% / {conexionSeleccionada.progresoObjetivo ?? 100}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={conexionSeleccionada.progresoActual ?? 0}
+                      className="h-2 rounded-none border border-black"
+                    />
+
+                    {conexionSeleccionada.requisitoCartografia && (
+                      <div className="flex items-start gap-1 text-[8px] sm:text-[9px] retro">
+                        {conexionSeleccionada.requisitoCartografia.completada ? (
+                          <CheckCircle2 className="size-3 text-emerald-400 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="size-3 text-red-400 shrink-0 mt-0.5" />
+                        )}
+                        <span className={conexionSeleccionada.requisitoCartografia.completada ? "text-emerald-300" : "text-slate-300"}>
+                          Cartografía previa: [{conexionSeleccionada.requisitoCartografia.zonaId}] {conexionSeleccionada.requisitoCartografia.nombre} al 100% ({conexionSeleccionada.requisitoCartografia.progresoActual}%)
+                        </span>
+                      </div>
+                    )}
+
+                    {conexionSeleccionada.requisitoNivelEquipo && (
+                      <div className="flex items-start gap-1 text-[8px] sm:text-[9px] retro">
+                        {conexionSeleccionada.requisitoNivelEquipo.cumplido ? (
+                          <CheckCircle2 className="size-3 text-emerald-400 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="size-3 text-red-400 shrink-0 mt-0.5" />
+                        )}
+                        <span className={conexionSeleccionada.requisitoNivelEquipo.cumplido ? "text-emerald-300" : "text-slate-300"}>
+                          Poder de equipo: Requiere {conexionSeleccionada.requisitoNivelEquipo.cantidadCriaturas} criatura(s) Nv.{conexionSeleccionada.requisitoNivelEquipo.nivelRequerido}+ (Tienes: {conexionSeleccionada.requisitoNivelEquipo.cantidadActual ?? 0} · Mejor: Nv.{conexionSeleccionada.requisitoNivelEquipo.nivelMaximoActual})
+                        </span>
+                      </div>
+                    )}
+
+                    {(conexionSeleccionada.detalleProgreso || conexionSeleccionada.requisito) && (
+                      <p className="retro text-[8px] sm:text-[9px] text-slate-300 leading-relaxed">
+                        {conexionSeleccionada.detalleProgreso ?? conexionSeleccionada.requisito}
+                      </p>
+                    )}
+
+                    {conexionSeleccionada.cumpleRequisito && (
+                      <Badge className="retro text-[7px] mt-1 bg-amber-950 text-amber-300 border border-amber-400">
+                        LISTA PARA DESBLOQUEAR
+                      </Badge>
+                    )}
+                  </div>
+                ) : conexionSeleccionada?.requisito ? (
+                  <div className="pt-1 flex items-start gap-1.5 text-xs text-slate-300 border-t-2 border-black mt-3">
+                    <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] sm:text-xs">{conexionSeleccionada.requisito}</p>
+                  </div>
+                ) : null}
 
                 {!conexionSeleccionada && nodoSeleccionado.id !== ubicacion?.ubicacionId && (
                   <p className="text-[11px] text-slate-400 pt-1">
@@ -750,6 +827,7 @@ export function PantallaHubUbicacion() {
                     <Button
                       type="button"
                       disabled={Boolean(desbloqueandoId) || viajando}
+                      aria-busy={desbloqueandoId === nodoSeleccionado.id}
                       onClick={() => handleDesbloquearRuta(nodoSeleccionado.id)}
                       className="retro text-[9px] border-2 border-black bg-amber-500 text-black hover:bg-amber-400"
                     >
@@ -798,3 +876,5 @@ export function PantallaHubUbicacion() {
     </div>
   );
 }
+
+export default PantallaHubUbicacion;

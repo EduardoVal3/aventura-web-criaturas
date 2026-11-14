@@ -591,7 +591,7 @@ export function MapaInteractivoCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}
-      className="relative w-full h-[54vh] min-h-[380px] sm:h-[60vh] md:h-[64vh] bg-[#070d18] border-4 border-black shadow-[6px_6px_0_0_#000] overflow-hidden select-none cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full bg-[#070d18] overflow-hidden select-none cursor-grab active:cursor-grabbing"
     >
       {/* Fondo Canvas con position: absolute */}
       <canvas
@@ -698,8 +698,8 @@ export function MapaInteractivoCanvas({
         })}
       </div>
 
-      {/* Controles de Zoom y Centrado (relativos en esquina) */}
-      <div className="absolute right-2.5 bottom-2.5 z-30 flex flex-col gap-1.5">
+      {/* Controles de Zoom y Centrado (relativos en esquina derecha, sobre el dock) */}
+      <div className="absolute right-2.5 bottom-36 sm:bottom-32 z-30 flex flex-col gap-1.5">
         <button
           type="button"
           onClick={() => ajustarZoom(0.15)}
@@ -729,12 +729,7 @@ export function MapaInteractivoCanvas({
         </button>
       </div>
 
-      {/* Leyenda rápida en esquina superior izquierda */}
-      <div className="absolute left-2.5 top-2.5 z-30 pointer-events-none hidden sm:flex items-center gap-2 bg-black/80 border-2 border-black px-2.5 py-1 shadow-[3px_3px_0_0_#000]">
-        <span className="retro text-[7px] text-slate-300">
-          ARRASTRA PARA EXPLORAR EL MAPA · CLIC EN UNA ISLA PARA VIAJAR
-        </span>
-      </div>
+      {/* Fin de controles de mapa */}
     </div>
   );
 }

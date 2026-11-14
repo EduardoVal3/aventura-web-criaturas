@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
-  Map as MapIcon,
   Users,
   Package,
   Backpack,
@@ -22,6 +21,7 @@ import {
   XCircle,
   Crown,
   Swords,
+  Settings,
 } from "lucide-react";
 import {
   MapaInteractivoCanvas,
@@ -49,6 +49,7 @@ import {
   type UbicacionActual,
   type ConexionUbicacion,
   type NodoMapaTerritorial,
+  type CriaturaEquipo,
   ErrorApi,
 } from "@/api";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
@@ -77,16 +78,20 @@ interface EstadoTransicionViaje {
   destinoNombre: string;
 }
 
+const IDS_SERVICIOS_IZQUIERDA = ["catalogo", "historial", "almacen"] as const;
+const IDS_SERVICIOS_DERECHA = ["curacion", "tienda", "inventario"] as const;
+
 export function PantallaHubUbicacion() {
   const navigate = useNavigate();
   const { cerrarSesion } = useAutenticacion();
   const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
   const [personaje, setPersonaje] = useState<PersonajeActivo | null>(null);
-  const [lider, setLider] = useState<LiderMapaInfo | null>(null);
+  const [equipo, setEquipo] = useState<CriaturaEquipo[]>([]);
   const [cargando, setCargando] = useState(true);
   const [viajando, setViajando] = useState(false);
   const [desbloqueandoId, setDesbloqueandoId] = useState<string | null>(null);
   const [nodoSeleccionado, setNodoSeleccionado] = useState<NodoMapaTerritorial | null>(null);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const [transicionActiva, setTransicionActiva] = useState<EstadoTransicionViaje | null>(null);
   const [pendienteTrasAnimacion, setPendienteTrasAnimacion] = useState<{
     ubicacion: UbicacionActual;
@@ -101,15 +106,7 @@ export function PantallaHubUbicacion() {
     ]);
     setUbicacion(datosUbicacion);
     setPersonaje(datosPersonaje);
-
-    const criaturaLider = datosEquipo?.criaturas?.[0];
-    if (criaturaLider) {
-      setLider({
-        nombre: criaturaLider.apodo || criaturaLider.nombre,
-        especieSlug: criaturaLider.slug,
-        nivel: criaturaLider.nivel,
-      });
-    }
+    setEquipo(datosEquipo?.criaturas ?? []);
   }, []);
 
   useEffect(() => {
@@ -137,6 +134,16 @@ export function PantallaHubUbicacion() {
       cancelado = true;
     };
   }, [cargarTodo, navigate]);
+
+  const lider: LiderMapaInfo | null = useMemo(() => {
+    const primero = equipo[0];
+    if (!primero) return null;
+    return {
+      nombre: primero.apodo || primero.nombre,
+      especieSlug: primero.slug,
+      nivel: primero.nivel,
+    };
+  }, [equipo]);
 
   const nodosMapa = useMemo(
     () => (ubicacion ? construirNodosMapaFallback(ubicacion) : []),
@@ -178,7 +185,8 @@ export function PantallaHubUbicacion() {
   };
 
   const handleViajar = async (conexion: ConexionUbicacion) => {
-    if (viajando || !ubicacion) return;
+    if (viajando) return;
+    if (!ubicacion) return;
     try {
       setViajando(true);
       reproducirSonido("confirmar", 0.5);
@@ -227,7 +235,6 @@ export function PantallaHubUbicacion() {
     }
   }, [pendienteTrasAnimacion]);
 
-  // Si la API terminó después de la animación, aplicamos en cuanto llegue
   useEffect(() => {
     if (!transicionActiva && pendienteTrasAnimacion) {
       setUbicacion(pendienteTrasAnimacion.ubicacion);
@@ -242,6 +249,24 @@ export function PantallaHubUbicacion() {
     await cerrarSesion();
     toast.info("Has cerrado sesión.");
     navigate("/ingreso");
+  };
+
+  const handleBotonPrincipal = () => {
+    if (!ubicacion || viajando) return;
+    reproducirSonido("confirmar", 0.45);
+    if (!ubicacion.esSegura) {
+      navigate("/exploracion");
+      return;
+    }
+    const primeraDisponible = ubicacion.conexiones.find((c) => !c.estaBloqueada);
+    if (primeraDisponible) {
+      const nodoDestino = nodosMapa.find((n) => n.id === primeraDisponible.ubicacionDestinoId);
+      if (nodoDestino) {
+        setNodoSeleccionado(nodoDestino);
+        return;
+      }
+    }
+    toast.info("Toca una isla conectada en el mapa para emprender camino.");
   };
 
   const renderIconoServicio = (icono: ServicioHub["icono"]) => {
@@ -266,26 +291,61 @@ export function PantallaHubUbicacion() {
     }
   };
 
+  const renderBotonFlotanteServicio = (servicio: ServicioHub) => {
+    const habilitado = estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
+    return (
+      <Link
+        key={servicio.id}
+        to={habilitado ? servicio.ruta : "#"}
+        onClick={(e) => {
+          if (!habilitado || viajando) {
+            e.preventDefault();
+            reproducirSonido("error", 0.35);
+            toast.info(
+              `${servicio.titulo} solo está disponible en localidades con este servicio.`,
+            );
+            return;
+          }
+          reproducirSonido("click", 0.35);
+        }}
+        aria-disabled={!habilitado || viajando}
+        className={cn(
+          "group pointer-events-auto bg-card/90 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-36 justify-center sm:justify-start",
+          habilitado && !viajando
+            ? "hover:border-[#14d1e8] hover:-translate-y-0.5 active:translate-y-0.5"
+            : "opacity-55 grayscale cursor-not-allowed",
+          viajando && "pointer-events-none opacity-50",
+        )}
+        title={servicio.titulo}
+      >
+        <div className="relative shrink-0">
+          {renderIconoServicio(servicio.icono)}
+          {!habilitado && (
+            <Lock className="size-2.5 text-amber-300 absolute -top-1 -right-1 bg-black rounded-full p-0.5" />
+          )}
+        </div>
+        <span className="hidden sm:block retro text-[8px] text-slate-100 leading-tight break-words mb-1.5">
+          {servicio.titulo}
+        </span>
+      </Link>
+    );
+  };
+
   if (cargando) {
     return (
-      <div className="space-y-4 w-full max-w-6xl mx-auto px-2 sm:px-4 py-2 sm:py-4 overflow-x-hidden animate-pulse">
-        <div className="bg-card border-4 border-black shadow-[6px_6px_0_0_#000] p-3">
-          <Skeleton className="h-14 w-full bg-[#1a2332] border-2 border-black" />
-        </div>
-        <div className="bg-card border-4 border-black shadow-[6px_6px_0_0_#000] p-2">
-          <Skeleton className="h-[54vh] min-h-[380px] w-full bg-[#1a2332] border-2 border-black" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton
-              key={i}
-              className="h-20 w-full bg-card border-2 border-black shadow-[4px_4px_0_0_#000]"
-            />
-          ))}
-        </div>
+      <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden p-4 flex flex-col justify-between animate-pulse">
+        <Skeleton className="h-14 w-full max-w-md bg-[#1a2332] border-4 border-black" />
+        <Skeleton className="h-24 w-full max-w-xl mx-auto bg-[#1a2332] border-4 border-black" />
       </div>
     );
   }
+
+  const serviciosIzquierda = SERVICIOS_HUB.filter((s) =>
+    (IDS_SERVICIOS_IZQUIERDA as readonly string[]).includes(s.id),
+  );
+  const serviciosDerecha = SERVICIOS_HUB.filter((s) =>
+    (IDS_SERVICIOS_DERECHA as readonly string[]).includes(s.id),
+  );
 
   const slugSeleccionado = nodoSeleccionado
     ? sanitizarSlugZona(nodoSeleccionado.nombre)
@@ -299,7 +359,20 @@ export function PantallaHubUbicacion() {
     : null;
 
   return (
-    <div className="space-y-4 w-full max-w-6xl mx-auto px-1.5 sm:px-3 py-1 sm:py-2 overflow-x-hidden">
+    <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden flex flex-col justify-between">
+      {/* Capa 1: Canvas Interactivo de fondo con position: absolute */}
+      {ubicacion && (
+        <div className="absolute inset-0 z-0">
+          <MapaInteractivoCanvas
+            nodos={nodosMapa}
+            conexiones={ubicacion.conexiones}
+            ubicacionActualId={ubicacion.ubicacionId}
+            lider={lider}
+            onSeleccionarNodo={(nodo) => setNodoSeleccionado(nodo)}
+          />
+        </div>
+      )}
+
       {/* Transición animada 2D de viaje */}
       {transicionActiva && (
         <TransicionViaje2D
@@ -312,186 +385,215 @@ export function PantallaHubUbicacion() {
         />
       )}
 
-      {/* HUD Superior Flotante (Relative) */}
+      {/* Capa 2: HUD Superior Flotante (Relative) */}
       {ubicacion && (
-        <section
-          aria-label="Resumen del explorador"
-          className="relative z-10 bg-card border-4 border-black shadow-[6px_6px_0_0_#000] p-2.5 sm:p-3.5"
+        <header
+          aria-label="HUD superior del explorador"
+          className="relative z-20 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3 flex items-start justify-between gap-2"
         >
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            {/* Identidad del Jugador y Líder */}
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="size-10 sm:size-12 bg-black border-2 border-[#14d1e8] shadow-[2px_2px_0_0_#000] p-0.5 shrink-0 flex items-center justify-center">
-                <img
-                  src={obtenerImagenCriatura(lider?.especieSlug)}
-                  alt={lider?.nombre || "Líder de equipo"}
-                  onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
-                  className="w-full h-full object-contain scale-x-[-1]"
-                />
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="retro text-[10px] sm:text-xs text-slate-100 font-bold truncate">
-                    {personaje?.nombre ?? "Explorador"}
+          {/* Ficha del Jugador (estilo tarjeta superior izquierda) */}
+          <div className="pointer-events-auto bg-card/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-2.5 max-w-[62vw] sm:max-w-sm">
+            <div className="size-9 sm:size-11 bg-black border-2 border-[#14d1e8] p-0.5 shrink-0 flex items-center justify-center">
+              <img
+                src={obtenerImagenCriatura(lider?.especieSlug)}
+                alt={lider?.nombre || "Líder"}
+                onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
+                className="w-full h-full object-contain scale-x-[-1]"
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="retro text-[9px] sm:text-[11px] text-slate-100 font-bold truncate">
+                  {personaje?.nombre ?? "Explorador"}
+                </span>
+                {ubicacion.poderEquipo && (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/80 text-[#14d1e8] px-1.5 py-0.5 border border-[#14d1e8]/40">
+                    <Crown className="size-2.5" />
+                    NV.{ubicacion.poderEquipo.nivelMaximoEquipo}
                   </span>
-                  <Badge className="retro text-[7px] bg-[#14d1e8]/20 text-[#14d1e8] border border-[#14d1e8]/50">
-                    {ubicacion.nombre}
-                  </Badge>
-                </div>
-                <p className="retro text-[7px] sm:text-[8px] text-slate-400 mt-0.5 truncate">
-                  {lider
-                    ? `Líder: ${lider.nombre} (Nv.${lider.nivel})`
-                    : "Sin líder asignado"}
-                  {ubicacion.poderEquipo
-                    ? ` · ${ubicacion.poderEquipo.rangoDomador}`
-                    : ""}
-                </p>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="retro text-[7px] sm:text-[8px] text-amber-300 truncate">
+                  {ubicacion.nombre}
+                </span>
+                {!ubicacion.esSegura && typeof ubicacion.progresoZona === "number" && (
+                  <span className="retro text-[7px] bg-black/80 px-1 py-0.5 border border-black text-emerald-300">
+                    {ubicacion.progresoZona}%
+                  </span>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Métricas y Botón Salir */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="bg-black/70 border-2 border-black shadow-[4px_4px_0_0_#000] px-2.5 py-1 flex items-center gap-1.5">
-                <Coins className="size-3.5 text-amber-400 shrink-0" />
-                <span className="retro text-[9px] sm:text-[10px] text-amber-300">
-                  {personaje?.monedas ?? 0}
-                </span>
-              </div>
+          {/* Monedas + Menú de Ajustes / Salir */}
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="bg-card/95 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2.5 py-1.5 flex items-center gap-1.5">
+              <Coins className="size-3.5 sm:size-4 text-amber-400 shrink-0" />
+              <span className="retro text-[9px] sm:text-[10px] text-amber-300">
+                {personaje?.monedas ?? 0}
+              </span>
+            </div>
 
-              {ubicacion.poderEquipo && (
-                <div className="hidden sm:flex bg-black/70 border-2 border-black shadow-[4px_4px_0_0_#000] px-2.5 py-1 items-center gap-1.5">
-                  <Crown className="size-3.5 text-[#14d1e8] shrink-0" />
-                  <span className="retro text-[9px] text-slate-200">
-                    MAX NV.{ubicacion.poderEquipo.nivelMaximoEquipo}
-                  </span>
+            <AlertDialog open={menuAbierto} onOpenChange={setMenuAbierto}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  aria-label="Opciones y sesión"
+                  disabled={viajando}
+                  className={cn(
+                    "size-9 sm:size-10 border-2 border-black shadow-[4px_4px_0_0_#000] bg-card/95 text-slate-100 hover:text-[#14d1e8]",
+                    viajando && "pointer-events-none opacity-50",
+                  )}
+                >
+                  <Settings className="size-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="retro text-xs sm:text-sm text-[#14d1e8]">
+                    MENÚ DE AETHELGARD
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-xs text-slate-300">
+                    Accesos del sistema y cierre de sesión seguro.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+
+                <div className="space-y-2 py-2">
+                  <Link
+                    to="/kit-ui"
+                    onClick={() => {
+                      reproducirSonido("click", 0.3);
+                      setMenuAbierto(false);
+                    }}
+                    className="block w-full text-center retro text-[9px] border-2 border-black bg-card px-3 py-2 shadow-[3px_3px_0_0_#000] hover:border-[#14d1e8]"
+                  >
+                    KIT DE INTERFAZ
+                  </Link>
+                  <Link
+                    to="/creditos"
+                    onClick={() => {
+                      reproducirSonido("click", 0.3);
+                      setMenuAbierto(false);
+                    }}
+                    className="block w-full text-center retro text-[9px] border-2 border-black bg-card px-3 py-2 shadow-[3px_3px_0_0_#000] hover:border-[#14d1e8]"
+                  >
+                    CRÉDITOS Y LICENCIAS
+                  </Link>
                 </div>
-              )}
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={viajando}
-                    className={cn(
-                      "retro text-[8px] sm:text-[9px] h-8 border-2 border-black bg-red-950/70 text-red-200 hover:bg-red-900",
-                      viajando && "pointer-events-none opacity-50",
-                    )}
+                <AlertDialogFooter className="gap-3 sm:gap-4 w-full mt-4">
+                  <AlertDialogCancel className="retro text-[9px] border-2 border-black">
+                    PERMANECER
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCerrarSesion}
+                    className="retro text-[9px] border-2 border-black bg-red-700 hover:bg-red-600 text-white"
                   >
                     <LogOut className="size-3.5 mr-1" />
                     SALIR
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-md border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="retro text-xs sm:text-sm text-[#14d1e8]">
-                      CERRAR SESIÓN
-                    </AlertDialogTitle>
-                    <AlertDialogDescription className="text-xs sm:text-sm text-slate-300">
-                      Tu progreso queda guardado en el servidor de Aethelgard. ¿Deseas salir ahora?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="gap-3 sm:gap-4 w-full mt-4">
-                    <AlertDialogCancel className="retro text-[9px] border-2 border-black">
-                      PERMANECER
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleCerrarSesion}
-                      className="retro text-[9px] border-2 border-black bg-red-700 hover:bg-red-600 text-white"
-                    >
-                      SALIR
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-        </section>
+        </header>
       )}
 
-      {/* Mapa Interactivo Navegable (Canvas absolute + Nodos relative) */}
+      {/* Capa 3: Botoneras Laterales Flotantes (Relative, estilo juego) */}
       {ubicacion && (
-        <section aria-label="Mapa navegable de Aethelgard">
-          <MapaInteractivoCanvas
-            nodos={nodosMapa}
-            conexiones={ubicacion.conexiones}
-            ubicacionActualId={ubicacion.ubicacionId}
-            lider={lider}
-            onSeleccionarNodo={(nodo) => setNodoSeleccionado(nodo)}
-          />
-        </section>
+        <div className="relative z-20 pointer-events-none flex-1 flex items-center justify-between px-2 sm:px-4">
+          <div className="flex flex-col gap-2">
+            {serviciosIzquierda.map(renderBotonFlotanteServicio)}
+          </div>
+          <div className="flex flex-col gap-2">
+            {serviciosDerecha.map(renderBotonFlotanteServicio)}
+          </div>
+        </div>
       )}
 
-      {/* Dock Inferior de Servicios del Hub (Relative) */}
-      <section aria-label="Servicios disponibles" className="relative z-10 space-y-2.5">
-        <div className="flex items-center justify-between border-b-2 border-black pb-1.5">
-          <div className="flex items-center gap-2">
-            <div className="size-6 bg-black border border-black flex items-center justify-center">
-              <MapIcon className="size-3.5 text-[#14d1e8]" />
-            </div>
-            <h2 className="retro text-[10px] sm:text-xs text-slate-100 tracking-wider">
-              ACCIONES Y SERVICIOS ({ubicacion?.nombre.toUpperCase()})
-            </h2>
-          </div>
-          {ubicacion && !ubicacion.esSegura && typeof ubicacion.progresoZona === "number" && (
-            <div className="flex items-center gap-2">
-              <span className="retro text-[8px] text-amber-300">
-                PROGRESO {ubicacion.progresoZona}%
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-          {SERVICIOS_HUB.map((servicio) => {
-            const habilitado = estaServicioHabilitadoEnZona(
-              servicio,
-              ubicacion?.servicios,
-            );
-            return (
-              <Link
-                key={servicio.id}
-                to={habilitado ? servicio.ruta : "#"}
-                onClick={(e) => {
-                  if (!habilitado || viajando) {
-                    e.preventDefault();
-                    reproducirSonido("error", 0.35);
-                    toast.info(
-                      `${servicio.titulo} solo está disponible en localidades con este servicio.`,
-                    );
-                    return;
-                  }
-                  reproducirSonido("click", 0.35);
-                }}
-                aria-disabled={!habilitado || viajando}
-                className={cn(
-                  "group bg-card border-2 border-black shadow-[4px_4px_0_0_#000] p-2.5 sm:p-3 flex flex-col justify-between transition-all",
-                  habilitado && !viajando
-                    ? "hover:border-[#14d1e8] hover:-translate-y-0.5 active:translate-y-0.5"
-                    : "opacity-50 grayscale cursor-not-allowed",
-                  viajando && "pointer-events-none opacity-50",
-                )}
-              >
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="size-8 bg-black border border-black flex items-center justify-center shrink-0">
-                    {renderIconoServicio(servicio.icono)}
+      {/* Capa 4: Dock Inferior estilo Juego (Equipo + Botón Principal EXPLORAR / VIAJAR) */}
+      {ubicacion && (
+        <footer
+          aria-label="Dock inferior de equipo y acción principal"
+          className="relative z-20 pointer-events-none px-2.5 pb-2.5 sm:px-4 sm:pb-3 flex flex-col items-center gap-2"
+        >
+          <div className="pointer-events-auto w-full max-w-2xl bg-card/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] p-2 sm:p-2.5 flex items-center justify-between gap-2 sm:gap-3">
+            {/* Ranuras rápidas del equipo activo */}
+            <Link
+              to="/equipo"
+              onClick={() => reproducirSonido("click", 0.35)}
+              className={cn(
+                "flex items-center gap-1 sm:gap-1.5 min-w-0 group",
+                viajando && "pointer-events-none opacity-50",
+              )}
+              title="Gestionar Equipo Activo"
+            >
+              {Array.from({ length: 4 }).map((_, indice) => {
+                const criatura = equipo[indice];
+                return (
+                  <div
+                    key={indice}
+                    className={cn(
+                      "size-10 sm:size-12 border-2 border-black bg-black/85 flex items-center justify-center relative shrink-0 group-hover:border-[#14d1e8]",
+                      indice === 0 && criatura && "border-[#14d1e8]",
+                    )}
+                  >
+                    {criatura ? (
+                      <>
+                        <img
+                          src={obtenerImagenCriatura(criatura.slug)}
+                          alt={criatura.nombre}
+                          onError={(e) => manejarErrorImagen(e, RUTAS_PLACEHOLDERS.criatura)}
+                          className="w-8 h-8 sm:w-10 sm:h-10 object-contain scale-x-[-1]"
+                        />
+                        <span className="retro text-[6px] sm:text-[7px] bg-black/90 text-amber-300 px-1 border border-black absolute -bottom-1 -right-1">
+                          {criatura.nivel}
+                        </span>
+                      </>
+                    ) : (
+                      <Users className="size-3.5 text-slate-600" />
+                    )}
                   </div>
-                  {!habilitado && <Lock className="size-3.5 text-slate-400 shrink-0" />}
-                </div>
-                <div>
-                  <span className="retro text-[9px] sm:text-[10px] text-slate-100 block leading-tight break-words mb-1.5">
-                    {servicio.titulo}
-                  </span>
-                  <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
-                    {servicio.descripcion}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+                );
+              })}
+              {equipo.length > 4 && (
+                <span className="retro text-[8px] text-[#14d1e8] pl-0.5">
+                  +{equipo.length - 4}
+                </span>
+              )}
+            </Link>
+
+            {/* Botón Principal Central estilo "BATALLA" */}
+            <Button
+              type="button"
+              disabled={viajando}
+              onClick={handleBotonPrincipal}
+              className={cn(
+                "retro text-[10px] sm:text-xs h-11 sm:h-12 px-4 sm:px-7 border-4 border-black shadow-[4px_4px_0_0_#000] shrink-0 active:translate-y-0.5",
+                !ubicacion.esSegura
+                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  : "bg-[#14d1e8] hover:bg-[#38bdf8] text-black",
+                viajando && "pointer-events-none opacity-50",
+              )}
+            >
+              {!ubicacion.esSegura ? (
+                <>
+                  <Swords className="size-4 mr-1.5" />
+                  EXPLORAR
+                </>
+              ) : (
+                <>
+                  <Compass className="size-4 mr-1.5" />
+                  VIAJAR
+                </>
+              )}
+            </Button>
+          </div>
+        </footer>
+      )}
 
       {/* Modal Retro de Inspección y Decisión de Viaje al hacer clic en una Isla */}
       <AlertDialog
@@ -543,7 +645,6 @@ export function PantallaHubUbicacion() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
-              {/* Vista previa del paisaje de la zona */}
               <div className="border-2 border-black bg-black/80 overflow-hidden h-32 sm:h-40 relative">
                 <img
                   src={obtenerImagenZona(slugSeleccionado)}
@@ -561,7 +662,6 @@ export function PantallaHubUbicacion() {
                 )}
               </div>
 
-              {/* Ficha interior retro de destino */}
               <div className="border-2 border-black bg-black/60 p-3 space-y-1.5 shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)]">
                 <p className="retro text-[8px] sm:text-[9px] text-slate-200">
                   {formatearRangoFauna(

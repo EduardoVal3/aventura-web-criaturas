@@ -1582,3 +1582,40 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+---
+
+## 24. Sub-Fase 10o: Consolidación del Hub RPG en Canvas Interactivo, Transición 2D y Paridad Táctica (`PantallaHubUbicacion.tsx`)
+
+### 24.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras integrar el PR #53 (`funcionalidad(hub): integrar mapa interactivo navegable y transicion 2d`) en la rama `desarrollo`, se ejecutó una auditoría técnica y heurística sobre el nuevo Hub interactivo sobre `<canvas>` detectando tres brechas críticas respecto a la especificación alcanzada en las subfases 10m y 10n:
+1. **Condición de carrera en la transición 2D de viaje (`TransicionViaje2D.tsx` y `PantallaHubUbicacion.tsx`):** La referencia `onCompletadoRef.current = onCompletado` se actualizaba directamente durante el render y el cierre de la transición dependía de un estado reactivo `pendienteTrasAnimacion` acoplado a un `useEffect`. Si la petición `api.viajarAUbicacion` demoraba más de `1850ms` mientras la animación finalizaba primero, el flujo quedaba expuesto a un bloqueo de carga, además de generar advertencias de `oxlint` por reglas de hooks.
+2. **Pérdida de paridad táctica de las Subfases 10m/10n en el Hub (`PantallaHubUbicacion.tsx`):** Al migrar a tarjetas flotantes y modal de isla sobre el canvas, se omitieron el indicador `rangoDomador` en el HUD superior, la sección de fauna del hábitat (`especiesHabitantes`), el checklist completo de progreso y requisitos de desbloqueo (`requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso`), el atributo `aria-busy` en el botón de desbloqueo, el confinamiento de altura del modal (`max-h-[90dvh] overflow-y-auto overflow-x-hidden`) y la exportación por defecto (`export default PantallaHubUbicacion;`).
+3. **Bloqueo en consulta de servicios laterales e indicador en zonas salvajes:** El acceso a rutas laterales restringía innecesariamente el modo consulta en pantallas que ya lo soportan (`PantallaTienda`, `PantallaCuracion`, `PantallaAlmacen`, `PantallaHistorial`), requiriendo diferenciar claramente la navegación de consulta frente a la disponibilidad operativa real (`activoEnZona` según `esSegura`).
+
+### 24.2 Mejoras Implementadas
+
+#### A. Identidad Visual Retro y Paridad Táctica (`PantallaHubUbicacion.tsx`)
+- Restauración del distintivo `rangoDomador` dentro de la tarjeta superior del HUD flotante sobre el mapa interactivo.
+- Incorporación del bloque táctico **"Fauna del Hábitat"** listando `especiesHabitantes` dentro del detalle de la isla seleccionada.
+- Reincorporación del panel **"PROGRESO DE DESBLOQUEO"** con `requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso` y la indicación de ruta **"LISTA PARA DESBLOQUEAR"**.
+- Confinamiento responsivo del cuadro de diálogo (`AlertDialogContent`) mediante `max-h-[90dvh] overflow-y-auto overflow-x-hidden` para evitar desbordamiento en pantallas compactas.
+
+#### B. Componentes `8bitcn/ui`, Accesibilidad y Reglas del Proyecto (R1)
+- Preservación integral de iconografía SVG de Lucide sin emojis Unicode en los módulos nuevos y modificados (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`), validada por pruebas automatizadas.
+- Añadido de `aria-busy` en el botón de desbloqueo territorial para prevenir dobles envíos durante la llamada al servidor.
+- Restauración de `export default PantallaHubUbicacion;` para mantener compatibilidad con importaciones existentes.
+
+#### C. Sincronización Determinista de `TransicionViaje2D` y Higiene de Hooks
+- En `apps/web/src/components/mundo/TransicionViaje2D.tsx`, la sincronización de `onCompletadoRef.current = onCompletado;` se trasladó dentro de `useEffect`, evitando mutar referencias durante el render.
+- En `apps/web/src/paginas/PantallaHubUbicacion.tsx`, se reemplazó el patrón de estado reactivo `pendienteTrasAnimacion` + `useEffect` por referencias deterministas (`montadoRef`, `animacionCompletadaRef`, `viajePendienteRef`) coordinadas mediante el callback `finalizarViajeSiListo`, eliminando el riesgo de bloqueo cuando la API supera el tiempo mínimo de animación y erradicando las advertencias de `oxlint` en los archivos modificados.
+
+#### D. Reglas de Servidor y Consulta Libre de Servicios Laterales
+- En `renderBotonFlotanteServicio` dentro de `PantallaHubUbicacion.tsx`, los botones laterales permiten navegar libremente a sus rutas en modo consulta, mientras el indicador visual `activoEnZona` evalúa con precisión la regla de zonas seguras del servidor (`esSegura === false` marca como inactivos operativamente `CURACION`, `TIENDA` y `ALMACEN` fuera de localidades seguras).
+
+### 24.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores (`LINT=0`) sobre 88 archivos evaluados (34 advertencias preexistentes en módulos previos; 0 advertencias en `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`, `MapaInteractivoCanvas.tsx` y `verificacion-hub-mundo.spec.ts`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** 99 de 99 pruebas aprobadas (0 fallos, 0 omitidas), ampliando `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar ausencia de emojis en `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`, presencia de `requisitoCartografia`, `requisitoNivelEquipo`, `especiesHabitantes`, `rangoDomador`, `finalizarViajeSiListo`, `export default PantallaHubUbicacion` y cobertura de las 9 islas en `CONFIGURACION_ISLAS_MAPA`.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, 2160 módulos transformados en `1.82s`).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** 130 de 130 pruebas aprobadas en 41 suites (0 fallos, 0 omitidas).

@@ -20,7 +20,7 @@ Este documento es el enrutador ligero (~2 KB) para navegar el proyecto sin neces
 | **7** | Combate y captura (AV4) | ✅ Completada | `funcionalidad/fase-07-combate` | [FASE-07.md](file:///docs/workflows/FASE-07.md) | L374–L393 |
 | **8** | Integración Front↔API | ✅ Completada | `funcionalidad/fase-08-integracion` | [FASE-08.md](file:///docs/workflows/FASE-08.md) | L394–L410 |
 | **9** | Seguridad y cierre base | ✅ Completada | `pruebas/fase-09-seguridad` | [FASE-09.md](file:///docs/workflows/FASE-09.md) | L415–L431 |
-| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10n) | `funcionalidad/fase-10n-ux-orientacion-territorial` | [10-orientacion-territorial-mapa-y-ux-progresion.md](file:///docs/workflows/fase-10/10-orientacion-territorial-mapa-y-ux-progresion.md) | L435–L525 |
+| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10o) | `funcionalidad/fase-10o-hub-mapa-interactivo` | [10-15-hub-mapa-interactivo.md](file:///docs/workflows/fase-10/10-15-hub-mapa-interactivo.md) | L437–L541 |
 | **11** | Extras: Gateway y UI (+5) | Pendiente | `configuracion/fase-11-extras` | `docs/workflows/FASE-11.md` | L483–L501 |
 | **12** | Entrega final (FIN) | Pendiente | `documentacion/fase-12-entrega` | `docs/workflows/FASE-12.md` | L502–L516 |
 | **13** | Multijugador (opcional) | Opcional | `funcionalidad/fase-13-presencia` | `docs/workflows/FASE-13.md` | L517–L530 |
@@ -59,7 +59,7 @@ Si requieres validar el texto original de [Plan_Desarrollo_ISC305_Entregable1.md
 - **§7 Plantilla de workflow:** Líneas 239 a 252
 - **§8 Resumen de Fases:** Líneas 254 a 570
   - Fase 9: Líneas 417 a 434
-  - Fase 10 (UX y Combate Táctico): Líneas 437 a 525
+  - Fase 10 (UX y Combate Táctico): Líneas 437 a 541
   - Fase 11 (Extras): Líneas 526 a 544
   - Fase 12 (Entrega final): Líneas 545 a 559
   - Fase 13 (Multijugador opcional): Líneas 560 a 573

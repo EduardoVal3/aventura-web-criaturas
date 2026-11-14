@@ -1,0 +1,14 @@
+flowchart LR
+    C["Navegador Web\nReact + Vite (:5173)\nVITE_URL_API=http://localhost:8000"] -->|"HTTP + Header apikey + JWT"| K["Kong API Gateway\nDocker (:8000 Proxy / :8001 Admin)\nModo DB-less (kong.yml)"]
+
+    subgraph P["Políticas Activas en Kong"]
+        direction TB
+        P1["key-auth\nControl de acceso por apikey"]
+        P2["rate-limiting\n10 req/min en /api/exploracion\n120 req/min en /api"]
+        P3["cors + correlation-id\nX-Request-ID y cabeceras X-RateLimit-*"]
+        P4["file-log\nRegistro centralizado en stdout"]
+    end
+
+    K --> P
+    K -->|"Proxy HTTP (solo tráfico válido)\nhost.docker.internal:3000"| A["Back-End NestJS (:3000)\nValidación JWT, Reglas y Prisma"]
+    A -->|"SQL / TCP :5432"| DB[("PostgreSQL 17\nDocker aventura-postgres")]

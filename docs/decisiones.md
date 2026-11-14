@@ -240,4 +240,15 @@
   - **D-17 (Previa de Hábitat desde Catálogo Canónico en Memoria):** Para que el explorador visualice las especies autóctonas antes de adentrarse en una senda, `MundoService` enriquece cada conexión y la ubicación actual consultando las tablas de aparición canónicas en memoria (`TABLAS_APARICION` y `BESTIARIO`), eliminando ráfagas de consultas a base de datos y garantizando tiempo de respuesta sub-milisegundo.
   - **D-18 (Grafo Territorial Topológico Canónico de 9 Nodos):** La geografía de Aethelgard se expone estructuradamente como un grafo de 9 nodos (`LOC-01`, `ZON-01`, `ZON-02`, `LOC-02`, `ZON-03`, `ZON-04`, `LOC-03`, `ZON-05`, `ZON-06`) distribuidos en 5 escalones de avance, permitiendo al componente `MinimapaRedTerritorial.tsx` renderizar la posición actual, estado cartográfico y accesibilidad en un layout responsive retro-brutalista sin overflow horizontal.
 
+---
+
+## 15. API Gateway con Kong en modo DB-less (Subfase 11a)
+
+- **Fuente y fecha de consulta:**
+  - Documentación oficial de Kong Gateway 3.8 (DB-less and Declarative Configuration): `https://docs.konghq.com/gateway/3.8.x/production/deployment-topologies/db-less-and-declarative-configuration/` (14 de noviembre de 2026).
+- **Decisiones arquitectónicas tomadas:**
+  - **D-19 (Kong 3.8 en modo DB-less con perfil opcional en Docker):** Se incorpora `kong:3.8` en `docker-compose.yml` bajo `profiles: ["gateway"]` leyendo la configuración declarativa versionada `kong.yml` (`KONG_DATABASE: "off"`). Se eligió modo *DB-less* para no requerir una segunda base de datos ni alterar el volumen `datos-postgres` existente, y se usó perfil `gateway` para que quienes ejecuten `pnpm dev` sin gateway no tengan conflictos con su flujo local.
+  - **D-20 (Políticas de Control de Acceso, Rate-Limiting y Trazabilidad en Gateway):** Sobre el servicio `aethelgard-api` se configuran `key-auth` (consumidor `web-aethelgard` con `run_on_preflight: false` para no bloquear `OPTIONS` CORS), `rate-limiting` diferenciado (`10 req/min` en `/api/exploracion` y `120 req/min` en `/api`), `cors`, `correlation-id` (`X-Request-ID`) y `file-log` (`/dev/stdout`). En el cliente (`apiHttp.ts`), el envío de `apikey` mediante `VITE_API_KEY` es opcional para mantener compatibilidad tanto con `:3000` directo como con `:8000` (Kong).
+
+
 

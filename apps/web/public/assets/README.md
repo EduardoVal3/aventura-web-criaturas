@@ -11,12 +11,14 @@ Este documento define las reglas técnicas, nombres exactos de archivo y **Promp
 ```text
 apps/web/public/assets/
 ├── criaturas/      -> 30 criaturas canónicas integradas (512x512 px, .webp RGBA q90, ~51–93 KB c/u, fondo transparente, MIRANDO A LA IZQUIERDA)
-├── zonas/          -> 6 zonas silvestres + 3 localidades seguras (800x450 px, 16:9, formato .webp)
-├── battlegrounds/  -> 6 escenarios de combate por zona (800x450 px, 16:9, formato .webp)
-└── objetos/        -> 4 ítems del bazar (256x256 px, formato .webp, fondo transparente)
+├── zonas/          -> 6 zonas silvestres + 3 localidades seguras integradas (800x450 px, 16:9, .webp q90, ~75–118 KB c/u, 808 KB totales)
+├── battlegrounds/  -> 6 escenarios de combate integrados + caverna-cristal.svg fallback (800x450 px, 16:9, .webp q90, ~68–97 KB c/u, 480 KB totales)
+└── objetos/        -> 4 ítems del bazar integrados (256x256 px, .webp RGBA q90, ~18–32 KB c/u, 94.2 KB totales, fondo transparente)
 ```
 
 > **Especificación técnica aplicada a `criaturas/` (30 archivos, `1.96 MB` totales):** Cada sprite optimizado desde su maestro local 2K (`2048x2048 px`, conservado fuera de Git en `/sprites/`) se procesa mediante recorte uniforme `1:1` con margen periférico del `4%`, submuestreo con filtro `BOX` a `1024x1024 -> 512x512` para preservar píxeles nítidos sin anillo *Lanczos*, sellado morfológico perimetral para impedir filtraciones en grietas de armadura/corteza/escamas, apertura geodésica segura de cavidades encerradas, disolución alfa gradual en halos luminosos externos sobre negro y codificación `WebP` RGBA (`quality=90`, `alpha_quality=100`, `method=6`).
+>
+> **Especificación aplicada a `zonas/`, `battlegrounds/` y `objetos/` (19 archivos, `1.35 MB` totales desde `48.11 MB` fuente en `/faltantes/`):** Los 15 escenarios `2752x1536` se recortan al centro a relación exacta `16:9` (`2731x1536`), se reescalan con filtro `BOX` a `800x450 px` y se codifican en `WebP` (`quality=90`, `method=6`). Los 4 ítems `2048x2048` reciben recorte `1:1` con `8%` de margen, sellado estructural de vidrio/metal, preservación de destellos aditivos des-premultiplicados sin halo negro y submuestreo premultiplicado `BOX` a `256x256 px` RGBA (`quality=90`, `alpha_quality=100`, `method=6`).
 
 ---
 

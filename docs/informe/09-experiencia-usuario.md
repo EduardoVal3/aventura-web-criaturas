@@ -1676,3 +1676,46 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **99 de 99 pruebas aprobadas** (`0` fallos, `0` omitidas).
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, 2161 módulos transformados en `5.33s`).
 - **Reglas de negocio:** Las reglas del combate por turnos, contratos de API y esquema de base de datos permanecen intactos.
+
+---
+
+## 27. Sub-Fase 10p: Rediseño Híbrido del Mapa Mundial 2D Dark Fantasy en Canvas, Calibración Geométrica e Iluminación Viva a 60 FPS (`MapaInteractivoCanvas.tsx`)
+
+Con el objetivo de llevar el mapa interactivo del Hub (`/hub`) a un acabado visual de videojuego RPG comercial sin alterar un solo píxel de la interfaz retro circundante, la paleta de biomas ni las reglas autoritativas de navegación territorial, se ejecutó la **Sub-Fase 10p** sobre la rama `funcionalidad/fase-10p-mapa-dioramas-canvas`.
+
+### 27.1 Diagnóstico Inicial y Auditoría Impeccable
+1. **Apariencia genérica de elipses aisladas:** La versión anterior recortaba 9 retratos panorámicos `.webp` dentro de óvalos uniformes conectados por trazos rectos originados en el centro `(isla.x, isla.y)`, generando islas desconectadas del océano y con sensación visual básica frente a la dirección artística Dark Fantasy buscada.
+2. **Cohesión geográfica y continuidad oceánica:** Al utilizar la ilustración maestra pixel-art de 9 islas (`1679×937`), el alejamiento de cámara o el desplazamiento hacia los extremos requería extender de forma natural el gradiente oceánico profundo y difuminar el perímetro de la lámina para evitar cortes rectangulares o bordes negros.
+3. **Traslapes potenciales entre placas, marcador `"TÚ AQUÍ"` y puentes:** En un lienzo denso con 9 islas y 10 puentes de mampostería/madera, anclar todas las etiquetas con un único desplazamiento vertical uniforme `(radioY + 38)` provocaba cruces puntuales sobre el puente sur de *Praderas*, el viaducto este de *Puesto del Río*, el cristal sur de *La Cumbre* o el emblema `"TÚ AQUÍ"` del *Bosque Susurrante*.
+
+### 27.2 Mejoras Implementadas
+
+#### A. Identidad Visual Dark Fantasy y Arquitectura Híbrida (`mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx`)
+- **Ilustración maestra y océano continuo:** Incorporación de `apps/web/public/assets/zonas/mapa-mundo-aethelgard.png` (`DIMENSIONES_MAPA_MUNDO = 1679×937`, con carga asíncrona en `mapaImagenRef` y respaldo vectorial automático mediante `dibujarRespaldoIslasBase`), extendida por `dibujarFondoOceanoContinuo` (`#002040 → #002c50 → #002345` con destellos de oleaje) y `dibujarFusionBordesMapa` para lograr un océano infinito sin costuras.
+- **Capa viva 60 FPS calibrada por bioma (`dibujarCapaVivaMapa`):** Conservando intactas las paletas cromáticas originales de cada región (`CONFIGURACION_ISLAS_MAPA`), se superpusieron velos de niebla sobre islas aún bloqueadas, aro rúnico cian pulsante alrededor de la costa actual (`trazarPoligonoLocal` con `generarGeometriaDiorama`), flujo guiado de orbes sobre los 10 trayectos Bezier cuadráticos calibrados (`TRAYECTOS_PUENTES_AETHELGARD`: verdes esmeralda en rutas viajables, ámbar en sendas desbloqueables y sombra en accesos cerrados) y micro-animaciones bioma por bioma respetando `prefers-reduced-motion`:
+  - **Villa Serena (`LOC-01`):** brillo pulsante en la fuente central, faroles cálidos nocturnos y columnas de humo ascendentes en chimeneas.
+  - **Praderas (`ZON-01`):** destellos en los monolitos rúnicos esmeralda/cian y motas doradas flotantes.
+  - **Puesto del Río (`LOC-02`):** pebeteros encendidos en atalayas con chispas cálidas y estela espumosa animada sobre la cascada frontal.
+  - **Lago Espejo (`ZON-02`):** halo prismático central, destellos cian en cristales costeros y neblina arcana ascendente.
+  - **Bosque Susurrante (`ZON-03`):** luciérnagas verde esmeralda orbitando suavemente el claro del trono.
+  - **Paso de los Riscos (`ZON-04`):** fulgor de brasas en grietas rocosas, humo de cumbre y pavesas naranjas ascendentes.
+  - **Bastión del Norte (`LOC-03`):** pebeteros ardientes en las tres torres principales y nieve ligera en descenso.
+  - **Cueva Umbría (`ZON-05`):** coladas de magma incandescentes con chispas ascendentes y arcos eléctricos violeta sobre los cristales del norte.
+  - **Pico de la Cumbre (`ZON-06`):** cortinas ondulantes de aurora boreal verde/cian, destellos glaciares y nevada ártica.
+
+#### B. Componentes `8bitcn/ui`, Navegación Responsive y Preservación de la UI
+- **Conservación estricta de la interfaz HUD (R1 y estética existente):** Panel de jugador superior, medidor de experiencia, monedas, configuraciones, menús laterales (`Almacén`, `Compendio Open5e`, `Bitácora`, `Inventario`, `Tienda / Bazar`, `Santuario de Salud`), dock inferior de criaturas, botón `EXPLORAR`, controles de zoom/recentrado/audio, tooltip interactivo, placa `"TÚ AQUÍ"` y consumo de `/assets/zonas/*.webp` en HUD/modales permanecen intactos.
+- **Compensaciones anti-traslape (`placaOffsetX` / `placaOffsetY`) e inspección geométrica:** Calibración individual de cada placa bajo su acantilado sur (`MapaInteractivoCanvas.tsx` + `CONFIGURACION_ISLAS_MAPA`) para dejar despejados los 10 puentes y evitar colisiones incluso con la placa activa `"TÚ AQUÍ"`.
+- **Cámara en escritorio y móvil:** Auto-centrado automático en `ubicacionActualId` al abrir o viajar (`centrarEnUbicacion`), ampliación de `ZOOM_MINIMO` a `0.5` para vista panorámica completa en escritorio, preservación de escala natural en móvil (`zoomInicial = 0.9` sin comprimir el archipiélago), arrastre táctil (`touch-none`), zoom por rueda y gestos *pinch-to-zoom* (`pinchRef`).
+
+#### C. Audio Web Audio API y Reglas del Servidor
+- **Sin alteración de contratos ni lógica del servidor:** Se conservan todas las reglas autoritativas de `CONEXIONES_AETHELGARD`, `TOPOLOGIA_AETHELGARD`, validación de viajes y desbloqueos en `apps/api`, manteniendo los efectos de clic/viaje sintetizados con Web Audio API y el control global de silencio (`Volume2` / `VolumeX`).
+
+### 27.3 Verificación de Calidad y Cero Regresiones
+- **Verificación Visual de Calibración sobre Lámina Real (`1679×937`):** Superposición bitmap verificada visualmente confirmando coincidencia exacta de los 9 contornos, las 9 placas (`placaOffsetX/Y`), las 9 áreas `"TÚ AQUÍ"` y los 10 trayectos Bezier cuadráticos sobre las pasarelas pintadas del mapa.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores en **90 archivos** (`LINT=0`, 34 advertencias preexistentes en módulos previos; 0 advertencias nuevas en `mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx` y `verificacion-hub-mundo.spec.ts`, ejecutado en `173ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **100 de 100 pruebas aprobadas** (`0` fallos, `0` omitidas en `1685.26ms`), incluyendo la nueva prueba integral `Subfase 10p` (validación de `DIMENSIONES_MAPA_MUNDO`, existencia en disco de `mapa-mundo-aethelgard.png`, geometría *pure-Node* de las 9 islas, cobertura bidireccional de los 10 puentes Bezier, ausencia de `obtenerImagenZona` en el canvas y verificación de Regla R1 en `mapa-dioramas.ts`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`6.27s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `59.88s`).
+

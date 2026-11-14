@@ -507,19 +507,21 @@ export function MapaInteractivoCanvas({
 
       ctx.restore();
 
-      // Viñeta tenebrosa en los bordes del visor
+      // Viñeta tenebrosa sutil en todo el visor (usando dimensiones reales del canvas con DPR)
+      ctx.save();
       const vineta = ctx.createRadialGradient(
-        tamanoContenedor.ancho / 2,
-        tamanoContenedor.alto / 2,
-        Math.min(tamanoContenedor.ancho, tamanoContenedor.alto) * 0.3,
-        tamanoContenedor.ancho / 2,
-        tamanoContenedor.alto / 2,
-        Math.max(tamanoContenedor.ancho, tamanoContenedor.alto) * 0.72,
+        canvas.width / 2,
+        canvas.height / 2,
+        Math.min(canvas.width, canvas.height) * 0.36,
+        canvas.width / 2,
+        canvas.height / 2,
+        Math.max(canvas.width, canvas.height) * 0.75,
       );
       vineta.addColorStop(0, "rgba(0, 0, 0, 0)");
-      vineta.addColorStop(1, "rgba(3, 5, 10, 0.68)");
+      vineta.addColorStop(1, "rgba(3, 5, 10, 0.48)");
       ctx.fillStyle = vineta;
-      ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
 
       frameId = requestAnimationFrame(renderizar);
     };

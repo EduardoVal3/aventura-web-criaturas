@@ -10,13 +10,13 @@ Este documento define las reglas técnicas, nombres exactos de archivo y **Promp
 
 ```text
 apps/web/public/assets/
-├── criaturas/      -> 30 criaturas canónicas integradas (512x512 px, .webp RGBA q90, ~50–90 KB c/u, fondo transparente, MIRANDO A LA IZQUIERDA)
+├── criaturas/      -> 30 criaturas canónicas integradas (512x512 px, .webp RGBA q90, ~51–93 KB c/u, fondo transparente, MIRANDO A LA IZQUIERDA)
 ├── zonas/          -> 6 zonas silvestres + 3 localidades seguras (800x450 px, 16:9, formato .webp)
 ├── battlegrounds/  -> 6 escenarios de combate por zona (800x450 px, 16:9, formato .webp)
 └── objetos/        -> 4 ítems del bazar (256x256 px, formato .webp, fondo transparente)
 ```
 
-> **Especificación técnica aplicada a `criaturas/` (30 archivos, ~1.92 MB totales):** Cada sprite optimizado desde su maestro local 2K (`2048x2048 px`, conservado fuera de Git en `/sprites/`) se procesa mediante recorte uniforme `1:1` con margen periférico del `4%`, submuestreo con filtro `BOX` a `1024x1024 -> 512x512` para preservar píxeles nítidos sin anillo *Lanczos*, extracción híbrida de transparencia (inundación exterior + reconstrucción geodésica segura de cavidades encerradas sin perforar quitina ni pelaje oscuro), descontaminación de halo negro en contorno de `2 px` y codificación `WebP` RGBA (`quality=90`, `alpha_quality=100`, `method=6`).
+> **Especificación técnica aplicada a `criaturas/` (30 archivos, `1.96 MB` totales):** Cada sprite optimizado desde su maestro local 2K (`2048x2048 px`, conservado fuera de Git en `/sprites/`) se procesa mediante recorte uniforme `1:1` con margen periférico del `4%`, submuestreo con filtro `BOX` a `1024x1024 -> 512x512` para preservar píxeles nítidos sin anillo *Lanczos*, sellado morfológico perimetral para impedir filtraciones en grietas de armadura/corteza/escamas, apertura geodésica segura de cavidades encerradas, disolución alfa gradual en halos luminosos externos sobre negro y codificación `WebP` RGBA (`quality=90`, `alpha_quality=100`, `method=6`).
 
 ---
 

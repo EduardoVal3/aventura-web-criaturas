@@ -30,7 +30,10 @@ export function TransicionViaje2D({
 }: TransicionViaje2DProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const onCompletadoRef = useRef(onCompletado);
-  onCompletadoRef.current = onCompletado;
+
+  useEffect(() => {
+    onCompletadoRef.current = onCompletado;
+  }, [onCompletado]);
 
   const [progreso, setProgreso] = useState(0);
 

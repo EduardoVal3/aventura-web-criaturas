@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -92,10 +92,19 @@ export function PantallaHubUbicacion() {
   const [nodoSeleccionado, setNodoSeleccionado] = useState<NodoMapaTerritorial | null>(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [transicionActiva, setTransicionActiva] = useState<EstadoTransicionViaje | null>(null);
-  const [pendienteTrasAnimacion, setPendienteTrasAnimacion] = useState<{
+  const montadoRef = useRef(true);
+  const animacionCompletadaRef = useRef(false);
+  const viajePendienteRef = useRef<{
     ubicacion: UbicacionActual;
     mensaje: string;
   } | null>(null);
+
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+    };
+  }, []);
 
   const cargarTodo = useCallback(async () => {
     const [datosUbicacion, datosPersonaje, datosEquipo] = await Promise.all([
@@ -183,6 +192,18 @@ export function PantallaHubUbicacion() {
     }
   };
 
+  const finalizarViajeSiListo = useCallback(() => {
+    if (!montadoRef.current) return;
+    if (!animacionCompletadaRef.current || !viajePendienteRef.current) return;
+    const pendiente = viajePendienteRef.current;
+    viajePendienteRef.current = null;
+    animacionCompletadaRef.current = false;
+    setUbicacion(pendiente.ubicacion);
+    toast.success(pendiente.mensaje);
+    setTransicionActiva(null);
+    setViajando(false);
+  }, []);
+
   const handleViajar = async (conexion: ConexionUbicacion) => {
     if (viajando) return;
     if (!ubicacion) return;
@@ -193,6 +214,8 @@ export function PantallaHubUbicacion() {
       const origenId = ubicacion.ubicacionId;
       const origenNombre = ubicacion.nombre;
 
+      animacionCompletadaRef.current = false;
+      viajePendienteRef.current = null;
       setNodoSeleccionado(null);
       setTransicionActiva({
         origenId,
@@ -203,13 +226,17 @@ export function PantallaHubUbicacion() {
 
       const respuesta = await api.viajar({ destinoId: conexion.ubicacionDestinoId });
       const nuevaUbicacion = await api.obtenerUbicacionActual();
-      setPendienteTrasAnimacion({
+      if (!montadoRef.current) return;
+      viajePendienteRef.current = {
         ubicacion: nuevaUbicacion,
         mensaje: respuesta.mensaje || `Has viajado hacia ${respuesta.nombre}`,
-      });
+      };
+      finalizarViajeSiListo();
     } catch (error) {
+      viajePendienteRef.current = null;
+      animacionCompletadaRef.current = false;
+      if (!montadoRef.current) return;
       setTransicionActiva(null);
-      setPendienteTrasAnimacion(null);
       setViajando(false);
       reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
@@ -225,23 +252,9 @@ export function PantallaHubUbicacion() {
   };
 
   const handleAnimacionViajeCompletada = useCallback(() => {
-    if (pendienteTrasAnimacion) {
-      setUbicacion(pendienteTrasAnimacion.ubicacion);
-      toast.success(pendienteTrasAnimacion.mensaje);
-      setPendienteTrasAnimacion(null);
-      setTransicionActiva(null);
-      setViajando(false);
-    }
-  }, [pendienteTrasAnimacion]);
-
-  useEffect(() => {
-    if (!transicionActiva && pendienteTrasAnimacion) {
-      setUbicacion(pendienteTrasAnimacion.ubicacion);
-      toast.success(pendienteTrasAnimacion.mensaje);
-      setPendienteTrasAnimacion(null);
-      setViajando(false);
-    }
-  }, [pendienteTrasAnimacion, transicionActiva]);
+    animacionCompletadaRef.current = true;
+    finalizarViajeSiListo();
+  }, [finalizarViajeSiListo]);
 
   const handleCerrarSesion = async () => {
     reproducirSonido("click", 0.4);

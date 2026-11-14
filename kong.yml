@@ -1,0 +1,75 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: aethelgard-api
+    url: http://host.docker.internal:3000
+    routes:
+      - name: ruta-exploracion
+        paths:
+          - /api/exploracion
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 10
+              policy: local
+              hide_client_headers: false
+
+      - name: ruta-api-general
+        paths:
+          - /api
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 120
+              policy: local
+              hide_client_headers: false
+
+    plugins:
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+          hide_credentials: true
+          run_on_preflight: false
+
+      - name: cors
+        config:
+          origins:
+            - http://localhost:5173
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Authorization
+            - Content-Type
+            - apikey
+            - X-Request-ID
+          exposed_headers:
+            - X-RateLimit-Limit-Minute
+            - X-RateLimit-Remaining-Minute
+            - X-Request-ID
+          credentials: true
+          max_age: 3600
+
+      - name: correlation-id
+        config:
+          header_name: X-Request-ID
+          generator: uuid#counter
+          echo_downstream: true
+
+      - name: file-log
+        config:
+          path: /dev/stdout
+
+consumers:
+  - username: web-aethelgard
+    keyauth_credentials:
+      - key: aethelgard-clave-gateway-dev-2026

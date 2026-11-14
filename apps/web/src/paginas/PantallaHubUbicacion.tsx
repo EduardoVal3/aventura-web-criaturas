@@ -304,35 +304,40 @@ export function PantallaHubUbicacion() {
   };
 
   const renderBotonFlotanteServicio = (servicio: ServicioHub) => {
-    const habilitado = estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
+    // En zonas silvestres (servicios=[]), los servicios exclusivos de localidad quedan en modo solo consulta
+    const requiereLocalidad =
+      Boolean(servicio.codigoLocalidad) && servicio.codigoLocalidad !== "HISTORIAL";
+    const activoEnZona =
+      ubicacion?.esSegura === false && requiereLocalidad
+        ? false
+        : estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
+
     return (
       <Link
         key={servicio.id}
-        to={habilitado ? servicio.ruta : "#"}
+        to={servicio.ruta}
         onClick={(e) => {
-          if (!habilitado || viajando) {
+          if (viajando) {
             e.preventDefault();
-            reproducirSonido("error", 0.35);
-            toast.info(
-              `${servicio.titulo} solo está disponible en localidades con este servicio.`,
-            );
             return;
           }
           reproducirSonido("click", 0.35);
         }}
-        aria-disabled={!habilitado || viajando}
+        aria-disabled={viajando}
         className={cn(
-          "group pointer-events-auto bg-card/90 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-36 justify-center sm:justify-start",
-          habilitado && !viajando
-            ? "hover:border-[#14d1e8] hover:-translate-y-0.5 active:translate-y-0.5"
-            : "opacity-55 grayscale cursor-not-allowed",
+          "group pointer-events-auto bg-card/90 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-36 justify-center sm:justify-start hover:border-[#14d1e8] hover:-translate-y-0.5 active:translate-y-0.5",
+          !activoEnZona && "opacity-85",
           viajando && "pointer-events-none opacity-50",
         )}
-        title={servicio.titulo}
+        title={
+          activoEnZona
+            ? servicio.titulo
+            : `${servicio.titulo} (Solo consulta aquí; viaja a una localidad con este servicio para operar)`
+        }
       >
         <div className="relative shrink-0">
           {renderIconoServicio(servicio.icono)}
-          {!habilitado && (
+          {!activoEnZona && (
             <Lock className="size-2.5 text-amber-300 absolute -top-1 -right-1 bg-black rounded-full p-0.5" />
           )}
         </div>

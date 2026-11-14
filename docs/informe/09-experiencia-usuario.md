@@ -1510,3 +1510,49 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+---
+
+## 22. Adenda de Retroalimentación Visual, "Game Feel" y Control de Audio Retro (Sin Alterar Reglas de Turnos)
+
+Con el objetivo de enriquecer la experiencia visual e interactiva del jugador manteniendo intactas la jugabilidad por turnos y todas las reglas autoritativas del servidor (`apps/api`), se implementaron mejoras en cuatro frentes puramente visuales y sensoriales en `apps/web`.
+
+### 22.1 Mejoras Implementadas
+
+1. **Mapa Interactivo más Vivo e Informativo (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`):**
+   - **Tooltip rico al hacer hover o enfocar un nodo:** Despliega una ficha flotante con el nombre de la ubicación, etiqueta del bioma, estado de viaje (actual, conectada, desbloqueable o bloqueada) y servicios disponibles (Santuario/Tienda en localidades seguras; rango de nivel de fauna y porcentaje explorado en zonas salvajes).
+   - **Iconografía directa en placas de nodo:** Añade indicadores compactos de Santuario (`Heart`), Tienda (`Store`) y seguridad (`ShieldCheck`) en localidades, y de combate (`Swords` + `Nv. X-Y`) en zonas silvestres desbloqueadas.
+   - **Flujo animado en rutas alcanzables:** Dibuja un resplandor y partículas en movimiento sobre los puentes conectados directamente desde la ubicación actual hacia destinos viajables o desbloqueables.
+   - **Partículas ambientales por bioma:** Renderizado determinista en `<canvas>` de brasas, copos glaciales, luciérnagas y destellos acuáticos acordes al bioma de cada isla desbloqueada.
+
+2. **Combate por Turnos con "Game Feel" (`PantallaCombate.tsx` y `health-bar.tsx`):**
+   - **Estela de daño retardada en barras de vida (`apps/web/src/components/ui/8bit/health-bar.tsx`):** Cuando la salud disminuye, una barra secundaria ámbar permanece brevemente y se drena suavemente en `500 ms` sin alterar el cálculo real de HP.
+   - **Etiquetas de efectividad e insignia en daño flotante:** `resolverEtiquetaImpacto()` lee `efectividad` (`VENTAJA`, `DESVENTAJA`) y `esInsignia` de la respuesta del turno para mostrar etiquetas retro (`¡INSIGNIA!`, `¡MUY EFICAZ x1.5!`, `RESISTIDO x0.75`) junto al número flotante.
+   - **Embestida de atacante y sacudida de arena:** Desplazamiento breve del atacante antes del impacto y sacudida temporal del contenedor de la arena ante golpes `VENTAJA` o `esInsignia`.
+   - **Invariante de jugabilidad:** Ninguna regla de cálculo, orden de turno ni consumo de recursos fue modificada.
+
+3. **Viaje y Exploración más Inmersivos (`TransicionViaje2D.tsx` y `PantallaExploracion.tsx`):**
+   - **Clima dinámico de destino en `TransicionViaje2D.tsx`:** Partículas ambientales acordes al bioma de destino que se intensifican conforme avanza la travesía y rótulo narrativo con el bioma de llegada.
+   - **Destello de encuentro y rastreo visual en `PantallaExploracion.tsx`:** Barra de rastreo (`RASTREANDO SENDAS...`) durante la petición de exploración y destello visual breve (carmesí en encuentro normal, ámbar dorado en avistamiento legendario) al aparecer una criatura salvaje.
+
+4. **Control Global de Sonido Retro 8-bit (`assets.ts`, `LayoutPrincipal.tsx` y `MapaInteractivoCanvas.tsx`):**
+   - **Persistencia en `localStorage` (`aethelgard_sonido_silenciado`):** Funciones `estaSonidoSilenciado()`, `establecerSonidoSilenciado()` y `alternarSonidoSilenciado()` en `apps/web/src/lib/assets.ts` respetadas automáticamente por `reproducirSonido()`.
+   - **Botón accesible Silenciar / Activar (`Volume2` / `VolumeX`):** Integrado en la barra de navegación de `LayoutPrincipal.tsx` y junto a los controles de cámara en `MapaInteractivoCanvas.tsx`.
+
+### 22.2 Control de Archivos Modificados
+
+| Archivo | Cambio Principal |
+| :--- | :--- |
+| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Tooltips de nodo, iconos de servicio/fauna, flujo animado en rutas alcanzables, partículas por bioma y botón de silencio en el mapa. |
+| `apps/web/src/components/ui/8bit/health-bar.tsx` | Estela de daño retardada (`500 ms`) detrás de la barra principal. |
+| `apps/web/src/paginas/PantallaCombate.tsx` | Embestida de atacante, etiquetas de efectividad/insignia en daño flotante y sacudida de arena ante impactos críticos. |
+| `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Partículas climáticas del bioma destino y mensaje narrativo de llegada. |
+| `apps/web/src/paginas/PantallaExploracion.tsx` | Indicador de rastreo y destello visual al detectar criatura salvaje o legendaria. |
+| `apps/web/src/lib/assets.ts` | Persistencia y control global de silencio para el sintetizador Web Audio 8-bit. |
+| `apps/web/src/components/LayoutPrincipal.tsx` | Botón de activar/silenciar sonido retro en la cabecera global. |
+
+### 22.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm.cmd --filter web exec tsc -b --noEmit`):** 0 errores.
+- **Pruebas Unitarias Web (`pnpm.cmd --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm.cmd --filter web lint`):** 0 errores en 86 archivos.
+- **Compilación de Producción (`pnpm.cmd --filter web build`):** Compilación exitosa (`tsc -b && vite build`).

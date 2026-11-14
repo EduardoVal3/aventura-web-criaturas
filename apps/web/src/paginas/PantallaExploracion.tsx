@@ -64,6 +64,7 @@ export function PantallaExploracion() {
   const [cargandoInicial, setCargandoInicial] = useState(true);
   const [progresoZona, setProgresoZona] = useState<number>(0);
   const [explorando, setExplorando] = useState(false);
+  const [destelloEncuentro, setDestelloEncuentro] = useState<"normal" | "legendario" | null>(null);
 
   // Estado del encuentro rival activo (persistido tanto al cargar como tras sortearse)
   const [rivalActivo, setRivalActivo] = useState<{
@@ -222,6 +223,8 @@ export function PantallaExploracion() {
           esLegendaria,
           mensaje: resultado.mensaje,
         });
+        setDestelloEncuentro(esLegendaria ? "legendario" : "normal");
+        window.setTimeout(() => setDestelloEncuentro(null), 420);
         setModalEncuentroAbierto(true);
       } else if (resultado.tipoEvento === "OBJETO") {
         reproducirSonido("botin", 0.5);
@@ -311,6 +314,30 @@ export function PantallaExploracion() {
 
           {/* Degradado oscuro para integrar con el bastión y maximizar contraste WCAG AAA */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30 pointer-events-none" />
+
+          {/* Destello dramático al detectar una criatura salvaje */}
+          {destelloEncuentro && (
+            <div
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-0 z-20 pointer-events-none animate-pulse",
+                destelloEncuentro === "legendario" ? "bg-amber-400/35" : "bg-red-500/30",
+              )}
+            />
+          )}
+
+          {/* Indicador visual de rastreo sobre el paisaje mientras explora */}
+          {explorando && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 z-20 bg-black/75 border-t-2 border-[#14d1e8] px-3 py-1.5 flex items-center justify-center gap-2 pointer-events-none"
+            >
+              <span className="size-2 rounded-full bg-[#14d1e8] animate-ping" />
+              <span className="retro text-[8px] sm:text-[9px] text-[#14d1e8] tracking-wider">
+                RASTREANDO SENDAS...
+              </span>
+            </div>
+          )}
 
           {/* Badges superiores sobre el paisaje: diseño retro brutalista adaptable sin colisiones */}
           <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 flex items-start justify-between gap-1.5 sm:gap-2 pointer-events-auto z-10">

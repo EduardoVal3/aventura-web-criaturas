@@ -136,6 +136,9 @@ export function PantallaCombate() {
   const [animacionAliado, setAnimacionAliado] = useState("");
   const [danoFlotanteRival, setDanoFlotanteRival] = useState<number | null>(null);
   const [danoFlotanteAliado, setDanoFlotanteAliado] = useState<number | null>(null);
+  const [etiquetaFlotanteRival, setEtiquetaFlotanteRival] = useState<string | null>(null);
+  const [etiquetaFlotanteAliado, setEtiquetaFlotanteAliado] = useState<string | null>(null);
+  const [sacudidaArena, setSacudidaArena] = useState(false);
   const [curacionFlotanteAliado, setCuracionFlotanteAliado] = useState<number | null>(null);
   const [secuenciaCaptura, setSecuenciaCaptura] = useState(false);
   const [esPlaceholderAliado, setEsPlaceholderAliado] = useState(false);
@@ -267,6 +270,14 @@ export function PantallaCombate() {
     }
   }, []);
 
+  const resolverEtiquetaImpacto = (accion?: AccionCombate | null): string | null => {
+    if (!accion) return null;
+    if (accion.esInsignia) return "¡INSIGNIA!";
+    if (accion.efectividad === "VENTAJA") return "¡MUY EFICAZ x1.5!";
+    if (accion.efectividad === "DESVENTAJA") return "RESISTIDO x0.75";
+    return null;
+  };
+
   // Auxiliar unificado para animar contraataque rival y efectos fin de turno (DoT)
   const reproducirContraataqueYDoT = async (
     contraataque: AccionCombate | null | undefined,
@@ -278,9 +289,19 @@ export function PantallaCombate() {
       if (contraataque.perdioTurno) {
         reproducirSonido("error");
       } else {
+        setAnimacionRival("-translate-x-3 translate-y-1 scale-105");
+        await new Promise((resolver) => setTimeout(resolver, 110));
+        setAnimacionRival("");
+
         reproducirSonido(sonidoDeGolpe(contraataque));
         setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
         setDanoFlotanteAliado(contraataque.danoCausado);
+        setEtiquetaFlotanteAliado(resolverEtiquetaImpacto(contraataque));
+
+        if (contraataque.efectividad === "VENTAJA" || contraataque.esInsignia) {
+          setSacudidaArena(true);
+          setTimeout(() => setSacudidaArena(false), 320);
+        }
 
         if (typeof contraataque.hpRestanteAliado === "number") {
           setAliado((prev) =>
@@ -291,7 +312,8 @@ export function PantallaCombate() {
         setTimeout(() => {
           setAnimacionAliado("");
           setDanoFlotanteAliado(null);
-        }, 500);
+          setEtiquetaFlotanteAliado(null);
+        }, 550);
       }
     }
 
@@ -355,9 +377,22 @@ export function PantallaCombate() {
         if (resultado.accionJugador.perdioTurno) {
           reproducirSonido("error");
         } else {
+          setAnimacionAliado("translate-x-3 -translate-y-1 scale-105");
+          await new Promise((resolver) => setTimeout(resolver, 110));
+          setAnimacionAliado("");
+
           reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
           setAnimacionRival("anim-sacudida anim-parpadeo-dano");
           setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+          setEtiquetaFlotanteRival(resolverEtiquetaImpacto(resultado.accionJugador));
+
+          if (
+            resultado.accionJugador.efectividad === "VENTAJA" ||
+            resultado.accionJugador.esInsignia
+          ) {
+            setSacudidaArena(true);
+            setTimeout(() => setSacudidaArena(false), 320);
+          }
 
           if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
             setRival({
@@ -387,9 +422,10 @@ export function PantallaCombate() {
             });
           }
 
-          await new Promise((resolver) => setTimeout(resolver, 500));
+          await new Promise((resolver) => setTimeout(resolver, 550));
           setAnimacionRival("");
           setDanoFlotanteRival(null);
+          setEtiquetaFlotanteRival(null);
         }
       };
 
@@ -838,7 +874,9 @@ export function PantallaCombate() {
         )}
 
         {/* ARENA DE COMBATE: Disposición Diagonal Clásica JRPG */}
-        <div className="flex-1 w-full px-3 py-1 flex flex-col justify-between relative z-10 overflow-hidden">
+        <div
+          className={`flex-1 w-full px-3 py-1 flex flex-col justify-between relative z-10 overflow-hidden transition-transform ${sacudidaArena ? "anim-sacudida" : ""}`}
+        >
           {/* SECTOR RIVAL: Arriba a la derecha */}
           <div className="flex items-start justify-end gap-2 sm:gap-3 self-end w-full max-w-[95%] sm:max-w-[85%] pt-1">
             {/* Placa HUD Flotante Compacta del Rival */}
@@ -908,9 +946,16 @@ export function PantallaCombate() {
             {/* Sprite del Rival con Pedestal y Daño Flotante */}
             <div className="relative flex flex-col items-center shrink-0">
               {danoFlotanteRival !== null && (
-                <span className="absolute -top-5 text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                  -{danoFlotanteRival}
-                </span>
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteRival && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteRival}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteRival}
+                  </span>
+                </div>
               )}
               <div
                 className={`size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival}`}
@@ -931,9 +976,16 @@ export function PantallaCombate() {
             {/* Sprite del Aliado (de espaldas/perfil hacia el rival) */}
             <div className="relative flex flex-col items-center shrink-0">
               {danoFlotanteAliado !== null && (
-                <span className="absolute -top-5 text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                  -{danoFlotanteAliado}
-                </span>
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteAliado && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteAliado}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteAliado}
+                  </span>
+                </div>
               )}
               {curacionFlotanteAliado !== null && (
                 <span className="absolute -top-5 text-xs sm:text-sm font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">

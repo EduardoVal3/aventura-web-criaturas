@@ -190,6 +190,30 @@ export function TransicionViaje2D({
         ctx.fillRect(posX - 16, posY - 36, 32, 32);
       }
 
+      // Partículas ambientales del bioma destino que se intensifican al acercarse
+      const colorClima =
+        islaDestino.bioma === "glaciar"
+          ? "rgba(224, 242, 254, 0.8)"
+          : islaDestino.bioma === "volcan"
+            ? "rgba(251, 146, 60, 0.85)"
+            : islaDestino.bioma === "bosque" || islaDestino.bioma === "pradera"
+              ? "rgba(163, 230, 53, 0.78)"
+              : islaDestino.bioma === "lago"
+                ? "rgba(34, 211, 238, 0.75)"
+                : "rgba(251, 191, 36, 0.65)";
+
+      const cantidadClima = Math.max(4, Math.floor(4 + t * 12));
+      ctx.fillStyle = colorClima;
+      for (let i = 0; i < cantidadClima; i++) {
+        const faseClima = (ahora * 0.0005 + i * 0.17) % 1;
+        const cx = ((i * 89 + ahora * 0.04) % W + W) % W;
+        const cy =
+          islaDestino.bioma === "volcan"
+            ? H - faseClima * (H * 0.85)
+            : faseClima * (H * 0.85);
+        ctx.fillRect(Math.round(cx), Math.round(cy), 3, 3);
+      }
+
       if (t < 1) {
         frameId = requestAnimationFrame(animar);
       } else if (!finalizado) {
@@ -243,7 +267,7 @@ export function TransicionViaje2D({
           </div>
           <Progress value={progreso} className="h-3 border-2 border-black bg-black" />
           <p className="text-center retro text-[8px] text-slate-400">
-            Cruzando sendas de Aethelgard... {progreso}%
+            Avanzando hacia {destinoNombre} ({obtenerConfiguracionIsla(destinoId).bioma})... {progreso}%
           </p>
         </div>
       </div>

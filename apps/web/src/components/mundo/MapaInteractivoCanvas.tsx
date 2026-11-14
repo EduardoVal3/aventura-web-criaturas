@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Compass, Crosshair, Lock, MapPin, Minus, Plus, Sparkles } from "lucide-react";
+import {
+  Compass,
+  Crosshair,
+  Heart,
+  Lock,
+  MapPin,
+  Minus,
+  Plus,
+  ShieldCheck,
+  Sparkles,
+  Store,
+  Swords,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import type { ConexionUbicacion, NodoMapaTerritorial } from "@/api";
 import { CONEXIONES_AETHELGARD } from "@/lib/servicios-hub";
 import {
@@ -9,6 +23,8 @@ import {
   type ConfiguracionIslaMapa,
 } from "@/lib/mapa-mundo";
 import {
+  alternarSonidoSilenciado,
+  estaSonidoSilenciado,
   manejarErrorImagen,
   obtenerImagenCriatura,
   reproducirSonido,
@@ -40,6 +56,55 @@ const ZOOM_MAXIMO = 2.0;
 
 function limitar(valor: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, valor));
+}
+
+const ETIQUETA_BIOMA: Record<ConfiguracionIslaMapa["bioma"], string> = {
+  puerto: "Puerto Costero",
+  pradera: "Pradera Abierta",
+  lago: "Ribera Lacustre",
+  puesto: "Puesto Fronterizo",
+  bosque: "Bosque Umbrío",
+  riscos: "Riscos Escarpados",
+  bastion: "Bastión Fortificado",
+  volcan: "Caverna Ígnea",
+  glaciar: "Cumbre Glacial",
+};
+
+function dibujarParticulasBioma(
+  ctx: CanvasRenderingContext2D,
+  isla: ConfiguracionIslaMapa,
+  tiempo: number,
+  desbloqueada: boolean,
+) {
+  if (!desbloqueada) return;
+  ctx.save();
+  ctx.translate(isla.x, isla.y);
+
+  const colorParticula =
+    isla.bioma === "volcan"
+      ? "rgba(251, 146, 60, 0.85)"
+      : isla.bioma === "glaciar"
+        ? "rgba(224, 242, 254, 0.8)"
+        : isla.bioma === "bosque" || isla.bioma === "pradera"
+          ? "rgba(163, 230, 53, 0.78)"
+          : isla.bioma === "lago"
+            ? "rgba(34, 211, 238, 0.75)"
+            : "rgba(251, 191, 36, 0.72)";
+
+  const esDescendente = isla.bioma === "glaciar";
+  for (let i = 0; i < 6; i++) {
+    const fase = (tiempo * 0.00045 + i * 0.19 + (isla.x % 7) * 0.11) % 1;
+    const anguloBase = (i * 2.1 + isla.y * 0.05) % (Math.PI * 2);
+    const px = Math.cos(anguloBase) * (isla.radioX * 0.55) + Math.sin(tiempo * 0.002 + i) * 10;
+    const py = esDescendente
+      ? -isla.radioY * 0.75 + fase * (isla.radioY * 1.4)
+      : isla.radioY * 0.45 - fase * (isla.radioY * 1.15);
+    const alfa = Math.sin(fase * Math.PI);
+    ctx.globalAlpha = Math.max(0.1, alfa * 0.85);
+    ctx.fillStyle = colorParticula;
+    ctx.fillRect(Math.round(px), Math.round(py), 3, 3);
+  }
+  ctx.restore();
 }
 
 function dibujarIslaPixel(
@@ -297,6 +362,8 @@ export function MapaInteractivoCanvas({
 
   const [tamanoContenedor, setTamanoContenedor] = useState({ ancho: 900, alto: 540 });
   const [camara, setCamara] = useState<CamaraMapa>({ x: 600, y: 380, zoom: 0.9 });
+  const [nodoHoverId, setNodoHoverId] = useState<string | null>(null);
+  const [silenciado, setSilenciado] = useState(() => estaSonidoSilenciado());
   const arrastreRef = useRef<{
     activo: boolean;
     inicioX: number;
@@ -478,10 +545,50 @@ export function MapaInteractivoCanvas({
           ctx.moveTo(origen.x, origen.y);
           ctx.lineTo(destino.x, destino.y);
           ctx.stroke();
+
+          // Flujo animado en rutas alcanzables desde la ubicación actual
+          const otroId =
+            origenId === ubicacionActualId
+              ? destinoId
+              : destinoId === ubicacionActualId
+                ? origenId
+                : null;
+          if (otroId) {
+            const conexionActiva = conexionesPorId.get(otroId);
+            const esAlcanzable = Boolean(conexionActiva && !conexionActiva.estaBloqueada);
+            const esDesbloqueableRuta = Boolean(
+              conexionActiva?.estaBloqueada && conexionActiva.cumpleRequisito,
+            );
+            if (esAlcanzable || esDesbloqueableRuta) {
+              const desde = origenId === ubicacionActualId ? origen : destino;
+              const hacia = origenId === ubicacionActualId ? destino : origen;
+              const colorFlujo = esAlcanzable ? "#34d399" : "#fbbf24";
+
+              ctx.setLineDash([]);
+              ctx.strokeStyle = esAlcanzable
+                ? "rgba(52, 211, 153, 0.35)"
+                : "rgba(251, 191, 36, 0.35)";
+              ctx.lineWidth = 5;
+              ctx.beginPath();
+              ctx.moveTo(desde.x, desde.y);
+              ctx.lineTo(hacia.x, hacia.y);
+              ctx.stroke();
+
+              for (let p = 0; p < 3; p++) {
+                const t = (tiempo * 0.00055 + p * 0.33) % 1;
+                const px = desde.x + (hacia.x - desde.x) * t;
+                const py = desde.y + (hacia.y - desde.y) * t;
+                ctx.fillStyle = colorFlujo;
+                ctx.beginPath();
+                ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          }
           ctx.restore();
         }
 
-        // Dibujar cada isla
+        // Dibujar cada isla y sus partículas ambientales de bioma
         for (const nodo of nodos) {
           const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
           if (!isla) continue;
@@ -492,6 +599,7 @@ export function MapaInteractivoCanvas({
             nodo.id === ubicacionActualId,
             nodo.desbloqueada,
           );
+          dibujarParticulasBioma(ctx, isla, tiempo, nodo.desbloqueada);
         }
 
         // Bancos de niebla pixelada desplazándose lentamente
@@ -528,7 +636,7 @@ export function MapaInteractivoCanvas({
 
     frameId = requestAnimationFrame(renderizar);
     return () => cancelAnimationFrame(frameId);
-  }, [camara, nodos, nodosPorId, tamanoContenedor, ubicacionActualId]);
+  }, [camara, conexionesPorId, nodos, nodosPorId, tamanoContenedor, ubicacionActualId]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("button")) return;
@@ -622,11 +730,20 @@ export function MapaInteractivoCanvas({
           const esActual = nodo.id === ubicacionActualId;
           const esViajable = Boolean(conexion && !conexion.estaBloqueada);
           const esDesbloqueable = Boolean(conexion?.estaBloqueada && conexion.cumpleRequisito);
+          const enHover = nodoHoverId === nodo.id;
+          const rangoFauna =
+            nodo.faunaNivelMinimo !== null && nodo.faunaNivelMaximo !== null
+              ? `Nv.${nodo.faunaNivelMinimo}-${nodo.faunaNivelMaximo}`
+              : null;
 
           return (
             <button
               key={nodo.id}
               type="button"
+              onMouseEnter={() => setNodoHoverId(nodo.id)}
+              onMouseLeave={() => setNodoHoverId((prev) => (prev === nodo.id ? null : prev))}
+              onFocus={() => setNodoHoverId(nodo.id)}
+              onBlur={() => setNodoHoverId((prev) => (prev === nodo.id ? null : prev))}
               onClick={() => {
                 reproducirSonido("click", 0.35);
                 onSeleccionarNodo(nodo);
@@ -639,9 +756,57 @@ export function MapaInteractivoCanvas({
               className={cn(
                 "absolute pointer-events-auto group flex flex-col items-center gap-1 transition-transform duration-150 hover:scale-105 focus:outline-none z-10",
                 esActual && "z-20",
+                enHover && "z-30",
               )}
               aria-label={`Inspeccionar ${nodo.nombre}`}
             >
+              {/* Tooltip flotante con bioma, estado de acceso y servicios */}
+              {enHover && (
+                <div
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full mb-2 w-52 bg-slate-950/95 border-2 border-[#14d1e8] shadow-[4px_4px_0_0_#000] px-2.5 py-2 text-left z-40"
+                >
+                  <div className="flex items-center justify-between gap-1 border-b border-slate-800 pb-1 mb-1">
+                    <span className="retro text-[8px] text-white truncate">{nodo.nombre}</span>
+                    <span className="retro text-[7px] text-[#14d1e8] shrink-0">
+                      {ETIQUETA_BIOMA[isla.bioma]}
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-tight text-slate-200 mb-1">
+                    {esActual
+                      ? "Ubicación actual del grupo."
+                      : esViajable
+                        ? "Ruta conectada: clic para viajar."
+                        : esDesbloqueable
+                          ? "Senda desbloqueable disponible."
+                          : !nodo.desbloqueada
+                            ? "Zona aún bloqueada."
+                            : "Zona descubierta (no adyacente)."}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-300">
+                    {nodo.esSegura ? (
+                      <>
+                        <span className="inline-flex items-center gap-0.5 text-emerald-300">
+                          <Heart className="size-3" /> Santuario
+                        </span>
+                        <span className="inline-flex items-center gap-0.5 text-amber-300">
+                          <Store className="size-3" /> Tienda
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="inline-flex items-center gap-0.5 text-rose-300">
+                          <Swords className="size-3" /> {rangoFauna ?? "Zona salvaje"}
+                        </span>
+                        {nodo.desbloqueada && (
+                          <span className="text-amber-300">· {nodo.progreso}% explorado</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Avatar de la criatura líder si el jugador está en esta isla */}
               {esActual && (
                 <div className="relative flex flex-col items-center -mb-1 animate-bounce">
@@ -688,8 +853,19 @@ export function MapaInteractivoCanvas({
                   {isla.etiquetaCorta}
                 </span>
 
+                {/* Iconos rápidos de servicio o nivel de peligro */}
+                {nodo.esSegura && nodo.desbloqueada && (
+                  <span className="flex items-center gap-0.5 text-emerald-300" title="Localidad segura: Santuario y Tienda">
+                    <ShieldCheck className="size-2.5" />
+                    <Heart className="size-2.5 text-rose-300" />
+                    <Store className="size-2.5 text-amber-300" />
+                  </span>
+                )}
+
                 {!nodo.esSegura && nodo.desbloqueada && (
-                  <span className="retro text-[7px] bg-black/70 px-1 py-0.5 border border-black/80 text-amber-300">
+                  <span className="inline-flex items-center gap-1 retro text-[7px] bg-black/70 px-1 py-0.5 border border-black/80 text-amber-300">
+                    <Swords className="size-2.5 text-rose-400" />
+                    {rangoFauna ? `${rangoFauna} · ` : ""}
                     {nodo.progreso}%
                   </span>
                 )}
@@ -727,6 +903,23 @@ export function MapaInteractivoCanvas({
           className="size-8 sm:size-9 bg-card/95 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center text-[#14d1e8] hover:bg-black active:translate-y-0.5"
         >
           <Crosshair className="size-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const nuevo = alternarSonidoSilenciado();
+            setSilenciado(nuevo);
+            if (!nuevo) reproducirSonido("click", 0.35);
+          }}
+          aria-label={silenciado ? "Activar sonido retro" : "Silenciar sonido retro"}
+          title={silenciado ? "Activar sonido retro" : "Silenciar sonido retro"}
+          className="size-8 sm:size-9 bg-card/95 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center text-slate-100 hover:text-[#14d1e8] active:translate-y-0.5"
+        >
+          {silenciado ? (
+            <VolumeX className="size-4 text-rose-400" />
+          ) : (
+            <Volume2 className="size-4 text-[#14d1e8]" />
+          )}
         </button>
       </div>
 

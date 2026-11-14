@@ -310,12 +310,46 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
   }
 }
 
+const CLAVE_SONIDO_SILENCIADO = "aethelgard_sonido_silenciado";
+
+/**
+ * Indica si los efectos de sonido retro están silenciados por el usuario.
+ */
+export function estaSonidoSilenciado(): boolean {
+  try {
+    return window.localStorage.getItem(CLAVE_SONIDO_SILENCIADO) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Persiste la preferencia de silencio de audio retro en localStorage.
+ */
+export function establecerSonidoSilenciado(silenciado: boolean): void {
+  try {
+    window.localStorage.setItem(CLAVE_SONIDO_SILENCIADO, silenciado ? "1" : "0");
+  } catch {
+    // simplificacion: ignorar entornos sin localStorage
+  }
+}
+
+/**
+ * Alterna entre sonido activo y silenciado, devolviendo el nuevo estado de silencio.
+ */
+export function alternarSonidoSilenciado(): boolean {
+  const nuevoEstado = !estaSonidoSilenciado();
+  establecerSonidoSilenciado(nuevoEstado);
+  return nuevoEstado;
+}
+
 /**
  * Reproduce un efecto de sonido retro sintetizado fielmente con la Web Audio API (8-bit).
  * Al ser generado proceduralmente, garantiza latencia cero y elimina peticiones de red 404.
  */
 export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
   try {
+    if (estaSonidoSilenciado()) return;
     sintetizarTonoRetro(nombre, volumen);
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API.

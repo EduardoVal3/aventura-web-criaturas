@@ -54,6 +54,8 @@ import {
 } from "@/api";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import {
+  detenerMusicaAmbiente,
+  iniciarMusicaAmbiente,
   manejarErrorImagen,
   obtenerImagenCriatura,
   obtenerImagenZona,
@@ -115,6 +117,11 @@ export function PantallaHubUbicacion() {
     setUbicacion(datosUbicacion);
     setPersonaje(datosPersonaje);
     setEquipo(datosEquipo?.criaturas ?? []);
+  }, []);
+
+  useEffect(() => {
+    iniciarMusicaAmbiente("hub");
+    return () => detenerMusicaAmbiente();
   }, []);
 
   useEffect(() => {
@@ -325,7 +332,7 @@ export function PantallaHubUbicacion() {
         }}
         aria-disabled={viajando}
         className={cn(
-          "group pointer-events-auto bg-card/90 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-36 justify-center sm:justify-start hover:border-[#14d1e8] hover:-translate-y-0.5 active:translate-y-0.5",
+          "group pointer-events-auto bg-gradient-to-r from-[#0d1628]/95 to-[#16233b]/95 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-40 justify-center sm:justify-start hover:border-[#14d1e8] hover:-translate-y-0.5 hover:shadow-[4px_6px_0_0_#000,0_0_12px_rgba(20,209,232,0.28)] active:translate-y-0.5",
           !activoEnZona && "opacity-85",
           viajando && "pointer-events-none opacity-50",
         )}
@@ -335,15 +342,20 @@ export function PantallaHubUbicacion() {
             : `${servicio.titulo} (Solo consulta aquí; viaja a una localidad con este servicio para operar)`
         }
       >
-        <div className="relative shrink-0">
+        <div className="relative shrink-0 size-7 sm:size-8 bg-[#080e1a] border border-[#14d1e8]/40 flex items-center justify-center">
           {renderIconoServicio(servicio.icono)}
           {!activoEnZona && (
             <Lock className="size-2.5 text-amber-300 absolute -top-1 -right-1 bg-black rounded-full p-0.5" />
           )}
         </div>
-        <span className="hidden sm:block retro text-[8px] text-slate-100 leading-tight break-words mb-1.5">
-          {servicio.titulo}
-        </span>
+        <div className="hidden sm:flex flex-col min-w-0">
+          <span className="retro text-[8px] text-slate-100 leading-tight break-words mb-1.5">
+            {servicio.titulo}
+          </span>
+          <span className="text-[9px] text-[#14d1e8]/80 leading-tight">
+            {activoEnZona ? "Disponible" : "Solo consulta"}
+          </span>
+        </div>
       </Link>
     );
   };
@@ -413,22 +425,39 @@ export function PantallaHubUbicacion() {
           aria-label="HUD superior del explorador"
           className="relative z-20 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3 flex items-start justify-between gap-2"
         >
-          {/* Ficha del Jugador (estilo tarjeta superior izquierda) */}
-          <div className="pointer-events-auto bg-card/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-2.5 max-w-[62vw] sm:max-w-sm">
-            <div className="size-9 sm:size-11 bg-black border-2 border-[#14d1e8] p-0.5 shrink-0 flex items-center justify-center">
+          {/* Ficha del Jugador + Miniatura de Zona Actual (HUD superior) */}
+          <div className="pointer-events-auto bg-gradient-to-r from-[#0b1322]/95 via-[#132038]/95 to-[#0b1322]/95 backdrop-blur-xs border-2 border-[#14d1e8]/80 outline outline-2 outline-black shadow-[6px_6px_0_0_#000] px-2.5 py-2 sm:px-3.5 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 max-w-[72vw] sm:max-w-xl">
+            <div className="relative size-10 sm:size-12 bg-[#070b14] border-2 border-amber-400 shadow-[inset_0_0_10px_rgba(20,209,232,0.35)] p-0.5 shrink-0 flex items-center justify-center">
               <img
                 src={obtenerImagenCriatura(lider?.especieSlug)}
                 alt={lider?.nombre || "Líder"}
                 onError={(e) => manejarErrorImagen(e, "criatura")}
-                className="w-full h-full object-contain scale-x-[-1]"
+                className="w-full h-full object-contain scale-x-[-1] anim-respiracion-combate"
               />
+              {ubicacion.poderEquipo && (
+                <span className="retro text-[6.5px] bg-amber-400 text-black font-bold px-1 border border-black absolute -bottom-1.5 -right-1.5">
+                  NV.{ubicacion.poderEquipo.nivelMaximoEquipo}
+                </span>
+              )}
             </div>
-            <div className="min-w-0">
+            <div className="relative w-14 sm:w-24 aspect-video bg-[#070b14] border-2 border-[#14d1e8]/70 shadow-[2px_2px_0_0_#000] overflow-hidden shrink-0">
+              <img
+                src={obtenerImagenZona(sanitizarSlugZona(ubicacion.nombre))}
+                alt={`Vista de ${ubicacion.nombre}`}
+                decoding="async"
+                onError={(e) => manejarErrorImagen(e, "zona")}
+                className="w-full h-full object-cover"
+              />
+              <span className="retro text-[5.5px] bg-black/80 text-[#14d1e8] px-1 py-0.5 absolute bottom-0 left-0 right-0 truncate text-center">
+                ZONA
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="retro text-[9px] sm:text-[11px] text-slate-100 font-bold truncate">
+                <span className="retro text-[9px] sm:text-[11px] text-white font-bold truncate drop-shadow-[1px_1px_0_#000]">
                   {personaje?.nombre ?? "Explorador"}
                 </span>
-                {ubicacion.poderEquipo && (
+                {ubicacion.poderEquipo ? (
                   <span
                     title={`Rango de domador: ${ubicacion.poderEquipo.rangoDomador}`}
                     className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/80 text-[#14d1e8] px-1.5 py-0.5 border border-[#14d1e8]/40 whitespace-nowrap"
@@ -436,26 +465,39 @@ export function PantallaHubUbicacion() {
                     <Crown className="size-2.5" />
                     NV.{ubicacion.poderEquipo.nivelMaximoEquipo} · {ubicacion.poderEquipo.rangoDomador}
                   </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="retro text-[7px] sm:text-[8px] text-amber-300 truncate">
-                  {ubicacion.nombre}
-                </span>
-                {!ubicacion.esSegura && typeof ubicacion.progresoZona === "number" && (
-                  <span className="retro text-[7px] bg-black/80 px-1 py-0.5 border border-black text-emerald-300">
-                    {ubicacion.progresoZona}%
+                ) : (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/70 text-amber-300 px-1.5 py-0.5 border border-amber-400/50">
+                    <Crown className="size-2.5" />
+                    {ubicacion.esSegura ? "ZONA SEGURA" : "ZONA SALVAJE"}
                   </span>
                 )}
               </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="retro text-[7px] sm:text-[8px] text-[#14d1e8] truncate">
+                  {ubicacion.nombre}
+                </span>
+              </div>
+              {!ubicacion.esSegura && typeof ubicacion.progresoZona === "number" && (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <div className="flex-1 h-1.5 bg-black border border-slate-700 overflow-hidden min-w-[60px]">
+                    <div
+                      className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-300"
+                      style={{ width: `${Math.min(100, Math.max(0, ubicacion.progresoZona))}%` }}
+                    />
+                  </div>
+                  <span className="retro text-[6.5px] text-emerald-300 shrink-0">
+                    {ubicacion.progresoZona}%
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Monedas + Menú de Ajustes / Salir */}
           <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="bg-card/95 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2.5 py-1.5 flex items-center gap-1.5">
-              <Coins className="size-3.5 sm:size-4 text-amber-400 shrink-0" />
-              <span className="retro text-[9px] sm:text-[10px] text-amber-300">
+            <div className="bg-gradient-to-b from-amber-950/95 to-[#1b1206]/95 backdrop-blur-xs border-2 border-amber-400/80 outline outline-2 outline-black shadow-[4px_4px_0_0_#000] px-2.5 py-1.5 sm:px-3 sm:py-2 flex items-center gap-1.5">
+              <Coins className="size-3.5 sm:size-4 text-amber-400 shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+              <span className="retro text-[9px] sm:text-[11px] text-amber-200 font-bold">
                 {personaje?.monedas ?? 0}
               </span>
             </div>
@@ -545,25 +587,31 @@ export function PantallaHubUbicacion() {
           aria-label="Dock inferior de equipo y acción principal"
           className="relative z-20 pointer-events-none px-2.5 pb-2.5 sm:px-4 sm:pb-3 flex flex-col items-center gap-2"
         >
-          <div className="pointer-events-auto w-full max-w-2xl bg-card/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] p-2 sm:p-2.5 flex items-center justify-between gap-2 sm:gap-3">
-            {/* Ranuras rápidas del equipo activo */}
+          <div className="pointer-events-auto w-full max-w-2xl bg-gradient-to-r from-[#0b1322]/95 via-[#14223b]/95 to-[#0b1322]/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] ring-1 ring-[#14d1e8]/60 p-2 sm:p-2.5 flex items-center justify-between gap-2 sm:gap-3">
+            {/* Ranuras rápidas del equipo activo con barra HP */}
             <Link
               to="/equipo"
               onClick={() => reproducirSonido("click", 0.35)}
               className={cn(
-                "flex items-center gap-1 sm:gap-1.5 min-w-0 group",
+                "flex items-center gap-1.5 sm:gap-2 min-w-0 group",
                 viajando && "pointer-events-none opacity-50",
               )}
               title="Gestionar Equipo Activo"
             >
               {Array.from({ length: 4 }).map((_, indice) => {
                 const criatura = equipo[indice];
+                const hpPct =
+                  criatura && criatura.hpMaximo > 0
+                    ? Math.max(0, Math.min(100, Math.round((criatura.hpActual / criatura.hpMaximo) * 100)))
+                    : 0;
+                const colorHp =
+                  hpPct > 50 ? "bg-emerald-400" : hpPct > 20 ? "bg-amber-400" : "bg-red-500";
                 return (
                   <div
                     key={indice}
                     className={cn(
-                      "size-10 sm:size-12 border-2 border-black bg-black/85 flex items-center justify-center relative shrink-0 group-hover:border-[#14d1e8]",
-                      indice === 0 && criatura && "border-[#14d1e8]",
+                      "w-11 h-12 sm:w-13 sm:h-14 border-2 border-black bg-[#070b14] flex flex-col items-center justify-between p-1 relative shrink-0 group-hover:border-[#14d1e8] transition-colors",
+                      indice === 0 && criatura && "border-[#14d1e8] shadow-[0_0_8px_rgba(20,209,232,0.3)]",
                     )}
                   >
                     {criatura ? (
@@ -572,14 +620,19 @@ export function PantallaHubUbicacion() {
                           src={obtenerImagenCriatura(criatura.slug)}
                           alt={criatura.nombre}
                           onError={(e) => manejarErrorImagen(e, "criatura")}
-                          className="w-8 h-8 sm:w-10 sm:h-10 object-contain scale-x-[-1]"
+                          className="w-7 h-7 sm:w-9 sm:h-9 object-contain scale-x-[-1]"
                         />
-                        <span className="retro text-[6px] sm:text-[7px] bg-black/90 text-amber-300 px-1 border border-black absolute -bottom-1 -right-1">
+                        <div className="w-full h-1 bg-slate-900 border border-black overflow-hidden">
+                          <div className={`h-full ${colorHp}`} style={{ width: `${hpPct}%` }} />
+                        </div>
+                        <span className="retro text-[6px] bg-black/95 text-amber-300 px-1 border border-black absolute -top-1.5 -right-1.5">
                           {criatura.nivel}
                         </span>
                       </>
                     ) : (
-                      <Users className="size-3.5 text-slate-600" />
+                      <div className="flex-1 flex items-center justify-center">
+                        <Users className="size-3.5 text-slate-600" />
+                      </div>
                     )}
                   </div>
                 );
@@ -591,16 +644,16 @@ export function PantallaHubUbicacion() {
               )}
             </Link>
 
-            {/* Botón Principal Central estilo "BATALLA" */}
+            {/* Botón Principal Central estilo Arcade RPG */}
             <Button
               type="button"
               disabled={viajando}
               onClick={handleBotonPrincipal}
               className={cn(
-                "retro text-[10px] sm:text-xs h-11 sm:h-12 px-4 sm:px-7 border-4 border-black shadow-[4px_4px_0_0_#000] shrink-0 active:translate-y-0.5",
+                "retro text-[10px] sm:text-xs h-12 sm:h-14 px-4 sm:px-7 border-4 border-black shadow-[inset_0_2px_0_rgba(255,255,255,0.4),4px_4px_0_0_#000] shrink-0 active:translate-y-0.5 transition-all",
                 !ubicacion.esSegura
-                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                  : "bg-[#14d1e8] hover:bg-[#38bdf8] text-black",
+                  ? "bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 text-white"
+                  : "bg-gradient-to-b from-[#22d3ee] to-[#0284c7] hover:from-[#67e8f9] hover:to-[#0ea5e9] text-black",
                 viajando && "pointer-events-none opacity-50",
               )}
             >

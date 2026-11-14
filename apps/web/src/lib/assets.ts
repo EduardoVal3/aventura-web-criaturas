@@ -310,14 +310,168 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
   }
 }
 
+const CLAVE_SONIDO_SILENCIADO = "aethelgard_sonido_silenciado";
+
+/**
+ * Indica si los efectos de sonido retro están silenciados por el usuario.
+ */
+export function estaSonidoSilenciado(): boolean {
+  try {
+    return window.localStorage.getItem(CLAVE_SONIDO_SILENCIADO) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Persiste la preferencia de silencio de audio retro en localStorage.
+ */
+export function establecerSonidoSilenciado(silenciado: boolean): void {
+  try {
+    window.localStorage.setItem(CLAVE_SONIDO_SILENCIADO, silenciado ? "1" : "0");
+  } catch {
+    // simplificacion: ignorar entornos sin localStorage
+  }
+  if (silenciado) {
+    pausarIntervaloAmbiente();
+  } else if (modoAmbienteDeseado) {
+    arrancarLoopAmbiente(modoAmbienteDeseado);
+  }
+}
+
+/**
+ * Alterna entre sonido activo y silenciado, devolviendo el nuevo estado de silencio.
+ */
+export function alternarSonidoSilenciado(): boolean {
+  const nuevoEstado = !estaSonidoSilenciado();
+  establecerSonidoSilenciado(nuevoEstado);
+  return nuevoEstado;
+}
+
 /**
  * Reproduce un efecto de sonido retro sintetizado fielmente con la Web Audio API (8-bit).
  * Al ser generado proceduralmente, garantiza latencia cero y elimina peticiones de red 404.
  */
 export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
   try {
+    if (estaSonidoSilenciado()) return;
     sintetizarTonoRetro(nombre, volumen);
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API.
   }
+}
+
+export type ModoMusicaAmbiente = "hub" | "combate";
+
+let contextoAmbiente: AudioContext | null = null;
+let temporizadorAmbiente: number | null = null;
+let modoAmbienteDeseado: ModoMusicaAmbiente | null = null;
+let pasoAmbiente = 0;
+let listenerDesbloqueoRegistrado = false;
+
+const NOTAS_AMBIENTE_HUB = [261.63, 329.63, 392.0, 493.88, 392.0, 329.63, 293.66, 392.0];
+const NOTAS_AMBIENTE_COMBATE = [220.0, 261.63, 329.63, 293.66, 220.0, 246.94, 329.63, 349.23];
+
+function pausarIntervaloAmbiente(): void {
+  if (temporizadorAmbiente !== null) {
+    window.clearInterval(temporizadorAmbiente);
+    temporizadorAmbiente = null;
+  }
+}
+
+function tocarNotaSuaveAmbiente(modo: ModoMusicaAmbiente): void {
+  if (estaSonidoSilenciado()) return;
+  try {
+    const VentanaAudio =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    if (!VentanaAudio) return;
+
+    if (!contextoAmbiente || contextoAmbiente.state === "closed") {
+      contextoAmbiente = new VentanaAudio();
+    }
+    if (contextoAmbiente.state === "suspended") {
+      void contextoAmbiente.resume().catch(() => {});
+      if (contextoAmbiente.state === "suspended") return;
+    }
+
+    const ahora = contextoAmbiente.currentTime;
+    const notas = modo === "combate" ? NOTAS_AMBIENTE_COMBATE : NOTAS_AMBIENTE_HUB;
+    const frecuencia = notas[pasoAmbiente % notas.length];
+    pasoAmbiente += 1;
+
+    const osc = contextoAmbiente.createOscillator();
+    const filtro = contextoAmbiente.createBiquadFilter();
+    const ganancia = contextoAmbiente.createGain();
+
+    osc.type = modo === "combate" ? "triangle" : "sine";
+    osc.frequency.setValueAtTime(frecuencia, ahora);
+
+    filtro.type = "lowpass";
+    filtro.frequency.setValueAtTime(modo === "combate" ? 680 : 540, ahora);
+
+    const duracion = modo === "combate" ? 0.48 : 0.85;
+    const picoVolumen = modo === "combate" ? 0.032 : 0.028;
+
+    ganancia.gain.setValueAtTime(0.0001, ahora);
+    ganancia.gain.linearRampToValueAtTime(picoVolumen, ahora + 0.08);
+    ganancia.gain.exponentialRampToValueAtTime(0.0001, ahora + duracion);
+
+    osc.connect(filtro);
+    filtro.connect(ganancia);
+    ganancia.connect(contextoAmbiente.destination);
+
+    osc.start(ahora);
+    osc.stop(ahora + duracion + 0.02);
+  } catch {
+    // simplificacion: ignorar bloqueos de autoplay
+  }
+}
+
+function arrancarLoopAmbiente(modo: ModoMusicaAmbiente): void {
+  pausarIntervaloAmbiente();
+  if (typeof window === "undefined" || estaSonidoSilenciado()) return;
+
+  const intervaloMs = modo === "combate" ? 440 : 780;
+  tocarNotaSuaveAmbiente(modo);
+  temporizadorAmbiente = window.setInterval(() => {
+    tocarNotaSuaveAmbiente(modo);
+  }, intervaloMs);
+}
+
+/**
+ * Inicia un acompañamiento ambiental suave (modo "hub" o "combate") respetando el estado de silencio.
+ */
+export function iniciarMusicaAmbiente(modo: ModoMusicaAmbiente): void {
+  if (typeof window === "undefined") return;
+  modoAmbienteDeseado = modo;
+  pasoAmbiente = 0;
+
+  if (!listenerDesbloqueoRegistrado) {
+    listenerDesbloqueoRegistrado = true;
+    const desbloquear = () => {
+      if (contextoAmbiente && contextoAmbiente.state === "suspended") {
+        void contextoAmbiente.resume().then(() => {
+          if (modoAmbienteDeseado && !estaSonidoSilenciado()) {
+            tocarNotaSuaveAmbiente(modoAmbienteDeseado);
+          }
+        }).catch(() => {});
+      }
+    };
+    window.addEventListener("pointerdown", desbloquear, { passive: true });
+    window.addEventListener("keydown", desbloquear, { passive: true });
+  }
+
+  if (!estaSonidoSilenciado()) {
+    arrancarLoopAmbiente(modo);
+  }
+}
+
+/**
+ * Detiene el acompañamiento ambiental activo.
+ */
+export function detenerMusicaAmbiente(): void {
+  modoAmbienteDeseado = null;
+  pausarIntervaloAmbiente();
 }

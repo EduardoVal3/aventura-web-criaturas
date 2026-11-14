@@ -1486,6 +1486,121 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 
 ---
 
+## 23. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
+
+### 23.1 Problema que Resuelve y Objetivo
+Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjetas de rutas, la experiencia seguía percibiéndose como una página web tradicional con scroll vertical en lugar de un videojuego RPG. Esta mejora migra el Hub (`/hub`) a una **interfaz de juego a pantalla completa (`100dvh`)** con estética **16-bit dark fantasy (tenebrosa)**, permitiendo explorar el archipiélago de Aethelgard directamente sobre un lienzo interactivo, inspeccionar cada isla antes de decidir si viajar y presenciar una transición animada 2D con la criatura líder del equipo al desplazarse entre zonas.
+
+---
+
+### 22.2 Arquitectura e Implementación
+
+#### A. Cartografía Virtual y Paleta Tenebrosa (`apps/web/src/lib/mapa-mundo.ts`)
+- **Espacio Lógico de 9 Islas:** Define `DIMENSIONES_MAPA_MUNDO` (`1200 × 760` unidades) y `CONFIGURACION_ISLAS_MAPA` para los 9 nodos canónicos (`LOC-01` a `LOC-03`, `ZON-01` a `ZON-06`) conectados según `CONEXIONES_AETHELGARD`.
+- **Ambientación Oscura (Dark Fantasy):** Cada bioma cuenta con paleta nocturna (`colorSuelo`, `colorBorde`, `colorCielo`, `colorAcento`) acorde a `apps/web/public/assets/README.md`: mar abisal oscuro, puerto con cabañas sombrías, estepa crepuscular con monolitos rúnicos, lago bioluminiscente, bosque maldito, riscos de obsidiana, bastión gótico, volcán con lava pulsante y cumbres lunares.
+
+#### B. Mapa Navegable en `<canvas>` (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`)
+- **Capas `absolute` + `relative`:** El `<canvas>` ocupa el fondo con `position: absolute; inset: 0`, mientras los marcadores de cada isla y los controles de cámara flotan en una capa `relative` sincronizada.
+- **Navegación y Zoom Responsive:**
+  - Paneo libre mediante `PointerEvents` (arrastre con ratón o pantalla táctil en móvil).
+  - Zoom con rueda del ratón (`0.55x` a `2.0x`) y botonera flotante (`+`, `-`, `Centrar`), con centrado automático en la ubicación actual al cargar o cambiar de tamaño de pantalla.
+- **Renderizado 2D Provisional y Soporte de Arte Final:**
+  - Dibuja olas nocturnas, peñascos, puentes de madera desgastada (continuos si la ruta está desbloqueada, punteados si está sellada), niebla desplazándose y detalles animados por bioma (faroles ámbar parpadeantes, runas, esporas espectrales y lava).
+  - Si el equipo coloca una ilustración definitiva en `/assets/zonas/mapa-mundo.webp`, el canvas la carga automáticamente como fondo; mientras tanto opera con el renderizado procedural 16-bit.
+  - Muestra el sprite de la **criatura líder** (`equipo[0]`) con el distintivo `TÚ AQUÍ` sobre la isla actual.
+  - Viñeta radial calibrada a las dimensiones reales del canvas escaladas por `devicePixelRatio` (`canvas.width`, `canvas.height`) para evitar cortes rectangulares en pantallas con escalado DPI.
+
+#### C. Pantalla de Carga / Transición Animada 2D (`apps/web/src/components/mundo/TransicionViaje2D.tsx`)
+- **Escena Nocturna de Travesía (~1.85 s):** Al confirmar un viaje (`api.viajar()`), despliega un `<canvas>` 2D con transición de cielo entre el bioma origen y destino, luna pálida, niebla en parallax, mar abisal y un puente viejo iluminado por faroles ámbar parpadeantes.
+- **Animación del Líder y Audio Retro:** El sprite de la criatura líder (obtenido de `api.obtenerEquipo()`, invertido horizontalmente con `ctx.scale(-1, 1)` porque los sprites canónicos miran a la izquierda, con fallback seguro a `placeholder-criatura.svg`) avanza saltando por el puente generando partículas de polvo y disparando `reproducirSonido("paso")` durante el trayecto y `reproducirSonido("confirmar")` al llegar.
+
+#### D. Hub a Pantalla Completa y HUD Flotante (`LayoutPrincipal.tsx` y `PantallaHubUbicacion.tsx`)
+- **Viewport de Juego (`100dvh`):** `LayoutPrincipal.tsx` aplica el modo sin scroll ni cabecera/pie web a `/hub` (igual que `/combate`).
+- **HUD Flotante `relative`:**
+  - **Superior:** Ficha del explorador (avatar del líder, nombre, nivel máximo, ubicación actual y `%` de progreso), saldo de monedas y botón de engrane (`Settings`) con acceso a `Kit de interfaz`, `Créditos` y cierre de sesión (`SALIR`).
+  - **Laterales:** Accesos rápidos flotantes a `Compendio`, `Bitácora`, `Almacén` (izquierda) y `Santuario`, `Tienda / Bazar`, `Inventario` (derecha), indicando con candado cuando un servicio no está habilitado en la localidad actual.
+  - **Inferior (Dock):** Ranuras rápidas del equipo activo (enlace a `/equipo`) y botón principal central **`EXPLORAR`** (en zonas silvestres) o **`VIAJAR`** (en localidades seguras).
+- **Modal de Decisión de Viaje (`AlertDialog`):** Al hacer clic en cualquier isla del mapa se abre un cuadro retro `8bitcn/ui` con vista previa de la zona, rango de fauna, barra de cartografía, requisitos de desbloqueo y acciones según estado (`EMPRENDER CAMINO`, `DESBLOQUEAR SENDA`, `EXPLORAR ZONA` o `PERMANECER`).
+- **Soberanía del Servidor Intacta:** No se modificó ningún endpoint ni regla de negocio en `apps/api`; toda validación de viaje, desbloqueo y equipo sigue residiendo en el Back-End.
+
+---
+
+### 22.3 Control de Archivos (Agregados y Modificados)
+
+| Estado | Archivo | Propósito |
+| :---: | :--- | :--- |
+| **Agregado** | `apps/web/src/lib/mapa-mundo.ts` | Coordenadas virtuales (`1200×760`) y paletas dark-fantasy de las 9 islas. |
+| **Agregado** | `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Mapa interactivo en `<canvas>` (`absolute`) con paneo, zoom, niebla, viñeta DPR y nodos `relative`. |
+| **Agregado** | `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Pantalla de carga 2D animada con la criatura líder cruzando el puente y sonido retro. |
+| **Editado** | `apps/web/src/components/LayoutPrincipal.tsx` | Habilita pantalla completa `100dvh` para la ruta `/hub`. |
+| **Editado** | `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Migra el Hub al HUD flotante sobre el mapa interactivo y conecta `TransicionViaje2D`. |
+| **Editado** | `apps/web/test/verificacion-hub-mundo.spec.ts` | Actualiza las aserciones estáticas para validar `MapaInteractivoCanvas` y `TransicionViaje2D`. |
+
+---
+
+### 22.4 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript.
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+---
+
+## 23. Adenda de Retroalimentación Visual, "Game Feel" y Control de Audio Retro (Sin Alterar Reglas de Turnos)
+
+Con el objetivo de enriquecer la experiencia visual e interactiva del jugador manteniendo intactas la jugabilidad por turnos y todas las reglas autoritativas del servidor (`apps/api`), se implementaron mejoras en cuatro frentes puramente visuales y sensoriales en `apps/web`.
+
+### 23.1 Mejoras Implementadas
+
+1. **Mapa Interactivo más Vivo e Informativo (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`):**
+   - **Tooltip rico al hacer hover o enfocar un nodo:** Despliega una ficha flotante con el nombre de la ubicación, etiqueta del bioma, estado de viaje (actual, conectada, desbloqueable o bloqueada) y servicios disponibles (Santuario/Tienda en localidades seguras; rango de nivel de fauna y porcentaje explorado en zonas salvajes).
+   - **Iconografía directa en placas de nodo:** Añade indicadores compactos de Santuario (`Heart`), Tienda (`Store`) y seguridad (`ShieldCheck`) en localidades, y de combate (`Swords` + `Nv. X-Y`) en zonas silvestres desbloqueadas.
+   - **Flujo animado en rutas alcanzables:** Dibuja un resplandor y partículas en movimiento sobre los puentes conectados directamente desde la ubicación actual hacia destinos viajables o desbloqueables.
+   - **Partículas ambientales por bioma:** Renderizado determinista en `<canvas>` de brasas, copos glaciales, luciérnagas y destellos acuáticos acordes al bioma de cada isla desbloqueada.
+
+2. **Combate por Turnos con "Game Feel" (`PantallaCombate.tsx` y `health-bar.tsx`):**
+   - **Estela de daño retardada en barras de vida (`apps/web/src/components/ui/8bit/health-bar.tsx`):** Cuando la salud disminuye, una barra secundaria ámbar permanece brevemente y se drena suavemente en `500 ms` sin alterar el cálculo real de HP.
+   - **Etiquetas de efectividad e insignia en daño flotante:** `resolverEtiquetaImpacto()` lee `efectividad` (`VENTAJA`, `DESVENTAJA`) y `esInsignia` de la respuesta del turno para mostrar etiquetas retro (`¡INSIGNIA!`, `¡MUY EFICAZ x1.5!`, `RESISTIDO x0.75`) junto al número flotante.
+   - **Embestida de atacante y sacudida de arena:** Desplazamiento breve del atacante antes del impacto y sacudida temporal del contenedor de la arena ante golpes `VENTAJA` o `esInsignia`.
+   - **Invariante de jugabilidad:** Ninguna regla de cálculo, orden de turno ni consumo de recursos fue modificada.
+
+3. **Viaje y Exploración más Inmersivos (`TransicionViaje2D.tsx` y `PantallaExploracion.tsx`):**
+   - **Clima dinámico de destino en `TransicionViaje2D.tsx`:** Partículas ambientales acordes al bioma de destino que se intensifican conforme avanza la travesía y rótulo narrativo con el bioma de llegada.
+   - **Destello de encuentro y rastreo visual en `PantallaExploracion.tsx`:** Barra de rastreo (`RASTREANDO SENDAS...`) durante la petición de exploración y destello visual breve (carmesí en encuentro normal, ámbar dorado en avistamiento legendario) al aparecer una criatura salvaje.
+
+4. **Control Global de Sonido Retro 8-bit (`assets.ts`, `LayoutPrincipal.tsx` y `MapaInteractivoCanvas.tsx`):**
+   - **Persistencia en `localStorage` (`aethelgard_sonido_silenciado`):** Funciones `estaSonidoSilenciado()`, `establecerSonidoSilenciado()` y `alternarSonidoSilenciado()` en `apps/web/src/lib/assets.ts` respetadas automáticamente por `reproducirSonido()`.
+   - **Botón accesible Silenciar / Activar (`Volume2` / `VolumeX`):** Integrado en la barra de navegación de `LayoutPrincipal.tsx` y junto a los controles de cámara en `MapaInteractivoCanvas.tsx`.
+
+### 23.2 Control de Archivos Modificados
+
+| Archivo | Cambio Principal |
+| :--- | :--- |
+| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Tooltips de nodo, iconos de servicio/fauna, flujo animado en rutas alcanzables, partículas por bioma y botón de silencio en el mapa. |
+| `apps/web/src/components/ui/8bit/health-bar.tsx` | Estela de daño retardada (`500 ms`) detrás de la barra principal. |
+| `apps/web/src/paginas/PantallaCombate.tsx` | Embestida de atacante, etiquetas de efectividad/insignia en daño flotante y sacudida de arena ante impactos críticos. |
+| `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Partículas climáticas del bioma destino y mensaje narrativo de llegada. |
+| `apps/web/src/paginas/PantallaExploracion.tsx` | Indicador de rastreo y destello visual al detectar criatura salvaje o legendaria. |
+| `apps/web/src/lib/assets.ts` | Persistencia y control global de silencio para el sintetizador Web Audio 8-bit. |
+| `apps/web/src/components/LayoutPrincipal.tsx` | Botón de activar/silenciar sonido retro en la cabecera global. |
+
+### 23.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm.cmd --filter web exec tsc -b --noEmit`):** 0 errores.
+- **Pruebas Unitarias Web (`pnpm.cmd --filter web test`):** 97 de 97 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm.cmd --filter web lint`):** 0 errores en 87 archivos.
+- **Compilación de Producción (`pnpm.cmd --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+### 23.4 Ampliación Dinámica por Cartas Tácticas y Coreografía en Arena
+- **Cartas Tácticas Elevables (`PantallaCombate.tsx`):** Los 4 slots del menú `ATACAR` (`C1..C4`) se presentan como cartas tácticas que se elevan al pasar el cursor (`hover:-translate-y-1.5`), indicando su coreografía (`Embestida`, `Proyectil`, `Escudo` o `Insignia`).
+- **Movilidad Diferenciada por Carta (`index.css` + `PantallaCombate.tsx`):**
+  - *Físico:* Embestida diagonal (`anim-embestida-aliado` / `anim-embestida-rival`).
+  - *Elemental:* Proyectil pixel-art (`anim-proyectil-aliado` / `anim-proyectil-rival`) teñido según la afinidad de la criatura.
+  - *Defensivo / Estado:* Aura rúnica pulsante alrededor de la criatura aliada.
+  - *Insignia (Resonancia 100%):* Clímax oscuro sobre la arena, proyectil dorado y mini-zoom cinemático (`scale-[1.04]`).
+- **Arena Viva y Asistente Táctico:** Respiración continua (`anim-respiracion-combate`) en ambos sprites cuando están en reposo y barra de consejo `TÁCTICA:` en la consola raíz según Resonancia, `Bastión`, estados alterados o ventaja elemental.
+
+---
+
 ## 22. Optimización e Integración Multimedia de Entornos, Arenas de Combate y Objetos del Bazar (19 Recursos)
 
 ### 22.1 Diagnóstico Inicial y Auditoría Técnica
@@ -1522,6 +1637,40 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 - **Compilación de Producción (`pnpm --filter web build`):** `tsc -b && vite build` completado con `0` errores en **`4.04 s`**.
 - **Inspección visual directa sobre láminas de control:** Verificación en comparación `BOX` vs `BICUBIC` vs `LANCZOS` sobre paisajes, mosaico `15/15` en `800x450` sin bandas negras y láminas de contraste claro/oscuro (`#090d16`) + máscara alfa pura para los 4 objetos sin artefactos de borde.
 
+---
+
+## 25. Calibración de Escenarios Reales, Mapa Volcánico, Ataques Precisos y Audio Ambiente
+
+### 24.1 Problemas Detectados Tras la Integración de Escenarios WebP
+1. **Superposición CSS sobre las ilustraciones de combate (`BattlefieldBackground.tsx`):** La rejilla 2.5D y pilares procedurales se renderizaban también cuando la imagen `.webp` real ya estaba cargada, tapando la iluminación y el relieve natural de los escenarios.
+2. **Desalineación de criaturas y cartas HUD según la arena (`PantallaCombate.tsx`):** Cada una de las 6 arenas (`/assets/battlegrounds/*.webp`) ubica sus plataformas a distintas alturas y márgenes (por ejemplo, `riberas-del-lago-espejo.webp` tiene la orilla aliada mucho más baja a `x: 22%` y el acantilado rival a `y: 51%`, mientras que `paso-de-los-riscos.webp` termina su saliente rocoso antes del borde derecho). Una única disposición flexbox fija hacía que en ciertas zonas los sprites flotaran o quedaran desplazados respecto a la roca.
+3. **Proyectiles saliendo detrás de las cartas y ataques físicos sin impacto visible (`PantallaCombate.tsx` + `index.css`):**
+   - Los proyectiles usaban coordenadas CSS fijas (`22% -> 74%`) y un `z-index` en el contenedor padre, provocando que en algunas arenas nacieran detrás de la carta HUD del aliado o del rival.
+   - Los ataques clasificados como `FISICO` solo ejecutaban una ligera embestida sin destello de impacto sobre el objetivo.
+4. **Identidad visual del mapa de islas y HUD (`MapaInteractivoCanvas.tsx`, `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`):**
+   - Las islas del mapa usaban figuras geométricas planas en vez de mostrar las ilustraciones reales de `/assets/zonas/*.webp`.
+   - El fondo azul plano del mapa y del puente de viaje no aprovechaba la estética *dark fantasy* de Aethelgard, y el HUD superior no mostraba una vista previa de la zona actual ni del destino al viajar.
+   - Faltaba acompañamiento sonoro ambiental suave diferenciando exploración (`hub`) y combate (`combate`).
+
+### 24.2 Soluciones y Mejoras Implementadas
+
+| Archivo | Mejoras y Soluciones Aplicadas |
+| --- | --- |
+| `apps/web/src/components/combate/BattlefieldBackground.tsx` | Cuando `pasoFallback === 0` y no hay video, la arena `.webp` se muestra a opacidad completa (`opacity-100`) sin capas CSS encima; el escenario procedural 2.5D queda únicamente como respaldo si falla la carga de imagen. |
+| `apps/web/src/lib/battlegrounds.ts` *(nuevo)* | Tabla `CALIBRACION_ARENAS_ZONA` y helper `obtenerCalibracionArena(zoneId)` con coordenadas calibradas para cada uno de los 6 escenarios `800x450` (`bosque-susurrante`, `cueva-umbria`, `paso-de-los-riscos`, `pico-de-la-cumbre`, `praderas-del-amanecer`, `riberas-del-lago-espejo`) y anclaje de cartas HUD en esquinas libres. |
+| `apps/web/src/paginas/PantallaCombate.tsx` | Posicionamiento absoluto por plataforma con `clamp(...)` para evitar recortes en móvil; reemplazo de óvalos CSS por sombras de contacto sutiles; proyectiles (`proyectilActivo`) y destellos de impacto (`impactoVisual`) montados dentro de la arena en `z-40` por encima de las cartas HUD (`z-20`) usando coordenadas reales origen-destino; activación de audio ambiente de combate. |
+| `apps/web/src/index.css` | Unificación de `.anim-proyectil-aliado` / `.anim-proyectil-rival` mediante variables CSS dinámicas (`--origen-x`, `--origen-y`, `--destino-x`, `--destino-y`) y nueva animación `.anim-impacto-golpe` para todo tipo de ataque. |
+| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Precarga y recorte elíptico de las 9 ilustraciones reales de `/assets/zonas/*.webp` sobre la superficie de cada isla; sustitución del mar azul por un abismo de obsidiana con ríos de magma pulsante, brasas ascendentes y peñascos iluminados; anillo rúnico rotatorio alrededor de la isla actual. |
+| `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Miniatura panorámica `16:9` de la zona actual en el HUD superior (actualizada dinámicamente al viajar), animación de respiración en el retrato del líder y activación de audio ambiente del hub. |
+| `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Vista previa de la zona destino (`DESTINO`) junto al lienzo animado; abismo de magma vivo bajo el puente, antorchas que se encienden al paso de la criatura, estela cian de movimiento y destello de portal al llegar. |
+| `apps/web/src/lib/assets.ts` | Motor de audio ambiente suave con Web Audio API (`iniciarMusicaAmbiente("hub" \| "combate")`, `detenerMusicaAmbiente`) con filtro paso-bajo, baja ganancia y sincronización con `establecerSonidoSilenciado` / `alternarSonidoSilenciado`. |
+
+### 24.3 Verificación Completa Pre-Push
+- `pnpm.cmd --filter web exec tsc -b --noEmit`: 0 errores de compilación TypeScript.
+- `pnpm.cmd --filter web test`: **99 de 99 pruebas aprobadas** (`0` fallos).
+- `pnpm.cmd --filter web lint`: **0 errores** bajo `oxlint` (37 advertencias preexistentes).
+- `pnpm.cmd --filter web build`: compilación de producción (`tsc -b && vite build`) completada exitosamente.
+- **Reglas de negocio:** Las reglas del combate por turnos, contratos de API y esquema de base de datos permanecen intactos.
 
 ---
 

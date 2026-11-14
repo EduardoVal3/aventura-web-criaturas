@@ -37,12 +37,15 @@ import {
   ErrorApi,
 } from "@/api";
 import {
+  detenerMusicaAmbiente,
+  iniciarMusicaAmbiente,
   obtenerImagenCriatura,
   obtenerImagenObjeto,
   obtenerSlugZonaPorCriatura,
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
+import { obtenerCalibracionArena } from "@/lib/battlegrounds";
 import {
   Lock,
   Crown,
@@ -136,6 +139,21 @@ export function PantallaCombate() {
   const [animacionAliado, setAnimacionAliado] = useState("");
   const [danoFlotanteRival, setDanoFlotanteRival] = useState<number | null>(null);
   const [danoFlotanteAliado, setDanoFlotanteAliado] = useState<number | null>(null);
+  const [etiquetaFlotanteRival, setEtiquetaFlotanteRival] = useState<string | null>(null);
+  const [etiquetaFlotanteAliado, setEtiquetaFlotanteAliado] = useState<string | null>(null);
+  const [sacudidaArena, setSacudidaArena] = useState(false);
+  const [zoomArena, setZoomArena] = useState(false);
+  const [climaxInsignia, setClimaxInsignia] = useState(false);
+  const [proyectilActivo, setProyectilActivo] = useState<{
+    direccion: "aliado-a-rival" | "rival-a-aliado";
+    claseColor: string;
+  } | null>(null);
+  const [impactoVisual, setImpactoVisual] = useState<{
+    objetivo: "rival" | "aliado";
+    claseColor: string;
+  } | null>(null);
+  const [auraAliado, setAuraAliado] = useState(false);
+  const [avisoAtaqueRival, setAvisoAtaqueRival] = useState<string | null>(null);
   const [curacionFlotanteAliado, setCuracionFlotanteAliado] = useState<number | null>(null);
   const [secuenciaCaptura, setSecuenciaCaptura] = useState(false);
   const [esPlaceholderAliado, setEsPlaceholderAliado] = useState(false);
@@ -162,6 +180,11 @@ export function PantallaCombate() {
   const [itemsCuracion, setItemsCuracion] = useState<ItemInventario[]>([]);
   const [equipoCriaturas, setEquipoCriaturas] = useState<CriaturaEquipo[]>([]);
   const [talismanSeleccionado, setTalismanSeleccionado] = useState<string>("talisman-basico");
+
+  useEffect(() => {
+    iniciarMusicaAmbiente("combate");
+    return () => detenerMusicaAmbiente();
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -267,6 +290,52 @@ export function PantallaCombate() {
     }
   }, []);
 
+  const resolverEtiquetaImpacto = (accion?: AccionCombate | null): string | null => {
+    if (!accion) return null;
+    if (accion.esInsignia) return "¡INSIGNIA!";
+    if (accion.efectividad === "VENTAJA") return "¡MUY EFICAZ x1.5!";
+    if (accion.efectividad === "DESVENTAJA") return "RESISTIDO x0.75";
+    return null;
+  };
+
+  type CoreografiaCarta = "INSIGNIA" | "DEFENSIVO" | "ELEMENTAL" | "FISICO";
+
+  const clasificarCoreografiaMovimiento = (
+    mov?: { tipoAccion?: string; efecto?: string | null; estadoAplicado?: string | null; slot?: number } | null,
+    esInsignia?: boolean,
+  ): CoreografiaCarta => {
+    if (esInsignia || mov?.slot === 4) return "INSIGNIA";
+    if (
+      mov?.tipoAccion === "ESTADO" ||
+      mov?.efecto === "BASTION" ||
+      mov?.efecto === "CURACION" ||
+      mov?.efecto === "DEF_UP"
+    ) {
+      return "DEFENSIVO";
+    }
+    if (mov?.efecto || mov?.estadoAplicado || (mov?.slot ?? 1) >= 2) {
+      return "ELEMENTAL";
+    }
+    return "FISICO";
+  };
+
+  const colorProyectilPorAfinidad = (afinidad?: string | null): string => {
+    switch (afinidad) {
+      case "fuego":
+        return "bg-orange-400 border-red-700 shadow-[0_0_12px_#fb923c]";
+      case "agua":
+        return "bg-cyan-300 border-blue-700 shadow-[0_0_12px_#22d3ee]";
+      case "natura":
+        return "bg-emerald-400 border-green-800 shadow-[0_0_12px_#34d399]";
+      case "sombra":
+        return "bg-purple-400 border-purple-900 shadow-[0_0_12px_#c084fc]";
+      case "luz":
+        return "bg-amber-300 border-yellow-700 shadow-[0_0_12px_#fcd34d]";
+      default:
+        return "bg-slate-200 border-slate-700 shadow-[0_0_10px_#e2e8f0]";
+    }
+  };
+
   // Auxiliar unificado para animar contraataque rival y efectos fin de turno (DoT)
   const reproducirContraataqueYDoT = async (
     contraataque: AccionCombate | null | undefined,
@@ -276,11 +345,43 @@ export function PantallaCombate() {
       await new Promise((resolver) => setTimeout(resolver, 600));
 
       if (contraataque.perdioTurno) {
+        setAvisoAtaqueRival(`${rival?.nombre ?? "El rival"} perdió su turno`);
         reproducirSonido("error");
+        await new Promise((resolver) => setTimeout(resolver, 480));
+        setAvisoAtaqueRival(null);
       } else {
+        setAvisoAtaqueRival(`${rival?.nombre ?? "Rival"} usa ${contraataque.movimiento}`);
+        setAnimacionRival("scale-110 brightness-125");
+        await new Promise((resolver) => setTimeout(resolver, 420));
+
+        setAnimacionRival("anim-embestida-rival");
+        setProyectilActivo({
+          direccion: "rival-a-aliado",
+          claseColor: colorProyectilPorAfinidad(rival?.afinidad),
+        });
+        await new Promise((resolver) => setTimeout(resolver, 360));
+        setProyectilActivo(null);
+        setAnimacionRival("");
+        setAvisoAtaqueRival(null);
+
         reproducirSonido(sonidoDeGolpe(contraataque));
+        setImpactoVisual({
+          objetivo: "aliado",
+          claseColor: colorProyectilPorAfinidad(rival?.afinidad),
+        });
+        setTimeout(() => setImpactoVisual(null), 320);
         setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
         setDanoFlotanteAliado(contraataque.danoCausado);
+        setEtiquetaFlotanteAliado(resolverEtiquetaImpacto(contraataque));
+
+        if (contraataque.efectividad === "VENTAJA" || contraataque.esInsignia) {
+          setSacudidaArena(true);
+          setZoomArena(true);
+          setTimeout(() => {
+            setSacudidaArena(false);
+            setZoomArena(false);
+          }, 340);
+        }
 
         if (typeof contraataque.hpRestanteAliado === "number") {
           setAliado((prev) =>
@@ -291,7 +392,8 @@ export function PantallaCombate() {
         setTimeout(() => {
           setAnimacionAliado("");
           setDanoFlotanteAliado(null);
-        }, 500);
+          setEtiquetaFlotanteAliado(null);
+        }, 550);
       }
     }
 
@@ -349,15 +451,71 @@ export function PantallaCombate() {
         setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
       }
 
-      // Animación de impacto del jugador sobre el rival
+      // Animación de impacto del jugador sobre el rival diferenciada por carta
+      const movSeleccionado = aliado?.movimientos?.[movimientoIndice];
+      const coreografia = clasificarCoreografiaMovimiento(
+        movSeleccionado,
+        Boolean(resultado.accionJugador?.esInsignia || movimientoIndice === 3),
+      );
+
       const animarImpactoJugador = async () => {
         if (!resultado.accionJugador) return;
         if (resultado.accionJugador.perdioTurno) {
           reproducirSonido("error");
         } else {
+          if (coreografia === "INSIGNIA") {
+            setClimaxInsignia(true);
+            setZoomArena(true);
+            setProyectilActivo({
+              direccion: "aliado-a-rival",
+              claseColor: "bg-amber-300 border-amber-600 shadow-[0_0_16px_#fbbf24]",
+            });
+            await new Promise((resolver) => setTimeout(resolver, 280));
+            setProyectilActivo(null);
+            setClimaxInsignia(false);
+          } else if (coreografia === "DEFENSIVO") {
+            setAuraAliado(true);
+            await new Promise((resolver) => setTimeout(resolver, 260));
+            setAuraAliado(false);
+          } else if (coreografia === "ELEMENTAL") {
+            setProyectilActivo({
+              direccion: "aliado-a-rival",
+              claseColor: colorProyectilPorAfinidad(aliado?.afinidad),
+            });
+            await new Promise((resolver) => setTimeout(resolver, 240));
+            setProyectilActivo(null);
+          } else {
+            setAnimacionAliado("anim-embestida-aliado");
+            await new Promise((resolver) => setTimeout(resolver, 220));
+            setAnimacionAliado("");
+          }
+
           reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+          setImpactoVisual({
+            objetivo: "rival",
+            claseColor:
+              coreografia === "INSIGNIA"
+                ? "bg-amber-300 border-amber-500 shadow-[0_0_20px_#fbbf24]"
+                : colorProyectilPorAfinidad(aliado?.afinidad),
+          });
+          setTimeout(() => setImpactoVisual(null), 320);
           setAnimacionRival("anim-sacudida anim-parpadeo-dano");
           setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+          setEtiquetaFlotanteRival(resolverEtiquetaImpacto(resultado.accionJugador));
+
+          if (
+            resultado.accionJugador.efectividad === "VENTAJA" ||
+            resultado.accionJugador.esInsignia
+          ) {
+            setSacudidaArena(true);
+            setZoomArena(true);
+            setTimeout(() => {
+              setSacudidaArena(false);
+              setZoomArena(false);
+            }, 340);
+          } else {
+            setZoomArena(false);
+          }
 
           if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
             setRival({
@@ -387,9 +545,10 @@ export function PantallaCombate() {
             });
           }
 
-          await new Promise((resolver) => setTimeout(resolver, 500));
+          await new Promise((resolver) => setTimeout(resolver, 550));
           setAnimacionRival("");
           setDanoFlotanteRival(null);
+          setEtiquetaFlotanteRival(null);
         }
       };
 
@@ -782,11 +941,14 @@ export function PantallaCombate() {
     : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE", slot: 1 }];
   const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
 
+  const zonaCombateId = obtenerSlugZonaPorCriatura(rival.slug);
+  const calibracionArena = obtenerCalibracionArena(zonaCombateId);
+
   return (
     <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
-        zoneId={obtenerSlugZonaPorCriatura(rival.slug)}
+        zoneId={zonaCombateId}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
@@ -837,12 +999,94 @@ export function PantallaCombate() {
           </div>
         )}
 
-        {/* ARENA DE COMBATE: Disposición Diagonal Clásica JRPG */}
-        <div className="flex-1 w-full px-3 py-1 flex flex-col justify-between relative z-10 overflow-hidden">
-          {/* SECTOR RIVAL: Arriba a la derecha */}
-          <div className="flex items-start justify-end gap-2 sm:gap-3 self-end w-full max-w-[95%] sm:max-w-[85%] pt-1">
-            {/* Placa HUD Flotante Compacta del Rival */}
-            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[225px] sm:max-w-[260px] space-y-1.5">
+        {/* Clímax oscuro al desatar Movimiento Insignia */}
+        {climaxInsignia && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 z-10 bg-black/65 pointer-events-none transition-opacity"
+          />
+        )}
+
+        {/* Aviso Central Inconfundible del Ataque Enemigo */}
+        {avisoAtaqueRival && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute left-1/2 top-14 -translate-x-1/2 z-30 px-3 py-1.5 bg-red-950/95 border-2 border-red-400 shadow-[4px_4px_0_0_#000] pointer-events-none anim-revelacion-evento"
+          >
+            <span className="retro text-[8px] sm:text-[10px] text-amber-200 whitespace-nowrap">
+              {avisoAtaqueRival}
+            </span>
+          </div>
+        )}
+
+        {/* ARENA DE COMBATE: Posicionamiento milimétrico calibrado por escenario */}
+        <div
+          className={`flex-1 w-full relative z-10 overflow-hidden transition-transform duration-300 ${sacudidaArena ? "anim-sacudida" : ""} ${zoomArena ? "scale-[1.04]" : "scale-100"}`}
+        >
+          {/* Proyectil Pixel-Art en vuelo exacto entre plataformas (por encima de cartas HUD) */}
+          {proyectilActivo && (
+            <div
+              aria-hidden="true"
+              style={
+                {
+                  "--origen-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.aliado.x
+                      : calibracionArena.rival.x
+                  }%`,
+                  "--origen-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(20, calibracionArena.aliado.y - 14)
+                      : Math.max(16, calibracionArena.rival.y - 12)
+                  }%`,
+                  "--destino-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.rival.x
+                      : calibracionArena.aliado.x
+                  }%`,
+                  "--destino-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(16, calibracionArena.rival.y - 12)
+                      : Math.max(20, calibracionArena.aliado.y - 14)
+                  }%`,
+                } as React.CSSProperties
+              }
+              className={`absolute z-40 size-6 sm:size-7 border-2 pointer-events-none ${proyectilActivo.claseColor} ${
+                proyectilActivo.direccion === "aliado-a-rival"
+                  ? "anim-proyectil-aliado"
+                  : "anim-proyectil-rival"
+              }`}
+            />
+          )}
+
+          {/* Destello de impacto pixel-art sobre la criatura objetivo */}
+          {impactoVisual && (
+            <div
+              aria-hidden="true"
+              style={{
+                left: `${
+                  impactoVisual.objetivo === "rival"
+                    ? calibracionArena.rival.x
+                    : calibracionArena.aliado.x
+                }%`,
+                top: `${
+                  impactoVisual.objetivo === "rival"
+                    ? Math.max(16, calibracionArena.rival.y - 12)
+                    : Math.max(20, calibracionArena.aliado.y - 14)
+                }%`,
+              }}
+              className={`absolute z-40 size-12 sm:size-16 border-2 pointer-events-none anim-impacto-golpe ${impactoVisual.claseColor}`}
+            />
+          )}
+          {/* Placa HUD Flotante Compacta del Rival (anclada sin cubrir plataformas) */}
+          <div
+            style={{
+              top: `${calibracionArena.cartaRival.top}%`,
+              left: `${calibracionArena.cartaRival.left}%`,
+            }}
+            className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+          >
               <div className="flex items-start justify-between gap-1.5">
                 <div className="flex items-center gap-1 min-w-0 flex-1">
                   {rival.esLegendaria && (
@@ -905,36 +1149,60 @@ export function PantallaCombate() {
               )}
             </div>
 
-            {/* Sprite del Rival con Pedestal y Daño Flotante */}
-            <div className="relative flex flex-col items-center shrink-0">
+            {/* Sprite del Rival apoyado exactamente en la plataforma elevada de la zona */}
+            <div
+              style={{
+                left: `clamp(56px, ${calibracionArena.rival.x}%, calc(100% - 56px))`,
+                top: `clamp(88px, ${calibracionArena.rival.y}%, calc(100% - 24px))`,
+              }}
+              className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+            >
               {danoFlotanteRival !== null && (
-                <span className="absolute -top-5 text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                  -{danoFlotanteRival}
-                </span>
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteRival && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteRival}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteRival}
+                  </span>
+                </div>
               )}
               <div
-                className={`size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival}`}
+                className={`relative z-10 size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival || "anim-respiracion-combate"}`}
               >
                 <img
                   src={obtenerImagenCriatura(rival.slug)}
                   alt={rival.nombre}
                   decoding="async"
                   onError={(e) => manejarErrorImagen(e, "criatura")}
-                  className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)]"
+                  className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_10px_10px_rgba(0,0,0,0.85)]"
                 />
               </div>
-              <div className="w-16 sm:w-20 h-2 bg-black/60 rounded-full blur-[1px] -mt-1 -z-0" />
+              {/* Sombra de contacto sutil sobre la plataforma elevada del escenario */}
+              <div className="w-20 sm:w-28 h-2.5 bg-black/55 rounded-full blur-[2px] -mt-2 z-0" />
             </div>
-          </div>
 
-          {/* SECTOR ALIADO: Abajo a la izquierda */}
-          <div className="flex items-end justify-start gap-2 sm:gap-3 self-start w-full max-w-[95%] sm:max-w-[85%] pb-1">
-            {/* Sprite del Aliado (de espaldas/perfil hacia el rival) */}
-            <div className="relative flex flex-col items-center shrink-0">
+          {/* Sprite del Aliado apoyado exactamente en la plataforma en primer plano */}
+          <div
+            style={{
+              left: `clamp(56px, ${calibracionArena.aliado.x}%, calc(100% - 56px))`,
+              top: `clamp(110px, ${calibracionArena.aliado.y}%, calc(100% - 6px))`,
+            }}
+            className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+          >
               {danoFlotanteAliado !== null && (
-                <span className="absolute -top-5 text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] anim-dano-flotante z-20 retro">
-                  -{danoFlotanteAliado}
-                </span>
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteAliado && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteAliado}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteAliado}
+                  </span>
+                </div>
               )}
               {curacionFlotanteAliado !== null && (
                 <span className="absolute -top-5 text-xs sm:text-sm font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
@@ -942,8 +1210,14 @@ export function PantallaCombate() {
                 </span>
               )}
               <div
-                className={`size-24 sm:size-32 flex items-center justify-center transition-transform ${animacionAliado}`}
+                className={`relative z-10 size-28 sm:size-36 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
               >
+                {auraAliado && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-1 border-4 border-cyan-300 bg-cyan-400/20 animate-ping pointer-events-none"
+                  />
+                )}
                 <img
                   src={obtenerImagenCriatura(aliado.slug)}
                   alt={aliado.nombre}
@@ -955,11 +1229,18 @@ export function PantallaCombate() {
                   className={`max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)] ${esPlaceholderAliado || !aliado.slug ? "" : "scale-x-[-1]"}`}
                 />
               </div>
-              <div className="w-20 sm:w-24 h-2 bg-black/60 rounded-full blur-[1px] -mt-1 -z-0" />
+              {/* Sombra de contacto sutil sobre la plataforma en primer plano del escenario */}
+              <div className="w-24 sm:w-32 h-3 bg-black/60 rounded-full blur-[2px] -mt-2 z-0" />
             </div>
 
-            {/* Placa HUD Flotante Compacta del Aliado */}
-            <div className="bg-[#0b1322]/95 border-2 border-black p-2 shadow-[3px_3px_0_0_#000] flex-1 max-w-[225px] sm:max-w-[260px] space-y-1.5">
+            {/* Placa HUD Flotante Compacta del Aliado (anclada sin cubrir plataformas) */}
+            <div
+              style={{
+                bottom: `${calibracionArena.cartaAliado.bottom}%`,
+                right: `${calibracionArena.cartaAliado.right}%`,
+              }}
+              className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+            >
               <div className="flex items-start justify-between gap-1.5">
                 <span className="font-bold text-[8px] sm:text-[9px] leading-tight break-words text-foreground retro flex-1 min-w-0">
                   {aliado.nombre}
@@ -1050,7 +1331,6 @@ export function PantallaCombate() {
                 </div>
               )}
             </div>
-          </div>
         </div>
       </BattlefieldBackground>
 
@@ -1201,8 +1481,26 @@ export function PantallaCombate() {
             </div>
           </div>
         ) : menuState === "ROOT" ? (
-          /* Estado Raíz: Botonera Clásica Retro (2x2 + Huir Inferior con Espaciado Táctil Óptimo) */
+          /* Estado Raíz: Botonera Clásica Retro + Asistente Táctico Contextual */
           <div className="space-y-2">
+            {!combateFinalizado && (
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1 bg-[#090d16]/90 border border-slate-700 text-[9px] sm:text-[10px] text-slate-200">
+                <span className="retro text-[7px] sm:text-[8px] text-[#14d1e8] shrink-0">
+                  TÁCTICA:
+                </span>
+                <span className="truncate text-right">
+                  {(aliado.resonancia ?? 0) >= 100
+                    ? "Resonancia al 100%: Carta Insignia lista en ATACAR."
+                    : rival.estados?.some((s) => s.codigo === "BASTION")
+                      ? "Rival con Bastión: prioriza estado o técnica elemental."
+                      : rival.estados && rival.estados.length > 0
+                        ? "Rival con estado alterado: captura bonificada x1.25."
+                        : encuentro?.efectividadAliadaSobreRival?.etiqueta === "VENTAJA"
+                          ? "Tienes ventaja elemental en este cruce."
+                          : "Elige carta de ataque, objeto, relevo o captura."}
+                </span>
+              </div>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
               {/* 1. Atacar (Rojo Fuego Arcade con Bisel 3D) */}
               <button
@@ -1317,6 +1615,15 @@ export function PantallaCombate() {
                 const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
                 const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
                 const badgeEfecto = resolverBadgeEfectoMovimiento(mov?.efecto, mov?.estadoAplicado);
+                const coreografiaCarta = clasificarCoreografiaMovimiento(mov, esInsignia);
+                const etiquetaCoreografia =
+                  coreografiaCarta === "INSIGNIA"
+                    ? "Insignia"
+                    : coreografiaCarta === "DEFENSIVO"
+                      ? "Escudo"
+                      : coreografiaCarta === "ELEMENTAL"
+                        ? "Proyectil"
+                        : "Embestida";
 
                 return (
                   <button
@@ -1326,18 +1633,18 @@ export function PantallaCombate() {
                     aria-disabled={estaBloqueado}
                     aria-busy={procesandoAccion}
                     onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
-                    className={`flex flex-col items-start justify-between min-h-[56px] sm:min-h-[64px] p-2 border-2 border-black shadow-[2px_2px_0_0_#000] text-left transition-all ${
+                    className={`flex flex-col items-start justify-between min-h-[68px] sm:min-h-[76px] p-2 border-2 border-black shadow-[2px_3px_0_0_#000] text-left transition-all duration-150 ${
                       estaBloqueado
                         ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
                         : esInsignia
-                        ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 anim-pulso-resonancia text-amber-200"
-                        : "bg-[#121927] hover:border-primary text-foreground active:translate-y-0.5"
+                        ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 hover:-translate-y-1.5 hover:shadow-[4px_6px_0_0_#000] anim-pulso-resonancia text-amber-200 cursor-pointer"
+                        : "bg-gradient-to-b from-[#172133] to-[#0f1624] hover:border-[#14d1e8] hover:-translate-y-1.5 hover:shadow-[4px_6px_0_0_#000] text-foreground active:translate-y-0.5 cursor-pointer"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full gap-1 min-w-0">
+                    <div className="flex items-center justify-between w-full gap-1 min-w-0 border-b border-black/50 pb-1">
                       <div className="flex items-center gap-1 min-w-0 truncate">
-                        <span className="text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black bg-black/40 text-foreground shrink-0">
-                          M{slot}
+                        <span className="text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black bg-black/50 text-[#14d1e8] shrink-0">
+                          C{slot}
                         </span>
                         <span className="font-semibold truncate text-[8px] sm:text-[9px] retro">
                           {nombreMov}
@@ -1347,7 +1654,11 @@ export function PantallaCombate() {
                         <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
                       ) : esInsignia ? (
                         <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
-                      ) : null}
+                      ) : (
+                        <span className="text-[6.5px] retro text-slate-400 shrink-0">
+                          {etiquetaCoreografia}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center justify-between w-full mt-1.5 min-w-0 gap-1">

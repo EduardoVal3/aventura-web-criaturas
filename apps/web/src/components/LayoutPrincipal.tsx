@@ -1,11 +1,26 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { Volume2, VolumeX } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
-import { reproducirSonido } from "@/lib/assets";
+import {
+  alternarSonidoSilenciado,
+  estaSonidoSilenciado,
+  reproducirSonido,
+} from "@/lib/assets";
 
 export function LayoutPrincipal() {
   const location = useLocation();
   const esCombate = location.pathname.startsWith("/combate");
   const esHub = location.pathname === "/hub" || location.pathname.startsWith("/hub/");
+  const [silenciado, setSilenciado] = useState(() => estaSonidoSilenciado());
+
+  const handleAlternarSonido = () => {
+    const nuevo = alternarSonidoSilenciado();
+    setSilenciado(nuevo);
+    if (!nuevo) {
+      reproducirSonido("click", 0.35);
+    }
+  };
 
   if (esCombate || esHub) {
     return (
@@ -56,6 +71,19 @@ export function LayoutPrincipal() {
             >
               Créditos
             </NavLink>
+            <button
+              type="button"
+              onClick={handleAlternarSonido}
+              aria-label={silenciado ? "Activar sonido retro" : "Silenciar sonido retro"}
+              title={silenciado ? "Activar sonido retro" : "Silenciar sonido retro"}
+              className="h-7 sm:h-9 px-2 sm:px-2.5 inline-flex items-center justify-center border-2 border-black bg-background text-muted-foreground hover:text-[#14d1e8] hover:border-[#14d1e8] shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all cursor-pointer"
+            >
+              {silenciado ? (
+                <VolumeX className="size-3.5 sm:size-4 text-rose-400" aria-hidden="true" />
+              ) : (
+                <Volume2 className="size-3.5 sm:size-4 text-[#14d1e8]" aria-hidden="true" />
+              )}
+            </button>
           </nav>
         </div>
       </header>

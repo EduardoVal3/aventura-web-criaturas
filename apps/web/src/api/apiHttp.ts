@@ -52,6 +52,11 @@ async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Pro
     "Content-Type": "application/json",
   };
 
+  const claveGateway = import.meta.env.VITE_API_KEY;
+  if (claveGateway) {
+    encabezados.apikey = claveGateway;
+  }
+
   if (tokenActual) {
     encabezados.Authorization = `Bearer ${tokenActual}`;
   }
@@ -76,9 +81,15 @@ async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Pro
       if (datosError?.error) {
         codigo = datosError.error.codigo ?? codigo;
         mensaje = datosError.error.mensaje ?? mensaje;
+      } else if (respuesta.status === 429) {
+        codigo = "LIMITE_TASA_EXCEDIDO";
+        mensaje = "Has superado el límite de peticiones del API Gateway. Espera un momento.";
       }
     } catch {
-      // simplificacion: si el cuerpo no es JSON legible, se usan los valores por defecto.
+      if (respuesta.status === 429) {
+        codigo = "LIMITE_TASA_EXCEDIDO";
+        mensaje = "Has superado el límite de peticiones del API Gateway. Espera un momento.";
+      }
     }
 
     if (respuesta.status === 401 && typeof window !== "undefined") {

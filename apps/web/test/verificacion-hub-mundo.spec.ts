@@ -401,6 +401,7 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
     join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
     join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"),
     join(__dirname, "../src/lib/mapa-mundo.ts"),
+    join(__dirname, "../src/lib/mapa-dioramas.ts"),
   ];
 
   const regexEmoji = /\p{Extended_Pictographic}/u;
@@ -447,4 +448,77 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
   assert.ok(expCodigo.includes("especiesHabitantes"), "PantallaExploracion debe desplegar especiesHabitantes del hábitat");
   assert.ok(expCodigo.includes("MinimapaRedTerritorial"), "PantallaExploracion debe integrar MinimapaRedTerritorial");
 });
+
+test("Subfase 10p: Calibración híbrida del mapa maestro 2D, 10 puentes Bezier, geometría pure-Node y controles", async () => {
+  const { existsSync, readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const { CONEXIONES_AETHELGARD } = await import("../src/lib/servicios-hub.ts");
+  const { CONFIGURACION_ISLAS_MAPA, DIMENSIONES_MAPA_MUNDO } = await import(
+    "../src/lib/mapa-mundo.ts"
+  );
+  const {
+    TRAYECTOS_PUENTES_AETHELGARD,
+    factorContornoIsla,
+    generarGeometriaDiorama,
+    puntoBordeIsla,
+  } = await import("../src/lib/mapa-dioramas.ts");
+
+  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.ancho, 1679);
+  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.alto, 937);
+
+  const rutaMapaAsset = join(__dirname, "../public/assets/zonas/mapa-mundo-aethelgard.png");
+  assert.strictEqual(existsSync(rutaMapaAsset), true, "Debe existir mapa-mundo-aethelgard.png");
+
+  for (const nodo of TOPOLOGIA_AETHELGARD) {
+    const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
+    assert.ok(isla, `Falta isla calibrada para ${nodo.id}`);
+    assert.ok(isla.x > 0 && isla.x < DIMENSIONES_MAPA_MUNDO.ancho);
+    assert.ok(isla.y > 0 && isla.y < DIMENSIONES_MAPA_MUNDO.alto);
+    assert.ok(isla.radioX > 80 && isla.radioY > 60);
+
+    const geom = generarGeometriaDiorama(isla);
+    assert.ok(geom.contornoLocal.length >= 48);
+    assert.ok(geom.angulosPuente.length >= 2);
+    assert.ok(factorContornoIsla(isla, 0) > 0.5);
+    const borde = puntoBordeIsla(isla, 840, 468, 1);
+    assert.ok(Number.isFinite(borde.x) && Number.isFinite(borde.y));
+  }
+
+  assert.strictEqual(
+    TRAYECTOS_PUENTES_AETHELGARD.length,
+    CONEXIONES_AETHELGARD.length,
+    "Debe calibrar exactamente los 10 puentes de CONEXIONES_AETHELGARD",
+  );
+
+  for (const [origenId, destinoId] of CONEXIONES_AETHELGARD) {
+    const puente = TRAYECTOS_PUENTES_AETHELGARD.find(
+      (t) =>
+        (t.origenId === origenId && t.destinoId === destinoId) ||
+        (t.origenId === destinoId && t.destinoId === origenId),
+    );
+    assert.ok(puente, `Falta trayecto Bezier calibrado para ${origenId} <-> ${destinoId}`);
+    for (const pt of [puente.inicio, puente.control, puente.fin]) {
+      assert.ok(pt.x >= 0 && pt.x <= DIMENSIONES_MAPA_MUNDO.ancho);
+      assert.ok(pt.y >= 0 && pt.y <= DIMENSIONES_MAPA_MUNDO.alto);
+    }
+  }
+
+  const canvasCodigo = readFileSync(
+    join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
+    "utf-8",
+  );
+  assert.ok(canvasCodigo.includes("/assets/zonas/mapa-mundo-aethelgard.png"));
+  assert.ok(canvasCodigo.includes("dibujarFondoOceanoContinuo"));
+  assert.ok(canvasCodigo.includes("dibujarFusionBordesMapa"));
+  assert.ok(canvasCodigo.includes("dibujarCapaVivaMapa"));
+  assert.ok(canvasCodigo.includes("dibujarRespaldoIslasBase"));
+  assert.ok(canvasCodigo.includes("pinchRef"));
+  assert.ok(canvasCodigo.includes("centrarEnUbicacion"));
+  assert.ok(canvasCodigo.includes("placaOffsetX"));
+  assert.strictEqual(canvasCodigo.includes("obtenerImagenZona"), false);
+});
+
 

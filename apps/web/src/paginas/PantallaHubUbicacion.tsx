@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -94,10 +94,19 @@ export function PantallaHubUbicacion() {
   const [nodoSeleccionado, setNodoSeleccionado] = useState<NodoMapaTerritorial | null>(null);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [transicionActiva, setTransicionActiva] = useState<EstadoTransicionViaje | null>(null);
-  const [pendienteTrasAnimacion, setPendienteTrasAnimacion] = useState<{
+  const montadoRef = useRef(true);
+  const animacionCompletadaRef = useRef(false);
+  const viajePendienteRef = useRef<{
     ubicacion: UbicacionActual;
     mensaje: string;
   } | null>(null);
+
+  useEffect(() => {
+    montadoRef.current = true;
+    return () => {
+      montadoRef.current = false;
+    };
+  }, []);
 
   const cargarTodo = useCallback(async () => {
     const [datosUbicacion, datosPersonaje, datosEquipo] = await Promise.all([
@@ -190,6 +199,18 @@ export function PantallaHubUbicacion() {
     }
   };
 
+  const finalizarViajeSiListo = useCallback(() => {
+    if (!montadoRef.current) return;
+    if (!animacionCompletadaRef.current || !viajePendienteRef.current) return;
+    const pendiente = viajePendienteRef.current;
+    viajePendienteRef.current = null;
+    animacionCompletadaRef.current = false;
+    setUbicacion(pendiente.ubicacion);
+    toast.success(pendiente.mensaje);
+    setTransicionActiva(null);
+    setViajando(false);
+  }, []);
+
   const handleViajar = async (conexion: ConexionUbicacion) => {
     if (viajando) return;
     if (!ubicacion) return;
@@ -200,6 +221,8 @@ export function PantallaHubUbicacion() {
       const origenId = ubicacion.ubicacionId;
       const origenNombre = ubicacion.nombre;
 
+      animacionCompletadaRef.current = false;
+      viajePendienteRef.current = null;
       setNodoSeleccionado(null);
       setTransicionActiva({
         origenId,
@@ -210,13 +233,17 @@ export function PantallaHubUbicacion() {
 
       const respuesta = await api.viajar({ destinoId: conexion.ubicacionDestinoId });
       const nuevaUbicacion = await api.obtenerUbicacionActual();
-      setPendienteTrasAnimacion({
+      if (!montadoRef.current) return;
+      viajePendienteRef.current = {
         ubicacion: nuevaUbicacion,
         mensaje: respuesta.mensaje || `Has viajado hacia ${respuesta.nombre}`,
-      });
+      };
+      finalizarViajeSiListo();
     } catch (error) {
+      viajePendienteRef.current = null;
+      animacionCompletadaRef.current = false;
+      if (!montadoRef.current) return;
       setTransicionActiva(null);
-      setPendienteTrasAnimacion(null);
       setViajando(false);
       reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
@@ -232,23 +259,9 @@ export function PantallaHubUbicacion() {
   };
 
   const handleAnimacionViajeCompletada = useCallback(() => {
-    if (pendienteTrasAnimacion) {
-      setUbicacion(pendienteTrasAnimacion.ubicacion);
-      toast.success(pendienteTrasAnimacion.mensaje);
-      setPendienteTrasAnimacion(null);
-      setTransicionActiva(null);
-      setViajando(false);
-    }
-  }, [pendienteTrasAnimacion]);
-
-  useEffect(() => {
-    if (!transicionActiva && pendienteTrasAnimacion) {
-      setUbicacion(pendienteTrasAnimacion.ubicacion);
-      toast.success(pendienteTrasAnimacion.mensaje);
-      setPendienteTrasAnimacion(null);
-      setViajando(false);
-    }
-  }, [pendienteTrasAnimacion, transicionActiva]);
+    animacionCompletadaRef.current = true;
+    finalizarViajeSiListo();
+  }, [finalizarViajeSiListo]);
 
   const handleCerrarSesion = async () => {
     reproducirSonido("click", 0.4);
@@ -298,35 +311,40 @@ export function PantallaHubUbicacion() {
   };
 
   const renderBotonFlotanteServicio = (servicio: ServicioHub) => {
-    const habilitado = estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
+    // En zonas silvestres (servicios=[]), los servicios exclusivos de localidad quedan en modo solo consulta
+    const requiereLocalidad =
+      Boolean(servicio.codigoLocalidad) && servicio.codigoLocalidad !== "HISTORIAL";
+    const activoEnZona =
+      ubicacion?.esSegura === false && requiereLocalidad
+        ? false
+        : estaServicioHabilitadoEnZona(servicio, ubicacion?.servicios);
+
     return (
       <Link
         key={servicio.id}
-        to={habilitado ? servicio.ruta : "#"}
+        to={servicio.ruta}
         onClick={(e) => {
-          if (!habilitado || viajando) {
+          if (viajando) {
             e.preventDefault();
-            reproducirSonido("error", 0.35);
-            toast.info(
-              `${servicio.titulo} solo está disponible en localidades con este servicio.`,
-            );
             return;
           }
           reproducirSonido("click", 0.35);
         }}
-        aria-disabled={!habilitado || viajando}
+        aria-disabled={viajando}
         className={cn(
-          "group pointer-events-auto bg-gradient-to-r from-[#0d1628]/95 to-[#16233b]/95 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-40 justify-center sm:justify-start",
-          habilitado && !viajando
-            ? "border-[#14d1e8]/55 hover:border-[#14d1e8] hover:-translate-y-0.5 hover:shadow-[4px_6px_0_0_#000,0_0_12px_rgba(20,209,232,0.28)] active:translate-y-0.5"
-            : "opacity-50 grayscale cursor-not-allowed",
+          "group pointer-events-auto bg-gradient-to-r from-[#0d1628]/95 to-[#16233b]/95 backdrop-blur-xs border-2 border-black shadow-[4px_4px_0_0_#000] px-2 py-1.5 sm:px-2.5 sm:py-2 flex items-center gap-2 transition-all w-11 sm:w-40 justify-center sm:justify-start hover:border-[#14d1e8] hover:-translate-y-0.5 hover:shadow-[4px_6px_0_0_#000,0_0_12px_rgba(20,209,232,0.28)] active:translate-y-0.5",
+          !activoEnZona && "opacity-85",
           viajando && "pointer-events-none opacity-50",
         )}
-        title={servicio.titulo}
+        title={
+          activoEnZona
+            ? servicio.titulo
+            : `${servicio.titulo} (Solo consulta aquí; viaja a una localidad con este servicio para operar)`
+        }
       >
         <div className="relative shrink-0 size-7 sm:size-8 bg-[#080e1a] border border-[#14d1e8]/40 flex items-center justify-center">
           {renderIconoServicio(servicio.icono)}
-          {!habilitado && (
+          {!activoEnZona && (
             <Lock className="size-2.5 text-amber-300 absolute -top-1 -right-1 bg-black rounded-full p-0.5" />
           )}
         </div>
@@ -335,7 +353,7 @@ export function PantallaHubUbicacion() {
             {servicio.titulo}
           </span>
           <span className="text-[9px] text-[#14d1e8]/80 leading-tight">
-            {habilitado ? "Disponible" : "Solo localidad"}
+            {activoEnZona ? "Disponible" : "Solo consulta"}
           </span>
         </div>
       </Link>
@@ -368,6 +386,11 @@ export function PantallaHubUbicacion() {
         nodoSeleccionado.faunaNivelMaximo,
       )
     : null;
+  const especiesNodo = nodoSeleccionado
+    ? nodoSeleccionado.id === ubicacion?.ubicacionId
+      ? ubicacion.especiesHabitantes
+      : conexionSeleccionada?.especiesHabitantes
+    : undefined;
 
   return (
     <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden flex flex-col justify-between">
@@ -434,10 +457,20 @@ export function PantallaHubUbicacion() {
                 <span className="retro text-[9px] sm:text-[11px] text-white font-bold truncate drop-shadow-[1px_1px_0_#000]">
                   {personaje?.nombre ?? "Explorador"}
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/70 text-amber-300 px-1.5 py-0.5 border border-amber-400/50">
-                  <Crown className="size-2.5" />
-                  {ubicacion.esSegura ? "ZONA SEGURA" : "ZONA SALVAJE"}
-                </span>
+                {ubicacion.poderEquipo ? (
+                  <span
+                    title={`Rango de domador: ${ubicacion.poderEquipo.rangoDomador}`}
+                    className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/80 text-[#14d1e8] px-1.5 py-0.5 border border-[#14d1e8]/40 whitespace-nowrap"
+                  >
+                    <Crown className="size-2.5" />
+                    NV.{ubicacion.poderEquipo.nivelMaximoEquipo} · {ubicacion.poderEquipo.rangoDomador}
+                  </span>
+                ) : (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 retro text-[7px] bg-black/70 text-amber-300 px-1.5 py-0.5 border border-amber-400/50">
+                    <Crown className="size-2.5" />
+                    {ubicacion.esSegura ? "ZONA SEGURA" : "ZONA SALVAJE"}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="retro text-[7px] sm:text-[8px] text-[#14d1e8] truncate">
@@ -649,7 +682,7 @@ export function PantallaHubUbicacion() {
           }
         }}
       >
-        <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100">
+        <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90dvh] overflow-y-auto overflow-x-hidden border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 text-slate-100">
           {nodoSeleccionado && (
             <>
               <AlertDialogHeader className="space-y-2 text-left">
@@ -730,23 +763,92 @@ export function PantallaHubUbicacion() {
                   </div>
                 )}
 
-                {conexionSeleccionada?.requisito && (
-                  <div className="pt-1 flex items-start gap-1.5 text-xs text-slate-300 border-t-2 border-black mt-3">
-                    {conexionSeleccionada.cumpleRequisito ? (
-                      <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
-                    ) : (
-                      <XCircle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-                    )}
-                    <div>
-                      <p className="text-[11px] sm:text-xs">{conexionSeleccionada.requisito}</p>
-                      {conexionSeleccionada.cumpleRequisito && (
-                        <Badge className="retro text-[7px] mt-1 bg-amber-950 text-amber-300 border border-amber-400">
-                          LISTA PARA DESBLOQUEAR
-                        </Badge>
-                      )}
+                {/* Previa de Fauna del Hábitat (Subfase 10n) */}
+                {especiesNodo && especiesNodo.length > 0 && (
+                  <div className="bg-black/50 border border-black p-2 space-y-1 mt-1">
+                    <span className="retro text-[7px] sm:text-[8px] text-amber-400 uppercase tracking-widest block">
+                      Fauna del Hábitat:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {especiesNodo.map((esp) => (
+                        <span
+                          key={esp.slug ?? esp.nombre}
+                          className="bg-[#1a2332] border border-black px-1.5 py-0.5 text-[7px] text-slate-200 retro flex items-center gap-1"
+                        >
+                          {esp.nombre}
+                          {esp.esLegendaria && <Crown className="size-2 text-amber-400" />}
+                          {esp.esEspecial && !esp.esLegendaria && <Sparkles className="size-2 text-amber-300" />}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
+
+                {/* Checklist estructurado de desbloqueo territorial (Subfases 10m/10n) */}
+                {conexionSeleccionada?.estaBloqueada ? (
+                  <div className="border-t-2 border-black bg-black/50 p-2.5 space-y-1.5 mt-3">
+                    <div className="flex items-center justify-between gap-2 text-[8px] sm:text-[9px] retro">
+                      <span className="flex items-center gap-1 text-slate-300">
+                        {conexionSeleccionada.cumpleRequisito ? (
+                          <Sparkles className="size-3 text-amber-400 shrink-0" />
+                        ) : (
+                          <Lock className="size-3 text-red-400 shrink-0" />
+                        )}
+                        <span className="font-bold">PROGRESO DE DESBLOQUEO</span>
+                      </span>
+                      <span className={conexionSeleccionada.cumpleRequisito ? "text-amber-400 font-bold" : "text-slate-300"}>
+                        {conexionSeleccionada.progresoActual ?? 0}% / {conexionSeleccionada.progresoObjetivo ?? 100}%
+                      </span>
+                    </div>
+                    <Progress
+                      value={conexionSeleccionada.progresoActual ?? 0}
+                      className="h-2 rounded-none border border-black"
+                    />
+
+                    {conexionSeleccionada.requisitoCartografia && (
+                      <div className="flex items-start gap-1 text-[8px] sm:text-[9px] retro">
+                        {conexionSeleccionada.requisitoCartografia.completada ? (
+                          <CheckCircle2 className="size-3 text-emerald-400 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="size-3 text-red-400 shrink-0 mt-0.5" />
+                        )}
+                        <span className={conexionSeleccionada.requisitoCartografia.completada ? "text-emerald-300" : "text-slate-300"}>
+                          Cartografía previa: [{conexionSeleccionada.requisitoCartografia.zonaId}] {conexionSeleccionada.requisitoCartografia.nombre} al 100% ({conexionSeleccionada.requisitoCartografia.progresoActual}%)
+                        </span>
+                      </div>
+                    )}
+
+                    {conexionSeleccionada.requisitoNivelEquipo && (
+                      <div className="flex items-start gap-1 text-[8px] sm:text-[9px] retro">
+                        {conexionSeleccionada.requisitoNivelEquipo.cumplido ? (
+                          <CheckCircle2 className="size-3 text-emerald-400 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="size-3 text-red-400 shrink-0 mt-0.5" />
+                        )}
+                        <span className={conexionSeleccionada.requisitoNivelEquipo.cumplido ? "text-emerald-300" : "text-slate-300"}>
+                          Poder de equipo: Requiere {conexionSeleccionada.requisitoNivelEquipo.cantidadCriaturas} criatura(s) Nv.{conexionSeleccionada.requisitoNivelEquipo.nivelRequerido}+ (Tienes: {conexionSeleccionada.requisitoNivelEquipo.cantidadActual ?? 0} · Mejor: Nv.{conexionSeleccionada.requisitoNivelEquipo.nivelMaximoActual})
+                        </span>
+                      </div>
+                    )}
+
+                    {(conexionSeleccionada.detalleProgreso || conexionSeleccionada.requisito) && (
+                      <p className="retro text-[8px] sm:text-[9px] text-slate-300 leading-relaxed">
+                        {conexionSeleccionada.detalleProgreso ?? conexionSeleccionada.requisito}
+                      </p>
+                    )}
+
+                    {conexionSeleccionada.cumpleRequisito && (
+                      <Badge className="retro text-[7px] mt-1 bg-amber-950 text-amber-300 border border-amber-400">
+                        LISTA PARA DESBLOQUEAR
+                      </Badge>
+                    )}
+                  </div>
+                ) : conexionSeleccionada?.requisito ? (
+                  <div className="pt-1 flex items-start gap-1.5 text-xs text-slate-300 border-t-2 border-black mt-3">
+                    <CheckCircle2 className="size-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] sm:text-xs">{conexionSeleccionada.requisito}</p>
+                  </div>
+                ) : null}
 
                 {!conexionSeleccionada && nodoSeleccionado.id !== ubicacion?.ubicacionId && (
                   <p className="text-[11px] text-slate-400 pt-1">
@@ -783,6 +885,7 @@ export function PantallaHubUbicacion() {
                     <Button
                       type="button"
                       disabled={Boolean(desbloqueandoId) || viajando}
+                      aria-busy={desbloqueandoId === nodoSeleccionado.id}
                       onClick={() => handleDesbloquearRuta(nodoSeleccionado.id)}
                       className="retro text-[9px] border-2 border-black bg-amber-500 text-black hover:bg-amber-400"
                     >
@@ -831,3 +934,5 @@ export function PantallaHubUbicacion() {
     </div>
   );
 }
+
+export default PantallaHubUbicacion;

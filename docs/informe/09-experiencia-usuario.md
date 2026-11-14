@@ -1639,7 +1639,7 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 
 ---
 
-## 24. Calibración de Escenarios Reales, Mapa Volcánico, Ataques Precisos y Audio Ambiente
+## 25. Calibración de Escenarios Reales, Mapa Volcánico, Ataques Precisos y Audio Ambiente
 
 ### 24.1 Problemas Detectados Tras la Integración de Escenarios WebP
 1. **Superposición CSS sobre las ilustraciones de combate (`BattlefieldBackground.tsx`):** La rejilla 2.5D y pilares procedurales se renderizaban también cuando la imagen `.webp` real ya estaba cargada, tapando la iluminación y el relieve natural de los escenarios.
@@ -1671,3 +1671,100 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 - `pnpm.cmd --filter web lint`: **0 errores** bajo `oxlint` (37 advertencias preexistentes).
 - `pnpm.cmd --filter web build`: compilación de producción (`tsc -b && vite build`) completada exitosamente.
 - **Reglas de negocio:** Las reglas del combate por turnos, contratos de API y esquema de base de datos permanecen intactos.
+
+---
+
+## 23. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
+
+### 23.1 Problema que Resuelve y Objetivo
+Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjetas de rutas, la experiencia seguía percibiéndose como una página web tradicional con scroll vertical en lugar de un videojuego RPG. Esta mejora migra el Hub (`/hub`) a una **interfaz de juego a pantalla completa (`100dvh`)** con estética **16-bit dark fantasy (tenebrosa)**, permitiendo explorar el archipiélago de Aethelgard directamente sobre un lienzo interactivo, inspeccionar cada isla antes de decidir si viajar y presenciar una transición animada 2D con la criatura líder del equipo al desplazarse entre zonas.
+
+---
+
+### 23.2 Arquitectura e Implementación
+
+#### A. Cartografía Virtual y Paleta Tenebrosa (`apps/web/src/lib/mapa-mundo.ts`)
+- **Espacio Lógico de 9 Islas:** Define `DIMENSIONES_MAPA_MUNDO` (`1200 × 760` unidades) y `CONFIGURACION_ISLAS_MAPA` para los 9 nodos canónicos (`LOC-01` a `LOC-03`, `ZON-01` a `ZON-06`) conectados según `CONEXIONES_AETHELGARD`.
+- **Ambientación Oscura (Dark Fantasy):** Cada bioma cuenta con paleta nocturna (`colorSuelo`, `colorBorde`, `colorCielo`, `colorAcento`) acorde a `apps/web/public/assets/README.md`: mar abisal oscuro, puerto con cabañas sombrías, estepa crepuscular con monolitos rúnicos, lago bioluminiscente, bosque maldito, riscos de obsidiana, bastión gótico, volcán con lava pulsante y cumbres lunares.
+
+#### B. Mapa Navegable en `<canvas>` (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`)
+- **Capas `absolute` + `relative`:** El `<canvas>` ocupa el fondo con `position: absolute; inset: 0`, mientras los marcadores de cada isla y los controles de cámara flotan en una capa `relative` sincronizada.
+- **Navegación y Zoom Responsive:**
+  - Paneo libre mediante `PointerEvents` (arrastre con ratón o pantalla táctil en móvil).
+  - Zoom con rueda del ratón (`0.55x` a `2.0x`) y botonera flotante (`+`, `-`, `Centrar`), con centrado automático en la ubicación actual al cargar o cambiar de tamaño de pantalla.
+- **Renderizado 2D Provisional y Soporte de Arte Final:**
+  - Dibuja olas nocturnas, peñascos, puentes de madera desgastada (continuos si la ruta está desbloqueada, punteados si está sellada), niebla desplazándose y detalles animados por bioma (faroles ámbar parpadeantes, runas, esporas espectrales y lava).
+  - Si el equipo coloca una ilustración definitiva en `/assets/zonas/mapa-mundo.webp`, el canvas la carga automáticamente como fondo; mientras tanto opera con el renderizado procedural 16-bit.
+  - Muestra el sprite de la **criatura líder** (`equipo[0]`) con el distintivo `TÚ AQUÍ` sobre la isla actual.
+  - Viñeta radial calibrada a las dimensiones reales del canvas escaladas por `devicePixelRatio` (`canvas.width`, `canvas.height`) para evitar cortes rectangulares en pantallas con escalado DPI.
+
+#### C. Pantalla de Carga / Transición Animada 2D (`apps/web/src/components/mundo/TransicionViaje2D.tsx`)
+- **Escena Nocturna de Travesía (~1.85 s):** Al confirmar un viaje (`api.viajar()`), despliega un `<canvas>` 2D con transición de cielo entre el bioma origen y destino, luna pálida, niebla en parallax, mar abisal y un puente viejo iluminado por faroles ámbar parpadeantes.
+- **Animación del Líder y Audio Retro:** El sprite de la criatura líder (obtenido de `api.obtenerEquipo()`, invertido horizontalmente con `ctx.scale(-1, 1)` porque los sprites canónicos miran a la izquierda, con fallback seguro a `placeholder-criatura.svg`) avanza saltando por el puente generando partículas de polvo y disparando `reproducirSonido("paso")` durante el trayecto y `reproducirSonido("confirmar")` al llegar.
+
+#### D. Hub a Pantalla Completa y HUD Flotante (`LayoutPrincipal.tsx` y `PantallaHubUbicacion.tsx`)
+- **Viewport de Juego (`100dvh`):** `LayoutPrincipal.tsx` aplica el modo sin scroll ni cabecera/pie web a `/hub` (igual que `/combate`).
+- **HUD Flotante `relative`:**
+  - **Superior:** Ficha del explorador (avatar del líder, nombre, nivel máximo, ubicación actual y `%` de progreso), saldo de monedas y botón de engrane (`Settings`) con acceso a `Kit de interfaz`, `Créditos` y cierre de sesión (`SALIR`).
+  - **Laterales:** Accesos rápidos flotantes a `Compendio`, `Bitácora`, `Almacén` (izquierda) y `Santuario`, `Tienda / Bazar`, `Inventario` (derecha), indicando con candado cuando un servicio no está habilitado en la localidad actual.
+  - **Inferior (Dock):** Ranuras rápidas del equipo activo (enlace a `/equipo`) y botón principal central **`EXPLORAR`** (en zonas silvestres) o **`VIAJAR`** (en localidades seguras).
+- **Modal de Decisión de Viaje (`AlertDialog`):** Al hacer clic en cualquier isla del mapa se abre un cuadro retro `8bitcn/ui` con vista previa de la zona, rango de fauna, barra de cartografía, requisitos de desbloqueo y acciones según estado (`EMPRENDER CAMINO`, `DESBLOQUEAR SENDA`, `EXPLORAR ZONA` o `PERMANECER`).
+- **Soberanía del Servidor Intacta:** No se modificó ningún endpoint ni regla de negocio en `apps/api`; toda validación de viaje, desbloqueo y equipo sigue residiendo en el Back-End.
+
+---
+
+### 23.3 Control de Archivos (Agregados y Modificados)
+
+| Estado | Archivo | Propósito |
+| :---: | :--- | :--- |
+| **Agregado** | `apps/web/src/lib/mapa-mundo.ts` | Coordenadas virtuales (`1200×760`) y paletas dark-fantasy de las 9 islas. |
+| **Agregado** | `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Mapa interactivo en `<canvas>` (`absolute`) con paneo, zoom, niebla, viñeta DPR y nodos `relative`. |
+| **Agregado** | `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Pantalla de carga 2D animada con la criatura líder cruzando el puente y sonido retro. |
+| **Editado** | `apps/web/src/components/LayoutPrincipal.tsx` | Habilita pantalla completa `100dvh` para la ruta `/hub`. |
+| **Editado** | `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Migra el Hub al HUD flotante sobre el mapa interactivo y conecta `TransicionViaje2D`. |
+| **Editado** | `apps/web/test/verificacion-hub-mundo.spec.ts` | Actualiza las aserciones estáticas para validar `MapaInteractivoCanvas` y `TransicionViaje2D`. |
+
+---
+
+### 23.4 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript.
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
+- **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`).
+
+---
+
+## 24. Sub-Fase 10o: Consolidación del Hub RPG en Canvas Interactivo, Transición 2D y Paridad Táctica (`PantallaHubUbicacion.tsx`)
+
+### 24.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras integrar el PR #53 (`funcionalidad(hub): integrar mapa interactivo navegable y transicion 2d`) en la rama `desarrollo`, se ejecutó una auditoría técnica y heurística sobre el nuevo Hub interactivo sobre `<canvas>` detectando tres brechas críticas respecto a la especificación alcanzada en las subfases 10m y 10n:
+1. **Condición de carrera en la transición 2D de viaje (`TransicionViaje2D.tsx` y `PantallaHubUbicacion.tsx`):** La referencia `onCompletadoRef.current = onCompletado` se actualizaba directamente durante el render y el cierre de la transición dependía de un estado reactivo `pendienteTrasAnimacion` acoplado a un `useEffect`. Si la petición `api.viajarAUbicacion` demoraba más de `1850ms` mientras la animación finalizaba primero, el flujo quedaba expuesto a un bloqueo de carga, además de generar advertencias de `oxlint` por reglas de hooks.
+2. **Pérdida de paridad táctica de las Subfases 10m/10n en el Hub (`PantallaHubUbicacion.tsx`):** Al migrar a tarjetas flotantes y modal de isla sobre el canvas, se omitieron el indicador `rangoDomador` en el HUD superior, la sección de fauna del hábitat (`especiesHabitantes`), el checklist completo de progreso y requisitos de desbloqueo (`requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso`), el atributo `aria-busy` en el botón de desbloqueo, el confinamiento de altura del modal (`max-h-[90dvh] overflow-y-auto overflow-x-hidden`) y la exportación por defecto (`export default PantallaHubUbicacion;`).
+3. **Bloqueo en consulta de servicios laterales e indicador en zonas salvajes:** El acceso a rutas laterales restringía innecesariamente el modo consulta en pantallas que ya lo soportan (`PantallaTienda`, `PantallaCuracion`, `PantallaAlmacen`, `PantallaHistorial`), requiriendo diferenciar claramente la navegación de consulta frente a la disponibilidad operativa real (`activoEnZona` según `esSegura`).
+
+### 24.2 Mejoras Implementadas
+
+#### A. Identidad Visual Retro y Paridad Táctica (`PantallaHubUbicacion.tsx`)
+- Restauración del distintivo `rangoDomador` dentro de la tarjeta superior del HUD flotante sobre el mapa interactivo.
+- Incorporación del bloque táctico **"Fauna del Hábitat"** listando `especiesHabitantes` dentro del detalle de la isla seleccionada.
+- Reincorporación del panel **"PROGRESO DE DESBLOQUEO"** con `requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso` y la indicación de ruta **"LISTA PARA DESBLOQUEAR"**.
+- Confinamiento responsivo del cuadro de diálogo (`AlertDialogContent`) mediante `max-h-[90dvh] overflow-y-auto overflow-x-hidden` para evitar desbordamiento en pantallas compactas.
+
+#### B. Componentes `8bitcn/ui`, Accesibilidad y Reglas del Proyecto (R1)
+- Preservación integral de iconografía SVG de Lucide sin emojis Unicode en los módulos nuevos y modificados (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`), validada por pruebas automatizadas.
+- Añadido de `aria-busy` en el botón de desbloqueo territorial para prevenir dobles envíos durante la llamada al servidor.
+- Restauración de `export default PantallaHubUbicacion;` para mantener compatibilidad con importaciones existentes.
+
+#### C. Sincronización Determinista de `TransicionViaje2D` y Higiene de Hooks
+- En `apps/web/src/components/mundo/TransicionViaje2D.tsx`, la sincronización de `onCompletadoRef.current = onCompletado;` se trasladó dentro de `useEffect`, evitando mutar referencias durante el render.
+- En `apps/web/src/paginas/PantallaHubUbicacion.tsx`, se reemplazó el patrón de estado reactivo `pendienteTrasAnimacion` + `useEffect` por referencias deterministas (`montadoRef`, `animacionCompletadaRef`, `viajePendienteRef`) coordinadas mediante el callback `finalizarViajeSiListo`, eliminando el riesgo de bloqueo cuando la API supera el tiempo mínimo de animación y erradicando las advertencias de `oxlint` en los archivos modificados.
+
+#### D. Reglas de Servidor y Consulta Libre de Servicios Laterales
+- En `renderBotonFlotanteServicio` dentro de `PantallaHubUbicacion.tsx`, los botones laterales permiten navegar libremente a sus rutas en modo consulta, mientras el indicador visual `activoEnZona` evalúa con precisión la regla de zonas seguras del servidor (`esSegura === false` marca como inactivos operativamente `CURACION`, `TIENDA` y `ALMACEN` fuera de localidades seguras).
+
+### 24.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores (`LINT=0`) sobre 88 archivos evaluados (34 advertencias preexistentes en módulos previos; 0 advertencias en `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`, `MapaInteractivoCanvas.tsx` y `verificacion-hub-mundo.spec.ts`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** 99 de 99 pruebas aprobadas (0 fallos, 0 omitidas), ampliando `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar ausencia de emojis en `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`, presencia de `requisitoCartografia`, `requisitoNivelEquipo`, `especiesHabitantes`, `rangoDomador`, `finalizarViajeSiListo`, `export default PantallaHubUbicacion` y cobertura de las 9 islas en `CONFIGURACION_ISLAS_MAPA`.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, 2160 módulos transformados en `1.82s`).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** 130 de 130 pruebas aprobadas en 41 suites (0 fallos, 0 omitidas).

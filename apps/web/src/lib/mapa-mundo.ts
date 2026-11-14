@@ -1,11 +1,11 @@
 /**
- * Coordenadas virtuales, paletas de bioma dark-fantasy y metadatos visuales del mapa 2D de Aethelgard.
- * El lienzo base mide 1200 x 760 unidades lógicas y se adapta con paneo y zoom responsive.
+ * Coordenadas calibradas sobre la ilustración pixel-art maestra (1679 x 937),
+ * paletas originales de cada bioma y compensaciones visuales del mapa interactivo de Aethelgard.
  */
 
 export const DIMENSIONES_MAPA_MUNDO = {
-  ancho: 1200,
-  alto: 760,
+  ancho: 1679,
+  alto: 937,
 } as const;
 
 export interface ConfiguracionIslaMapa {
@@ -14,6 +14,8 @@ export interface ConfiguracionIslaMapa {
   y: number;
   radioX: number;
   radioY: number;
+  placaOffsetX?: number;
+  placaOffsetY?: number;
   bioma: "puerto" | "pradera" | "lago" | "puesto" | "bosque" | "riscos" | "bastion" | "volcan" | "glaciar";
   colorSuelo: string;
   colorBorde: string;
@@ -25,10 +27,12 @@ export interface ConfiguracionIslaMapa {
 export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   "LOC-01": {
     id: "LOC-01",
-    x: 340,
-    y: 590,
-    radioX: 118,
-    radioY: 82,
+    x: 285,
+    y: 710,
+    radioX: 185,
+    radioY: 145,
+    placaOffsetX: 0,
+    placaOffsetY: 168,
     bioma: "puerto",
     colorSuelo: "#24352a",
     colorBorde: "#4a3e30",
@@ -38,10 +42,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-01": {
     id: "ZON-01",
-    x: 185,
-    y: 385,
-    radioX: 115,
-    radioY: 84,
+    x: 255,
+    y: 415,
+    radioX: 185,
+    radioY: 98,
+    placaOffsetX: -115,
+    placaOffsetY: 92,
     bioma: "pradera",
     colorSuelo: "#2f3824",
     colorBorde: "#211d18",
@@ -51,10 +57,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-02": {
     id: "ZON-02",
-    x: 730,
-    y: 595,
-    radioX: 118,
-    radioY: 80,
+    x: 865,
+    y: 740,
+    radioX: 185,
+    radioY: 135,
+    placaOffsetX: 0,
+    placaOffsetY: 158,
     bioma: "lago",
     colorSuelo: "#142e36",
     colorBorde: "#0b1a22",
@@ -64,10 +72,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "LOC-02": {
     id: "LOC-02",
-    x: 475,
-    y: 390,
-    radioX: 102,
-    radioY: 74,
+    x: 660,
+    y: 475,
+    radioX: 145,
+    radioY: 105,
+    placaOffsetX: -18,
+    placaOffsetY: 112,
     bioma: "puesto",
     colorSuelo: "#2b3025",
     colorBorde: "#36281e",
@@ -77,10 +87,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-03": {
     id: "ZON-03",
-    x: 710,
-    y: 415,
-    radioX: 108,
-    radioY: 76,
+    x: 1365,
+    y: 705,
+    radioX: 215,
+    radioY: 150,
+    placaOffsetX: 0,
+    placaOffsetY: 168,
     bioma: "bosque",
     colorSuelo: "#11261b",
     colorBorde: "#09150f",
@@ -90,10 +102,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-04": {
     id: "ZON-04",
-    x: 685,
-    y: 255,
-    radioX: 96,
-    radioY: 66,
+    x: 1010,
+    y: 355,
+    radioX: 205,
+    radioY: 108,
+    placaOffsetX: 0,
+    placaOffsetY: 112,
     bioma: "riscos",
     colorSuelo: "#2c2829",
     colorBorde: "#1a1718",
@@ -103,10 +117,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "LOC-03": {
     id: "LOC-03",
-    x: 565,
-    y: 130,
-    radioX: 106,
-    radioY: 72,
+    x: 505,
+    y: 205,
+    radioX: 195,
+    radioY: 132,
+    placaOffsetX: -36,
+    placaOffsetY: 136,
     bioma: "bastion",
     colorSuelo: "#262d36",
     colorBorde: "#171b22",
@@ -116,10 +132,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-05": {
     id: "ZON-05",
-    x: 985,
-    y: 345,
-    radioX: 118,
-    radioY: 84,
+    x: 1465,
+    y: 395,
+    radioX: 175,
+    radioY: 128,
+    placaOffsetX: 35,
+    placaOffsetY: 122,
     bioma: "volcan",
     colorSuelo: "#1c1317",
     colorBorde: "#0f090b",
@@ -129,10 +147,12 @@ export const CONFIGURACION_ISLAS_MAPA: Record<string, ConfiguracionIslaMapa> = {
   },
   "ZON-06": {
     id: "ZON-06",
-    x: 895,
-    y: 135,
-    radioX: 118,
-    radioY: 80,
+    x: 1050,
+    y: 128,
+    radioX: 245,
+    radioY: 94,
+    placaOffsetX: 118,
+    placaOffsetY: 114,
     bioma: "glaciar",
     colorSuelo: "#2c3d4f",
     colorBorde: "#17222e",
@@ -146,10 +166,10 @@ export function obtenerConfiguracionIsla(ubicacionId: string): ConfiguracionIsla
   return (
     CONFIGURACION_ISLAS_MAPA[ubicacionId] ?? {
       id: ubicacionId,
-      x: 600,
-      y: 380,
-      radioX: 100,
-      radioY: 70,
+      x: 840,
+      y: 468,
+      radioX: 165,
+      radioY: 110,
       bioma: "pradera",
       colorSuelo: "#24352a",
       colorBorde: "#1a1718",

@@ -734,6 +734,57 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
   assert.strictEqual(canvasCodigo.includes("data-placa-isla"), false);
   assert.strictEqual(canvasCodigo.includes("data-boton-placas-mapa"), false);
   assert.strictEqual(canvasCodigo.includes("mostrarPlacas"), false);
+
+  // 7. Detección de columnas/pilares de puente tocando agua (y rechazo de techos de arcos aéreos)
+  const alfaPilares = new Uint8Array(MASCARA_OCEANO_ANCHO * MASCARA_OCEANO_ALTO);
+  const pintarRectPilar = (x0: number, y0: number, x1: number, y1: number) => {
+    const mx0 = Math.max(0, Math.floor(x0 * ESCALA_MASCARA_OCEANO));
+    const mx1 = Math.min(MASCARA_OCEANO_ANCHO - 1, Math.ceil(x1 * ESCALA_MASCARA_OCEANO));
+    const my0 = Math.max(0, Math.floor(y0 * ESCALA_MASCARA_OCEANO));
+    const my1 = Math.min(MASCARA_OCEANO_ALTO - 1, Math.ceil(y1 * ESCALA_MASCARA_OCEANO));
+    for (let my = my0; my <= my1; my++) {
+      for (let mx = mx0; mx <= mx1; mx++) {
+        alfaPilares[my * MASCARA_OCEANO_ANCHO + mx] = 255;
+      }
+    }
+  };
+  // Tablero del puente sobre LOC-01 <-> ZON-02 (y ~ 710) con dos pilares verticales hasta y = 746 y vano de arco central
+  pintarRectPilar(460, 704, 592, 720);
+  pintarRectPilar(488, 720, 504, 746);
+  pintarRectPilar(548, 720, 564, 746);
+
+  const mascaraPilares = analizarMascaraAlfaOceano(
+    alfaPilares,
+    MASCARA_OCEANO_ANCHO,
+    MASCARA_OCEANO_ALTO,
+    ESCALA_MASCARA_OCEANO,
+  );
+  const datosPilares = generarDatosOceanoVivo(mascaraPilares);
+  const puntosPilar = datosPilares.puntosEspuma.filter((p) => p.esPilar);
+
+  assert.ok(
+    puntosPilar.length >= 2,
+    `Deben detectarse al menos 2 puntos de espuma en pilares de puente, detectados=${puntosPilar.length}`,
+  );
+  assert.ok(
+    puntosPilar.some((p) => Math.abs(p.x - 496) <= 14 && p.y >= 748 && p.y <= 756),
+    "El pilar izquierdo debe recibir espuma animada en su base sobre el agua",
+  );
+  assert.ok(
+    puntosPilar.some((p) => Math.abs(p.x - 556) <= 14 && p.y >= 748 && p.y <= 756),
+    "El pilar derecho debe recibir espuma animada en su base sobre el agua",
+  );
+  assert.strictEqual(
+    puntosPilar.some((p) => p.x >= 514 && p.x <= 538 && p.y >= 720 && p.y <= 736),
+    false,
+    "El techo aéreo del arco central no debe recibir espuma de columna",
+  );
+  for (const p of puntosPilar) {
+    assert.ok(
+      consultarDistanciaMar(mascaraPilares, p.x, p.y, false) > 0,
+      `Espuma de pilar en (${p.x}, ${p.y}) invadió mampostería sólida`,
+    );
+  }
 });
 
 

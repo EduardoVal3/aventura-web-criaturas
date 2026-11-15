@@ -519,7 +519,6 @@ test("Subfase 10p/10q/10r: Calibración sobre mapa transparente WebP (1616x897),
   assert.ok(canvasCodigo.includes("dibujarRespaldoIslasBase"));
   assert.ok(canvasCodigo.includes("pinchRef"));
   assert.ok(canvasCodigo.includes("centrarEnUbicacion"));
-  assert.ok(canvasCodigo.includes("placaOffsetX"));
   assert.strictEqual(canvasCodigo.includes("obtenerImagenZona"), false);
 });
 
@@ -675,7 +674,7 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
   assert.ok(canvasCodigo.includes("dibujarAvesMarinasLejanas"));
   assert.ok(canvasCodigo.includes("vinetaCacheRef"));
 
-  // 5. Presencia prolongada y expansión a mares exteriores de abisales y siluetas
+  // 5. Presencia prolongada y equilibrada (sin saturar) de abisales y siluetas hacia aguas abiertas
   assert.ok(
     datos.siluetasSubmarinas.length >= 15,
     "Debe poblar siluetas submarinas tanto en canales como en aguas exteriores abiertas",
@@ -687,9 +686,12 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     "Las siluetas submarinas deben expandirse al océano abierto exterior",
   );
   assert.ok(
-    datos.avistamientosAbisales.length >= 10,
-    "Debe distribuir múltiples avistamientos de kraken, mosasaurus y leviatán por el mapa",
+    datos.avistamientosAbisales.length >= 5 && datos.avistamientosAbisales.length <= 6,
+    "Debe mantener avistamientos espaciados (5-6) sin saturar el mapa",
   );
+  const krakensSup = datos.avistamientosAbisales.filter((a) => a.especie === "kraken").length;
+  const leviatanesSup = datos.avistamientosAbisales.filter((a) => a.especie === "leviatan").length;
+  assert.ok(krakensSup <= 2 && leviatanesSup <= 2, "Kraken y leviatán no deben saturar el mapa");
   assert.ok(
     datos.avistamientosAbisales.some(
       (a) => a.centro.x < 0 || a.centro.x > 1616 || a.centro.y < 0 || a.centro.y > 897,
@@ -698,12 +700,12 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
   );
   for (const a of datos.avistamientosAbisales) {
     assert.ok(
-      a.duracionAparicion / a.duracionCiclo >= 0.78,
-      `Avistamiento ${a.especie} debe mantener presencia prolongada (>=78% del ciclo)`,
+      a.duracionAparicion / a.duracionCiclo >= 0.78 && a.duracionAparicion >= 14_000,
+      `Avistamiento ${a.especie} debe mantener presencia prolongada (>=14s y >=78% del ciclo)`,
     );
   }
 
-  // 6. Eliminación de aros punteados, calibración de puentes y controles de placas en MapaInteractivoCanvas
+  // 6. Eliminación de aros punteados, calibración de puentes, tooltip con nombre real y eliminación total de tarjetas/botón
   const dioramasCodigo = readFileSync(
     join(__dirname, "../src/lib/mapa-dioramas.ts"),
     "utf-8",
@@ -724,10 +726,14 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     false,
     "El badge animado debe mostrar únicamente 'Tú'",
   );
-  assert.ok(canvasCodigo.includes("mostrarPlacas"));
-  assert.ok(canvasCodigo.includes("escalaPlaca"));
-  assert.ok(canvasCodigo.includes("data-boton-placas-mapa"));
-  assert.ok(canvasCodigo.includes("data-placa-isla"));
+  assert.strictEqual(
+    canvasCodigo.includes("ETIQUETA_BIOMA"),
+    false,
+    "El tooltip al pasar el cursor debe mostrar únicamente el nombre real de la zona sin etiquetas inventadas",
+  );
+  assert.strictEqual(canvasCodigo.includes("data-placa-isla"), false);
+  assert.strictEqual(canvasCodigo.includes("data-boton-placas-mapa"), false);
+  assert.strictEqual(canvasCodigo.includes("mostrarPlacas"), false);
 });
 
 

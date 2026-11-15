@@ -47,72 +47,72 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
   {
     origenId: "LOC-01",
     destinoId: "ZON-01",
-    inicio: { x: 146, y: 582 },
-    control: { x: 148, y: 514 },
-    fin: { x: 250, y: 488 },
+    inicio: { x: 158, y: 576 },
+    control: { x: 175, y: 516 },
+    fin: { x: 248, y: 496 },
   },
   {
     origenId: "LOC-01",
     destinoId: "ZON-02",
-    inicio: { x: 412, y: 704 },
-    control: { x: 516, y: 702 },
-    fin: { x: 622, y: 704 },
+    inicio: { x: 424, y: 720 },
+    control: { x: 526, y: 718 },
+    fin: { x: 628, y: 720 },
   },
   {
     origenId: "ZON-01",
     destinoId: "LOC-02",
-    inicio: { x: 332, y: 466 },
-    control: { x: 412, y: 432 },
-    fin: { x: 474, y: 462 },
+    inicio: { x: 336, y: 466 },
+    control: { x: 408, y: 439 },
+    fin: { x: 474, y: 468 },
   },
   {
     origenId: "ZON-02",
     destinoId: "ZON-03",
-    inicio: { x: 1015, y: 720 },
-    control: { x: 1075, y: 688 },
-    fin: { x: 1134, y: 720 },
+    inicio: { x: 1018, y: 725 },
+    control: { x: 1076, y: 704 },
+    fin: { x: 1138, y: 725 },
   },
   {
     origenId: "LOC-02",
     destinoId: "ZON-03",
-    inicio: { x: 775, y: 515 },
-    control: { x: 948, y: 446 },
-    fin: { x: 1132, y: 608 },
+    inicio: { x: 794, y: 503 },
+    control: { x: 956, y: 422 },
+    fin: { x: 1134, y: 594 },
   },
   {
     origenId: "LOC-02",
     destinoId: "ZON-04",
-    inicio: { x: 740, y: 422 },
-    control: { x: 820, y: 386 },
-    fin: { x: 892, y: 348 },
+    inicio: { x: 736, y: 415 },
+    control: { x: 810, y: 382 },
+    fin: { x: 886, y: 352 },
   },
   {
     origenId: "ZON-04",
     destinoId: "LOC-03",
-    inicio: { x: 744, y: 286 },
-    control: { x: 684, y: 242 },
-    fin: { x: 614, y: 248 },
+    inicio: { x: 738, y: 288 },
+    control: { x: 682, y: 256 },
+    fin: { x: 614, y: 250 },
   },
   {
     origenId: "ZON-04",
     destinoId: "ZON-05",
-    inicio: { x: 1116, y: 336 },
-    control: { x: 1190, y: 312 },
-    fin: { x: 1262, y: 344 },
+    inicio: { x: 1122, y: 346 },
+    control: { x: 1188, y: 326 },
+    fin: { x: 1256, y: 353 },
   },
   {
     origenId: "LOC-03",
     destinoId: "ZON-06",
-    inicio: { x: 622, y: 166 },
-    control: { x: 697, y: 104 },
-    fin: { x: 784, y: 98 },
+    inicio: { x: 626, y: 168 },
+    control: { x: 696, y: 122 },
+    fin: { x: 780, y: 122 },
   },
   {
     origenId: "ZON-05",
     destinoId: "ZON-06",
-    inicio: { x: 1328, y: 224 },
-    control: { x: 1276, y: 152 },
-    fin: { x: 1206, y: 154 },
+    inicio: { x: 1328, y: 246 },
+    control: { x: 1270, y: 192 },
+    fin: { x: 1214, y: 178 },
   },
 ];
 
@@ -605,21 +605,21 @@ function dibujarPuentesYRutasVivas(
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     ctx.strokeStyle = colorHalo;
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 3.6;
     ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(p0.x, p0.y);
     ctx.quadraticCurveTo(p1.x, p1.y, p2.x, p2.y);
     ctx.stroke();
 
-    for (let k = 0; k < 4; k++) {
-      const u = (t * 0.00048 + k * 0.25) % 1;
+    for (let k = 0; k < 5; k++) {
+      const u = (t * 0.00046 + k * 0.2) % 1;
       const inv = 1 - u;
       const ox = inv * inv * p0.x + 2 * inv * u * p1.x + u * u * p2.x;
       const oy = inv * inv * p0.y + 2 * inv * u * p1.y + u * u * p2.y;
       ctx.fillStyle = colorOrbe;
       ctx.beginPath();
-      ctx.arc(ox, oy, 3.8, 0, Math.PI * 2);
+      ctx.arc(ox, oy, 3.2, 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -628,7 +628,7 @@ function dibujarPuentesYRutasVivas(
 
 /**
  * Superpone toda la capa viva 60 FPS recalibrada píxel a píxel sobre la lámina transparente (1616x897):
- * velos de niebla ceñidos a zonas bloqueadas, aro rúnico de ubicación actual, orbes en 10 puentes
+ * velos de niebla ceñidos a zonas bloqueadas, orbes guiados sobre los 10 puentes reales
  * y efectos ambientales sincronizados con cada monumento, cascada, cráter, antorcha y cristal.
  */
 export function dibujarCapaVivaMapa(
@@ -642,7 +642,7 @@ export function dibujarCapaVivaMapa(
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
 
-  // 1. Velo oscuro ceñido a islas bloqueadas y aro rúnico costero en la ubicación actual
+  // 1. Velo oscuro ceñido a islas aún bloqueadas
   for (const nodo of nodos) {
     const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
     if (!isla) continue;
@@ -664,26 +664,6 @@ export function dibujarCapaVivaMapa(
       const geomBloq = generarGeometriaDiorama(isla);
       trazarPoligonoLocal(ctx, geomBloq.contornoLocal, isla.x, isla.y, 1.02);
       ctx.fill();
-      ctx.restore();
-    }
-
-    if (nodo.id === ubicacionActualId) {
-      const geom = generarGeometriaDiorama(isla);
-      const pulso = 0.72 + Math.sin(t * 0.004) * 0.28;
-      ctx.save();
-      ctx.translate(isla.x, isla.y + 8);
-      ctx.setLineDash([13, 9]);
-      ctx.lineDashOffset = -(t * 0.032);
-      ctx.strokeStyle = `rgba(20, 209, 232, ${0.88 * pulso})`;
-      ctx.lineWidth = 3;
-      trazarPoligonoLocal(ctx, geom.contornoLocal, 0, 0, 1.01);
-      ctx.stroke();
-
-      ctx.setLineDash([]);
-      ctx.strokeStyle = `rgba(56, 189, 248, ${0.24 * pulso})`;
-      ctx.lineWidth = 7.5;
-      trazarPoligonoLocal(ctx, geom.contornoLocal, 0, 0, 1.03);
-      ctx.stroke();
       ctx.restore();
     }
   }

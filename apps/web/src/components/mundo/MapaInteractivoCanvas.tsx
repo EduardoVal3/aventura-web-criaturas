@@ -24,6 +24,7 @@ import {
 import {
   dibujarAguasCosterasMapa,
   dibujarCapaVivaMapa,
+  dibujarFondoCieloMapa,
   dibujarFondoOceanoContinuo,
   dibujarRespaldoIslasBase,
 } from "@/lib/mapa-dioramas";
@@ -237,6 +238,7 @@ export function MapaInteractivoCanvas({
       const recursosOceano = recursosOceanoRef.current;
       if (mapaImagenLista && mapaImagenRef.current && recursosOceano) {
         dibujarOceanoVivo(ctx, recursosOceano, tiempo, reducirMovimiento, vistaMundo);
+        dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento);
         ctx.drawImage(
           mapaImagenRef.current,
           0,
@@ -252,12 +254,15 @@ export function MapaInteractivoCanvas({
           tiempo,
           reducirMovimiento,
           recursosOceano.mascara,
+          true,
         );
         dibujarAvesMarinasLejanas(ctx, recursosOceano, tiempo, reducirMovimiento);
       } else {
         dibujarFondoOceanoContinuo(ctx, tiempo, reducirMovimiento, vistaMundo);
         dibujarAguasCosterasMapa(ctx, nodos, tiempo, reducirMovimiento);
-        if (mapaImagenLista && mapaImagenRef.current) {
+        const hayMapaReal = Boolean(mapaImagenLista && mapaImagenRef.current);
+        if (hayMapaReal && mapaImagenRef.current) {
+          dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento);
           ctx.drawImage(
             mapaImagenRef.current,
             0,
@@ -276,6 +281,7 @@ export function MapaInteractivoCanvas({
           tiempo,
           reducirMovimiento,
           recursosOceano?.mascara,
+          hayMapaReal,
         );
       }
 

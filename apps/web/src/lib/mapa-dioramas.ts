@@ -11,7 +11,10 @@ import {
   type ConfiguracionIslaMapa,
 } from "./mapa-mundo.ts";
 import type { MascaraOceano } from "./oceano-vivo.ts";
-import { dibujarDioramaCumbre } from "./diorama-cumbre.ts";
+import {
+  dibujarCieloAuroraCumbre,
+  dibujarDioramaCumbre,
+} from "./diorama-cumbre.ts";
 
 const PASOS_CONTORNO = 72;
 
@@ -629,6 +632,21 @@ function dibujarPuentesYRutasVivas(
 }
 
 /**
+ * Dibuja fenómenos celestes de profundidad (aurora boreal de La Cumbre) detrás de la lámina WebP
+ * para que las cumbres nevadas y cristales se recorten con nitidez frente al cielo nocturno.
+ */
+export function dibujarFondoCieloMapa(
+  ctx: CanvasRenderingContext2D,
+  nodos: NodoMapaTerritorial[],
+  tiempo: number,
+  reducirMovimiento: boolean,
+): void {
+  const cumbre = nodos.find((n) => n.id === "ZON-06");
+  if (!cumbre) return;
+  dibujarCieloAuroraCumbre(ctx, Boolean(cumbre.desbloqueada), tiempo, reducirMovimiento);
+}
+
+/**
  * Superpone toda la capa viva 60 FPS recalibrada píxel a píxel sobre la lámina transparente (1616x897):
  * velos de niebla ceñidos a zonas bloqueadas, orbes guiados sobre los 10 puentes reales
  * y efectos ambientales sincronizados con cada monumento, cascada, cráter, antorcha y cristal.
@@ -641,6 +659,7 @@ export function dibujarCapaVivaMapa(
   tiempo: number,
   reducirMovimiento: boolean,
   mascaraOceano?: MascaraOceano | null,
+  auroraDetrasDibujada = false,
 ): void {
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
@@ -1071,6 +1090,7 @@ export function dibujarCapaVivaMapa(
       tiempo,
       reducirMovimiento,
       mascaraOceano,
+      auroraDetrasDibujada,
     );
   }
 }

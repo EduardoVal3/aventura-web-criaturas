@@ -247,6 +247,8 @@ interface SpritesCumbreCache {
   resplandorEspectral: HTMLCanvasElement;
   cortinaEsmeralda: HTMLCanvasElement;
   cortinaVioleta: HTMLCanvasElement;
+  rayoPilar: HTMLCanvasElement;
+  haloAuroraPolar: HTMLCanvasElement;
   brumaFria: HTMLCanvasElement;
   brumaCian: HTMLCanvasElement;
 }
@@ -290,48 +292,91 @@ function obtenerSpritesCumbre(): SpritesCumbreCache | null {
     sCtx.fillRect(0, 0, 64, 64);
   }
 
-  // 2. Cortina vertical de aurora esmeralda -> cian
-  const cortinaEsmeralda = crearCanvasAuxiliar(32, 64);
+  // 2. Cortina de aurora principal: borde inferior menta-esmeralda luminoso hacia corona cian-violeta
+  const cortinaEsmeralda = crearCanvasAuxiliar(20, 96);
   const eCtx = cortinaEsmeralda.getContext("2d");
   if (eCtx) {
-    const gradV = eCtx.createLinearGradient(0, 0, 0, 64);
-    gradV.addColorStop(0, "rgba(56, 189, 248, 0)");
-    gradV.addColorStop(0.24, "rgba(45, 212, 191, 0.72)");
-    gradV.addColorStop(0.56, "rgba(52, 211, 153, 1)");
-    gradV.addColorStop(0.84, "rgba(110, 231, 183, 0.62)");
+    const gradV = eCtx.createLinearGradient(0, 0, 0, 96);
+    gradV.addColorStop(0, "rgba(139, 92, 246, 0)");
+    gradV.addColorStop(0.2, "rgba(139, 92, 246, 0.36)");
+    gradV.addColorStop(0.48, "rgba(34, 211, 238, 0.72)");
+    gradV.addColorStop(0.74, "rgba(52, 211, 153, 0.96)");
+    gradV.addColorStop(0.86, "rgba(167, 243, 208, 1)");
+    gradV.addColorStop(0.94, "rgba(52, 211, 153, 0.45)");
     gradV.addColorStop(1, "rgba(16, 185, 129, 0)");
     eCtx.fillStyle = gradV;
-    eCtx.fillRect(2, 0, 28, 64);
+    eCtx.fillRect(1, 0, 18, 96);
 
-    // Suavizar flancos laterales con máscara horizontal
     eCtx.globalCompositeOperation = "destination-in";
-    const gradH = eCtx.createLinearGradient(0, 0, 32, 0);
+    const gradH = eCtx.createLinearGradient(0, 0, 20, 0);
     gradH.addColorStop(0, "rgba(255, 255, 255, 0)");
     gradH.addColorStop(0.5, "rgba(255, 255, 255, 1)");
     gradH.addColorStop(1, "rgba(255, 255, 255, 0)");
     eCtx.fillStyle = gradH;
-    eCtx.fillRect(0, 0, 32, 64);
+    eCtx.fillRect(0, 0, 20, 96);
   }
 
-  // 3. Cortina alta de aurora violeta -> cian polar
-  const cortinaVioleta = crearCanvasAuxiliar(32, 64);
+  // 3. Cortina alta de aurora amatista-violeta -> borde inferior cian eléctrico
+  const cortinaVioleta = crearCanvasAuxiliar(20, 96);
   const vCtx = cortinaVioleta.getContext("2d");
   if (vCtx) {
-    const gradV = vCtx.createLinearGradient(0, 0, 0, 64);
+    const gradV = vCtx.createLinearGradient(0, 0, 0, 96);
     gradV.addColorStop(0, "rgba(168, 85, 247, 0)");
-    gradV.addColorStop(0.28, "rgba(192, 132, 252, 0.92)");
-    gradV.addColorStop(0.64, "rgba(56, 189, 248, 0.85)");
+    gradV.addColorStop(0.22, "rgba(192, 132, 252, 0.84)");
+    gradV.addColorStop(0.54, "rgba(129, 140, 248, 0.76)");
+    gradV.addColorStop(0.78, "rgba(34, 211, 238, 0.94)");
+    gradV.addColorStop(0.88, "rgba(165, 243, 252, 0.98)");
+    gradV.addColorStop(0.95, "rgba(56, 189, 248, 0.38)");
     gradV.addColorStop(1, "rgba(56, 189, 248, 0)");
     vCtx.fillStyle = gradV;
-    vCtx.fillRect(2, 0, 28, 64);
+    vCtx.fillRect(1, 0, 18, 96);
 
     vCtx.globalCompositeOperation = "destination-in";
-    const gradH = vCtx.createLinearGradient(0, 0, 32, 0);
+    const gradH = vCtx.createLinearGradient(0, 0, 20, 0);
     gradH.addColorStop(0, "rgba(255, 255, 255, 0)");
     gradH.addColorStop(0.5, "rgba(255, 255, 255, 1)");
     gradH.addColorStop(1, "rgba(255, 255, 255, 0)");
     vCtx.fillStyle = gradH;
-    vCtx.fillRect(0, 0, 32, 64);
+    vCtx.fillRect(0, 0, 20, 96);
+  }
+
+  // 3b. Pilar luminoso fino para estriaciones verticales nítidas de la aurora
+  const rayoPilar = crearCanvasAuxiliar(8, 96);
+  const rCtx = rayoPilar.getContext("2d");
+  if (rCtx) {
+    const gradV = rCtx.createLinearGradient(0, 0, 0, 96);
+    gradV.addColorStop(0, "rgba(192, 132, 252, 0)");
+    gradV.addColorStop(0.24, "rgba(192, 132, 252, 0.55)");
+    gradV.addColorStop(0.58, "rgba(56, 189, 248, 0.8)");
+    gradV.addColorStop(0.84, "rgba(209, 250, 229, 1)");
+    gradV.addColorStop(0.95, "rgba(110, 231, 183, 0.4)");
+    gradV.addColorStop(1, "rgba(52, 211, 153, 0)");
+    rCtx.fillStyle = gradV;
+    rCtx.fillRect(1, 0, 6, 96);
+
+    rCtx.globalCompositeOperation = "destination-in";
+    const gradH = rCtx.createLinearGradient(0, 0, 8, 0);
+    gradH.addColorStop(0, "rgba(255, 255, 255, 0)");
+    gradH.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+    gradH.addColorStop(1, "rgba(255, 255, 255, 0)");
+    rCtx.fillStyle = gradH;
+    rCtx.fillRect(0, 0, 8, 96);
+  }
+
+  // 3c. Halo atmosférico polar esmeralda-cian para bañar el cielo nocturno tras los picos
+  const haloAuroraPolar = crearCanvasAuxiliar(128, 64);
+  const hCtx = haloAuroraPolar.getContext("2d");
+  if (hCtx) {
+    hCtx.save();
+    hCtx.scale(2, 1);
+    const grad = hCtx.createRadialGradient(32, 32, 2, 32, 32, 31);
+    grad.addColorStop(0, "rgba(52, 211, 153, 0.85)");
+    grad.addColorStop(0.38, "rgba(34, 211, 238, 0.52)");
+    grad.addColorStop(0.72, "rgba(139, 92, 246, 0.2)");
+    grad.addColorStop(1, "rgba(15, 23, 42, 0)");
+    hCtx.fillStyle = grad;
+    hCtx.fillRect(0, 0, 64, 64);
+    hCtx.restore();
   }
 
   // 4. Jirones de bruma helada (aliento del dragón y neblina rasante)
@@ -370,6 +415,8 @@ function obtenerSpritesCumbre(): SpritesCumbreCache | null {
     resplandorEspectral,
     cortinaEsmeralda,
     cortinaVioleta,
+    rayoPilar,
+    haloAuroraPolar,
     brumaFria,
     brumaCian,
   };
@@ -441,90 +488,195 @@ function dibujarDestelloCruzPixel(
   ctx.restore();
 }
 
+interface EstrellaPolar {
+  x: number;
+  y: number;
+  tamano: number;
+  fase: number;
+  violeta: boolean;
+}
+
+const ESTRELLAS_POLARES_CUMBRE: readonly EstrellaPolar[] = Array.from({ length: 18 }, (_, i) => ({
+  x: 752 + ((i * 79 + 23) % 586),
+  y: -18 + ((i * 31 + 7) % 78),
+  tamano: i % 5 === 0 ? 1.5 : 1,
+  fase: i * 1.37,
+  violeta: i % 4 === 0,
+}));
+
+function dibujarEstrellasPolaresCumbre(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  reducirMovimiento: boolean,
+): void {
+  for (let i = 0; i < ESTRELLAS_POLARES_CUMBRE.length; i++) {
+    const est = ESTRELLAS_POLARES_CUMBRE[i];
+    const destello = reducirMovimiento
+      ? 0.45 + (i % 3) * 0.15
+      : 0.25 + 0.65 * Math.pow(Math.max(0, Math.sin(t * 0.0022 + est.fase)), 2);
+    ctx.globalAlpha = destello;
+    ctx.fillStyle = est.violeta ? "#e9d5ff" : "#e0f2fe";
+    ctx.fillRect(Math.round(est.x), Math.round(est.y), est.tamano, est.tamano);
+  }
+}
+
 function dibujarAuroraBorealCumbre(
   ctx: CanvasRenderingContext2D,
   sprites: SpritesCumbreCache,
   t: number,
+  reducirMovimiento: boolean,
 ): void {
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
 
-  // Halo polar difuso coronando la cordillera nevada
-  const pulsoPolar = 0.14 + Math.sin(t * 0.0011) * 0.04;
-  dibujarResplandorSprite(
-    ctx,
-    sprites.resplandorGlacial,
-    1066,
-    16,
-    175,
-    40,
-    pulsoPolar,
-  );
+  // 1. Baño atmosférico polar sobre el cielo nocturno y reflejo leve en aguas flanqueantes
+  const pulsoPolar = 0.22 + Math.sin(t * 0.0011) * 0.05;
+  dibujarResplandorSprite(ctx, sprites.haloAuroraPolar, 955, 22, 190, 56, pulsoPolar);
+  dibujarResplandorSprite(ctx, sprites.haloAuroraPolar, 1175, 24, 185, 54, pulsoPolar * 0.92);
+  dibujarEstrellasPolaresCumbre(ctx, t, reducirMovimiento);
 
-  // Cortina 1: velo ondulante esmeralda -> cian sobre el cielo norte (x: 786..1292)
-  const columnas1 = 34;
-  for (let i = 0; i < columnas1; i++) {
-    const u = i / (columnas1 - 1);
-    const envolvente = Math.pow(Math.sin(u * Math.PI), 0.72);
-    const x = 786 + u * 506;
+  // 2. Cortina Profunda (alta altitud, violeta amatista -> cian, inclinación magnética orgánica)
+  const colsProf = 46;
+  for (let i = 0; i < colsProf; i++) {
+    const u = i / (colsProf - 1);
+    const envolvente = Math.pow(Math.sin(u * Math.PI), 0.62);
+    const x = 744 + u * 602;
     const onda =
-      Math.sin(u * 5.2 - t * 0.0014) * 8 +
-      Math.cos(u * 9.1 + t * 0.0021) * 4;
-    const yBase = 34 - envolvente * 20 + onda * 0.6;
-    const altoCol = 44 + Math.sin(u * 7.5 + t * 0.0019) * 10;
-    const densidad = 0.55 + 0.45 * Math.sin(u * 12.2 - t * 0.0026 + i * 0.45);
-    const alfa = envolvente * (0.14 + densidad * 0.16);
+      Math.sin(u * 4.8 - t * 0.001) * 11 +
+      Math.cos(u * 8.4 + t * 0.0015) * 4.5;
+    const yInferior = 66 - envolvente * 32 + onda * 0.72;
+    const altoCol = 74 + Math.sin(u * 6.5 + t * 0.0014) * 16;
+    const ondaViajera = 0.52 + 0.48 * Math.sin(u * 10.5 - t * 0.0019 + i * 0.25);
+    const alfa = envolvente * (0.14 + ondaViajera * 0.18);
+    const inclinacion = (u - 0.5) * 0.16;
 
+    ctx.save();
+    ctx.translate(x, yInferior);
+    ctx.transform(1, 0, inclinacion, 1, 0, 0);
     ctx.globalAlpha = alfa;
-    ctx.drawImage(
-      sprites.cortinaEsmeralda,
-      x - 16 + Math.sin(t * 0.001 + i) * 2,
-      yBase - altoCol * 0.52,
-      32,
-      altoCol,
-    );
+    ctx.drawImage(sprites.cortinaVioleta, -11, -altoCol * 0.88, 22, altoCol);
+    ctx.restore();
   }
 
-  // Cortina 2: banda superior violeta-cian con rayos verticales en contrafase
-  const columnas2 = 24;
-  for (let i = 0; i < columnas2; i++) {
-    const u = i / (columnas2 - 1);
+  // 3. Cortina Principal Plegada en "S" (borde inferior menta-esmeralda luminoso + corona violeta)
+  const colsPrinc = 56;
+  for (let i = 0; i < colsPrinc; i++) {
+    const u = i / (colsPrinc - 1);
+    const envolvente = Math.pow(Math.sin(u * Math.PI), 0.66);
+    // Desplazamiento horizontal sutil del pliegue en S para sensación de tela flotante
+    const pliegueX = Math.sin(u * 7.0 - t * 0.0013) * 8;
+    const x = 764 + u * 558 + pliegueX;
+    const onda =
+      Math.sin(u * 6.8 - t * 0.0016) * 13 +
+      Math.cos(u * 12.2 + t * 0.0022) * 5.5;
+    const yInferior = 62 - envolvente * 28 + onda * 0.76;
+    const altoCol = 62 + Math.sin(u * 9.2 + t * 0.002) * 15;
+    const ondaViajera = 0.48 + 0.52 * Math.sin(u * 14.0 - t * 0.0028);
+    const alfa = envolvente * (0.2 + ondaViajera * 0.28);
+    const inclinacion = (u - 0.5) * 0.14 - 0.04;
+
+    ctx.save();
+    ctx.translate(x, yInferior);
+    ctx.transform(1, 0, inclinacion, 1, 0, 0);
+    ctx.globalAlpha = alfa;
+    ctx.drawImage(sprites.cortinaEsmeralda, -10, -altoCol * 0.88, 20, altoCol);
+
+    // Borde inferior luminoso reforzado donde el pliegue gira
+    if (ondaViajera > 0.62) {
+      ctx.globalAlpha = envolvente * (ondaViajera - 0.62) * 0.85;
+      ctx.drawImage(sprites.rayoPilar, -5, -altoCol * 0.92, 10, altoCol * 0.92);
+    }
+    ctx.restore();
+  }
+
+  // 4. Cortina Frontal Danzante (cian eléctrico -> violeta en contrafase sobre valles laterales)
+  const colsFront = 38;
+  for (let i = 0; i < colsFront; i++) {
+    const u = i / (colsFront - 1);
+    const envolvente = Math.pow(Math.sin(u * Math.PI), 0.72);
+    const x = 815 + u * 462 + Math.cos(u * 6.0 + t * 0.0017) * 6;
+    const onda =
+      Math.cos(u * 5.8 + t * 0.0019) * 11 +
+      Math.sin(u * 10.6 - t * 0.0025) * 4;
+    const yInferior = 52 - envolvente * 22 + onda * 0.68;
+    const altoCol = 48 + Math.cos(u * 8.1 - t * 0.0023) * 12;
+    const ondaViajera = 0.45 + 0.55 * Math.cos(u * 12.6 + t * 0.0031);
+    const alfa = envolvente * (0.14 + ondaViajera * 0.22);
+    const inclinacion = (u - 0.5) * 0.12 + 0.03;
+
+    ctx.save();
+    ctx.translate(x, yInferior);
+    ctx.transform(1, 0, inclinacion, 1, 0, 0);
+    ctx.globalAlpha = alfa;
+    ctx.drawImage(
+      i % 2 === 0 ? sprites.cortinaEsmeralda : sprites.cortinaVioleta,
+      -9,
+      -altoCol * 0.88,
+      18,
+      altoCol,
+    );
+    ctx.restore();
+  }
+
+  // 5. Pilares luminosos viajeros (rayos de luz nítidos danzando en racimos orgánicos)
+  for (let p = 0; p < 22; p++) {
+    const uBase = (p * 0.6180339) % 1;
+    const u = (uBase + (reducirMovimiento ? 0 : t * 0.000018)) % 1;
     const envolvente = Math.pow(Math.sin(u * Math.PI), 0.75);
-    const x = 816 + u * 448;
-    const onda = Math.cos(u * 4.4 + t * 0.0016) * 7;
-    const yBase = 22 - envolvente * 12 + onda * 0.55;
-    const altoCol = 34 + Math.cos(u * 6.2 - t * 0.0022) * 8;
-    const densidad = 0.5 + 0.5 * Math.cos(u * 9.4 + t * 0.0023);
-    const alfa = envolvente * (0.11 + densidad * 0.14);
+    const x = 782 + u * 524;
+    const onda = Math.sin(u * 6.8 - t * 0.0016) * 11;
+    const yInferior = 58 - envolvente * 26 + onda * 0.72;
+    const altoPilar = 46 + (p % 4) * 12 + Math.sin(t * 0.0027 + p * 1.4) * 8;
+    const pulsoPilar = Math.pow(Math.max(0, Math.sin(u * 13.5 - t * 0.0032 + p * 0.7)), 1.6);
+    const alfa = envolvente * (0.12 + pulsoPilar * 0.36);
 
+    ctx.save();
+    ctx.translate(x, yInferior);
+    ctx.transform(1, 0, (u - 0.5) * 0.15, 1, 0, 0);
     ctx.globalAlpha = alfa;
-    ctx.drawImage(
-      sprites.cortinaVioleta,
-      x - 15,
-      yBase - altoCol * 0.54,
-      30,
-      altoCol,
-    );
+    ctx.drawImage(sprites.rayoPilar, -4, -altoPilar * 0.9, 8, altoPilar);
+    ctx.restore();
   }
 
-  // Rayos verticales orgánicos suaves (sin postes rígidos uniformes) usando el sprite degradado
-  for (let r = 0; r < 16; r++) {
-    const u = ((r * 0.6180339) % 1);
-    const envolvente = Math.sin(u * Math.PI);
-    const rx = 796 + u * 488 + Math.sin(t * 0.0011 + r * 2.1) * 7;
-    const ryTop = 4 + (1 - envolvente) * 16 + Math.cos(u * 6 + t * 0.0014) * 3;
-    const rAlto = 24 + envolvente * 18 + Math.sin(t * 0.002 + r * 1.7) * 5;
-    const brillo = envolvente * (0.09 + 0.14 * Math.max(0, Math.sin(t * 0.0024 + r * 2.3)));
+  // 6. Reflejo polar tenue sobre el mar abierto flanqueando la isla al oeste y este
+  dibujarResplandorSprite(ctx, sprites.haloAuroraPolar, 742, 178, 42, 12, 0.085);
+  dibujarResplandorSprite(ctx, sprites.haloAuroraPolar, 1325, 186, 42, 12, 0.075);
+
+  ctx.restore();
+}
+
+/**
+ * Baño frontal sutil de luz polar sobre las crestas nevadas y polvo luminoso de aurora,
+ * conectando la aurora del cielo trasero con las cumbres en primer plano.
+ */
+function dibujarReflejoAuroraEnCumbres(
+  ctx: CanvasRenderingContext2D,
+  sprites: SpritesCumbreCache,
+  t: number,
+  reducirMovimiento: boolean,
+): void {
+  ctx.save();
+  trazarPoligono(ctx, SILUETA_ENVOLVENTE_CUMBRE);
+  ctx.clip();
+  ctx.globalCompositeOperation = "lighter";
+
+  // Halo sutil besando las crestas superiores de la cordillera
+  const pulsoCresta = 0.095 + Math.sin(t * 0.0015) * 0.03;
+  dibujarResplandorSprite(ctx, sprites.haloAuroraPolar, 1068, 28, 165, 32, pulsoCresta);
+
+  // Motas luminosas flotantes de la aurora (esmeralda, cian y violeta tenue)
+  const limiteMotas = reducirMovimiento ? 8 : 14;
+  for (let m = 0; m < limiteMotas; m++) {
+    const u = (m * 0.6180339) % 1;
+    const mx = Math.round(792 + u * 492 + Math.sin(t * 0.0009 + m * 1.7) * 9);
+    const my = Math.round(8 + (m % 5) * 11 + Math.cos(t * 0.0011 + m * 2.1) * 4);
+    const brillo = reducirMovimiento
+      ? 0.42
+      : 0.25 + 0.55 * Math.pow(Math.max(0, Math.sin(t * 0.0026 + m * 1.4)), 2);
     ctx.globalAlpha = brillo;
-    ctx.drawImage(
-      r % 3 === 0 ? sprites.cortinaVioleta : sprites.cortinaEsmeralda,
-      rx - 5,
-      ryTop,
-      10,
-      rAlto,
-    );
+    ctx.fillStyle = m % 3 === 0 ? "#d8b4fe" : m % 2 === 0 ? "#6ee7b7" : "#67e8f9";
+    ctx.fillRect(mx, my, 1.5, 1.5);
   }
-
   ctx.restore();
 }
 
@@ -883,6 +1035,24 @@ function dibujarEstadoBloqueadoCumbre(
 }
 
 /**
+ * Renderiza únicamente la aurora boreal en el cielo nocturno detrás de la silueta WebP de ZON-06,
+ * permitiendo que los picos nevados y los cristales glaciares se recorten con nitidez delante de ella.
+ */
+export function dibujarCieloAuroraCumbre(
+  ctx: CanvasRenderingContext2D,
+  desbloqueada: boolean,
+  tiempo: number,
+  reducirMovimiento: boolean,
+): void {
+  if (!desbloqueada) return;
+  const sprites = obtenerSpritesCumbre();
+  if (!sprites) return;
+
+  const t = reducirMovimiento ? 0 : tiempo;
+  dibujarAuroraBorealCumbre(ctx, sprites, t, reducirMovimiento);
+}
+
+/**
  * Renderiza el diorama completo de ZON-06 ("La Cumbre") respetando el estado bloqueado vs. desbloqueado
  * y la preferencia de movimiento reducido.
  */
@@ -892,6 +1062,7 @@ export function dibujarDioramaCumbre(
   tiempo: number,
   reducirMovimiento: boolean,
   mascaraOceano?: MascaraOceano | null,
+  auroraDetrasDibujada = false,
 ): void {
   const sprites = obtenerSpritesCumbre();
   if (!sprites) return;
@@ -903,7 +1074,10 @@ export function dibujarDioramaCumbre(
     return;
   }
 
-  dibujarAuroraBorealCumbre(ctx, sprites, t);
+  if (!auroraDetrasDibujada) {
+    dibujarAuroraBorealCumbre(ctx, sprites, t, reducirMovimiento);
+  }
+  dibujarReflejoAuroraEnCumbres(ctx, sprites, t, reducirMovimiento);
   dibujarVentiscaYPlumasCumbre(ctx, sprites, mascaraOceano, t, reducirMovimiento);
   dibujarCristalesGlaciaresCumbre(ctx, sprites, t, reducirMovimiento);
   dibujarEsqueletoDragonCumbre(ctx, sprites, t, reducirMovimiento);

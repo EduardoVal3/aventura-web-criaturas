@@ -1885,6 +1885,40 @@ Tras la revisión directa del usuario sobre la primera entrega de fauna abisal (
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.53s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `32220.1676ms`).
 
+---
+
+## 33. Calibración de Puentes, Placas Escalables y Expansión Abisal de Océano (Subfase 10s — 15/11/2026)
+
+### 33.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+Sobre la captura en vivo del mapa interactivo tras la Subfase 10s (`Riscos` / `La Cumbre` / `Cueva Umbría`) se identificaron 5 oportunidades directas de pulido espacial y de legibilidad:
+1. **Aro punteado distrayente en ubicación actual:** `dibujarCapaVivaMapa` dibujaba dos anillos orbitales (`setLineDash([13, 9])`) en rotación continua alrededor de la isla activa, cruzando puentes y bordes vecinos.
+2. **Desalineación en rutas Bezier de puentes adyacentes:** En `TRAYECTOS_PUENTES_AETHELGARD`, varias pasarelas (`Riscos -> Cueva Umbría`, `Riscos -> Bastión Norte`, `Bastión Norte -> La Cumbre`, `Cueva Umbría -> La Cumbre`, `Villa Serena -> Lago Espejo`) flotaban por encima del tablero real de piedra o cortaban agua abierta en lugar de seguir las losas caminables.
+3. **Presencia y alcance acotado de abisales:** Los 5 avistamientos de superficie (`6.4–7.0s` sobre ciclos de `15.5–19.0s`, ~38% de tiempo activo) y las 9 siluetas se concentraban únicamente dentro de `[0..1616, 0..897]`, dejando el océano abierto alrededor del archipiélago sin actividad abisal al hacer zoom alejado.
+4. **Sobrecarga de etiquetas de ubicación y tarjetas grandes al alejar:** El badge bajo el avatar leía `TÚ AQUÍ`, mientras que las tarjetas de isla mantenían tamaño completo al alejar el zoom (con quiebres multilínea en rangos de nivel), tapando costas y puentes cercanos; además faltaba un control rápido para ocultar/mostrar las tarjetas cuando el jugador desea inspeccionar el mapa limpio.
+
+### 33.2 Mejoras Implementadas
+- **Calibración Geométrica sobre Máster WebP y Eliminación del Aro Punteado ([mapa-dioramas.ts](file:///apps/web/src/lib/mapa-dioramas.ts)):**
+  - Medición píxel a píxel de las 10 pasarelas reales en espacio lógico `1616×897`, recalibrando `TRAYECTOS_PUENTES_AETHELGARD` (ej. `ZON-04 -> ZON-05`: `{ inicio: {1122, 346}, control: {1188, 326}, fin: {1256, 353} }`, `ZON-05 -> ZON-06`: `{ inicio: {1328, 246}, control: {1270, 192}, fin: {1214, 178} }`, `LOC-01 -> ZON-02`: `{ inicio: {424, 720}, control: {526, 718}, fin: {628, 720} }`) y afinando los 5 orbes luminosos por ruta (`radio 3.2`) en `dibujarPuentesYRutasVivas`.
+  - Eliminación completa del bloque de aros punteados (`setLineDash`) alrededor de `ubicacionActualId` en `dibujarCapaVivaMapa`, conservando únicamente los velos sobre islas bloqueadas y los efectos ambientales por bioma.
+- **Expansión Abisal a Mares Abiertos y Ciclos Prolongados ([oceano-vivo.ts](file:///apps/web/src/lib/oceano-vivo.ts)):**
+  - Generalización de `encontrarCuencaProfunda` para operar tanto en la rejilla rápida dentro de `1616×897` como en mar abierto exterior evaluando `consultarDistanciaMar` y evitando colisiones con `estaCercaDePlaca`.
+  - Expansión de `recetasSiluetas` de **9 a 18 siluetas submarinas** (krakens, mosasaurus, plesiosaurios, mantarrayas y ballenas) y de `recetasAvistamientos` de **5 a 11 apariciones de superficie** (4 krakens, 4 mosasaurus y 3 leviatanes) extendidas por los cuatro cuadrantes oceánicos exteriores, además de ampliar cardúmenes, medusas, plancton y estelas fuera del perímetro costero.
+  - Elevación de la presencia activa de cada abisal a **`>= 78%–86%` del ciclo** (`12.2–13.8s` sobre ciclos de `14.5–16.8s`) con envolvente en meseta suave (14% ascenso / 72% exposición plena / 14% inmersión).
+- **HUD Limpio en Canvas: Badge `"Tú"`, Tarjetas Escalables y Botón Ocultar/Mostrar ([MapaInteractivoCanvas.tsx](file:///apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
+  - Simplificación del badge del líder actual de `TÚ AQUÍ` a **`Tú`**.
+  - Escalado proporcional automático de las tarjetas de isla al alejar el mapa (`escalaPlaca = Math.min(1, Math.max(0.54, camara.zoom / 1.02))`) con `whitespace-nowrap` en el distintivo de peligro para evitar roturas en 3 líneas.
+  - Incorporación del botón accesible (`data-boton-placas-mapa`, `aria-pressed`, iconos vectoriales `Eye` / `EyeOff` de Lucide sin emojis bajo R1) dentro de la barra de controles flotantes para alternar al instante `mostrarPlacas` sin deshabilitar los nodos interactivos del archipiélago.
+
+### 33.3 Verificación de Calidad y Cero Regresiones
+- **Inspección Visual en Chromium Headless (`01` a `05`):**
+  - Verificación en vistas equivalentes (`loc=ZON-04` y `loc=LOC-02`), alejado al mínimo (`zoom ~ 0.50`), modo tarjetas ocultas (`placasRestantes === 0`) y océano extendido (`1680×1005`), confirmando puentes centrados sobre piedra, ausencia total de aros punteados, tarjetas compactas sin solapes ni quiebres, badge `Tú` y criaturas abisales distribuidas por todo el mapa.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores.
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` con código de salida `0` y **`Found 0 warnings and 0 errors` en `56ms`** sobre los 4 archivos modificados (`oceano-vivo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx`, `verificacion-hub-mundo.spec.ts`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `3213.499ms`), incluyendo invariantes de ciclo `>= 78%`, expansión exterior `< 0` / `> 1616`, calibración de puentes, eliminación de `setLineDash` y nuevos atributos de placas.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`3.30s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `75673.0201ms`).
+
+
 
 
 

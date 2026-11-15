@@ -897,5 +897,99 @@ test("Subfase 10t: Diorama multicapa de La Cumbre (ZON-06) calibrado sobre arte 
   );
 });
 
+test("Subfase 10u: Diorama multicapa de Cueva Umbría (ZON-05) calibrado sobre arte maestro, diferenciado y sin asignaciones por cuadro", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const {
+    SILUETA_ENVOLVENTE_CUEVA,
+    ARCO_CAVERNA_CUEVA,
+    CASCADA_TECHO_CUEVA,
+    PRESENCIA_UMBRIA_CUEVA,
+    CAUCES_LAVA_MESETA,
+    BURBUJAS_LAVA_MESETA,
+    CASCADAS_ACANTILADO_CUEVA,
+    CUMULOS_CRISTALES_CUEVA,
+    ARCOS_CRISTAL_COLOSAL,
+    dibujarFondoCuevaUmbria,
+    dibujarDioramaCuevaUmbria,
+  } = await import("../src/lib/diorama-cueva-umbria.ts");
+
+  // 1. Silueta exterior y arco cavernoso dentro de los límites reales de ZON-05 (sin invadir ZON-04, ZON-06 ni ZON-03)
+  assert.ok(SILUETA_ENVOLVENTE_CUEVA.length >= 24);
+  assert.ok(ARCO_CAVERNA_CUEVA.length >= 10);
+  for (const pt of SILUETA_ENVOLVENTE_CUEVA) {
+    assert.ok(pt.x >= 1244 && pt.x <= 1606, `Silueta fuera de rango X en ZON-05: ${pt.x}`);
+    assert.ok(pt.y >= 204 && pt.y <= 506, `Silueta fuera de rango Y (riesgo sobre Bosque): ${pt.y}`);
+  }
+
+  // 2. Caverna, cauces sobre meseta, 3 cascadas (central en 3 hebras) y 3 cúmulos de cristales
+  assert.ok(CASCADA_TECHO_CUEVA.grietaSuperior.y < CASCADA_TECHO_CUEVA.pozaImpacto.y);
+  assert.ok(
+    PRESENCIA_UMBRIA_CUEVA.ojoIzquierdo.x < PRESENCIA_UMBRIA_CUEVA.ojoDerecho.x &&
+      PRESENCIA_UMBRIA_CUEVA.ojoDerecho.x < CASCADA_TECHO_CUEVA.grietaSuperior.x - 20,
+    "Los ojos abisales deben ubicarse dentro de la oquedad oscura izquierda sin tocar el chorro de magma",
+  );
+  assert.ok(CAUCES_LAVA_MESETA.length >= 3);
+  assert.ok(BURBUJAS_LAVA_MESETA.length >= 4);
+
+  assert.strictEqual(CASCADAS_ACANTILADO_CUEVA.length, 3, "Deben modelarse las 3 cascadas frontales");
+  const cascadaCentral = CASCADAS_ACANTILADO_CUEVA.find((c) => c.id === "cascada-central");
+  assert.ok(cascadaCentral && cascadaCentral.hebras.length === 3, "La cascada central debe bifurcarse en 3 hebras");
+  for (const cascada of CASCADAS_ACANTILADO_CUEVA) {
+    assert.ok(cascada.labio.y < cascada.poza.y);
+    assert.ok(cascada.poza.y <= 492, `La poza de ${cascada.id} no debe acercarse al dosel de ZON-03`);
+  }
+
+  assert.strictEqual(CUMULOS_CRISTALES_CUEVA.length, 3, "Deben modelarse los 3 cúmulos violeta");
+  for (const cumulo of CUMULOS_CRISTALES_CUEVA) {
+    assert.ok(cumulo.agujas.length >= 4);
+    assert.ok(
+      cumulo.agujas[0].punta.y < cumulo.agujas[0].base.y,
+      "La aguja principal de cada cúmulo debe apuntar hacia arriba",
+    );
+    for (const aguja of cumulo.agujas) {
+      assert.ok(
+        Math.hypot(aguja.punta.x - aguja.base.x, aguja.punta.y - aguja.base.y) >= 12,
+        "Cada aguja cristalina debe tener longitud medible desde su base hasta su punta",
+      );
+    }
+  }
+  assert.ok(ARCOS_CRISTAL_COLOSAL.length >= 4);
+
+  // 3. Ejecución segura en Node (sin document) para estados desbloqueado, bloqueado y movimiento reducido
+  const ctxDummy = {} as CanvasRenderingContext2D;
+  assert.doesNotThrow(() => dibujarFondoCuevaUmbria(ctxDummy, true, 2675, false));
+  assert.doesNotThrow(() => dibujarFondoCuevaUmbria(ctxDummy, false, 2675, false));
+  assert.doesNotThrow(() => dibujarDioramaCuevaUmbria(ctxDummy, true, 2675, false, null));
+  assert.doesNotThrow(() => dibujarDioramaCuevaUmbria(ctxDummy, false, 2675, false, null));
+  assert.doesNotThrow(() => dibujarDioramaCuevaUmbria(ctxDummy, true, 2675, true, null));
+
+  // 4. Integración, caché de sprites y cumplimiento de R1 (cero emojis y español)
+  const dioramaCuevaCodigo = readFileSync(join(__dirname, "../src/lib/diorama-cueva-umbria.ts"), "utf-8");
+  const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
+
+  assert.ok(dioramaCuevaCodigo.includes("spritesCuevaCache"), "Debe cachear sprites fuera de pantalla");
+  assert.ok(
+    dioramaCuevaCodigo.includes("dibujarEstadoBloqueadoCueva"),
+    "Debe diferenciar rescoldos contenidos cuando ZON-05 está bloqueada",
+  );
+  assert.strictEqual(
+    dioramaCuevaCodigo.includes("setLineDash"),
+    false,
+    "No debe introducir trazos punteados en el diorama de Cueva Umbría",
+  );
+  assert.strictEqual(
+    /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(dioramaCuevaCodigo),
+    false,
+    "Regla R1: diorama-cueva-umbria.ts no debe contener emojis unicode",
+  );
+  assert.ok(dioramasCodigo.includes("dibujarFondoCuevaUmbria"));
+  assert.ok(dioramasCodigo.includes("dibujarDioramaCuevaUmbria"));
+});
+
+
 
 

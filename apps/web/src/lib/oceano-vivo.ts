@@ -119,6 +119,37 @@ export interface AveMarina {
   cantidad: number;
 }
 
+export type EspecieSiluetaSubmarina =
+  | "mosasaurus"
+  | "plesiosaurio"
+  | "mantarraya"
+  | "kraken"
+  | "ballena";
+
+export interface SiluetaSubmarina {
+  especie: EspecieSiluetaSubmarina;
+  centro: Punto2D;
+  radioX: number;
+  radioY: number;
+  escala: number;
+  velocidad: number;
+  fase: number;
+  permitirBajoPuente: boolean;
+  matiz: "abisal" | "glacial" | "mistico";
+}
+
+export type EspecieAvistamientoAbisal = "leviatan" | "mosasaurus" | "kraken";
+
+export interface AvistamientoAbisal {
+  especie: EspecieAvistamientoAbisal;
+  centro: Punto2D;
+  escala: number;
+  duracionCiclo: number;
+  duracionAparicion: number;
+  desfase: number;
+  direccion: 1 | -1;
+}
+
 export interface DatosOceanoVivo {
   puntosEspuma: PuntoEspuma[];
   corrientes: CorrienteMarina[];
@@ -129,6 +160,8 @@ export interface DatosOceanoVivo {
   estelasV: EstelaSuperficie[];
   aves: AveMarina[];
   zonasLeviatan: Punto2D[];
+  siluetasSubmarinas: SiluetaSubmarina[];
+  avistamientosAbisales: AvistamientoAbisal[];
 }
 
 export interface RecursosOceanoVivo {
@@ -800,7 +833,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     });
   }
 
-  // 8. Zonas profundas exteriores escénicas (alejadas de esquinas extremas y placas) para el leviatán
+  // 8. Zonas profundas exteriores escénicas (alejadas de esquinas extremas y placas) para criaturas abisales
   const candidatosLeviatan: readonly [number, number, number, number][] = [
     [90, 95, 255, 250],
     [1355, 70, 1525, 210],
@@ -826,6 +859,198 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     if (respaldo) zonasLeviatan.push({ x: respaldo.x, y: respaldo.y });
   }
 
+  // 9. Siluetas submarinas abisales (mosasaurus, plesiosaurios, mantarrayas, krakens y ballenas) bajo las olas
+  const recetasSiluetas: readonly {
+    especie: EspecieSiluetaSubmarina;
+    caja: readonly [number, number, number, number];
+    minDist: number;
+    permitirBajoPuente: boolean;
+    escala: number;
+    vel: number;
+    matiz: "abisal" | "glacial" | "mistico";
+  }[] = [
+    {
+      especie: "mosasaurus",
+      caja: [75, 75, 260, 255],
+      minDist: 34,
+      permitirBajoPuente: false,
+      escala: 1.08,
+      vel: 0.00022,
+      matiz: "glacial",
+    },
+    {
+      especie: "plesiosaurio",
+      caja: [20, 245, 145, 450],
+      minDist: 26,
+      permitirBajoPuente: false,
+      escala: 0.96,
+      vel: 0.00024,
+      matiz: "abisal",
+    },
+    {
+      especie: "kraken",
+      caja: [1345, 55, 1565, 225],
+      minDist: 32,
+      permitirBajoPuente: false,
+      escala: 1.0,
+      vel: 0.00018,
+      matiz: "glacial",
+    },
+    {
+      especie: "mantarraya",
+      caja: [385, 515, 555, 665],
+      minDist: 22,
+      permitirBajoPuente: true,
+      escala: 0.9,
+      vel: 0.00028,
+      matiz: "abisal",
+    },
+    {
+      especie: "ballena",
+      caja: [445, 740, 605, 870],
+      minDist: 28,
+      permitirBajoPuente: false,
+      escala: 1.0,
+      vel: 0.00015,
+      matiz: "abisal",
+    },
+    {
+      especie: "plesiosaurio",
+      caja: [1025, 740, 1190, 870],
+      minDist: 28,
+      permitirBajoPuente: false,
+      escala: 0.92,
+      vel: 0.00021,
+      matiz: "mistico",
+    },
+    {
+      especie: "mantarraya",
+      caja: [880, 480, 1140, 600],
+      minDist: 20,
+      permitirBajoPuente: true,
+      escala: 0.85,
+      vel: 0.00025,
+      matiz: "mistico",
+    },
+    {
+      especie: "kraken",
+      caja: [35, 780, 120, 875],
+      minDist: 20,
+      permitirBajoPuente: false,
+      escala: 0.92,
+      vel: 0.0002,
+      matiz: "abisal",
+    },
+    {
+      especie: "ballena",
+      caja: [585, 25, 720, 115],
+      minDist: 22,
+      permitirBajoPuente: false,
+      escala: 0.96,
+      vel: 0.00017,
+      matiz: "glacial",
+    },
+  ];
+
+  const siluetasSubmarinas: SiluetaSubmarina[] = [];
+  for (let i = 0; i < recetasSiluetas.length; i++) {
+    const r = recetasSiluetas[i];
+    const [x0, y0, x1, y1] = r.caja;
+    const cuenca = encontrarCuencaProfunda(mascara, x0, y0, x1, y1, r.minDist, r.permitirBajoPuente, false);
+    if (!cuenca) continue;
+    const margenLibre = Math.max(8, cuenca.dist - 16);
+    siluetasSubmarinas.push({
+      especie: r.especie,
+      centro: { x: cuenca.x, y: cuenca.y },
+      radioX: Math.min(46, Math.max(10, margenLibre * 0.62)),
+      radioY: Math.min(28, Math.max(8, margenLibre * 0.44)),
+      escala: r.escala,
+      velocidad: r.vel,
+      fase: i * 1.45,
+      permitirBajoPuente: r.permitirBajoPuente,
+      matiz: r.matiz,
+    });
+  }
+
+  // 10. Avistamientos periódicos en superficie: leviatán, mosasaurus y kraken en mares exteriores
+  const recetasAvistamientos: readonly {
+    especie: EspecieAvistamientoAbisal;
+    caja: readonly [number, number, number, number];
+    minDist: number;
+    escala: number;
+    duracionCiclo: number;
+    duracionAparicion: number;
+    desfase: number;
+    direccion: 1 | -1;
+  }[] = [
+    {
+      especie: "leviatan",
+      caja: [85, 85, 255, 250],
+      minDist: 38,
+      escala: 1.06,
+      duracionCiclo: 15_500,
+      duracionAparicion: 6_600,
+      desfase: 600,
+      direccion: 1,
+    },
+    {
+      especie: "mosasaurus",
+      caja: [1345, 60, 1560, 220],
+      minDist: 36,
+      escala: 1.04,
+      duracionCiclo: 16_000,
+      duracionAparicion: 6_500,
+      desfase: 1_200,
+      direccion: -1,
+    },
+    {
+      especie: "kraken",
+      caja: [445, 745, 600, 865],
+      minDist: 32,
+      escala: 0.92,
+      duracionCiclo: 17_000,
+      duracionAparicion: 7_000,
+      desfase: 900,
+      direccion: 1,
+    },
+    {
+      especie: "mosasaurus",
+      caja: [1025, 745, 1190, 865],
+      minDist: 32,
+      escala: 0.92,
+      duracionCiclo: 18_500,
+      duracionAparicion: 6_400,
+      desfase: 7_800,
+      direccion: 1,
+    },
+    {
+      especie: "kraken",
+      caja: [20, 250, 135, 445],
+      minDist: 30,
+      escala: 0.95,
+      duracionCiclo: 19_000,
+      duracionAparicion: 6_800,
+      desfase: 8_500,
+      direccion: -1,
+    },
+  ];
+
+  const avistamientosAbisales: AvistamientoAbisal[] = [];
+  for (const r of recetasAvistamientos) {
+    const [x0, y0, x1, y1] = r.caja;
+    const cuenca = encontrarCuencaProfunda(mascara, x0, y0, x1, y1, r.minDist, false, true);
+    if (!cuenca) continue;
+    avistamientosAbisales.push({
+      especie: r.especie,
+      centro: { x: cuenca.x, y: cuenca.y },
+      escala: r.escala,
+      duracionCiclo: r.duracionCiclo,
+      duracionAparicion: r.duracionAparicion,
+      desfase: r.desfase,
+      direccion: r.direccion,
+    });
+  }
+
   return {
     puntosEspuma,
     corrientes,
@@ -836,6 +1061,8 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     estelasV,
     aves,
     zonasLeviatan,
+    siluetasSubmarinas,
+    avistamientosAbisales,
   };
 }
 
@@ -1259,71 +1486,400 @@ function dibujarFaunaSubmarina(
   ctx.restore();
 }
 
-function dibujarLeviatanAbisal(
+const ALETAS_MOSASAURUS_SUB: readonly (readonly [number, number, number, number, number])[] = [
+  [7, -5.5, 12.5, -0.85, 1],
+  [7, 5.5, 12.5, 0.85, -1],
+  [-9, -3.8, 8.5, -1.0, -1],
+  [-9, 3.8, 8.5, 1.0, 1],
+];
+
+const ALETAS_PLESIOSAURIO_SUB: readonly (readonly [number, number, number, number, boolean])[] = [
+  [3, -5.5, 14, -1.05, true],
+  [3, 5.5, 14, 1.05, false],
+  [-7, -4.8, 12, -1.15, true],
+  [-7, 4.8, 12, 1.15, false],
+];
+
+const LADOS_ALETA_BALLENA: readonly (-1 | 1)[] = [-1, 1];
+const TENTACULOS_KRAKEN_SURGIMIENTO: readonly number[] = [-2.65, -2.12, -1.56, -1.02, -0.48, 0.14, -3.02];
+
+/** Dibuja el anillo roto de olas y gotas de espuma alrededor de una irrupción abisal. */
+function dibujarEspumaEmergente(
   ctx: CanvasRenderingContext2D,
-  mascara: MascaraOceano,
-  zonas: readonly Punto2D[],
-  t: number,
-  reducirMovimiento: boolean,
+  x: number,
+  y: number,
+  radioX: number,
+  radioY: number,
+  p: number,
+  envolvente: number,
+  tinteSpray: string,
 ): void {
-  if (reducirMovimiento || zonas.length === 0) return;
+  const faseOnda = (p * 3.2) % 1;
+  const rx = radioX + faseOnda * 22;
+  const ry = radioY + faseOnda * 8.5;
+  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = `rgba(186, 230, 253, ${(envolvente * (1 - faseOnda) * 0.48).toFixed(3)})`;
+  // Segmentos curvos discontinuos en lugar de una elipse uniforme continua
+  for (let s = 0; s < 4; s++) {
+    const aIni = s * (Math.PI * 0.5) + 0.18 + faseOnda * 0.2;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 1.5, rx, ry, 0, aIni, aIni + 1.05);
+    ctx.stroke();
+  }
 
-  const duracionCiclo = 18_000;
-  const duracionAparicion = 5_800;
-  const cicloIdx = Math.floor(t / duracionCiclo);
-  const enCiclo = t % duracionCiclo;
-  if (enCiclo > duracionAparicion) return;
+  // Pixeles dispersos de resaca en la base de ruptura
+  const pasos = 7;
+  ctx.fillStyle = tinteSpray;
+  ctx.globalAlpha = envolvente * 0.72;
+  for (let g = 0; g < pasos; g++) {
+    const u = g / (pasos - 1) - 0.5;
+    const gx = Math.round(x + u * radioX * 1.9 + Math.sin(p * 18 + g * 2.1) * 1.6);
+    const gy = Math.round(y + Math.abs(u) * 2.5 + ((g % 2 === 0 ? 0.5 : 1.5)));
+    ctx.fillRect(gx, gy, g % 2 === 0 ? 3 : 2, 1.5);
+  }
+}
 
-  const centro = zonas[cicloIdx % zonas.length];
-  const p = enCiclo / duracionAparicion;
-  const envolvente = Math.sin(p * Math.PI);
-  const avance = (p - 0.5) * 82;
-  const dir = cicloIdx % 2 === 0 ? 1 : -1;
+function dibujarSiluetaMosasaurusBajoAgua(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  fase: number,
+  colorAcento: string,
+): void {
+  const braceo = Math.sin(t * 0.0046 + fase) * 0.32;
+  const coleo1 = Math.sin(t * 0.0055 + fase) * 3.5;
+  const coleo2 = Math.sin(t * 0.0055 + fase - 1.3) * 5.8;
 
-  ctx.save();
-  // Anillo orgánico pixelado de ruptura superficial
-  const faseOnda = (p * 3) % 1;
-  ctx.strokeStyle = `rgba(125, 211, 252, ${(envolvente * (1 - faseOnda) * 0.34).toFixed(3)})`;
-  ctx.lineWidth = 1.6;
+  // Cuerpo hidrodinámico alargado y hocico estrecho
   ctx.beginPath();
-  ctx.ellipse(
-    centro.x + avance * dir * 0.4,
-    centro.y + 1,
-    18 + faseOnda * 28,
-    7 + faseOnda * 11,
-    0,
-    0,
-    Math.PI * 2,
-  );
+  ctx.moveTo(24, 0);
+  ctx.quadraticCurveTo(15, -4.8, 4, -6.2);
+  ctx.quadraticCurveTo(-8, -5.5, -17, -2.6);
+  ctx.lineTo(-28, coleo1 - 1.7);
+  ctx.lineTo(-38, coleo2 - 4.0);
+  ctx.lineTo(-33.5, coleo2);
+  ctx.lineTo(-38, coleo2 + 4.0);
+  ctx.lineTo(-28, coleo1 + 1.7);
+  ctx.lineTo(-17, 2.6);
+  ctx.quadraticCurveTo(-8, 5.5, 4, 6.2);
+  ctx.quadraticCurveTo(15, 4.8, 24, 0);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
 
-  // Sombra corporal abisal sumergida enlazando los lomos bajo la superficie
+  // Cuatro aletas romboidales remando en contrafase
+  for (let i = 0; i < ALETAS_MOSASAURUS_SUB.length; i++) {
+    const [fx, fy, largo, angBase, inv] = ALETAS_MOSASAURUS_SUB[i];
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.rotate(angBase + braceo * inv);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(largo * 0.45, -2.6 * Math.sign(angBase));
+    ctx.lineTo(largo, 0);
+    ctx.lineTo(largo * 0.35, 2.4 * Math.sign(angBase));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Nodos bioluminiscentes tenues en el espinazo
+  ctx.fillStyle = colorAcento;
+  for (let d = 0; d < 5; d++) {
+    ctx.fillRect(Math.round(10 - d * 5.5), -1, 2, 1.5);
+  }
+}
+
+function dibujarSiluetaPlesiosaurioBajoAgua(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  fase: number,
+  colorAcento: string,
+): void {
+  const giroCuello = Math.sin(t * 0.0032 + fase) * 3.4;
+  const aleteoA = Math.sin(t * 0.0044 + fase) * 0.34;
+  const aleteoP = Math.sin(t * 0.0044 + fase + 1.4) * 0.3;
+
+  // Torso ovalado y cola breve
+  ctx.beginPath();
+  ctx.ellipse(-2, 0, 12, 6.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(-12, -2.4);
+  ctx.lineTo(-24, giroCuello * -0.4);
+  ctx.lineTo(-12, 2.4);
+  ctx.closePath();
+  ctx.fill();
+
+  // Cuello largo sinuoso y cabeza pequeña
+  const estiloCuerpo = ctx.fillStyle;
+  const estiloBorde = ctx.strokeStyle;
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = estiloCuerpo;
+  ctx.beginPath();
+  ctx.moveTo(8, 0);
+  ctx.quadraticCurveTo(17, giroCuello * 0.7, 27, giroCuello);
+  ctx.stroke();
+  ctx.strokeStyle = estiloBorde;
+  ctx.lineWidth = 1.1;
+
+  ctx.beginPath();
+  ctx.ellipse(28.5, giroCuello, 4.2, 2.2, giroCuello * 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Cuatro grandes aletas tipo remo
+  for (let i = 0; i < ALETAS_PLESIOSAURIO_SUB.length; i++) {
+    const [fx, fy, largo, ang, esAnterior] = ALETAS_PLESIOSAURIO_SUB[i];
+    const oscBase = esAnterior ? aleteoA : aleteoP;
+    const osc = ang < 0 ? oscBase : -oscBase;
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.rotate(ang + osc);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(largo * 0.6, -2.8, largo, 0);
+    ctx.quadraticCurveTo(largo * 0.5, 2.8, 0, 0);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.fillStyle = colorAcento;
+  ctx.fillRect(Math.round(27), Math.round(giroCuello - 1), 2, 1.5);
+}
+
+function dibujarSiluetaMantarrayaBajoAgua(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  fase: number,
+  colorAcento: string,
+): void {
+  const flex = Math.sin(t * 0.0042 + fase) * 3.8;
+  const cola = Math.sin(t * 0.005 + fase) * 3;
+
+  ctx.beginPath();
+  ctx.moveTo(12, 0);
+  ctx.lineTo(14.5, -3.8);
+  ctx.lineTo(9.5, -3.2);
+  ctx.quadraticCurveTo(2, -17.5 - flex * 0.4, -7.5, -20.5 + flex);
+  ctx.quadraticCurveTo(-5, -6.5, -9.5, -1.6);
+  ctx.lineTo(-29, cola);
+  ctx.lineTo(-9.5, 1.6);
+  ctx.quadraticCurveTo(-5, 6.5, -7.5, 20.5 - flex);
+  ctx.quadraticCurveTo(2, 17.5 + flex * 0.4, 9.5, 3.2);
+  ctx.lineTo(14.5, 3.8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = colorAcento;
+  ctx.fillRect(0, -6.5, 2.5, 1.5);
+  ctx.fillRect(0, 5, 2.5, 1.5);
+  ctx.fillRect(-4, -9.5, 2, 1.5);
+  ctx.fillRect(-4, 8, 2, 1.5);
+}
+
+function dibujarSiluetaKrakenBajoAgua(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  fase: number,
+  colorAcento: string,
+): void {
+  // Manto torpediforme con aleta apical
+  ctx.beginPath();
+  ctx.moveTo(23, 0);
+  ctx.lineTo(13.5, -7.8);
+  ctx.lineTo(8.5, -5.0);
+  ctx.quadraticCurveTo(-3, -7.2, -10.5, -4.4);
+  ctx.lineTo(-10.5, 4.4);
+  ctx.quadraticCurveTo(-3, 7.2, 8.5, 5.0);
+  ctx.lineTo(13.5, 7.8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Tentáculos sumergidos ondulando detrás
+  const estiloCuerpo = ctx.fillStyle;
+  ctx.strokeStyle = estiloCuerpo;
+  ctx.lineCap = "round";
+  ctx.lineWidth = 2.4;
+  for (let k = -2; k <= 2; k++) {
+    const oy = k * 2.2;
+    const onda = Math.sin(t * 0.0048 + fase + k * 0.9) * 3.4;
+    ctx.beginPath();
+    ctx.moveTo(-9.5, oy * 0.7);
+    ctx.quadraticCurveTo(-19, oy + onda * 0.7, -30 - (Math.abs(k) % 2) * 5.5, oy * 1.35 - onda);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = colorAcento;
+  ctx.fillRect(-6, -3, 2, 1.5);
+  ctx.fillRect(-6, 1.5, 2, 1.5);
+}
+
+function dibujarSiluetaBallenaBajoAgua(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  fase: number,
+  colorAcento: string,
+): void {
+  const coleo = Math.sin(t * 0.0028 + fase) * 3.2;
+  // Cuerpo masivo y aletas pectorales amplias
+  ctx.beginPath();
+  ctx.moveTo(23, 0);
+  ctx.quadraticCurveTo(20, -7.8, 4.5, -8.4);
+  ctx.quadraticCurveTo(-12, -6.8, -24.5, coleo - 1.6);
+  ctx.lineTo(-32, coleo - 7.4);
+  ctx.lineTo(-28.5, coleo);
+  ctx.lineTo(-32, coleo + 7.4);
+  ctx.lineTo(-24.5, coleo + 1.6);
+  ctx.quadraticCurveTo(-12, 6.8, 4.5, 8.4);
+  ctx.quadraticCurveTo(20, 7.8, 23, 0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  for (let i = 0; i < LADOS_ALETA_BALLENA.length; i++) {
+    const lado = LADOS_ALETA_BALLENA[i];
+    ctx.beginPath();
+    ctx.moveTo(6.5, lado * 6.5);
+    ctx.quadraticCurveTo(2.5, lado * 17, -5.5, lado * 15);
+    ctx.quadraticCurveTo(-1, lado * 8.5, 1, lado * 5.8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = colorAcento;
+  ctx.fillRect(11, -2.5, 3, 1.5);
+  ctx.fillRect(5, 1, 2.5, 1.5);
+}
+
+function dibujarSiluetasSubmarinas(
+  ctx: CanvasRenderingContext2D,
+  mascara: MascaraOceano,
+  siluetas: readonly SiluetaSubmarina[],
+  t: number,
+): void {
+  if (siluetas.length === 0) return;
+
+  ctx.save();
+  for (let i = 0; i < siluetas.length; i++) {
+    const s = siluetas[i];
+    const angOrbita = t * s.velocidad + s.fase;
+    let sx = s.centro.x + Math.cos(angOrbita) * s.radioX;
+    let sy = s.centro.y + Math.sin(angOrbita * 1.3) * s.radioY;
+    const vx = -Math.sin(angOrbita) * s.radioX * s.velocidad;
+    const vy = Math.cos(angOrbita * 1.3) * s.radioY * s.velocidad * 1.3;
+    const rumbo = Math.atan2(vy, vx);
+
+    const dist = consultarDistanciaMar(mascara, sx, sy, s.permitirBajoPuente);
+    if (dist < 14) {
+      const n = consultarNormalAgua(mascara, sx, sy, s.permitirBajoPuente);
+      sx += n.x * (16 - dist);
+      sy += n.y * (16 - dist);
+      if (!esPosicionNavegable(mascara, sx, sy, 12, s.permitirBajoPuente)) continue;
+    }
+
+    const pulso = 0.42 + 0.1 * Math.sin(t * 0.0014 + s.fase);
+    const colorBorde =
+      s.matiz === "mistico"
+        ? "rgba(167, 139, 250, 0.34)"
+        : s.matiz === "glacial"
+          ? "rgba(125, 211, 252, 0.32)"
+          : "rgba(56, 189, 248, 0.28)";
+    const colorAcento =
+      s.matiz === "mistico"
+        ? "rgba(196, 181, 253, 0.56)"
+        : s.matiz === "glacial"
+          ? "rgba(186, 230, 253, 0.52)"
+          : "rgba(103, 232, 249, 0.48)";
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(rumbo);
+    ctx.scale(s.escala, s.escala);
+
+    // Sombra abisal difusa inferior para sensación real de inmersión 2.5D
+    ctx.globalAlpha = pulso * 0.46;
+    ctx.fillStyle = "#00050e";
+    ctx.beginPath();
+    ctx.ellipse(-2, 2.5, 25, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalAlpha = pulso;
+    ctx.fillStyle =
+      s.matiz === "mistico" ? "#0b1e44" : s.matiz === "glacial" ? "#05223d" : "#041b32";
+    ctx.strokeStyle = colorBorde;
+    ctx.lineWidth = 1.1;
+
+    if (s.especie === "mosasaurus") {
+      dibujarSiluetaMosasaurusBajoAgua(ctx, t, s.fase, colorAcento);
+    } else if (s.especie === "plesiosaurio") {
+      dibujarSiluetaPlesiosaurioBajoAgua(ctx, t, s.fase, colorAcento);
+    } else if (s.especie === "mantarraya") {
+      dibujarSiluetaMantarrayaBajoAgua(ctx, t, s.fase, colorAcento);
+    } else if (s.especie === "kraken") {
+      dibujarSiluetaKrakenBajoAgua(ctx, t, s.fase, colorAcento);
+    } else {
+      dibujarSiluetaBallenaBajoAgua(ctx, t, s.fase, colorAcento);
+    }
+
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function dibujarCuerpoLeviatan(
+  ctx: CanvasRenderingContext2D,
+  mascara: MascaraOceano,
+  centro: Punto2D,
+  p: number,
+  envolvente: number,
+  dir: number,
+  escala: number,
+): void {
+  const avance = (p - 0.5) * 82 * escala;
+  dibujarEspumaEmergente(
+    ctx,
+    centro.x + avance * dir * 0.4,
+    centro.y,
+    18 * escala,
+    7 * escala,
+    p,
+    envolvente,
+    "rgba(224, 242, 254, 0.55)",
+  );
+
   const nodosSombra = 14;
   for (let n = 0; n < nodosSombra; n++) {
     const u = n / (nodosSombra - 1);
-    const sx = centro.x + (avance - u * 86) * dir;
+    const sx = centro.x + (avance - u * 86 * escala) * dir;
     const sy = centro.y + 3 + Math.sin(u * Math.PI * 2.2 - p * Math.PI * 2) * 3.5;
-    if (!esPosicionNavegable(mascara, sx, sy, 18, false) || estaCercaDePlaca(sx, sy, 14)) continue;
-    const radioSombra = (10 - u * 5.2) * (0.65 + 0.35 * envolvente);
-    ctx.globalAlpha = envolvente * 0.34 * (1 - u * 0.35);
+    if (!esPosicionNavegable(mascara, sx, sy, 16, false) || estaCercaDePlaca(sx, sy, 12)) continue;
+    const radioSombra = (10 - u * 5.2) * escala * (0.65 + 0.35 * envolvente);
+    ctx.globalAlpha = envolvente * 0.36 * (1 - u * 0.35);
     ctx.fillStyle = "#010c1b";
     ctx.beginPath();
     ctx.ellipse(sx, sy, radioSombra * 1.25, radioSombra * 0.52, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Arcos dorsales acorazados de la serpiente marina emergiendo en el abismo
   const segmentos = 6;
   for (let s = 0; s < segmentos; s++) {
     const u = s / (segmentos - 1);
-    const sx = centro.x + (avance - s * 16.5) * dir;
+    const sx = centro.x + (avance - s * 16.5 * escala) * dir;
     const arco = Math.sin(p * Math.PI * 2.1 - s * 0.85);
     if (arco <= -0.05) continue;
     const altura = Math.max(0, arco);
-    const sy = centro.y - altura * 9 + Math.sin(s * 1.1) * 2;
-    if (!esPosicionNavegable(mascara, sx, sy, 18, false) || estaCercaDePlaca(sx, sy, 14)) continue;
+    const sy = centro.y - altura * 9 * escala + Math.sin(s * 1.1) * 2;
+    if (!esPosicionNavegable(mascara, sx, sy, 16, false) || estaCercaDePlaca(sx, sy, 12)) continue;
 
-    const radio = (s === 0 ? 10.5 : 8.6 - u * 4.2) * (0.72 + 0.28 * envolvente);
+    const radio = (s === 0 ? 10.5 : 8.6 - u * 4.2) * escala * (0.72 + 0.28 * envolvente);
     ctx.globalAlpha = envolvente * (0.58 + 0.42 * altura);
 
     ctx.fillStyle = "#06273c";
@@ -1336,7 +1892,6 @@ function dibujarLeviatanAbisal(
     ctx.arc(sx - dir * 1.2, sy - 0.8, radio * 0.72, Math.PI * 1.15, -Math.PI * 0.15);
     ctx.fill();
 
-    // Cresta iluminada con filo lunar y espinas dorsales pixeladas
     ctx.strokeStyle = "#38bdf8";
     ctx.lineWidth = 1.4;
     ctx.beginPath();
@@ -1349,16 +1904,338 @@ function dibujarLeviatanAbisal(
     ctx.fillRect(rx - 1, Math.round(sy - radio - 3), 2, 3);
     ctx.fillRect(rx - dir * 3, Math.round(sy - radio - 1), 2, 2);
 
-    // Espuma blanca rota en la línea de flotación
-    ctx.fillStyle = "rgba(224, 242, 254, 0.58)";
-    ctx.fillRect(Math.round(sx - radio), ry, Math.round(radio * 0.9), 1.5);
-    ctx.fillRect(Math.round(sx + 1), ry + 1, Math.round(radio * 0.85), 1.5);
+    ctx.fillStyle = "rgba(224, 242, 254, 0.56)";
+    ctx.fillRect(Math.round(sx - radio * 0.85), ry, 4, 1.5);
+    ctx.fillRect(Math.round(sx + 2), ry + 1, 3, 1.5);
 
     if (s === 0) {
       ctx.fillStyle = "#67e8f9";
       ctx.fillRect(Math.round(sx + 4 * dir), ry - 5, 3, 2);
       ctx.fillStyle = "#e0f2fe";
       ctx.fillRect(Math.round(sx + 5 * dir), ry - 5, 1.5, 1.5);
+    }
+  }
+}
+
+function dibujarCuerpoMosasaurus(
+  ctx: CanvasRenderingContext2D,
+  mascara: MascaraOceano,
+  centro: Punto2D,
+  p: number,
+  envolvente: number,
+  dir: number,
+  escala: number,
+): void {
+  const avance = (p - 0.5) * 82 * escala;
+  const cx = centro.x + avance * dir;
+  const cy = centro.y;
+  if (!esPosicionNavegable(mascara, cx, cy, 18, false) || estaCercaDePlaca(cx, cy, 12)) return;
+
+  // Sombra abisal larga unificando cabeza, dorso y cola bajo la superficie
+  ctx.globalAlpha = envolvente * 0.44;
+  ctx.fillStyle = "#010917";
+  ctx.beginPath();
+  ctx.ellipse(cx - 10 * dir * escala, cy + 4, 34 * escala, 9.5 * escala, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  dibujarEspumaEmergente(
+    ctx,
+    cx - 8 * dir * escala,
+    cy,
+    22 * escala,
+    7.5 * escala,
+    p,
+    envolvente,
+    "rgba(224, 242, 254, 0.62)",
+  );
+
+  // 1. Cabeza reptiliana con fauces acorazadas emergiendo en ángulo
+  const saltoCabeza = Math.max(0, Math.sin(p * Math.PI * 1.65)) * 10 * escala;
+  const hx = cx + 13 * dir * escala;
+  const hy = cy - saltoCabeza;
+  if (esPosicionNavegable(mascara, hx, hy, 16, false) && !estaCercaDePlaca(hx, hy, 12)) {
+    ctx.globalAlpha = envolvente * 0.96;
+    // Cráneo dorsal oscuro
+    ctx.fillStyle = "#062135";
+    ctx.beginPath();
+    ctx.moveTo(hx - 12 * dir * escala, hy + 2);
+    ctx.quadraticCurveTo(hx - 2 * dir * escala, hy - 10.5 * escala, hx + 18 * dir * escala, hy - 4 * escala);
+    ctx.lineTo(hx + 6 * dir * escala, hy + 1 * escala);
+    ctx.closePath();
+    ctx.fill();
+
+    // Placa craneal lunar + mandíbula inferior entreabierta
+    ctx.fillStyle = "#0e496b";
+    ctx.beginPath();
+    ctx.moveTo(hx - 7 * dir * escala, hy - 0.5);
+    ctx.lineTo(hx + 16 * dir * escala, hy - 4 * escala);
+    ctx.lineTo(hx + 2 * dir * escala, hy - 7.5 * escala);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#0a3551";
+    ctx.beginPath();
+    ctx.moveTo(hx - 2 * dir * escala, hy + 1);
+    ctx.lineTo(hx + 14 * dir * escala, hy + 0.5 * escala);
+    ctx.lineTo(hx + 4 * dir * escala, hy + 4.5 * escala);
+    ctx.closePath();
+    ctx.fill();
+
+    // Contorno cian lunar y colmillos/ojo luminoso
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(hx - 10 * dir * escala, hy + 0.5);
+    ctx.quadraticCurveTo(hx + 1 * dir * escala, hy - 9.5 * escala, hx + 17.5 * dir * escala, hy - 4 * escala);
+    ctx.stroke();
+
+    ctx.fillStyle = "#67e8f9";
+    ctx.fillRect(Math.round(hx + 3 * dir * escala), Math.round(hy - 5.5 * escala), 2.5, 2);
+    ctx.fillStyle = "#e0f2fe";
+    ctx.fillRect(Math.round(hx + 10 * dir * escala), Math.round(hy - 2.5 * escala), 1.5, 2);
+    ctx.fillRect(Math.round(hx + 14 * dir * escala), Math.round(hy - 3 * escala), 1.5, 1.5);
+  }
+
+  // 2. Lomo arqueado con espinas dorsales, aleta pectoral y gotas de salpicadura
+  const bx = cx - 12 * dir * escala;
+  const by = cy - Math.max(0, Math.sin(p * Math.PI * 1.65 - 0.52)) * 8.2 * escala;
+  if (esPosicionNavegable(mascara, bx, by, 16, false) && !estaCercaDePlaca(bx, by, 12)) {
+    ctx.globalAlpha = envolvente * 0.92;
+    ctx.fillStyle = "#06273c";
+    ctx.beginPath();
+    ctx.arc(bx, by + 1, 11.5 * escala, Math.PI, 0);
+    ctx.fill();
+
+    ctx.fillStyle = "#0e496b";
+    ctx.beginPath();
+    ctx.arc(bx - dir * 1.2, by, 8.2 * escala, Math.PI * 1.15, -Math.PI * 0.15);
+    ctx.fill();
+
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(bx, by + 1, 11.5 * escala, Math.PI * 1.12, -Math.PI * 0.12);
+    ctx.stroke();
+
+    // Espinas dorsales pixeladas sobre el lomo
+    ctx.fillStyle = "#67e8f9";
+    for (let sp = -1; sp <= 1; sp++) {
+      ctx.fillRect(Math.round(bx + sp * 4.5 * escala), Math.round(by - 12.5 * escala + Math.abs(sp) * 2), 2, 3);
+    }
+
+    // Aleta lateral amplia rompiendo la superficie
+    ctx.fillStyle = "#0b3a56";
+    ctx.beginPath();
+    ctx.moveTo(bx + 2 * dir * escala, by + 2);
+    ctx.lineTo(bx - 5.5 * dir * escala, by - 10 * escala);
+    ctx.lineTo(bx - 11.5 * dir * escala, by + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Gotas y espuma quebrada orgánicamente en la línea de flotación (sin barra recta rígida)
+    ctx.fillStyle = "rgba(224, 242, 254, 0.72)";
+    ctx.fillRect(Math.round(bx - 10 * escala), Math.round(cy + 1), 4, 1.5);
+    ctx.fillRect(Math.round(bx - 2 * escala), Math.round(cy + 2), 5, 1.5);
+    ctx.fillRect(Math.round(bx + 6 * escala), Math.round(cy + 1), 4, 1.5);
+    ctx.fillStyle = "#bae6fd";
+    ctx.fillRect(Math.round(bx - 8 * dir * escala), Math.round(by - 12 * escala), 1.5, 1.5);
+  }
+
+  // 3. Cola bilobada azotando con vórtice detrás del dorso
+  const tx = cx - 35 * dir * escala;
+  const ty = cy - Math.max(0, Math.sin(p * Math.PI * 2.0 - 1.15)) * 9.5 * escala;
+  if (esPosicionNavegable(mascara, tx, ty, 16, false) && !estaCercaDePlaca(tx, ty, 12)) {
+    ctx.globalAlpha = envolvente * 0.88;
+    ctx.fillStyle = "#07304a";
+    ctx.beginPath();
+    ctx.moveTo(tx + 5 * dir * escala, ty + 2.5);
+    ctx.lineTo(tx - 7 * dir * escala, ty - 13 * escala);
+    ctx.lineTo(tx - 1.5 * dir * escala, ty - 3 * escala);
+    ctx.lineTo(tx - 4.5 * dir * escala, ty + 2.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(224, 242, 254, 0.68)";
+    ctx.fillRect(Math.round(tx - 5), Math.round(cy + 1), 3, 1.5);
+    ctx.fillRect(Math.round(tx + 1), Math.round(cy + 2), 3, 1.5);
+  }
+}
+
+function dibujarCuerpoKraken(
+  ctx: CanvasRenderingContext2D,
+  mascara: MascaraOceano,
+  centro: Punto2D,
+  p: number,
+  envolvente: number,
+  escala: number,
+): void {
+  if (!esPosicionNavegable(mascara, centro.x, centro.y, 18, false) || estaCercaDePlaca(centro.x, centro.y, 12)) {
+    return;
+  }
+
+  // Remolino de tinta abisal oscura y espuma fragmentada
+  ctx.globalAlpha = envolvente * 0.56;
+  ctx.fillStyle = "#010612";
+  ctx.beginPath();
+  ctx.ellipse(centro.x, centro.y + 3, 33 * escala, 13 * escala, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  dibujarEspumaEmergente(
+    ctx,
+    centro.x,
+    centro.y + 1,
+    21 * escala,
+    8.5 * escala,
+    p,
+    envolvente,
+    "rgba(186, 230, 253, 0.62)",
+  );
+
+  // Siete tentáculos cónicos gruesos retorciéndose con ventosas sin aspecto de alambre
+  for (let k = 0; k < TENTACULOS_KRAKEN_SURGIMIENTO.length; k++) {
+    const ang = TENTACULOS_KRAKEN_SURGIMIENTO[k];
+    const cicloTent = Math.sin(p * Math.PI * 2.25 + k * 0.95);
+    if (cicloTent < -0.2) continue;
+    const altBase = (0.38 + 0.62 * Math.max(0, cicloTent)) * 24 * escala;
+    const bx = centro.x + Math.cos(ang) * 20 * escala;
+    const by = centro.y + Math.sin(ang) * 5.8 * escala;
+    const lado = Math.cos(ang) >= 0 ? 1 : -1;
+    const tipX = bx + lado * 11 * escala + Math.sin(p * Math.PI * 3.8 + k * 1.4) * 5.2;
+    const tipY = by - altBase;
+    if (!esPosicionNavegable(mascara, tipX, tipY, 14, false) || estaCercaDePlaca(tipX, tipY, 10)) {
+      continue;
+    }
+
+    const ctrlX = bx + (tipX - bx) * 0.32 + Math.cos(p * Math.PI * 2.9 + k) * 7.5;
+    const ctrlY = by - altBase * 0.82;
+    const dx = tipX - bx;
+    const dy = tipY - by;
+    const mag = Math.hypot(dx, dy) || 1;
+    const nx = -dy / mag;
+    const ny = dx / mag;
+    const anchoBase = 3.6 * escala;
+    const anchoMedio = 2.0 * escala;
+
+    ctx.globalAlpha = envolvente * (0.72 + 0.28 * Math.max(0, cicloTent));
+    // Silueta cónica rellena del tentáculo (gruesa en la ruptura, afilada en el látigo)
+    ctx.fillStyle = "#081833";
+    ctx.beginPath();
+    ctx.moveTo(bx + nx * anchoBase, by + ny * anchoBase);
+    ctx.quadraticCurveTo(ctrlX + nx * anchoMedio, ctrlY + ny * anchoMedio, tipX, tipY);
+    ctx.quadraticCurveTo(ctrlX - nx * anchoMedio, ctrlY - ny * anchoMedio, bx - nx * anchoBase, by - ny * anchoBase);
+    ctx.closePath();
+    ctx.fill();
+
+    // Brillo lunar fino sobre el borde exterior y ventosas pálidas en la cara interna
+    ctx.strokeStyle = k % 2 === 0 ? "#38bdf8" : "#818cf8";
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(bx + nx * (anchoBase * 0.85), by + ny * (anchoBase * 0.85));
+    ctx.quadraticCurveTo(ctrlX + nx * (anchoMedio * 0.85), ctrlY + ny * (anchoMedio * 0.85), tipX, tipY);
+    ctx.stroke();
+
+    ctx.fillStyle = "#c4b5fd";
+    ctx.fillRect(Math.round((bx + ctrlX) * 0.5 - nx * 1.2), Math.round((by + ctrlY) * 0.5 - ny * 1.2), 2, 2);
+    ctx.fillRect(
+      Math.round((ctrlX + tipX) * 0.5 - nx * 0.6),
+      Math.round((ctrlY + tipY) * 0.5 - ny * 0.6),
+      1.5,
+      1.5,
+    );
+    ctx.fillStyle = "rgba(224, 242, 254, 0.66)";
+    ctx.fillRect(Math.round(bx - 3), Math.round(by), 3, 1.5);
+    ctx.fillRect(Math.round(bx + 2), Math.round(by + 1), 2.5, 1.5);
+  }
+
+  // Manto cefalópodo picudo con aletas laterales y ojos luminosos abisales
+  const asomoManto = Math.max(0, Math.sin(p * Math.PI * 1.25));
+  if (asomoManto > 0.08) {
+    const hManto = (14 + asomoManto * 9) * escala;
+    const wManto = 12 * escala;
+    ctx.globalAlpha = envolvente * 0.96;
+    ctx.fillStyle = "#091730";
+    ctx.beginPath();
+    ctx.moveTo(centro.x - wManto, centro.y + 2);
+    ctx.quadraticCurveTo(centro.x - wManto * 0.9, centro.y - hManto * 0.62, centro.x, centro.y - hManto);
+    ctx.quadraticCurveTo(centro.x + wManto * 0.9, centro.y - hManto * 0.62, centro.x + wManto, centro.y + 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Aletas laterales del manto y cresta interior púrpura-añil
+    ctx.fillStyle = "#162d59";
+    ctx.beginPath();
+    ctx.moveTo(centro.x - wManto * 0.65, centro.y - 1);
+    ctx.quadraticCurveTo(centro.x, centro.y - hManto * 0.84, centro.x + wManto * 0.35, centro.y - 1);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#818cf8";
+    ctx.lineWidth = 1.25;
+    ctx.beginPath();
+    ctx.moveTo(centro.x - wManto * 0.92, centro.y + 1);
+    ctx.quadraticCurveTo(centro.x - wManto * 0.85, centro.y - hManto * 0.62, centro.x, centro.y - hManto);
+    ctx.quadraticCurveTo(centro.x + wManto * 0.85, centro.y - hManto * 0.62, centro.x + wManto * 0.92, centro.y + 1);
+    ctx.stroke();
+
+    // Ojos abisales rasgados
+    ctx.fillStyle = "#a5f3fc";
+    ctx.fillRect(Math.round(centro.x - 5 * escala), Math.round(centro.y - 4.5 * asomoManto * escala), 3, 2);
+    ctx.fillRect(Math.round(centro.x + 2 * escala), Math.round(centro.y - 4.5 * asomoManto * escala), 3, 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(Math.round(centro.x - 4 * escala), Math.round(centro.y - 4.5 * asomoManto * escala), 1, 1);
+    ctx.fillRect(Math.round(centro.x + 3 * escala), Math.round(centro.y - 4.5 * asomoManto * escala), 1, 1);
+  }
+}
+
+function dibujarAvistamientosAbisales(
+  ctx: CanvasRenderingContext2D,
+  mascara: MascaraOceano,
+  datos: DatosOceanoVivo,
+  t: number,
+  reducirMovimiento: boolean,
+): void {
+  if (reducirMovimiento) return;
+
+  const lista = datos.avistamientosAbisales;
+  ctx.save();
+  if (lista.length > 0) {
+    for (let i = 0; i < lista.length; i++) {
+      const av = lista[i];
+      const tiempoLocal = (t + av.desfase) % av.duracionCiclo;
+      if (tiempoLocal > av.duracionAparicion) continue;
+      const p = tiempoLocal / av.duracionAparicion;
+      const envolvente = Math.sin(p * Math.PI);
+
+      ctx.save();
+      if (av.especie === "leviatan") {
+        dibujarCuerpoLeviatan(ctx, mascara, av.centro, p, envolvente, av.direccion, av.escala);
+      } else if (av.especie === "mosasaurus") {
+        dibujarCuerpoMosasaurus(ctx, mascara, av.centro, p, envolvente, av.direccion, av.escala);
+      } else {
+        dibujarCuerpoKraken(ctx, mascara, av.centro, p, envolvente, av.escala);
+      }
+      ctx.restore();
+    }
+  } else if (datos.zonasLeviatan.length > 0) {
+    // simplificacion: respaldo cuando pruebas sintéticas solo proveen zonasLeviatan
+    const duracionCiclo = 18_000;
+    const duracionAparicion = 5_800;
+    const cicloIdx = Math.floor(t / duracionCiclo);
+    const enCiclo = t % duracionCiclo;
+    if (enCiclo <= duracionAparicion) {
+      const p = enCiclo / duracionAparicion;
+      dibujarCuerpoLeviatan(
+        ctx,
+        mascara,
+        datos.zonasLeviatan[cicloIdx % datos.zonasLeviatan.length],
+        p,
+        Math.sin(p * Math.PI),
+        cicloIdx % 2 === 0 ? 1 : -1,
+        1,
+      );
     }
   }
   ctx.restore();
@@ -1648,8 +2525,8 @@ export function dibujarOceanoVivo(
 
   dibujarFondoAbisalYCausticas(ctx, recursos, t, xMin, yMin, xMax - xMin, yMax - yMin);
   dibujarCorrientesMarinas(ctx, recursos.datos.corrientes, t);
+  dibujarSiluetasSubmarinas(ctx, recursos.mascara, recursos.datos.siluetasSubmarinas, t);
   dibujarFaunaSubmarina(ctx, recursos.mascara, recursos.datos, t);
-  dibujarLeviatanAbisal(ctx, recursos.mascara, recursos.datos.zonasLeviatan, t, reducirMovimiento);
   dibujarOlasYEstelasSuperficie(
     ctx,
     recursos.mascara,
@@ -1660,6 +2537,7 @@ export function dibujarOceanoVivo(
     xMax,
     yMax,
   );
+  dibujarAvistamientosAbisales(ctx, recursos.mascara, recursos.datos, t, reducirMovimiento);
   dibujarResacaYHitosRegionales(ctx, recursos.mascara, recursos.datos, t);
 }
 

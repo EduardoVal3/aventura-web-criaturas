@@ -13,6 +13,7 @@ import {
   calcularNivelDesdeXp,
   calcularProgresoXp,
   ProgresoService,
+  REGLAS_DESBLOQUEO_TERRITORIAL,
 } from '../src/modulos/progreso/progreso.service';
 import { CuracionService } from '../src/modulos/curacion/curacion.service';
 import { InventarioService } from '../src/modulos/inventario/inventario.service';
@@ -987,6 +988,33 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
 
       assert.ok(recien.includes('LOC-02'), 'LOC-02 debe desbloquearse automáticamente al tener ZON-01 al 100%');
       assert.strictEqual(zonasDesbloqueadas.some((z) => z.zonaId === 'LOC-02'), true);
+    });
+
+    it('los textos de requisito y detalleProgreso no exponen IDs internos de zona (ZON-XX / LOC-XX)', async () => {
+      const patronIdInterno = /\b(?:ZON|LOC)-\d{2}\b/;
+      for (const regla of Object.values(REGLAS_DESBLOQUEO_TERRITORIAL)) {
+        if (regla.requisito) {
+          assert.strictEqual(
+            patronIdInterno.test(regla.requisito),
+            false,
+            `El requisito de ${regla.zonaId} no debe incluir IDs internos: "${regla.requisito}"`,
+          );
+        }
+      }
+
+      const prismaMock: any = {
+        zonaDesbloqueada: { findUnique: async () => null },
+        criatura: { findMany: async () => [], count: async () => 0 },
+      };
+      const servicio = new ProgresoService(prismaMock);
+      for (const zonaId of ['LOC-02', 'ZON-03', 'ZON-04', 'LOC-03', 'ZON-05', 'ZON-06']) {
+        const evalReq = await servicio.evaluarEstadoRequisitoZona(prismaMock, 'pj-1', zonaId);
+        assert.strictEqual(
+          patronIdInterno.test(evalReq.detalleProgreso),
+          false,
+          `detalleProgreso de ${zonaId} no debe incluir IDs internos: "${evalReq.detalleProgreso}"`,
+        );
+      }
     });
   });
 });

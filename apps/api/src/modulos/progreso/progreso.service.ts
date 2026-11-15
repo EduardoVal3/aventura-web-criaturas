@@ -216,7 +216,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     abiertaPorDefecto: false,
     zonaPreviaId: 'ZON-01',
     nombreZonaPrevia: 'Praderas del Amanecer',
-    requisito: 'Cartografiar Praderas del Amanecer (ZON-01) al 100%',
+    requisito: 'Cartografiar Praderas del Amanecer al 100%',
     mensajeDesbloqueo:
       '¡Has cartografiado las Praderas del Amanecer! El camino hacia el Puesto Fronterizo del Río está despejado.',
   },
@@ -226,7 +226,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     abiertaPorDefecto: false,
     zonaPreviaId: 'ZON-02',
     nombreZonaPrevia: 'Riberas del Lago Espejo',
-    requisito: 'Cartografiar Riberas del Lago Espejo (ZON-02) al 100%',
+    requisito: 'Cartografiar Riberas del Lago Espejo al 100%',
     mensajeDesbloqueo:
       '¡Dominaste las Riberas del Lago Espejo! Las sendas del Bosque Susurrante se han abierto.',
   },
@@ -237,7 +237,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     zonaPreviaId: 'ZON-03',
     nombreZonaPrevia: 'Bosque Susurrante',
     minNivelCriatura: 5,
-    requisito: 'Cartografiar Bosque Susurrante (ZON-03) al 100% y poseer 1 criatura Nv. 5+',
+    requisito: 'Cartografiar Bosque Susurrante al 100% y poseer 1 criatura Nv. 5+',
     mensajeDesbloqueo:
       '¡Tu liderazgo fue reconocido! El acceso al Paso de los Riscos ha sido habilitado.',
   },
@@ -247,7 +247,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     abiertaPorDefecto: false,
     zonaPreviaId: 'ZON-04',
     nombreZonaPrevia: 'Paso de los Riscos',
-    requisito: 'Cartografiar Paso de los Riscos (ZON-04) al 100%',
+    requisito: 'Cartografiar Paso de los Riscos al 100%',
     mensajeDesbloqueo:
       '¡Superaste el Paso de los Riscos! Las puertas del Bastión del Norte te dan la bienvenida.',
   },
@@ -259,7 +259,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     nombreZonaPrevia: 'Paso de los Riscos',
     minNivelCriaturaEquipo: 5,
     cantidadCriaturasEquipo: 3,
-    requisito: 'Cartografiar Paso de los Riscos (ZON-04) al 100% y 3 criaturas en equipo Nv. 5+',
+    requisito: 'Cartografiar Paso de los Riscos al 100% y 3 criaturas en equipo Nv. 5+',
     mensajeDesbloqueo:
       '¡Has demostrado suficiente maestría! El sello de Cueva Umbría se ha disipado.',
   },
@@ -270,7 +270,7 @@ export const REGLAS_DESBLOQUEO_TERRITORIAL: Record<string, ReglaDesbloqueoTerrit
     zonaPreviaId: 'ZON-05',
     nombreZonaPrevia: 'Cueva Umbría',
     minNivelCriatura: 10,
-    requisito: 'Cartografiar Cueva Umbría (ZON-05) al 100% y poseer 1 criatura Nv. 10+',
+    requisito: 'Cartografiar Cueva Umbría al 100% y poseer 1 criatura Nv. 10+',
     mensajeDesbloqueo:
       '¡Has alcanzado la cima! El acceso al Pico de la Cumbre ha sido habilitado.',
   },
@@ -468,7 +468,7 @@ export class ProgresoService {
         progresoActual,
         progresoObjetivo: 100,
         requisito: regla.requisito,
-        detalleProgreso: `Cartografía ${regla.zonaPreviaId}: ${progresoActual}% / 100%`,
+        detalleProgreso: `Cartografía ${regla.nombreZonaPrevia ?? regla.zonaPreviaId}: ${progresoActual}% / 100%`,
         requisitoCartografia,
         requisitoNivelEquipo: null,
       };
@@ -526,7 +526,7 @@ export class ProgresoService {
         progresoActual,
         progresoObjetivo: 100,
         requisito: regla.requisito,
-        detalleProgreso: `Cartografía ${regla.zonaPreviaId}: ${progresoPrevia}% · Criaturas Nv.${nivelMin}+: ${cuentaCriaturasNivel}/1`,
+        detalleProgreso: `Cartografía ${regla.nombreZonaPrevia ?? regla.zonaPreviaId}: ${progresoPrevia}% · Criaturas Nv.${nivelMin}+: ${cuentaCriaturasNivel}/1`,
         requisitoCartografia,
         requisitoNivelEquipo,
       };
@@ -595,7 +595,7 @@ export class ProgresoService {
         progresoActual,
         progresoObjetivo: 100,
         requisito: regla.requisito,
-        detalleProgreso: `Cartografía ${regla.zonaPreviaId}: ${progresoPrevia}% · Criaturas en equipo Nv.${nivelReq}+: ${cuentaEquipoNivel}/${cantidadReq}`,
+        detalleProgreso: `Cartografía ${regla.nombreZonaPrevia ?? regla.zonaPreviaId}: ${progresoPrevia}% · Criaturas en equipo Nv.${nivelReq}+: ${cuentaEquipoNivel}/${cantidadReq}`,
         requisitoCartografia,
         requisitoNivelEquipo,
       };

@@ -10,6 +10,8 @@ import {
   DIMENSIONES_MAPA_MUNDO,
   type ConfiguracionIslaMapa,
 } from "./mapa-mundo.ts";
+import type { MascaraOceano } from "./oceano-vivo.ts";
+import { dibujarDioramaCumbre } from "./diorama-cumbre.ts";
 
 const PASOS_CONTORNO = 72;
 
@@ -638,6 +640,7 @@ export function dibujarCapaVivaMapa(
   ubicacionActualId: string,
   tiempo: number,
   reducirMovimiento: boolean,
+  mascaraOceano?: MascaraOceano | null,
 ): void {
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
@@ -1060,55 +1063,14 @@ export function dibujarCapaVivaMapa(
     }
   }
 
-  // ZON-06: La Cumbre — aurora boreal sobre los picos nevados y los 4 cristales glaciares exactos
-  if (desbloqueada("ZON-06")) {
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    const onda = Math.sin(t * 0.0018) * 8;
-    const gradAurora = ctx.createLinearGradient(840, 4, 1275, 48);
-    gradAurora.addColorStop(0, "rgba(16, 185, 129, 0)");
-    gradAurora.addColorStop(
-      0.32,
-      `rgba(52, 211, 153, ${0.22 + Math.sin(t * 0.003) * 0.07})`,
+  // ZON-06: La Cumbre — aurora multicapa, ventisca confinada, cristales vivos, dragón ancestral y cornisa
+  if (nodosPorId.has("ZON-06")) {
+    dibujarDioramaCumbre(
+      ctx,
+      desbloqueada("ZON-06"),
+      tiempo,
+      reducirMovimiento,
+      mascaraOceano,
     );
-    gradAurora.addColorStop(
-      0.68,
-      `rgba(56, 189, 248, ${0.24 + Math.cos(t * 0.0025) * 0.07})`,
-    );
-    gradAurora.addColorStop(1, "rgba(168, 85, 247, 0)");
-    ctx.strokeStyle = gradAurora;
-    ctx.lineWidth = 16;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(840, 28 + onda * 0.3);
-    ctx.quadraticCurveTo(1060, 6 - onda * 0.4, 1275, 32 + onda * 0.3);
-    ctx.stroke();
-    ctx.restore();
-
-    for (const [cx, cy] of [
-      [852, 82],
-      [933, 102],
-      [1247, 114],
-      [1172, 180],
-    ]) {
-      const d = 0.55 + Math.sin(t * 0.004 + cx) * 0.4;
-      dibujarHaloFuego(
-        ctx,
-        cx,
-        cy,
-        26,
-        0.38 * d,
-        "rgba(224, 242, 254, 0.92)",
-        "rgba(56, 189, 248, 0.35)",
-      );
-    }
-
-    ctx.fillStyle = "rgba(224, 242, 254, 0.72)";
-    for (let n = 0; n < 14; n++) {
-      const fn = (t * 0.00042 + n * 0.09) % 1;
-      const sx = 790 + ((n * 45 + t * 0.022) % 495);
-      const sy = 14 + fn * 195;
-      ctx.fillRect(Math.round(sx), Math.round(sy), 2.5, 2.5);
-    }
   }
 }

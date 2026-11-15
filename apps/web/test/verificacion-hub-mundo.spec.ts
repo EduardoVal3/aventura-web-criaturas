@@ -428,6 +428,7 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
     join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"),
     join(__dirname, "../src/lib/mapa-mundo.ts"),
     join(__dirname, "../src/lib/mapa-dioramas.ts"),
+    join(__dirname, "../src/lib/diorama-cumbre.ts"),
     join(__dirname, "../src/lib/oceano-vivo.ts"),
   ];
 
@@ -816,5 +817,77 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     );
   }
 });
+
+test("Subfase 10t: Diorama multicapa de La Cumbre (ZON-06) calibrado sobre arte maestro, diferenciado y sin asignaciones por cuadro", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const {
+    SILUETA_ENVOLVENTE_CUMBRE,
+    CONTORNO_MESETA_CUMBRE,
+    PICOS_CORDILLERA_CUMBRE,
+    CRISTALES_GLACIARES_CUMBRE,
+    AGUJAS_ACANTILADO_CUMBRE,
+    ESQUELETO_DRAGON_CUMBRE,
+    DESTELLOS_CORNISA_CUMBRE,
+    FRAGMENTOS_ESCARCHA_ACANTILADO,
+    dibujarDioramaCumbre,
+  } = await import("../src/lib/diorama-cumbre.ts");
+
+  // 1. Silueta de envolvente y meseta dentro de los límites de ZON-06 (sin invadir LOC-03 ni ZON-05)
+  assert.ok(SILUETA_ENVOLVENTE_CUMBRE.length >= 24);
+  assert.ok(CONTORNO_MESETA_CUMBRE.length >= 12);
+  for (const pt of SILUETA_ENVOLVENTE_CUMBRE) {
+    assert.ok(pt.x >= 765 && pt.x <= 1310, `Silueta fuera de rango X en ZON-06: ${pt.x}`);
+    assert.ok(pt.y >= 0 && pt.y <= 245, `Silueta fuera de rango Y en ZON-06: ${pt.y}`);
+  }
+
+  // 2. Cordillera, 4 cúmulos de cristales + 2 agujas y esqueleto del dragón ancestral
+  assert.ok(PICOS_CORDILLERA_CUMBRE.length >= 6);
+  assert.strictEqual(CRISTALES_GLACIARES_CUMBRE.length, 4, "Deben modelarse los 4 cúmulos de cristales");
+  assert.strictEqual(AGUJAS_ACANTILADO_CUMBRE.length, 2);
+  for (const cr of CRISTALES_GLACIARES_CUMBRE) {
+    assert.ok(cr.punta.y < cr.arista.y && cr.arista.y < cr.base.y);
+    assert.ok(cr.satelites.length >= 2);
+  }
+
+  assert.ok(
+    ESQUELETO_DRAGON_CUMBRE.fauces.x < ESQUELETO_DRAGON_CUMBRE.cuencaOcular.x,
+    "Las fauces deben orientarse a la izquierda respecto a la cuenca ocular",
+  );
+  assert.ok(ESQUELETO_DRAGON_CUMBRE.vertebras.length >= 9);
+  assert.ok(DESTELLOS_CORNISA_CUMBRE.length >= 10);
+  assert.ok(FRAGMENTOS_ESCARCHA_ACANTILADO.length >= 4);
+
+  // 3. Ejecución segura en Node (sin document) para ambos estados y movimiento reducido
+  const ctxDummy = {} as CanvasRenderingContext2D;
+  assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, true, 1600, false, null));
+  assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, false, 1600, false, null));
+  assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, true, 1600, true, null));
+
+  // 4. Integración en mapa-dioramas.ts y MapaInteractivoCanvas.tsx (cacheo de sprites y estado bloqueado/desbloqueado)
+  const dioramaCumbreCodigo = readFileSync(join(__dirname, "../src/lib/diorama-cumbre.ts"), "utf-8");
+  const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
+  const canvasCodigo = readFileSync(
+    join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
+    "utf-8",
+  );
+
+  assert.ok(dioramaCumbreCodigo.includes("spritesCumbreCache"), "Debe cachear sprites fuera de pantalla");
+  assert.ok(
+    dioramaCumbreCodigo.includes("dibujarEstadoBloqueadoCumbre"),
+    "Debe diferenciar atmósfera contenida cuando ZON-06 está bloqueada",
+  );
+  assert.strictEqual(
+    dioramaCumbreCodigo.includes("setLineDash"),
+    false,
+    "No debe introducir trazos punteados en el diorama de La Cumbre",
+  );
+  assert.ok(dioramasCodigo.includes("dibujarDioramaCumbre"));
+  assert.ok(canvasCodigo.includes("recursosOceano.mascara"));
+});
+
 
 

@@ -48,6 +48,7 @@ export interface PuntoEspuma {
   clima: ClimaCostero;
   fase: number;
   ancho: number;
+  esPilar?: boolean;
 }
 
 export interface MuestraCorriente {
@@ -389,6 +390,90 @@ export function analizarMascaraAlfaOceano(
     }
   }
 
+  // Detectar exclusivamente pies de columnas/pilares verticales de los 10 puentes tocando el agua
+  // (excluyendo techos aéreos, muros curvos inclinados de arcos y acantilados de islas)
+  const radioDeteccionPuente2 = 115 * 115;
+  const alturaMinColumna = Math.max(4, Math.round(7 * escala));
+  const aguaMinDebajo = Math.max(3, Math.round(4 * escala));
+  const alcanceFlancoColumna = Math.max(5, Math.round(20 * escala));
+
+  for (let y = alturaMinColumna + 1; y < alto - aguaMinDebajo - 1; y++) {
+    const ly = y / escala;
+    const fila = y * ancho;
+    for (let x = 2; x < ancho - 2; x++) {
+      const idx = fila + x;
+      if (tierra[idx] !== 0) continue;
+      // Aguas inmediatas al pie del pilar (d entre 3 y 7 px lógicos)
+      const d = distanciaMar[idx];
+      if (d < 3 || d > 7) continue;
+      const lx = x / escala;
+      if (distanciaMinimaPuenteCuadrada(lx, ly) > radioDeteccionPuente2) continue;
+
+      // Encontrar borde inferior sólido inmediatamente encima
+      let yBorde = -1;
+      for (let up = 1; up <= 4; up++) {
+        if (y - up >= 0 && tierra[(y - up) * ancho + x] === 1) {
+          yBorde = y - up;
+          break;
+        }
+      }
+      if (yBorde < alturaMinColumna) continue;
+
+      let espesor = 0;
+      for (let yy = yBorde; yy >= 0 && tierra[yy * ancho + x] === 1 && espesor < 32; yy--) {
+        espesor++;
+      }
+      if (espesor < alturaMinColumna) continue;
+
+      let aguaAbajo = 0;
+      for (let dy = 0; dy <= aguaMinDebajo; dy++) {
+        if (tierra[(y + dy) * ancho + x] === 0) {
+          aguaAbajo++;
+        } else {
+          break;
+        }
+      }
+      if (aguaAbajo < aguaMinDebajo) continue;
+
+      // Exigir flancos de agua en yBorde - 3 a izquierda Y derecha: garantiza una columna real sobresaliendo al mar
+      // y descarta automáticamente tanto techos de arcos como paredes inclinadas que nacen del tablero o acantilado
+      const yFlanco = Math.max(0, yBorde - 3);
+      let aguaIzq = false;
+      for (let dx = 1; dx <= alcanceFlancoColumna; dx++) {
+        if (x - dx < 0 || tierra[yFlanco * ancho + (x - dx)] === 0) {
+          aguaIzq = true;
+          break;
+        }
+      }
+      let aguaDer = false;
+      for (let dx = 1; dx <= alcanceFlancoColumna; dx++) {
+        if (x + dx >= ancho || tierra[yFlanco * ancho + (x + dx)] === 0) {
+          aguaDer = true;
+          break;
+        }
+      }
+      if (!aguaIzq || !aguaDer) continue;
+
+      // Descartar peldaños diagonales si justo al lado la piedra sigue descendiendo >= 4 celdas más abajo
+      let bajaCerca = false;
+      if (yBorde + 4 < alto) {
+        const yCheck = yBorde + 4;
+        for (let dx = 1; dx <= 4; dx++) {
+          if (
+            (x - dx >= 0 && tierra[yCheck * ancho + (x - dx)] === 1) ||
+            (x + dx < ancho && tierra[yCheck * ancho + (x + dx)] === 1)
+          ) {
+            bajaCerca = true;
+            break;
+          }
+        }
+      }
+      if (bajaCerca) continue;
+
+      esFrenteAcantilado[idx] = 2;
+    }
+  }
+
   return {
     ancho,
     alto,
@@ -592,14 +677,51 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
   const rng = crearPrng(105019);
   const { ancho, alto, escala } = mascara;
 
-  // 1. Puntos de espuma y resaca abrazando las costas reales detectadas en el alfa
+  // 1. Puntos de espuma en columnas/pilares de puentes (barrido completo) y en acantilados costeros
   const puntosEspuma: PuntoEspuma[] = [];
+  const sepPilar2 = 20 * 20;
+  for (let y = 1; y < alto - 1; y++) {
+    const fila = y * ancho;
+    for (let x = 1; x < ancho - 1; x++) {
+      const idx = fila + x;
+      if (mascara.esFrenteAcantilado[idx] !== 2) continue;
+      const d = mascara.distanciaMar[idx];
+      if (d < 3 || d > 7) continue;
+      const lx = x / escala;
+      const ly = y / escala;
+
+      let muyCerca = false;
+      for (let k = puntosEspuma.length - 1; k >= 0; k--) {
+        const dx = lx - puntosEspuma[k].x;
+        const dy = ly - puntosEspuma[k].y;
+        if (dx * dx + dy * dy < sepPilar2) {
+          muyCerca = true;
+          break;
+        }
+      }
+      if (muyCerca) continue;
+
+      const normal = consultarNormalAgua(mascara, lx, ly, false);
+      const clima = CODIGO_A_CLIMA[mascara.climaPorCelda[idx]] ?? "templado";
+      puntosEspuma.push({
+        x: lx,
+        y: ly,
+        nx: normal.x,
+        ny: Math.max(0.25, normal.y),
+        clima,
+        fase: (lx * 0.041 + ly * 0.027) % (Math.PI * 2),
+        ancho: 12 + rng() * 3,
+        esPilar: true,
+      });
+    }
+  }
+
   const sepEspuma2 = 12 * 12;
   for (let y = 1; y < alto - 1; y += 2) {
     const fila = y * ancho;
     for (let x = 1; x < ancho - 1; x += 2) {
       const idx = fila + x;
-      if (!mascara.esFrenteAcantilado[idx]) continue;
+      if (mascara.esFrenteAcantilado[idx] !== 1) continue;
       const d = mascara.distanciaMar[idx];
       if (d < 2 || d > 8) continue;
       const lx = x / escala;
@@ -2597,10 +2719,58 @@ function dibujarResacaYHitosRegionales(
 ): void {
   ctx.save();
 
-  // 1. Resaca rítmica orgánica (cuentas y micro-crestas pixeladas) abrazando la base de los acantilados
+  // 1. Resaca rítmica en acantilados y estelas suaves de choque en las columnas de los puentes
   for (let i = 0; i < datos.puntosEspuma.length; i++) {
     const p = datos.puntosEspuma[i];
-    const marea = Math.sin(t * 0.0024 + p.fase);
+    const marea = Math.sin(t * 0.0014 + p.fase);
+
+    if (p.esPilar) {
+      const rgbBase =
+        p.clima === "glacial"
+          ? "224, 242, 254"
+          : p.clima === "volcanico"
+            ? "253, 186, 116"
+            : "186, 230, 253";
+
+      // Collarín continuo suave en la base del pilar
+      const alfaBase = 0.28 + (marea + 1) * 0.1;
+      ctx.strokeStyle = `rgba(${rgbBase}, ${alfaBase.toFixed(3)})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.ellipse(
+        p.x,
+        p.y + 0.8 + marea * 0.4,
+        p.ancho * 0.5,
+        2.1,
+        0,
+        0.08 * Math.PI,
+        0.92 * Math.PI,
+      );
+      ctx.stroke();
+
+      // Dos ondas concéntricas en cámara lenta y serena (~3.6 s por expansión)
+      for (let onda = 0; onda < 2; onda++) {
+        const ciclo = (t * 0.00028 + p.fase * 0.159 + onda * 0.5) % 1;
+        const alfaPilar = (1 - ciclo) * 0.42 + 0.1;
+        const radioX = p.ancho * (0.45 + ciclo * 0.65);
+        const radioY = 2.0 + ciclo * 3.1;
+        ctx.strokeStyle = `rgba(${rgbBase}, ${alfaPilar.toFixed(3)})`;
+        ctx.lineWidth = 1.25 - ciclo * 0.25;
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y + ciclo * 2.4, radioX, radioY, 0, 0.06 * Math.PI, 0.94 * Math.PI);
+        ctx.stroke();
+      }
+
+      // Salpicadura sutil en los flancos del pilar
+      const brisa = 0.36 + (marea + 1) * 0.14;
+      ctx.fillStyle = `rgba(224, 242, 254, ${brisa.toFixed(3)})`;
+      const dispX = p.ancho * (0.55 + (marea + 1) * 0.1);
+      ctx.fillRect(Math.round(p.x - dispX), Math.round(p.y + 0.5), 2, 2);
+      ctx.fillRect(Math.round(p.x + dispX - 1), Math.round(p.y + 0.5), 2, 2);
+      ctx.fillRect(Math.round(p.x - 1), Math.round(p.y + 2.0 + marea * 0.9), 2, 2);
+      continue;
+    }
+
     const alfa = 0.24 + (marea + 1) * 0.11;
     const ex = p.x + p.nx * (1.2 + marea * 2.1);
     const ey = p.y + p.ny * (1.2 + marea * 2.1);

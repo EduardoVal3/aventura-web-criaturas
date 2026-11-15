@@ -1918,6 +1918,34 @@ Sobre la captura en vivo del mapa interactivo tras la Subfase 10s (`Riscos` / `L
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`3.30s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `75673.0201ms`).
 
+---
+
+## 34. Erradicación de Tarjetas DOM, Tooltip con Nombre Real y Equilibrio Abisal (Subfase 10s — 15/11/2026)
+
+### 34.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+Tras validar la calibración previa en uso real se detectaron tres fricciones concretas de rendimiento y claridad en la capa interactiva del mapa:
+1. **Latencia de desplazamiento provocada por tarjetas DOM flotantes:** Las 9 tarjetas `[data-placa-isla]` con `backdrop-blur-xs`, bordes sombreados y `animate-pulse` reproyectaban compositing sobre el lienzo WebGL/Canvas en cada cuadro de arrastre y zoom; además resultaban redundantes frente a la inspección directa mediante el tooltip de zona.
+2. **Doble denominación y truncamiento en el tooltip al pasar el cursor:** El encabezado del modal flotante combinaba `{nodo.nombre}` con una etiqueta de bioma paralela inventada (`ETIQUETA_BIOMA[isla.bioma]`, ej. `"Paso ... Riscos Escarpados"`), recortando el nombre real de la región y mostrando un rótulo ficticio inexistente en el dominio del juego.
+3. **Saturación visual de Kraken y Leviatán en superficie:** Al elevar a 11 los avistamientos de superficie y a 4 los krakens submarinos, ambas especies predominaban demasiado en pantalla en lugar de resaltar como encuentros amplios y bien espaciados.
+
+### 34.2 Mejoras Implementadas
+- **Eliminación completa de tarjetas flotantes y su botón de alternancia ([MapaInteractivoCanvas.tsx](file:///apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
+  - Retiro integral de las tarjetas `[data-placa-isla]`, del estado `mostrarPlacas`, de las variables `escalaPlaca` / `desplazamientoPlaca*`, del botón `[data-boton-placas-mapa]` y de las importaciones de Lucide ahora innecesarias (`Compass`, `Eye`, `EyeOff`, `Lock`, `MapPin`, `ShieldCheck`, `Sparkles`), dejando la barra flotante con sus **4 controles limpios** (`Acercar mapa`, `Alejar mapa`, `Centrar en mi ubicación` y sonido).
+- **Tooltip limpio exclusivamente con el nombre canónico real ([MapaInteractivoCanvas.tsx](file:///apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
+  - Eliminación del diccionario `ETIQUETA_BIOMA` y del tipo `ConfiguracionIslaMapa` en el componente; el encabezado del tooltip `[role="tooltip"]` muestra únicamente `{nodo.nombre}` sobre contenedor `w-max min-w-52 max-w-68` sin truncamientos.
+- **Equilibrio espacial de Kraken y Leviatán conservando ciclos prolongados ([oceano-vivo.ts](file:///apps/web/src/lib/oceano-vivo.ts)):**
+  - Reducción de avistamientos de superficie de 11 a **6 ubicaciones espaciadas** (**2 krakens, 2 leviatanes y 2 mosasaurus** distribuidos en extremos opuestos sin solaparse) manteniendo presencia prolongada (`14.4–16.8s` activos sobre ciclos de `18.0–21.0s`, `>= 78%` del ciclo con envolvente en meseta), y ajuste de krakens submarinos de 4 a **2** preservando el resto de siluetas marinas (ballenas, plesiosaurios, mantarrayas, mosasaurus) por mares interiores y exteriores.
+
+### 34.3 Verificación de Calidad y Cero Regresiones
+- **Inspección Visual en Chromium Headless (`06` y `07`):**
+  - Verificación con cursor sobre `ZON-04`: el DOM reportó `placasDom: 0`, `botonPlacasDom: 0`, `controlesCount: 4` y tooltip con encabezado íntegro **`"Paso de los Riscos"`** sin segundo subtítulo inventado; en vista alejada (`zoom = 0.50`) el mapa luce despejado, fluido y sin saturación de krakens ni leviatanes.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores.
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con **`Found 0 warnings and 0 errors` en `159ms`** sobre los 3 archivos modificados (`oceano-vivo.ts`, `MapaInteractivoCanvas.tsx`, `verificacion-hub-mundo.spec.ts`) y salida `0` global.
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `2402.6558ms`), verificando eliminación de tarjetas/botón/`ETIQUETA_BIOMA`, cota `<= 6` de avistamientos (`krakens <= 2`, `leviatanes <= 2`) y duración extendida (`>= 14s` y `>= 78%`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`4.32s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `53272.5467ms`).
+
+
 
 
 

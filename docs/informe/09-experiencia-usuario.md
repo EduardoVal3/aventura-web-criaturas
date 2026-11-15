@@ -1972,6 +1972,36 @@ Al revisar en detalle los puentes de Aethelgard tras integrar la Subfase 10s (`3
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`5.59s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `83152.7656ms`).
 
+---
+
+## 36. Calibración de Colindación Exacta del Agua con Columnas de Puentes (Subfase 10s)
+
+> **Rama de trabajo:** `funcionalidad/fase-10s-calibracion-columnas`
+> **Módulos implicados:** [oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)
+
+### 36.1 Diagnóstico Inicial
+Al auditar la captura en primer plano del área central entre `Puesto del Río`, `Villa Serena`, `Lago Espejo` y `Riscos Escarpados`, manteniendo intacta la animación serena de ondas en columnas, se detectaron tres causas geométricas de desalineación en la extracción automática de pilares (`esPilar: true`):
+1. **Desplazamiento hacia el borde izquierdo de cada columna:** el barrido lineal de izquierda a derecha fijaba la semilla al primer píxel con distancia `sepPilar2 = 20 * 20`, ubicando el emisor en el borde izquierdo de columnas de `16–24px` de ancho en lugar de su eje horizontal central.
+2. **Desfase vertical bajo el pie sumergido:** al muestrear agua a distancia `3..7` de la grilla (`0.5x`), los centros descendían `4–7px` por debajo de la mampostería (`y = 634` frente a la base real en `y ≈ 630` en el viaducto central `LOC-02 <-> ZON-03`), separando visualmente la onda del pilar.
+3. **Falsos positivos aislados bajo copas de árboles en `Lago Espejo`:** `distanciaMinimaPuenteCuadrada` consideraba la cercanía lateral al trazo superior del viaducto `LOC-02 <-> ZON-03` sin validar que el punto estuviera a la altura vertical del puente (`ly >= yPuente - 4`), generando dos puntos por debajo de las copas de árboles superiores de `ZON-02`.
+
+### 36.2 Mejoras Implementadas
+1. **Agrupación por Columna y Centrado Exacto en Pie de Mampostería ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
+   - Se incorporó `muestraPuenteMasCercana(lx, ly)` devolviendo `{ d2, yPuente }` para exigir `ly >= cercano.yPuente - 4` en la pasada de pilares dentro de `analizarMascaraAlfaOceano` (distancia inmediata `d` entre `2` y `6`, altura de agua abierta `up` entre `1` y `3`), eliminando los artefactos sobre las copas de árboles de `Lago Espejo`.
+   - En `generarDatosOceanoVivo`, todas las celdas candidatas `esFrenteAcantilado === 2` se agrupan por componente conexa (`|dx| <= 18 && |dy| <= 14`) para obtener su envolvente horizontal `[xMin, xMax]` y la base real de piedra `yBorde`, fijando `lx = (xMin + xMax) * 0.5`, `yAgua = (yBorde + 1) / escala` y ancho calibrado con el grosor sólido real medido en `yBorde - 1` (`Math.max(10, Math.min(28, maxAnchoCol * 1.15))`), con respaldo seguro a la celda de agua válida más cercana al eje si el punto medio toca un saliente irregular (`consultarDistanciaMar(...) === 0`).
+   - Se conservó sin cambios la animación visual, cadencia (`t * 0.00028`) y renderizado en `dibujarResacaYHitosRegionales`.
+2. **Inspección Visual en Chrome Headless:**
+   - Se validaron capturas ampliadas sobre `LOC-02 <-> ZON-03`, `LOC-01 <-> ZON-02`, `ZON-02 <-> ZON-03`, `ZON-04 <-> ZON-05`, `ZON-05 <-> ZON-06`, `LOC-03 <-> ZON-06` y los puentes del oeste antes de retirar los archivos temporales de inspección.
+
+### 36.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/oceano-vivo.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos en `80ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `91` archivos en `176ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `1256.8878ms`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`2.13s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `29078.2906ms`).
+
+
 
 
 

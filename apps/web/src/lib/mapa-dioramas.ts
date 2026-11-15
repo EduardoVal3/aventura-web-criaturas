@@ -15,6 +15,10 @@ import {
   dibujarCieloAuroraCumbre,
   dibujarDioramaCumbre,
 } from "./diorama-cumbre.ts";
+import {
+  dibujarDioramaCuevaUmbria,
+  dibujarFondoCuevaUmbria,
+} from "./diorama-cueva-umbria.ts";
 
 const PASOS_CONTORNO = 72;
 
@@ -632,8 +636,8 @@ function dibujarPuentesYRutasVivas(
 }
 
 /**
- * Dibuja fenómenos celestes de profundidad (aurora boreal de La Cumbre) detrás de la lámina WebP
- * para que las cumbres nevadas y cristales se recorten con nitidez frente al cielo nocturno.
+ * Dibuja fenómenos celestes y atmosféricos de profundidad (aurora boreal de La Cumbre y resplandor/humo
+ * tras la cima de Cueva Umbría) detrás de la lámina WebP para que las cumbres y cristales se recorten delante.
  */
 export function dibujarFondoCieloMapa(
   ctx: CanvasRenderingContext2D,
@@ -641,9 +645,15 @@ export function dibujarFondoCieloMapa(
   tiempo: number,
   reducirMovimiento: boolean,
 ): void {
+  const cueva = nodos.find((n) => n.id === "ZON-05");
+  if (cueva) {
+    dibujarFondoCuevaUmbria(ctx, Boolean(cueva.desbloqueada), tiempo, reducirMovimiento);
+  }
+
   const cumbre = nodos.find((n) => n.id === "ZON-06");
-  if (!cumbre) return;
-  dibujarCieloAuroraCumbre(ctx, Boolean(cumbre.desbloqueada), tiempo, reducirMovimiento);
+  if (cumbre) {
+    dibujarCieloAuroraCumbre(ctx, Boolean(cumbre.desbloqueada), tiempo, reducirMovimiento);
+  }
 }
 
 /**
@@ -980,106 +990,16 @@ export function dibujarCapaVivaMapa(
     }
   }
 
-  // ZON-05: Cueva Umbría — caída de cueva (1453, 290..350), 3 cascadas completas de labio a poza y cristales violeta
-  if (desbloqueada("ZON-05")) {
-    const magma = 0.62 + Math.sin(t * 0.0052) * 0.35;
-    dibujarHaloFuego(
+  // ZON-05: Cueva Umbría — diorama volcánico y arcano multicapa (caverna, magma, vapor, cristales y arcos)
+  if (nodosPorId.has("ZON-05")) {
+    dibujarDioramaCuevaUmbria(
       ctx,
-      1453,
-      296,
-      24,
-      0.44 * magma,
-      "rgba(254, 240, 138, 0.95)",
-      "rgba(234, 88, 12, 0.35)",
+      desbloqueada("ZON-05"),
+      tiempo,
+      reducirMovimiento,
+      mascaraOceano,
+      auroraDetrasDibujada,
     );
-    dibujarHaloFuego(
-      ctx,
-      1452,
-      352,
-      36,
-      0.5 * magma,
-      "rgba(253, 224, 71, 0.92)",
-      "rgba(234, 88, 12, 0.36)",
-    );
-    dibujarHaloFuego(
-      ctx,
-      1327,
-      472,
-      30,
-      0.42 * magma,
-      "rgba(251, 146, 60, 0.9)",
-      "rgba(220, 38, 38, 0.3)",
-    );
-    dibujarHaloFuego(
-      ctx,
-      1414,
-      486,
-      44,
-      0.46 * magma,
-      "rgba(251, 146, 60, 0.92)",
-      "rgba(220, 38, 38, 0.34)",
-    );
-    dibujarHaloFuego(
-      ctx,
-      1526,
-      478,
-      30,
-      0.42 * magma,
-      "rgba(251, 146, 60, 0.9)",
-      "rgba(220, 38, 38, 0.3)",
-    );
-
-    const flujo = t * 0.036;
-    ctx.fillStyle = "#fef08a";
-    ctx.fillRect(1452, Math.round(290 + (flujo % 56)), 3, 5);
-    ctx.fillRect(1326, Math.round(398 + (flujo % 70)), 3, 5);
-    ctx.fillRect(1408, Math.round(414 + ((flujo + 12) % 68)), 3, 6);
-    ctx.fillRect(1418, Math.round(416 + ((flujo + 34) % 66)), 2.5, 5);
-    ctx.fillRect(1526, Math.round(412 + ((flujo + 20) % 62)), 3, 5);
-    dibujarChispasAscendentes(ctx, 1425, 474, 9, 80, 74, t * 0.95, "#fdba74");
-
-    // Pulsos violetas en los 3 grupos de cristales reales y arco eléctrico en las puntas del cristal gigante
-    const arc = Math.max(0, Math.sin(t * 0.008));
-    dibujarHaloFuego(
-      ctx,
-      1317,
-      328,
-      34,
-      0.38 + arc * 0.2,
-      "rgba(216, 180, 254, 0.88)",
-      "rgba(147, 51, 234, 0.32)",
-    );
-    dibujarHaloFuego(
-      ctx,
-      1518,
-      255,
-      48,
-      0.46 + arc * 0.25,
-      "rgba(232, 121, 249, 0.92)",
-      "rgba(147, 51, 234, 0.36)",
-    );
-    dibujarHaloFuego(
-      ctx,
-      1548,
-      358,
-      30,
-      0.36 + arc * 0.18,
-      "rgba(216, 180, 254, 0.86)",
-      "rgba(147, 51, 234, 0.3)",
-    );
-
-    if (Math.sin(t * 0.017) > 0.72) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(245, 208, 254, 0.92)";
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(1486, 218);
-      ctx.lineTo(1505, 208);
-      ctx.lineTo(1525, 224);
-      ctx.lineTo(1558, 218);
-      ctx.stroke();
-      ctx.restore();
-    }
   }
 
   // ZON-06: La Cumbre — aurora multicapa, ventisca confinada, cristales vivos, dragón ancestral y cornisa

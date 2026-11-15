@@ -251,6 +251,7 @@ export function MapaInteractivoCanvas({
           ubicacionActualId,
           tiempo,
           reducirMovimiento,
+          recursosOceano.mascara,
         );
         dibujarAvesMarinasLejanas(ctx, recursosOceano, tiempo, reducirMovimiento);
       } else {
@@ -274,6 +275,7 @@ export function MapaInteractivoCanvas({
           ubicacionActualId,
           tiempo,
           reducirMovimiento,
+          recursosOceano?.mascara,
         );
       }
 

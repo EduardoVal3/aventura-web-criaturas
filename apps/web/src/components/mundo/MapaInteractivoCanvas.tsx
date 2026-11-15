@@ -134,32 +134,20 @@ export function MapaInteractivoCanvas({
     camaraRef.current = camara;
   }, [camara]);
 
-  // Cargar ilustración transparente de 9 islas (respaldo vectorial si aún no termina de descargar)
+  // Cargar ilustración transparente optimizada en WebP (respaldo vectorial si aún no termina de descargar)
   useEffect(() => {
     let cancelado = false;
-    const cargarImagen = (fuente: string, respaldo?: string) => {
-      const img = new Image();
-      img.decoding = "async";
-      img.onload = () => {
-        if (cancelado) return;
-        mapaImagenRef.current = img;
-        setMapaImagenLista(true);
-      };
-      img.onerror = () => {
-        if (cancelado) return;
-        if (respaldo) {
-          cargarImagen(respaldo);
-        } else {
-          setMapaImagenLista(false);
-        }
-      };
-      img.src = fuente;
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => {
+      if (cancelado) return;
+      mapaImagenRef.current = img;
+      setMapaImagenLista(true);
     };
-
-    cargarImagen(
-      "/assets/zonas/mapa-mundo-aethelgard.png",
-      encodeURI("/assets/Polish_20261114_215332459.png"),
-    );
+    img.onerror = () => {
+      if (!cancelado) setMapaImagenLista(false);
+    };
+    img.src = "/assets/mapa-mundo-aethelgard.webp";
     return () => {
       cancelado = true;
     };

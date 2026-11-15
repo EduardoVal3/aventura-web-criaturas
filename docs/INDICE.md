@@ -20,7 +20,7 @@ Este documento es el enrutador ligero (~2 KB) para navegar el proyecto sin neces
 | **7** | Combate y captura (AV4) | ✅ Completada | `funcionalidad/fase-07-combate` | [FASE-07.md](file:///docs/workflows/FASE-07.md) | L374–L393 |
 | **8** | Integración Front↔API | ✅ Completada | `funcionalidad/fase-08-integracion` | [FASE-08.md](file:///docs/workflows/FASE-08.md) | L394–L410 |
 | **9** | Seguridad y cierre base | ✅ Completada | `pruebas/fase-09-seguridad` | [FASE-09.md](file:///docs/workflows/FASE-09.md) | L415–L431 |
-| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10q) | `funcionalidad/fase-10q-mapa-transparente-fx` | [10-17-mapa-transparente-fx.md](file:///docs/workflows/fase-10/10-17-mapa-transparente-fx.md) | L437–L562 |
+| **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10r) | `funcionalidad/fase-10r-mapa-webp-calibracion` | [10-18-mapa-webp-calibracion.md](file:///docs/workflows/fase-10/10-18-mapa-webp-calibracion.md) | L437–L572 |
 | **11** | Extras: Gateway y UI (+5) | Pendiente | `configuracion/fase-11-extras` | `docs/workflows/FASE-11.md` | L554–L571 |
 | **12** | Entrega final (FIN) | Pendiente | `documentacion/fase-12-entrega` | `docs/workflows/FASE-12.md` | L573–L586 |
 | **13** | Multijugador (opcional) | Opcional | `funcionalidad/fase-13-presencia` | `docs/workflows/FASE-13.md` | L588–L600 |
@@ -59,10 +59,10 @@ Si requieres validar el texto original de [Plan_Desarrollo_ISC305_Entregable1.md
 - **§7 Plantilla de workflow:** Líneas 239 a 252
 - **§8 Resumen de Fases:** Líneas 254 a 570
   - Fase 9: Líneas 417 a 434
-  - Fase 10 (UX y Combate Táctico): Líneas 437 a 562
-  - Fase 11 (Extras): Líneas 564 a 581
-  - Fase 12 (Entrega final): Líneas 583 a 596
-  - Fase 13 (Multijugador opcional): Líneas 598 a 610
+  - Fase 10 (UX y Combate Táctico): Líneas 437 a 572
+  - Fase 11 (Extras): Líneas 574 a 591
+  - Fase 12 (Entrega final): Líneas 593 a 606
+  - Fase 13 (Multijugador opcional): Líneas 608 a 620
 - **§9 Matriz de cobertura:** Líneas 576 a 595
 - **§10 Anexo A (API Externa Open5e):** Líneas 598 a 664
 

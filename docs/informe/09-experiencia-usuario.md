@@ -1762,4 +1762,33 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`3.18s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `31140.60ms`).
 
+---
+
+## 29. Sub-Fase 10r: Optimización WebP Transparente (943.8 KB) y Calibración Milimétrica de Cascadas y Biomas (`MapaInteractivoCanvas.tsx`)
+
+### 29.1 Diagnóstico Inicial y Auditoría Impeccable
+- **Peso excesivo del arte maestro:** El mapa del mundo en formato PNG transparente (`apps/web/public/assets/zonas/mapa-mundo-aethelgard.png`, `3232×1794`) ocupaba **8.46 MB** (`8,463,051` bytes), incrementando innecesariamente el tiempo de descarga inicial del hub en navegadores de escritorio y móviles, además de convivir dentro de `apps/web/public/assets/zonas/`, donde `apps/web/test/verificacion-assets-entornos-objetos.spec.ts` exige exactamente 9 fondos `.webp` de `800×450`.
+- **Cascada flotante y efectos desfasados tras inspección a zoom 2×:** Al auditar el dibujo procedural de `dibujarAguasCosterasMapa`, `dibujarCapaVivaMapa` y `TRAYECTOS_PUENTES_AETHELGARD` en `apps/web/src/lib/mapa-dioramas.ts` sobre el lienzo `1616×897`:
+  - **Puesto del Río (`LOC-02`):** La caída de agua real en el arte abarca `x = 732..758`, `y = 528..587`, pero las partículas previas nacían en `y = 482..544` (sobre la empalizada/pasto superior) con salpicadura opaca en `(742, 545)` y ondas marinas en `(742, 550)`, provocando que la cascada se viera suspendida en el aire a mitad del acantilado. Además, los destellos del río cruzaban por encima de la torre de madera en primer plano y una fogata flotaba fuera de los campamentos reales.
+  - **Resto del archipiélago:** Villa Serena (`LOC-01`) incluía una chimenea fantasma en `(106, 616)` sobre tejas sin tiro real y farolas ligeramente descentradas; Cueva Umbría (`ZON-05`) tenía saltos de magma con inicio debajo del labio superior del acantilado y deltas costeros desplazados; Riscos (`ZON-04`) presentaba columnas de humo fuera de los cráteres reales; y 3 puentes Bezier (`ZON-02->ZON-03`, `LOC-02->ZON-03`, `ZON-05->ZON-06`) requerían ajuste fino sobre las barandillas del arte maestro.
+
+### 29.2 Mejoras Implementadas (Identidad Retro, Optimización WebP y Reglas de Cliente)
+- **Conversión a WebP RGBA Transparente (`-88.9%` de peso):**
+  - Se convirtió el mapa maestro mediante Pillow (`Image.Resampling.LANCZOS`, `quality=90`, `alpha_quality=100`, `method=6`) a `apps/web/public/assets/mapa-mundo-aethelgard.webp` en resolución **`2424×1346`**, formato `WEBP RGBA` con transparencia limpia (`corner_a = 0`) y un peso final de **943.8 KB** (reducción del **88.9%** respecto a los `8,463,051` bytes del PNG previo).
+  - Se retiró el archivo PNG de `apps/web/public/assets/zonas/` (`git rm`) manteniendo esa carpeta con los 9 banners `.webp` de zona exigidos por la suite de pruebas, y se simplificó el cargador en `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` para consumir directamente `/assets/mapa-mundo-aethelgard.webp` sin fallback PNG.
+- **Calibración Milimétrica de Aguas Costeras, Puentes y los 9 Biomas (`apps/web/src/lib/mapa-dioramas.ts`):**
+  - **`LOC-02` (Puesto del Río):** Recorte estricto de la cascada a `y = 529..586` con salpicadura en `(744, 587)` y ondas costeras en `(744, 591)`; división del flujo del río en dos tramos (`556..610, 418..448` y `674..732, 486..520`) esquivando la torre frontal; y realineamiento de las 4 torres con brasero (`[524,414]`, `[636,365]`, `[638,452]`, `[763,426]`) y 3 fogatas reales (`[588,456]`, `[646,432]`, `[692,459]`).
+  - **`LOC-01` (Villa Serena):** Fuente en `(237, 672)`, chispas en `(237, 667)`, 8 farolas reales y eliminación de la chimenea inexistente dejando únicamente `(285, 556)` y `(348, 609)`.
+  - **`ZON-01` a `ZON-06` y `LOC-03`:** Recalibración de 5 monolitos en Praderas, lago `(820, 718)` y 5 cristales en Lago Espejo, trono `(1390, 668)` y 12 luciérnagas en Bosque, 7 grietas de magma, cascada lateral y cráteres `(904, 256)`/`(1069, 266)` en Riscos, 3 torres + rastrillo `(524, 198)` en Bastión Norte, 3 cascadas de magma desde el labio superior con deltas en `(1324, 480)`, `(1414, 492)`, `(1530, 486)`, boca de cueva `(1453, 296)->(1452, 352)`, 3 cúmulos violetas y descarga eléctrica en Cueva Umbría, aurora boreal `(840,28)->(1060,6)->(1275,32)` más 4 cristales gélidos en La Cumbre, y afinación de 3 splines Bezier en `TRAYECTOS_PUENTES_AETHELGARD`.
+- **Sincronización Documental y Grafo:** Actualización de `Plan_Desarrollo_ISC305_Entregable1.md`, `docs/INDICE.md`, creación de `docs/workflows/fase-10/10-18-mapa-webp-calibracion.md` y reconstrucción del grafo con `graphify update .` (`2087` nodos, `4892` aristas, `137` comunidades).
+
+### 29.3 Verificación de Calidad y Cero Regresiones
+- **Verificación Visual de Calibración Bitmap (`calibration-10r-full.png`, `calibration-10r-detalles.png`, `calibration-10r-puesto-final.png`):** Confirmación visual a zoom 2× de la cascada del Puesto del Río encajada en su caída real sin flotar en el aire, farolas/chimeneas/fogatas sobre sus puntos exactos y compresión WebP transparente limpia.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **90 archivos** (`322ms`, 116 reglas, 0 advertencias nuevas).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **100 de 100 pruebas aprobadas** (`0` fallos, `0` omitidas en `1567.04ms`), actualizando `apps/web/test/verificacion-hub-mundo.spec.ts` para validar el asset WebP (`< 1,500,000` bytes) y su carga en `MapaInteractivoCanvas.tsx`.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`3.80s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `44020.67ms`).
+
+
 

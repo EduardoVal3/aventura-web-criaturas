@@ -1,5 +1,5 @@
 /**
- * Motor híbrido 2D de océano vivo, oleaje costero e iluminación a 60 FPS sobre el mapa transparente (3232x1794 -> 1616x897).
+ * Motor híbrido 2D de océano vivo, oleaje costero e iluminación a 60 FPS sobre el mapa transparente WebP (2424x1346 -> 1616x897).
  * Dibuja el océano abisal completo entre las islas y bajo los puentes, espumas costeras animadas,
  * sombras de altura 2.5D y efectos calibrados píxel a píxel sobre los 9 biomas y 10 puentes Bezier.
  */
@@ -68,16 +68,16 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
   {
     origenId: "ZON-02",
     destinoId: "ZON-03",
-    inicio: { x: 1016, y: 716 },
-    control: { x: 1074, y: 696 },
-    fin: { x: 1134, y: 716 },
+    inicio: { x: 1015, y: 720 },
+    control: { x: 1075, y: 688 },
+    fin: { x: 1134, y: 720 },
   },
   {
     origenId: "LOC-02",
     destinoId: "ZON-03",
-    inicio: { x: 768, y: 514 },
-    control: { x: 942, y: 434 },
-    fin: { x: 1128, y: 608 },
+    inicio: { x: 775, y: 515 },
+    control: { x: 948, y: 446 },
+    fin: { x: 1132, y: 608 },
   },
   {
     origenId: "LOC-02",
@@ -110,9 +110,9 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
   {
     origenId: "ZON-05",
     destinoId: "ZON-06",
-    inicio: { x: 1326, y: 224 },
-    control: { x: 1268, y: 152 },
-    fin: { x: 1194, y: 150 },
+    inicio: { x: 1328, y: 224 },
+    control: { x: 1276, y: 152 },
+    fin: { x: 1206, y: 154 },
   },
 ];
 
@@ -366,20 +366,20 @@ export function dibujarAguasCosterasMapa(
   }
 
   // 3. Interacciones térmicas e hidráulicas donde cascadas y magma tocan el océano (1616x897)
-  // Espuma en caída de cascada de Puesto del Río (742, 548)
+  // Ondas espumosas exactamente en la poza base donde rompe la cascada de Puesto del Río (744, 591)
   ctx.save();
   const faseCascada = (t * 0.0012) % 1;
-  ctx.strokeStyle = `rgba(224, 242, 254, ${(1 - faseCascada) * 0.56})`;
+  ctx.strokeStyle = `rgba(224, 242, 254, ${(1 - faseCascada) * 0.58})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.ellipse(742, 550, 16 + faseCascada * 18, 6 + faseCascada * 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(744, 591, 15 + faseCascada * 17, 4.5 + faseCascada * 5.5, 0, 0, Math.PI * 2);
   ctx.stroke();
 
   // Vapor cálido donde caen las cascadas de magma de Cueva Umbría al mar
   for (const [vx, vy] of [
-    [1323, 482],
-    [1408, 492],
-    [1528, 486],
+    [1324, 480],
+    [1414, 492],
+    [1530, 486],
   ]) {
     dibujarHaloFuego(ctx, vx, vy, 28, 0.34, "rgba(251, 146, 60, 0.72)", "rgba(234, 88, 12, 0.2)");
   }
@@ -619,29 +619,28 @@ export function dibujarCapaVivaMapa(
   // 3. Efectos ambientales recalibrados por centroide real sobre la lámina 1616x897
   const desbloqueada = (id: string) => Boolean(nodosPorId.get(id)?.desbloqueada);
 
-  // LOC-01: Villa Serena — fuente central (237, 675), faroles exactos de plaza y 3 chimeneas sobre tejados
+  // LOC-01: Villa Serena — fuente central (237, 672), 8 faroles reales y 2 chimeneas de piedra sobre tejados
   if (desbloqueada("LOC-01")) {
     const pulsoFuente = 0.7 + Math.sin(t * 0.005) * 0.3;
-    dibujarHaloFuego(ctx, 237, 675, 32, 0.44 * pulsoFuente, "rgba(165, 243, 252, 0.92)", "rgba(20, 209, 232, 0.35)");
-    dibujarChispasAscendentes(ctx, 237, 671, 5, 8, 18, t, "#a5f3fc");
+    dibujarHaloFuego(ctx, 237, 672, 30, 0.44 * pulsoFuente, "rgba(165, 243, 252, 0.92)", "rgba(20, 209, 232, 0.35)");
+    dibujarChispasAscendentes(ctx, 237, 667, 5, 8, 18, t, "#a5f3fc");
 
     const faroles: [number, number][] = [
-      [153, 675],
-      [213, 628],
+      [152, 675],
+      [217, 635],
       [262, 634],
       [217, 750],
-      [256, 754],
-      [339, 679],
-      [179, 650],
-      [161, 763],
+      [256, 753],
+      [339, 678],
+      [178, 650],
+      [136, 718],
     ];
     for (const [fx, fy] of faroles) {
       const f = 0.72 + Math.sin(t * 0.009 + fx) * 0.28;
-      dibujarHaloFuego(ctx, fx, fy, 16, 0.45 * f, "rgba(254, 240, 138, 0.92)", "rgba(245, 158, 11, 0.32)");
+      dibujarHaloFuego(ctx, fx, fy, 15, 0.45 * f, "rgba(254, 240, 138, 0.92)", "rgba(245, 158, 11, 0.32)");
     }
-    dibujarHumoChimenea(ctx, 106, 616, t);
-    dibujarHumoChimenea(ctx, 262, 578, t + 900);
-    dibujarHumoChimenea(ctx, 314, 624, t + 1800);
+    dibujarHumoChimenea(ctx, 285, 556, t);
+    dibujarHumoChimenea(ctx, 348, 609, t + 1100);
   }
 
   // ZON-01: Praderas — los 5 monolitos rúnicos exactos y motas doradas de pradera
@@ -650,8 +649,8 @@ export function dibujarCapaVivaMapa(
       [81, 398],
       [147, 344],
       [133, 451],
-      [249, 392],
-      [288, 381],
+      [247, 392],
+      [288, 378],
     ];
     for (const [rx, ry] of runas) {
       const p = 0.45 + Math.sin(t * 0.0038 + rx * 0.05) * 0.45;
@@ -660,13 +659,13 @@ export function dibujarCapaVivaMapa(
     dibujarChispasAscendentes(ctx, 195, 425, 6, 80, 40, t * 0.7, "#fde047");
   }
 
-  // LOC-02: Puesto del Río — las 4 atalayas encendidas (525,415 / 637,368 / 638,442 / 762,427), fogatas y cascada (742)
+  // LOC-02: Puesto del Río — 4 atalayas encendidas, 3 fogatas reales y cascada frontal (732..756, y=528..587)
   if (desbloqueada("LOC-02")) {
     const pebeteros: [number, number][] = [
-      [525, 415],
-      [637, 368],
-      [638, 442],
-      [762, 427],
+      [524, 414],
+      [636, 365],
+      [638, 452],
+      [763, 426],
     ];
     for (const [bx, by] of pebeteros) {
       const f = 0.75 + Math.sin(t * 0.013 + bx) * 0.25;
@@ -674,104 +673,122 @@ export function dibujarCapaVivaMapa(
       dibujarChispasAscendentes(ctx, bx, by - 5, 3, 5, 22, t, "#fdba74");
     }
     for (const [fx, fy] of [
-      [589, 466],
-      [676, 395],
+      [588, 456],
+      [646, 432],
+      [692, 459],
     ]) {
       const f = 0.65 + Math.sin(t * 0.01 + fx) * 0.35;
-      dibujarHaloFuego(ctx, fx, fy, 15, 0.44 * f, "rgba(253, 186, 116, 0.88)", "rgba(234, 88, 12, 0.3)");
+      dibujarHaloFuego(ctx, fx, fy, 14, 0.44 * f, "rgba(253, 186, 116, 0.88)", "rgba(234, 88, 12, 0.3)");
     }
 
-    // Estelas blancas animadas centradas en el caudal real de la cascada (x = 732..752)
-    const despRio = (t * 0.05) % 18;
+    // Corriente en los tramos libres del río (evitando cruzar sobre la atalaya sur) y salto ceñido a y=529..586
     ctx.save();
-    ctx.fillStyle = "rgba(224, 242, 254, 0.72)";
-    for (let w = 0; w < 52; w += 10) {
-      const cx = 733 + (w % 4) * 5;
-      const cy = 482 + ((w + despRio) % 62);
-      ctx.fillRect(Math.round(cx), Math.round(cy), 2.5, 7);
+    ctx.fillStyle = "rgba(186, 230, 253, 0.45)";
+    for (let r = 0; r < 2; r++) {
+      const pSup = (t * 0.0005 + r * 0.5) % 1;
+      ctx.fillRect(Math.round(556 + pSup * 54), Math.round(418 + pSup * 30), 6, 2);
+      const pInf = (t * 0.0005 + r * 0.5 + 0.25) % 1;
+      ctx.fillRect(Math.round(674 + pInf * 58), Math.round(486 + pInf * 34), 6, 2);
+    }
+
+    const despRio = (t * 0.05) % 52;
+    ctx.fillStyle = "rgba(224, 242, 254, 0.76)";
+    for (let w = 0; w < 5; w++) {
+      const av = (w * 11 + despRio) % 52;
+      const cx = 735 + ((w * 4.5 + av * 0.08) % 21);
+      const cy = 529 + av;
+      ctx.fillRect(Math.round(cx), Math.round(cy), 2.5, 6);
     }
     const espuma = 0.68 + Math.sin(t * 0.0065) * 0.32;
-    ctx.fillStyle = `rgba(224, 242, 254, ${0.6 * espuma})`;
+    ctx.fillStyle = `rgba(224, 242, 254, ${0.58 * espuma})`;
     ctx.beginPath();
-    ctx.ellipse(742, 545, 19, 5.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(744, 587, 16, 4.2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  // ZON-02: Lago Espejo — espejo lacustre (806, 720) y los 5 grupos de cristales cian/violeta exactos
+  // ZON-02: Lago Espejo — espejo lacustre (820, 718) y los 5 grupos de cristales cian/violeta exactos
   if (desbloqueada("ZON-02")) {
     const reflejo = 0.55 + Math.sin(t * 0.0032) * 0.35;
-    dibujarHaloFuego(ctx, 806, 720, 56, 0.28 * reflejo, "rgba(103, 232, 249, 0.72)", "rgba(168, 85, 247, 0.28)");
+    dibujarHaloFuego(ctx, 820, 718, 56, 0.28 * reflejo, "rgba(103, 232, 249, 0.72)", "rgba(168, 85, 247, 0.28)");
 
     ctx.save();
     ctx.fillStyle = `rgba(186, 230, 253, ${0.26 * reflejo})`;
     for (let r = 0; r < 3; r++) {
-      const rx = 790 + Math.sin(t * 0.002 + r * 2) * 14;
-      const ry = 708 + r * 12;
+      const rx = 808 + Math.sin(t * 0.002 + r * 2) * 14;
+      const ry = 706 + r * 12;
       ctx.fillRect(Math.round(rx), ry, 24 - r * 4, 2);
     }
     ctx.restore();
 
     const cristales: [number, number][] = [
-      [689, 705],
-      [839, 652],
-      [969, 698],
-      [781, 785],
-      [942, 775],
+      [689, 706],
+      [836, 650],
+      [966, 698],
+      [782, 785],
+      [943, 775],
     ];
     for (const [cx, cy] of cristales) {
       const k = 0.5 + Math.sin(t * 0.0045 + cx * 0.1) * 0.45;
       dibujarHaloFuego(ctx, cx, cy, 20, 0.46 * k, "rgba(165, 243, 252, 0.92)", "rgba(6, 182, 212, 0.32)");
     }
-    dibujarChispasAscendentes(ctx, 806, 738, 6, 68, 44, t * 0.6, "#a5f3fc");
+    dibujarChispasAscendentes(ctx, 820, 732, 6, 64, 42, t * 0.6, "#a5f3fc");
   }
 
-  // ZON-03: Bosque — aura en escalinata/trono de piedra (1392, 672) y luciérnagas esmeralda en el claro
+  // ZON-03: Bosque — aura en escalinata/trono de piedra (1390, 668) y luciérnagas confinadas al claro
   if (desbloqueada("ZON-03")) {
     const auro = 0.65 + Math.sin(t * 0.0034) * 0.3;
-    dibujarHaloFuego(ctx, 1392, 672, 42, 0.32 * auro, "rgba(74, 222, 128, 0.85)", "rgba(16, 185, 129, 0.22)");
+    dibujarHaloFuego(ctx, 1390, 668, 40, 0.32 * auro, "rgba(74, 222, 128, 0.85)", "rgba(16, 185, 129, 0.22)");
     for (let i = 0; i < 12; i++) {
       const ang = t * 0.001 + i * 0.85;
-      const lx = 1380 + Math.cos(ang) * (36 + (i % 5) * 24);
-      const ly = 684 + Math.sin(ang * 1.4 + i) * (22 + (i % 4) * 13);
+      const lx = 1380 + Math.cos(ang) * (24 + (i % 5) * 14);
+      const ly = 682 + Math.sin(ang * 1.4 + i) * (16 + (i % 4) * 9);
       const brillo = 0.45 + Math.sin(t * 0.005 + i) * 0.45;
       ctx.fillStyle = `rgba(74, 222, 128, ${brillo})`;
       ctx.fillRect(Math.round(lx), Math.round(ly), 3, 3);
     }
   }
 
-  // ZON-04: Riscos — grietas ardientes reales (902, 1071, 1018, 905, 1061, 1066, 949) y columnas de humo
+  // ZON-04: Riscos — cráteres humeantes (904,256 / 1069,266), grietas, cascada ígnea (1088, 386..428) y poza (1095, 442)
   if (desbloqueada("ZON-04")) {
     const brasa = 0.55 + Math.sin(t * 0.0045) * 0.38;
     const grietas: [number, number][] = [
-      [902, 255],
-      [1071, 266],
-      [1018, 341],
-      [905, 346],
-      [1061, 387],
-      [1066, 420],
-      [949, 419],
+      [904, 256],
+      [1069, 266],
+      [1056, 340],
+      [922, 338],
+      [1088, 405],
+      [1095, 442],
+      [952, 420],
     ];
     for (const [gx, gy] of grietas) {
-      dibujarHaloFuego(ctx, gx, gy, 24, 0.3 * brasa, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.28)");
+      dibujarHaloFuego(ctx, gx, gy, 24, 0.32 * brasa, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.28)");
     }
-    dibujarHumoChimenea(ctx, 900, 232, t, true);
-    dibujarHumoChimenea(ctx, 1002, 224, t + 1100, true);
+    const flujoRisco = (t * 0.032) % 36;
+    ctx.fillStyle = "#fef08a";
+    ctx.fillRect(1088, Math.round(386 + flujoRisco), 2.5, 5);
+    ctx.fillRect(1091, Math.round(388 + ((flujoRisco + 18) % 36)), 2.5, 5);
+
+    dibujarHumoChimenea(ctx, 904, 256, t, true);
+    dibujarHumoChimenea(ctx, 1069, 266, t + 1100, true);
     dibujarChispasAscendentes(ctx, 985, 348, 6, 72, 52, t * 0.8, "#fb923c");
   }
 
-  // LOC-03: Bastión Norte — las 3 torres exactas (364, 103), (477, 151), (584, 99) y nieve ligera
+  // LOC-03: Bastión Norte — las 3 torres exactas (363,102 / 477,150 / 584,98), portón ardiente (524, 198) y nieve ligera
   if (desbloqueada("LOC-03")) {
     const torres: [number, number][] = [
-      [364, 103],
-      [477, 151],
-      [584, 99],
+      [363, 102],
+      [477, 150],
+      [584, 98],
     ];
     for (const [tx, ty] of torres) {
       const f = 0.72 + Math.sin(t * 0.011 + tx) * 0.28;
       dibujarHaloFuego(ctx, tx, ty, 30, 0.65 * f, "rgba(254, 240, 138, 0.95)", "rgba(249, 115, 22, 0.45)");
       dibujarChispasAscendentes(ctx, tx, ty - 5, 4, 6, 24, t, "#fde047");
     }
+    const fPorton = 0.6 + Math.sin(t * 0.008) * 0.3;
+    dibujarHaloFuego(ctx, 524, 198, 20, 0.38 * fPorton, "rgba(253, 186, 116, 0.85)", "rgba(234, 88, 12, 0.25)");
+
     ctx.fillStyle = "rgba(224, 242, 254, 0.62)";
     for (let s = 0; s < 10; s++) {
       const fs = (t * 0.00035 + s * 0.11) % 1;
@@ -781,27 +798,28 @@ export function dibujarCapaVivaMapa(
     }
   }
 
-  // ZON-05: Cueva Umbría — caída en boca (1452, 314..352), 3 cascadas en acantilado (1326, 1412, 1525) y cristales violetas
+  // ZON-05: Cueva Umbría — caída de cueva (1453, 290..350), 3 cascadas completas de labio a poza y cristales violeta
   if (desbloqueada("ZON-05")) {
     const magma = 0.62 + Math.sin(t * 0.0052) * 0.35;
+    dibujarHaloFuego(ctx, 1453, 296, 24, 0.44 * magma, "rgba(254, 240, 138, 0.95)", "rgba(234, 88, 12, 0.35)");
     dibujarHaloFuego(ctx, 1452, 352, 36, 0.5 * magma, "rgba(253, 224, 71, 0.92)", "rgba(234, 88, 12, 0.36)");
-    dibujarHaloFuego(ctx, 1324, 474, 30, 0.42 * magma, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.3)");
-    dibujarHaloFuego(ctx, 1412, 476, 44, 0.46 * magma, "rgba(251, 146, 60, 0.92)", "rgba(220, 38, 38, 0.34)");
+    dibujarHaloFuego(ctx, 1327, 472, 30, 0.42 * magma, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.3)");
+    dibujarHaloFuego(ctx, 1414, 486, 44, 0.46 * magma, "rgba(251, 146, 60, 0.92)", "rgba(220, 38, 38, 0.34)");
     dibujarHaloFuego(ctx, 1526, 478, 30, 0.42 * magma, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.3)");
 
-    const flujo = (t * 0.036) % 28;
+    const flujo = t * 0.036;
     ctx.fillStyle = "#fef08a";
-    ctx.fillRect(1451, Math.round(298 + (flujo % 24) * 2.2), 3, 5);
-    ctx.fillRect(1325, Math.round(422 + (flujo % 20) * 2.5), 3, 5);
-    ctx.fillRect(1408, Math.round(426 + ((flujo + 9) % 22) * 2.7), 3, 6);
-    ctx.fillRect(1418, Math.round(428 + ((flujo + 16) % 22) * 2.5), 2.5, 5);
-    ctx.fillRect(1524, Math.round(426 + ((flujo + 13) % 20) * 2.6), 3, 5);
-    dibujarChispasAscendentes(ctx, 1425, 470, 9, 80, 78, t * 0.95, "#fdba74");
+    ctx.fillRect(1452, Math.round(290 + (flujo % 56)), 3, 5);
+    ctx.fillRect(1326, Math.round(398 + (flujo % 70)), 3, 5);
+    ctx.fillRect(1408, Math.round(414 + ((flujo + 12) % 68)), 3, 6);
+    ctx.fillRect(1418, Math.round(416 + ((flujo + 34) % 66)), 2.5, 5);
+    ctx.fillRect(1526, Math.round(412 + ((flujo + 20) % 62)), 3, 5);
+    dibujarChispasAscendentes(ctx, 1425, 474, 9, 80, 74, t * 0.95, "#fdba74");
 
     // Pulsos violetas en los 3 grupos de cristales reales y arco eléctrico en las puntas del cristal gigante
     const arc = Math.max(0, Math.sin(t * 0.008));
     dibujarHaloFuego(ctx, 1317, 328, 34, 0.38 + arc * 0.2, "rgba(216, 180, 254, 0.88)", "rgba(147, 51, 234, 0.32)");
-    dibujarHaloFuego(ctx, 1526, 255, 48, 0.46 + arc * 0.25, "rgba(232, 121, 249, 0.92)", "rgba(147, 51, 234, 0.36)");
+    dibujarHaloFuego(ctx, 1518, 255, 48, 0.46 + arc * 0.25, "rgba(232, 121, 249, 0.92)", "rgba(147, 51, 234, 0.36)");
     dibujarHaloFuego(ctx, 1548, 358, 30, 0.36 + arc * 0.18, "rgba(216, 180, 254, 0.86)", "rgba(147, 51, 234, 0.3)");
 
     if (Math.sin(t * 0.017) > 0.72) {
@@ -809,10 +827,10 @@ export function dibujarCapaVivaMapa(
       ctx.strokeStyle = "rgba(245, 208, 254, 0.92)";
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(1492, 224);
-      ctx.lineTo(1522, 206);
-      ctx.lineTo(1546, 226);
-      ctx.lineTo(1570, 208);
+      ctx.moveTo(1486, 218);
+      ctx.lineTo(1505, 208);
+      ctx.lineTo(1525, 224);
+      ctx.lineTo(1558, 218);
       ctx.stroke();
       ctx.restore();
     }
@@ -822,8 +840,8 @@ export function dibujarCapaVivaMapa(
   if (desbloqueada("ZON-06")) {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
-    const onda = Math.sin(t * 0.0018) * 10;
-    const gradAurora = ctx.createLinearGradient(875, 10, 1245, 58);
+    const onda = Math.sin(t * 0.0018) * 8;
+    const gradAurora = ctx.createLinearGradient(840, 4, 1275, 48);
     gradAurora.addColorStop(0, "rgba(16, 185, 129, 0)");
     gradAurora.addColorStop(0.32, `rgba(52, 211, 153, ${0.22 + Math.sin(t * 0.003) * 0.07})`);
     gradAurora.addColorStop(0.68, `rgba(56, 189, 248, ${0.24 + Math.cos(t * 0.0025) * 0.07})`);
@@ -832,16 +850,16 @@ export function dibujarCapaVivaMapa(
     ctx.lineWidth = 16;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(875, 42 + onda * 0.35);
-    ctx.quadraticCurveTo(1055, 8 - onda * 0.55, 1245, 36 + onda * 0.3);
+    ctx.moveTo(840, 28 + onda * 0.3);
+    ctx.quadraticCurveTo(1060, 6 - onda * 0.4, 1275, 32 + onda * 0.3);
     ctx.stroke();
     ctx.restore();
 
     for (const [cx, cy] of [
-      [848, 72],
-      [933, 94],
+      [852, 82],
+      [933, 102],
       [1247, 114],
-      [1172, 178],
+      [1172, 180],
     ]) {
       const d = 0.55 + Math.sin(t * 0.004 + cx) * 0.4;
       dibujarHaloFuego(ctx, cx, cy, 26, 0.38 * d, "rgba(224, 242, 254, 0.92)", "rgba(56, 189, 248, 0.35)");

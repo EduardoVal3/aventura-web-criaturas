@@ -1,5 +1,5 @@
 /**
- * Coordenadas calibradas sobre la ilustración pixel-art transparente maestra (3232x1794 en espacio lógico 1616x897),
+ * Coordenadas calibradas sobre la ilustración pixel-art transparente maestra en WebP (2424x1346 en espacio lógico 1616x897),
  * paletas originales de cada bioma y compensaciones visuales del mapa interactivo de Aethelgard.
  */
 

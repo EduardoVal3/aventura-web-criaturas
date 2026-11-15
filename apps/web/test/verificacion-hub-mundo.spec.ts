@@ -449,7 +449,7 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
   assert.ok(expCodigo.includes("MinimapaRedTerritorial"), "PantallaExploracion debe integrar MinimapaRedTerritorial");
 });
 
-test("Subfase 10p: Calibración híbrida del mapa maestro 2D, 10 puentes Bezier, geometría pure-Node y controles", async () => {
+test("Subfase 10p/10q: Calibración sobre mapa transparente (1616x897), aguas costeras, 10 puentes Bezier y efectos recalculados", async () => {
   const { existsSync, readFileSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
@@ -466,8 +466,8 @@ test("Subfase 10p: Calibración híbrida del mapa maestro 2D, 10 puentes Bezier,
     puntoBordeIsla,
   } = await import("../src/lib/mapa-dioramas.ts");
 
-  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.ancho, 1679);
-  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.alto, 937);
+  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.ancho, 1616);
+  assert.strictEqual(DIMENSIONES_MAPA_MUNDO.alto, 897);
 
   const rutaMapaAsset = join(__dirname, "../public/assets/zonas/mapa-mundo-aethelgard.png");
   assert.strictEqual(existsSync(rutaMapaAsset), true, "Debe existir mapa-mundo-aethelgard.png");
@@ -482,8 +482,8 @@ test("Subfase 10p: Calibración híbrida del mapa maestro 2D, 10 puentes Bezier,
     const geom = generarGeometriaDiorama(isla);
     assert.ok(geom.contornoLocal.length >= 48);
     assert.ok(geom.angulosPuente.length >= 2);
-    assert.ok(factorContornoIsla(isla, 0) > 0.5);
-    const borde = puntoBordeIsla(isla, 840, 468, 1);
+    assert.ok(factorContornoIsla(isla.id, 0) > 0.5);
+    const borde = puntoBordeIsla(isla, 808, 448, 1);
     assert.ok(Number.isFinite(borde.x) && Number.isFinite(borde.y));
   }
 
@@ -512,7 +512,7 @@ test("Subfase 10p: Calibración híbrida del mapa maestro 2D, 10 puentes Bezier,
   );
   assert.ok(canvasCodigo.includes("/assets/zonas/mapa-mundo-aethelgard.png"));
   assert.ok(canvasCodigo.includes("dibujarFondoOceanoContinuo"));
-  assert.ok(canvasCodigo.includes("dibujarFusionBordesMapa"));
+  assert.ok(canvasCodigo.includes("dibujarAguasCosterasMapa"));
   assert.ok(canvasCodigo.includes("dibujarCapaVivaMapa"));
   assert.ok(canvasCodigo.includes("dibujarRespaldoIslasBase"));
   assert.ok(canvasCodigo.includes("pinchRef"));

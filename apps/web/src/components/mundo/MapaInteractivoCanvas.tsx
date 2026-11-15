@@ -28,9 +28,9 @@ import {
   reproducirSonido,
 } from "@/lib/assets";
 import {
+  dibujarAguasCosterasMapa,
   dibujarCapaVivaMapa,
   dibujarFondoOceanoContinuo,
-  dibujarFusionBordesMapa,
   dibujarRespaldoIslasBase,
 } from "@/lib/mapa-dioramas";
 import { cn } from "@/lib/utils";
@@ -124,8 +124,8 @@ export function MapaInteractivoCanvas({
     activo: false,
     inicioX: 0,
     inicioY: 0,
-    camaraInicioX: 840,
-    camaraInicioY: 468,
+    camaraInicioX: 808,
+    camaraInicioY: 448,
     distancia: 0,
     suprimirClickHasta: 0,
   });
@@ -134,7 +134,7 @@ export function MapaInteractivoCanvas({
     camaraRef.current = camara;
   }, [camara]);
 
-  // Cargar ilustración maestra de 9 islas (respaldo vectorial si aún no termina de descargar)
+  // Cargar ilustración transparente de 9 islas (respaldo vectorial si aún no termina de descargar)
   useEffect(() => {
     let cancelado = false;
     const cargarImagen = (fuente: string, respaldo?: string) => {
@@ -158,7 +158,7 @@ export function MapaInteractivoCanvas({
 
     cargarImagen(
       "/assets/zonas/mapa-mundo-aethelgard.png",
-      encodeURI("/assets/Mapa fantástico pixelado de nueve islas.png"),
+      encodeURI("/assets/Polish_20261114_215332459.png"),
     );
     return () => {
       cancelado = true;
@@ -237,7 +237,7 @@ export function MapaInteractivoCanvas({
       ctx.imageSmoothingQuality = "high";
 
       // Fondo oceánico continuo y transformación de cámara centrada
-      ctx.fillStyle = "#002040";
+      ctx.fillStyle = "#021327";
       ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
 
       ctx.translate(tamanoContenedor.ancho / 2, tamanoContenedor.alto / 2);
@@ -252,6 +252,7 @@ export function MapaInteractivoCanvas({
         maxX: camara.x + mitadAnchoMundo,
         maxY: camara.y + mitadAltoMundo,
       });
+      dibujarAguasCosterasMapa(ctx, nodos, tiempo, reducirMovimiento);
 
       if (mapaImagenLista && mapaImagenRef.current) {
         ctx.drawImage(
@@ -261,7 +262,6 @@ export function MapaInteractivoCanvas({
           DIMENSIONES_MAPA_MUNDO.ancho,
           DIMENSIONES_MAPA_MUNDO.alto,
         );
-        dibujarFusionBordesMapa(ctx);
       } else {
         dibujarRespaldoIslasBase(ctx, nodos);
       }
@@ -448,7 +448,7 @@ export function MapaInteractivoCanvas({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onWheel={handleWheel}
-      className="relative w-full h-full bg-[#002040] overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full bg-[#021327] overflow-hidden select-none touch-none cursor-grab active:cursor-grabbing"
     >
       {/* Fondo Canvas con position: absolute */}
       <canvas

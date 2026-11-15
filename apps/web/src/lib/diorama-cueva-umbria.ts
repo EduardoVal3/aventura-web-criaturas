@@ -123,35 +123,31 @@ export const PRESENCIA_UMBRIA_CUEVA = {
  * Cauce principal desde la poza interior hacia los 3 ramales de lava que recorren la meseta de basalto hasta cada cornisa.
  */
 export const CAUCES_LAVA_MESETA: readonly (readonly Punto2D[])[] = [
-  // Ramal Oeste hasta el labio izquierdo (1330, 405)
+  // Ramal Oeste dentro del cauce expuesto hasta el labio izquierdo (1330, 405)
   [
-    { x: 1446, y: 358 },
-    { x: 1420, y: 365 },
-    { x: 1390, y: 374 },
-    { x: 1368, y: 386 },
-    { x: 1345, y: 396 },
+    { x: 1372, y: 382 },
+    { x: 1358, y: 389 },
+    { x: 1344, y: 397 },
     { x: 1330, y: 405 },
   ],
-  // Ramal Central hasta el labio central bifurcado (1410, 415)
+  // Cauce central desde debajo del puente de basalto hasta el labio central (1410, 415)
   [
-    { x: 1448, y: 360 },
-    { x: 1438, y: 376 },
-    { x: 1432, y: 392 },
-    { x: 1422, y: 404 },
+    { x: 1432, y: 386 },
+    { x: 1422, y: 400 },
     { x: 1410, y: 415 },
   ],
-  // Tributario corto hacia la bifurcación izquierda del ramal central
+  // Bifurcación izquierda corta tras la roca central hasta el acantilado
   [
-    { x: 1388, y: 392 },
+    { x: 1396, y: 394 },
     { x: 1397, y: 405 },
     { x: 1398, y: 415 },
   ],
   // Ramal Este hasta el labio derecho (1523, 413)
   [
-    { x: 1462, y: 360 },
-    { x: 1476, y: 376 },
-    { x: 1480, y: 392 },
-    { x: 1496, y: 404 },
+    { x: 1463, y: 359 },
+    { x: 1476, y: 374 },
+    { x: 1481, y: 391 },
+    { x: 1497, y: 403 },
     { x: 1514, y: 409 },
     { x: 1523, y: 413 },
   ],
@@ -281,14 +277,23 @@ export const CUMULOS_CRISTALES_CUEVA: readonly CumuloCristalCueva[] = [
 ];
 
 /**
- * Trayectorias de arcos eléctricos orgánicos entre las puntas reales y zarcillos del cúmulo colosal.
+ * Trayectorias de arcos eléctricos orgánicos entre las puntas reales y zarcillos del cúmulo colosal
+ * y saltos secundarios en los cúmulos laterales.
  */
 export const ARCOS_CRISTAL_COLOSAL: readonly ArcoCristalCueva[] = [
-  { origen: { x: 1496, y: 247 }, destino: { x: 1536, y: 225 }, fase: 0.0, amplitud: 7.5, conRama: true },
-  { origen: { x: 1536, y: 225 }, destino: { x: 1560, y: 266 }, fase: 1.4, amplitud: 7.0, conRama: true },
-  { origen: { x: 1496, y: 247 }, destino: { x: 1477, y: 232 }, fase: 2.7, amplitud: 5.5, conRama: false },
-  { origen: { x: 1560, y: 266 }, destino: { x: 1574, y: 246 }, fase: 3.9, amplitud: 5.0, conRama: false },
-  { origen: { x: 1496, y: 292 }, destino: { x: 1492, y: 316 }, fase: 4.8, amplitud: 6.0, conRama: true },
+  { origen: { x: 1496, y: 247 }, destino: { x: 1536, y: 225 }, fase: 0.0, amplitud: 9.0, conRama: true },
+  { origen: { x: 1536, y: 225 }, destino: { x: 1560, y: 266 }, fase: 0.9, amplitud: 8.5, conRama: true },
+  { origen: { x: 1496, y: 247 }, destino: { x: 1477, y: 232 }, fase: 1.7, amplitud: 6.5, conRama: true },
+  { origen: { x: 1560, y: 266 }, destino: { x: 1574, y: 246 }, fase: 2.4, amplitud: 6.0, conRama: false },
+  { origen: { x: 1485, y: 256 }, destino: { x: 1492, y: 316 }, fase: 3.1, amplitud: 8.5, conRama: true },
+  { origen: { x: 1551, y: 278 }, destino: { x: 1553, y: 328 }, fase: 3.9, amplitud: 7.5, conRama: true },
+  { origen: { x: 1496, y: 247 }, destino: { x: 1560, y: 266 }, fase: 4.7, amplitud: 10.0, conRama: true },
+  // Descargas vivas en cúmulos oeste y este
+  { origen: { x: 1297, y: 323 }, destino: { x: 1312, y: 299 }, fase: 0.6, amplitud: 6.0, conRama: true },
+  { origen: { x: 1312, y: 299 }, destino: { x: 1330, y: 326 }, fase: 2.3, amplitud: 6.0, conRama: true },
+  { origen: { x: 1289, y: 342 }, destino: { x: 1297, y: 323 }, fase: 3.8, amplitud: 4.5, conRama: false },
+  { origen: { x: 1528, y: 351 }, destino: { x: 1553, y: 328 }, fase: 1.4, amplitud: 6.0, conRama: true },
+  { origen: { x: 1553, y: 328 }, destino: { x: 1571, y: 351 }, fase: 3.2, amplitud: 5.5, conRama: false },
 ];
 
 interface ParticulaVolcanica {
@@ -339,11 +344,13 @@ interface SpritesCuevaCache {
 
 let spritesCuevaCache: SpritesCuevaCache | null = null;
 
-// Búferes reutilizables sin asignaciones por cuadro para construir arcos eléctricos bifurcados
+// Búferes reutilizables sin asignaciones por cuadro para arcos eléctricos bifurcados y corrientes de lava
 const arcoBufferX = new Float32Array(17);
 const arcoBufferY = new Float32Array(17);
-const ramaBufferX = new Float32Array(5);
-const ramaBufferY = new Float32Array(5);
+const ramaBufferX = new Float32Array(6);
+const ramaBufferY = new Float32Array(6);
+const flujoBufferX = new Float32Array(21);
+const flujoBufferY = new Float32Array(21);
 
 function crearCanvasAuxiliar(ancho: number, alto: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -695,39 +702,59 @@ function dibujarCavernaSombria(
 
   // B. Cascada continua de magma desde la grieta del techo hacia la poza interior
   ctx.save();
-  const pulsoGrieta = 0.72 + Math.sin(t * 0.0056) * 0.24;
+  const pulsoGrieta = 0.78 + Math.sin(t * 0.0056) * 0.22;
   ctx.globalCompositeOperation = "lighter";
-  dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, grietaSuperior.x, grietaSuperior.y, 18, 13, 0.42 * pulsoGrieta);
-  dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, pozaImpacto.x, pozaImpacto.y, radioPozaX * 1.1, radioPozaY * 1.9, 0.48 * pulsoGrieta);
+  dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, grietaSuperior.x, grietaSuperior.y, 20, 14, 0.5 * pulsoGrieta);
+  dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, pozaImpacto.x, pozaImpacto.y, radioPozaX * 1.2, radioPozaY * 2.0, 0.55 * pulsoGrieta);
 
-  // Dos hebras continuas de magma fluido con estrías incandescentes en movimiento vertical
+  // Dos chorros líquidos continuos con crestas térmicas viajeras (sin barras cuadradas cortadas)
   const largoCaida = pozaImpacto.y - grietaSuperior.y;
-  for (let s = 0; s < 8; s++) {
-    const fs = (t * 0.00095 + s * 0.125) % 1;
-    const columna = s % 2 === 0 ? -2.2 : 2.2;
-    const oscilacion = Math.sin(fs * 8 + s) * 0.45;
-    const sx = Math.round(grietaSuperior.x + columna + oscilacion);
-    const sy = Math.round(grietaSuperior.y + 3 + fs * (largoCaida - 7));
-    const alfa = Math.sin(fs * Math.PI) * 0.65 + 0.15;
+  const segmentosCaida = 14;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
-    ctx.globalAlpha = alfa * 0.62;
-    ctx.fillStyle = "#fb923c";
-    ctx.fillRect(sx - 1.5, sy - 2, 3, 9);
-    ctx.globalAlpha = alfa * 0.75;
-    ctx.fillStyle = s % 2 === 0 ? "#fef08a" : "#fde047";
-    ctx.fillRect(sx - 0.5, sy, 1.5, 6);
+  for (let col = 0; col < 2; col++) {
+    const xCol = grietaSuperior.x + (col === 0 ? -2.4 : 2.4);
+    for (let s = 0; s <= segmentosCaida; s++) {
+      const u = s / segmentosCaida;
+      const ond = Math.sin(u * 8 - t * 0.0065 + col * 2.1) * 0.55;
+      flujoBufferX[s] = xCol + ond;
+      flujoBufferY[s] = grietaSuperior.y + 2 + u * (largoCaida - 2);
+    }
+
+    // Manto exterior incandescente continuo
+    ctx.globalAlpha = 0.42 * pulsoGrieta;
+    ctx.strokeStyle = "#f97316";
+    ctx.lineWidth = 4.6;
+    ctx.beginPath();
+    ctx.moveTo(flujoBufferX[0], flujoBufferY[0]);
+    for (let s = 1; s <= segmentosCaida; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
+    ctx.stroke();
+
+    // Pulsos líquidos blanco-dorados viajando de forma orgánica por el chorro
+    for (let s = 0; s < segmentosCaida; s++) {
+      const u = (s + 0.5) / segmentosCaida;
+      const onda = 0.5 + 0.5 * Math.sin(u * 12.0 - t * 0.0085 + col * 1.8);
+      ctx.globalAlpha = 0.36 + onda * 0.56;
+      ctx.strokeStyle = onda > 0.62 ? "#fef9c3" : "#fde047";
+      ctx.lineWidth = 1.0 + onda * 1.3;
+      ctx.beginPath();
+      ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+      ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+      ctx.stroke();
+    }
   }
 
-  // Salpicaduras incandescentes rebotando al impactar la poza central
+  // Salpicaduras incandescentes y corona hirviente al impactar la poza central
   if (!reducirMovimiento) {
-    for (let g = 0; g < 6; g++) {
-      const fg = (t * 0.0014 + g * 0.166) % 1;
+    for (let g = 0; g < 8; g++) {
+      const fg = (t * 0.0013 + g * 0.125) % 1;
       const dir = g % 2 === 0 ? -1 : 1;
-      const gx = Math.round(pozaImpacto.x + dir * (3 + fg * 13));
-      const gy = Math.round(pozaImpacto.y - Math.sin(fg * Math.PI) * (5 + (g % 3) * 2));
+      const gx = Math.round(pozaImpacto.x + dir * (2 + fg * 15));
+      const gy = Math.round(pozaImpacto.y - Math.sin(fg * Math.PI) * (5.5 + (g % 3) * 2.2));
       ctx.globalAlpha = (1 - fg) * 0.92;
       ctx.fillStyle = fg < 0.45 ? "#fef9c3" : "#fb923c";
-      ctx.fillRect(gx, gy, 2, 2);
+      ctx.fillRect(gx, gy, 1.5, 1.5);
     }
   }
   ctx.restore();
@@ -735,7 +762,7 @@ function dibujarCavernaSombria(
 
 /**
  * 3. Ríos de lava y poza volcánica vivas sobre la meseta de basalto:
- * corrientes incandescentes siguiendo los 3 ramales reales y burbujas que se hinchan y estallan.
+ * corrientes continuas de magma fluido siguiendo los 3 ramales reales y burbujas que se hinchan y estallan.
  */
 function dibujarRiosLavaMeseta(
   ctx: CanvasRenderingContext2D,
@@ -747,46 +774,78 @@ function dibujarRiosLavaMeseta(
   trazarPoligono(ctx, SILUETA_ENVOLVENTE_CUEVA);
   ctx.clip();
 
-  // Resplandor térmico tenue sobre la cuenca central de basalto
+  // Resplandor térmico sobre la cuenca central de basalto
   ctx.globalCompositeOperation = "lighter";
-  const calor = 0.17 + Math.sin(t * 0.0031) * 0.04;
-  dibujarSpriteCentrado(ctx, sprites.haloVolcanico, 1435, 384, 58, 24, calor);
+  const calor = 0.22 + Math.sin(t * 0.0031) * 0.05;
+  dibujarSpriteCentrado(ctx, sprites.haloVolcanico, 1435, 384, 62, 26, calor);
 
-  // Pulsos térmicos suaves recorriendo cada ramal real desde la poza hasta la cornisa
+  // Corrientes continuas de magma fluido con ondas térmicas viajeras hacia las cornisas
   const muestreado: Punto2D = { x: 0, y: 0 };
+  const pasosRio = 18;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
   for (let r = 0; r < CAUCES_LAVA_MESETA.length; r++) {
     const cauce = CAUCES_LAVA_MESETA[r];
-    const cuentas = r === 2 ? 2 : 4;
-    for (let c = 0; c < cuentas; c++) {
-      const u = (t * 0.00024 + c / cuentas + r * 0.19) % 1;
+    for (let s = 0; s <= pasosRio; s++) {
+      const u = s / pasosRio;
       muestrearPolilinea(cauce, u, muestreado);
-      const alfa = Math.sin(u * Math.PI) * 0.44;
-      if (alfa <= 0.04) continue;
+      const serpenteo = Math.sin(u * 8.5 - t * 0.0042 + r * 1.9) * 0.9 * Math.sin(u * Math.PI);
+      flujoBufferX[s] = muestreado.x + serpenteo;
+      flujoBufferY[s] = muestreado.y + serpenteo * 0.45;
+    }
 
-      dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, muestreado.x, muestreado.y, 7.5, 4.5, alfa);
+    // Aura térmica continua a lo largo de todo el cauce
+    ctx.globalAlpha = 0.28 + Math.sin(t * 0.003 + r) * 0.05;
+    ctx.strokeStyle = "#ea580c";
+    ctx.lineWidth = 6.2;
+    ctx.beginPath();
+    ctx.moveTo(flujoBufferX[0], flujoBufferY[0]);
+    for (let s = 1; s <= pasosRio; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
+    ctx.stroke();
+
+    // Crestas líquidas doradas-naranjas fluyendo de forma orgánica sin parecer trazos blancos rígidos
+    for (let s = 0; s < pasosRio; s++) {
+      const u = (s + 0.5) / pasosRio;
+      const env = Math.sin(u * Math.PI);
+      const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0046 + r * 1.7);
+      if (onda < 0.25) continue;
+      ctx.globalAlpha = env * onda * 0.54;
+      ctx.strokeStyle = onda > 0.78 ? "#fef08a" : onda > 0.52 ? "#fde047" : "#fb923c";
+      ctx.lineWidth = 1.4 + onda * 1.8;
+      ctx.beginPath();
+      ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+      ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+      ctx.stroke();
     }
   }
 
-  // Burbujas de magma hinchándose y estallando en micro-chispas
-  ctx.globalCompositeOperation = "source-over";
+  // Domos de magma incandescente hinchándose en la poza y estallando en micro-chispas
   for (let b = 0; b < BURBUJAS_LAVA_MESETA.length; b++) {
     const pt = BURBUJAS_LAVA_MESETA[b];
-    const ciclo = (t * 0.00052 + b * 0.18) % 1;
-    if (ciclo < 0.72) {
-      const crecimiento = ciclo / 0.72;
-      const radio = 1 + Math.round(crecimiento * 2);
-      ctx.globalAlpha = 0.35 + crecimiento * 0.55;
+    const ciclo = (t * 0.00056 + b * 0.17) % 1;
+    if (ciclo < 0.74) {
+      const crecimiento = ciclo / 0.74;
+      const rx = 1.6 + crecimiento * 2.4;
+      const ry = rx * 0.65;
+      dibujarSpriteCentrado(ctx, sprites.haloVolcanico, pt.x, pt.y, rx * 2.4, ry * 2.4, 0.28 + crecimiento * 0.36);
+      ctx.globalAlpha = 0.38 + crecimiento * 0.45;
       ctx.fillStyle = "#fb923c";
-      ctx.fillRect(Math.round(pt.x - radio), Math.round(pt.y - radio * 0.5), radio * 2, Math.max(1.5, radio));
+      ctx.beginPath();
+      ctx.ellipse(pt.x, pt.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = crecimiento * 0.78;
       ctx.fillStyle = "#fef08a";
-      ctx.fillRect(Math.round(pt.x - 0.5), Math.round(pt.y - 0.5), 1.5, 1.5);
+      ctx.fillRect(Math.round(pt.x - 0.8), Math.round(pt.y - 0.8), 1.6, 1.3);
     } else if (!reducirMovimiento) {
-      const estallido = (ciclo - 0.72) / 0.28;
-      const alfa = (1 - estallido) * 0.9;
+      const estallido = (ciclo - 0.74) / 0.26;
+      const alfa = (1 - estallido) * 0.92;
       ctx.globalAlpha = alfa;
-      ctx.fillStyle = "#fef9c3";
-      ctx.fillRect(Math.round(pt.x - 2 - estallido * 3), Math.round(pt.y - estallido * 5), 1.5, 1.5);
-      ctx.fillRect(Math.round(pt.x + 1 + estallido * 3), Math.round(pt.y - estallido * 6), 1.5, 1.5);
+      ctx.fillStyle = "#fef08a";
+      ctx.fillRect(Math.round(pt.x - 2 - estallido * 3.5), Math.round(pt.y - estallido * 5.5), 1.5, 1.5);
+      ctx.fillRect(Math.round(pt.x + 1 + estallido * 3.5), Math.round(pt.y - estallido * 6.5), 1.5, 1.5);
+      ctx.fillStyle = "#fb923c";
+      ctx.fillRect(Math.round(pt.x), Math.round(pt.y - 2 - estallido * 7), 1.5, 1.5);
     }
   }
 
@@ -805,11 +864,15 @@ function dibujarCascadasYVaporCueva(
   reducirMovimiento: boolean,
 ): void {
   const puntoFlujo: Punto2D = { x: 0, y: 0 };
+  const pasosCascada = 14;
 
   ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
   for (let i = 0; i < CASCADAS_ACANTILADO_CUEVA.length; i++) {
     const cascada = CASCADAS_ACANTILADO_CUEVA[i];
-    const pulso = 0.72 + Math.sin(t * 0.0046 + cascada.fase) * 0.25;
+    const pulso = 0.76 + Math.sin(t * 0.0046 + cascada.fase) * 0.24;
 
     // Resplandor cálido en labio superior y poza de choque contra el mar (acotado dentro de ZON-05)
     ctx.globalCompositeOperation = "lighter";
@@ -818,39 +881,51 @@ function dibujarCascadasYVaporCueva(
       sprites.haloVolcanico,
       cascada.poza.x,
       cascada.poza.y - 2,
-      18 + cascada.anchoChorro,
-      11,
-      0.34 * pulso,
+      20 + cascada.anchoChorro,
+      12,
+      0.4 * pulso,
     );
     dibujarSpriteCentrado(
       ctx,
       sprites.haloMagmaNucleo,
       cascada.poza.x,
       cascada.poza.y - 2,
-      12 + cascada.anchoChorro * 0.5,
-      8,
-      0.38 * pulso,
+      13 + cascada.anchoChorro * 0.55,
+      8.5,
+      0.46 * pulso,
     );
 
-    // Flujo viscoso continuo en estelas alargadas a lo largo de cada hebra real
-    ctx.globalCompositeOperation = "lighter";
+    // Flujo líquido continuo y turbulento a lo largo de cada hebra real (sin bloques discontinuos)
     for (let h = 0; h < cascada.hebras.length; h++) {
       const hebra = cascada.hebras[h];
-      const estelas = 5;
-      for (let g = 0; g < estelas; g++) {
-        const u = (t * 0.00062 + g / estelas + h * 0.29 + cascada.fase * 0.15) % 1;
+      for (let s = 0; s <= pasosCascada; s++) {
+        const u = s / pasosCascada;
         muestrearPolilinea(hebra, u, puntoFlujo);
-        const alfa = Math.sin(u * Math.PI) * 0.58 + 0.1;
-        const px = Math.round(puntoFlujo.x);
-        const py = Math.round(puntoFlujo.y);
+        const oscilacion = Math.sin(u * 9 - t * 0.006 + h * 2.1 + cascada.fase) * 0.65 * Math.sin(u * Math.PI);
+        flujoBufferX[s] = puntoFlujo.x + oscilacion;
+        flujoBufferY[s] = puntoFlujo.y;
+      }
 
-        ctx.globalAlpha = alfa * 0.65;
-        ctx.fillStyle = "#fb923c";
-        ctx.fillRect(px - 1.5, py - 4, 3, 9);
+      // Base fluida naranja envolvente
+      ctx.globalAlpha = 0.34 * pulso;
+      ctx.strokeStyle = "#f97316";
+      ctx.lineWidth = cascada.hebras.length > 1 ? 3.8 : 5.0;
+      ctx.beginPath();
+      ctx.moveTo(flujoBufferX[0], flujoBufferY[0]);
+      for (let s = 1; s <= pasosCascada; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
+      ctx.stroke();
 
-        ctx.globalAlpha = Math.min(0.86, alfa * 0.88);
-        ctx.fillStyle = g % 2 === 0 ? "#fef08a" : "#fde047";
-        ctx.fillRect(px - 0.5, py - 3, 1.5, 6);
+      // Lenguas de magma vivo descendiendo continuamente por cada hebra
+      for (let s = 0; s < pasosCascada; s++) {
+        const u = (s + 0.5) / pasosCascada;
+        const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0075 + h * 2.2 + cascada.fase);
+        ctx.globalAlpha = 0.28 + onda * 0.64;
+        ctx.strokeStyle = onda > 0.68 ? "#fef9c3" : onda > 0.42 ? "#fde047" : "#fb923c";
+        ctx.lineWidth = (cascada.hebras.length > 1 ? 0.9 : 1.1) + onda * 1.4;
+        ctx.beginPath();
+        ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+        ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+        ctx.stroke();
       }
     }
 
@@ -872,11 +947,11 @@ function dibujarCascadasYVaporCueva(
 
     // Chispas incandescentes brotando en el choque térmico con el mar
     if (!reducirMovimiento) {
-      for (let c = 0; c < 4; c++) {
-        const fc = (t * 0.00088 + c * 0.25 + cascada.fase) % 1;
-        const cx = Math.round(cascada.poza.x + Math.sin(fc * 7 + c * 2.1) * (8 + cascada.anchoChorro * 0.4));
-        const cy = Math.round(cascada.poza.y - 3 - fc * 22);
-        ctx.globalAlpha = (1 - fc) * 0.88;
+      for (let c = 0; c < 5; c++) {
+        const fc = (t * 0.00095 + c * 0.2 + cascada.fase) % 1;
+        const cx = Math.round(cascada.poza.x + Math.sin(fc * 7 + c * 2.1) * (9 + cascada.anchoChorro * 0.4));
+        const cy = Math.round(cascada.poza.y - 3 - fc * 24);
+        ctx.globalAlpha = (1 - fc) * 0.9;
         ctx.fillStyle = fc < 0.4 ? "#fef9c3" : "#fb923c";
         ctx.fillRect(cx, cy, 1.5, 1.5);
       }
@@ -899,15 +974,15 @@ function dibujarArcoElectricoBifurcado(
 ): void {
   if (intensidad <= 0.05) return;
 
-  const pasoTemporal = Math.floor(t / 65);
+  const pasoTemporal = Math.floor(t / 55);
   const dx = arco.destino.x - arco.origen.x;
   const dy = arco.destino.y - arco.origen.y;
   const dist = Math.max(1, Math.hypot(dx, dy));
   const nx = -dy / dist;
   const ny = dx / dist;
 
-  // 8 segmentos (9 vértices) rellenados mediante desplazamiento iterativo determinista
-  const totalPuntos = 9;
+  // 12 segmentos angulosos (13 vértices) con desplazamiento nítido de doble octava
+  const totalPuntos = 13;
   arcoBufferX[0] = arco.origen.x;
   arcoBufferY[0] = arco.origen.y;
   arcoBufferX[totalPuntos - 1] = arco.destino.x;
@@ -918,7 +993,8 @@ function dibujarArcoElectricoBifurcado(
     const envolvente = Math.sin(frac * Math.PI);
     const j1 = ruidoDeterminista(pasoTemporal * 17.3 + indiceArco * 31 + i * 7.1) - 0.5;
     const j2 = ruidoDeterminista(pasoTemporal * 9.1 + indiceArco * 13 + i * 11.7) - 0.5;
-    const desplazamiento = (j1 * 1.4 + j2 * 0.6) * arco.amplitud * envolvente;
+    const diente = i % 2 === 0 ? 1 : -1;
+    const desplazamiento = (j1 * 1.45 + j2 * 0.75 + diente * 0.22) * arco.amplitud * envolvente;
     arcoBufferX[i] = arco.origen.x + dx * frac + nx * desplazamiento;
     arcoBufferY[i] = arco.origen.y + dy * frac + ny * desplazamiento;
   }
@@ -926,53 +1002,67 @@ function dibujarArcoElectricoBifurcado(
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
 
-  // Halos en ambos extremos cristalinos de la descarga
-  dibujarSpriteCentrado(ctx, sprites.haloArcanoCristal, arco.origen.x, arco.origen.y, 13, 13, intensidad * 0.46);
-  dibujarSpriteCentrado(ctx, sprites.haloArcanoCristal, arco.destino.x, arco.destino.y, 13, 13, intensidad * 0.46);
+  // Fulgor eléctrico en ambos extremos cristalinos
+  dibujarSpriteCentrado(ctx, sprites.haloAbisalPurpura, arco.origen.x, arco.origen.y, 16, 16, intensidad * 0.42);
+  dibujarSpriteCentrado(ctx, sprites.haloArcanoCristal, arco.origen.x, arco.origen.y, 14, 14, intensidad * 0.58);
+  dibujarSpriteCentrado(ctx, sprites.haloArcanoCristal, arco.destino.x, arco.destino.y, 14, 14, intensidad * 0.58);
 
-  // Pasada exterior violeta difusa
-  ctx.strokeStyle = `rgba(192, 132, 252, ${(intensidad * 0.52).toFixed(2)})`;
-  ctx.lineWidth = 3.0;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = "square";
+  ctx.lineJoin = "miter";
   ctx.beginPath();
   ctx.moveTo(arcoBufferX[0], arcoBufferY[0]);
   for (let i = 1; i < totalPuntos; i++) {
     ctx.lineTo(arcoBufferX[i], arcoBufferY[i]);
   }
+
+  // Pasada 1: corona púrpura intensa
+  ctx.strokeStyle = `rgba(147, 51, 234, ${(intensidad * 0.42).toFixed(2)})`;
+  ctx.lineWidth = 5.4;
   ctx.stroke();
 
-  // Núcleo eléctrico nítido blanco-magenta
-  ctx.strokeStyle = `rgba(250, 232, 255, ${(intensidad * 0.96).toFixed(2)})`;
+  // Pasada 2: halo magenta eléctrico
+  ctx.strokeStyle = `rgba(232, 121, 249, ${(intensidad * 0.76).toFixed(2)})`;
+  ctx.lineWidth = 2.6;
+  ctx.stroke();
+
+  // Pasada 3: núcleo blanco-lavanda filoso
+  ctx.strokeStyle = `rgba(255, 250, 255, ${(intensidad * 0.98).toFixed(2)})`;
   ctx.lineWidth = 1.25;
   ctx.stroke();
 
-  // Bifurcación secundaria saliendo desde el tercio medio
+  // Dos bifurcaciones angulosas saliendo en ángulos vivos
   if (arco.conRama) {
-    const nodoBif = 3 + (indiceArco % 2);
-    const bx0 = arcoBufferX[nodoBif];
-    const by0 = arcoBufferY[nodoBif];
-    const signo = ruidoDeterminista(pasoTemporal * 5.7 + indiceArco) > 0.5 ? 1 : -1;
-    const dirX = dx * 0.28 + nx * signo * arco.amplitud * 1.65;
-    const dirY = dy * 0.28 + ny * signo * arco.amplitud * 1.65;
+    const cantidadRamas = dist > 45 ? 2 : 1;
+    for (let r = 0; r < cantidadRamas; r++) {
+      const nodoBif = r === 0 ? 4 + (indiceArco % 2) : 8;
+      const bx0 = arcoBufferX[nodoBif];
+      const by0 = arcoBufferY[nodoBif];
+      const signo = r === 0 ? (ruidoDeterminista(pasoTemporal * 5.7 + indiceArco) > 0.5 ? 1 : -1) : -1;
+      const escalaRama = r === 0 ? 0.34 : 0.24;
+      const dirX = dx * escalaRama + nx * signo * arco.amplitud * 2.1;
+      const dirY = dy * escalaRama + ny * signo * arco.amplitud * 2.1;
 
-    for (let k = 0; k < 5; k++) {
-      const f = k / 4;
-      const jitter = (ruidoDeterminista(pasoTemporal * 11.3 + indiceArco * 19 + k * 3.7) - 0.5) * 4.5 * Math.sin(f * Math.PI);
-      ramaBufferX[k] = bx0 + dirX * f + nx * jitter;
-      ramaBufferY[k] = by0 + dirY * f + ny * jitter;
+      for (let k = 0; k < 6; k++) {
+        const f = k / 5;
+        const jitter =
+          (ruidoDeterminista(pasoTemporal * 11.3 + indiceArco * 19 + k * 3.7 + r * 23) - 0.5) *
+          6.0 *
+          Math.sin(f * Math.PI);
+        ramaBufferX[k] = bx0 + dirX * f + nx * jitter;
+        ramaBufferY[k] = by0 + dirY * f + ny * jitter;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(ramaBufferX[0], ramaBufferY[0]);
+      for (let k = 1; k < 6; k++) ctx.lineTo(ramaBufferX[k], ramaBufferY[k]);
+      ctx.strokeStyle = `rgba(217, 70, 239, ${(intensidad * 0.55).toFixed(2)})`;
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      ctx.strokeStyle = `rgba(253, 244, 255, ${(intensidad * 0.92).toFixed(2)})`;
+      ctx.lineWidth = 0.95;
+      ctx.stroke();
     }
-
-    ctx.strokeStyle = `rgba(216, 180, 254, ${(intensidad * 0.42).toFixed(2)})`;
-    ctx.lineWidth = 2.0;
-    ctx.beginPath();
-    ctx.moveTo(ramaBufferX[0], ramaBufferY[0]);
-    for (let k = 1; k < 5; k++) ctx.lineTo(ramaBufferX[k], ramaBufferY[k]);
-    ctx.stroke();
-
-    ctx.strokeStyle = `rgba(253, 244, 255, ${(intensidad * 0.85).toFixed(2)})`;
-    ctx.lineWidth = 0.9;
-    ctx.stroke();
   }
 
   ctx.restore();
@@ -1072,21 +1162,26 @@ function dibujarCristalesYArcosCueva(
   }
   ctx.restore();
 
-  // Arcos eléctricos orgánicos bifurcados saltando intermitentemente en el cúmulo colosal
+  // Arcos eléctricos orgánicos bifurcados crepitando sobre los cristales
   if (reducirMovimiento) {
-    dibujarArcoElectricoBifurcado(ctx, sprites, ARCOS_CRISTAL_COLOSAL[0], 0, 0.72, 0);
+    dibujarArcoElectricoBifurcado(ctx, sprites, ARCOS_CRISTAL_COLOSAL[0], 0, 0.82, 0);
+    dibujarArcoElectricoBifurcado(ctx, sprites, ARCOS_CRISTAL_COLOSAL[5], 0, 0.68, 5);
     return;
   }
 
   for (let i = 0; i < ARCOS_CRISTAL_COLOSAL.length; i++) {
     const arco = ARCOS_CRISTAL_COLOSAL[i];
-    // Ventana natural intermitente (~320 ms activos cada ~2.6 s por trayectoria, con leve parpadeo interno)
-    const periodo = 2500 + i * 370;
-    const faseLocal = ((t + arco.fase * 650) % periodo) / periodo;
-    if (faseLocal > 0.14) continue;
+    // Distribución áurea de fases para evitar ventanas vacías simultáneas en los 3 cúmulos
+    const esMenor = i >= 7;
+    const periodo = esMenor ? 1950 + (i - 7) * 320 : 1450 + i * 210;
+    const cicloActivo = esMenor ? 0.36 : 0.42;
+    const indiceGrupo = esMenor ? i - 7 : i;
+    const desplazamientoFase = ((indiceGrupo * 0.6180339887) % 1) * periodo;
+    const faseLocal = ((t + desplazamientoFase) % periodo) / periodo;
+    if (faseLocal > cicloActivo) continue;
 
-    const uVentana = faseLocal / 0.14;
-    const parpadeo = 0.65 + 0.35 * Math.sin(uVentana * Math.PI * 5);
+    const uVentana = faseLocal / cicloActivo;
+    const parpadeo = 0.62 + 0.38 * Math.abs(Math.sin(uVentana * Math.PI * 3.5));
     const intensidad = Math.sin(uVentana * Math.PI) * parpadeo;
     dibujarArcoElectricoBifurcado(ctx, sprites, arco, t, intensidad, i);
   }

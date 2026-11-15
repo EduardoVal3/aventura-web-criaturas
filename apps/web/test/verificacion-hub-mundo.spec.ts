@@ -957,7 +957,7 @@ test("Subfase 10u: Diorama multicapa de Cueva Umbría (ZON-05) calibrado sobre a
       );
     }
   }
-  assert.ok(ARCOS_CRISTAL_COLOSAL.length >= 4);
+  assert.ok(ARCOS_CRISTAL_COLOSAL.length >= 10, "Deben coexistir arcos eléctricos primarios y secundarios en los 3 cúmulos");
 
   // 3. Ejecución segura en Node (sin document) para estados desbloqueado, bloqueado y movimiento reducido
   const ctxDummy = {} as CanvasRenderingContext2D;
@@ -972,6 +972,10 @@ test("Subfase 10u: Diorama multicapa de Cueva Umbría (ZON-05) calibrado sobre a
   const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
 
   assert.ok(dioramaCuevaCodigo.includes("spritesCuevaCache"), "Debe cachear sprites fuera de pantalla");
+  assert.ok(
+    dioramaCuevaCodigo.includes("flujoBufferX"),
+    "Debe reutilizar búfer estático continuo para los flujos de lava y cascadas sin asignaciones por cuadro",
+  );
   assert.ok(
     dioramaCuevaCodigo.includes("dibujarEstadoBloqueadoCueva"),
     "Debe diferenciar rescoldos contenidos cuando ZON-05 está bloqueada",

@@ -449,8 +449,8 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
   assert.ok(expCodigo.includes("MinimapaRedTerritorial"), "PantallaExploracion debe integrar MinimapaRedTerritorial");
 });
 
-test("Subfase 10p/10q: Calibración sobre mapa transparente (1616x897), aguas costeras, 10 puentes Bezier y efectos recalculados", async () => {
-  const { existsSync, readFileSync } = await import("node:fs");
+test("Subfase 10p/10q/10r: Calibración sobre mapa transparente WebP (1616x897), aguas costeras, 10 puentes Bezier y efectos calibrados", async () => {
+  const { existsSync, readFileSync, statSync } = await import("node:fs");
   const { join, dirname } = await import("node:path");
   const { fileURLToPath } = await import("node:url");
 
@@ -469,8 +469,9 @@ test("Subfase 10p/10q: Calibración sobre mapa transparente (1616x897), aguas co
   assert.strictEqual(DIMENSIONES_MAPA_MUNDO.ancho, 1616);
   assert.strictEqual(DIMENSIONES_MAPA_MUNDO.alto, 897);
 
-  const rutaMapaAsset = join(__dirname, "../public/assets/zonas/mapa-mundo-aethelgard.png");
-  assert.strictEqual(existsSync(rutaMapaAsset), true, "Debe existir mapa-mundo-aethelgard.png");
+  const rutaMapaAsset = join(__dirname, "../public/assets/mapa-mundo-aethelgard.webp");
+  assert.strictEqual(existsSync(rutaMapaAsset), true, "Debe existir public/assets/mapa-mundo-aethelgard.webp");
+  assert.ok(statSync(rutaMapaAsset).size < 1_500_000, "El mapa WebP optimizado debe pesar menos de 1.5 MB");
 
   for (const nodo of TOPOLOGIA_AETHELGARD) {
     const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
@@ -510,7 +511,7 @@ test("Subfase 10p/10q: Calibración sobre mapa transparente (1616x897), aguas co
     join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
     "utf-8",
   );
-  assert.ok(canvasCodigo.includes("/assets/zonas/mapa-mundo-aethelgard.png"));
+  assert.ok(canvasCodigo.includes("/assets/mapa-mundo-aethelgard.webp"));
   assert.ok(canvasCodigo.includes("dibujarFondoOceanoContinuo"));
   assert.ok(canvasCodigo.includes("dibujarAguasCosterasMapa"));
   assert.ok(canvasCodigo.includes("dibujarCapaVivaMapa"));

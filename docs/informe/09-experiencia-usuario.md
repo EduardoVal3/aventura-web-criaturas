@@ -1790,5 +1790,40 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`3.80s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `44020.67ms`).
 
+---
+
+## 30. Sub-Fase 10s: Océano Vivo y Animación Marina 2.5D en el Mapa de Aethelgard
+
+### 30.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras aislar en la Subfase 10r el mapa maestro transparente (`apps/web/public/assets/mapa-mundo-aethelgard.webp`, renderizado en el espacio lógico `1616×897`), el océano subyacente dependía de un degradado estático y elipses geométricas por isla (`dibujarAguasCosterasMapa`), mientras que algunos trazos uniformes y gradientes por cuadro limitaban la inmersión Dark Fantasy del archipiélago:
+- **Falta de lectura real del terreno en el agua:** Al usar radios elípticos aproximados en lugar de la silueta alfa real del archipiélago, no existía campo de distancias ni normales costeras para evitar que oleaje, corrientes o fauna atravesaran tierra firme o acantilados.
+- **Costuras geométricas y coste de renderizado por cuadro:** En la auditoría visual inicial sobre Chromium headless se detectaron tres artefactos puntuales que se corrigieron iterativamente: (1) saltos binarios entre meseta somera y aguas profundas provocados por la distancia entera Chamfer y umbrales discretos en puentes, (2) líneas rectas paralelas en pulsos de corriente y estelas vectoriales en `V` demasiado rígidas, y (3) necesidad de cachear en búferes fuera de pantalla (`WeakMap` y canvas auxiliares) para evitar asignar gradientes o patrones en `requestAnimationFrame`.
+- **Invariancia estricta del HUD y biomas calibrados:** Se mantuvo intacta la interfaz externa (barras, placas, tipografía, controles) y las coordenadas de los 9 biomas ya calibrados en `dibujarCapaVivaMapa` (`apps/web/src/lib/mapa-dioramas.ts`).
+
+### 30.2 Mejoras Implementadas
+- **Nuevo motor oceánico dedicado ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
+  - **Extracción única de máscara alfa y campo de distancias isotrópico (`analizarMascaraAlfaOceano` / `calcularCampoDistancia`):** Al cargar `mapa-mundo-aethelgard.webp` en `crearRecursosOceano(imagenMapa)`, se muestrea el canal alfa en `808×449` (`escala = 0.5`, umbral `110`) generando dos campos flotantes Chamfer (`1 / escala`, `Math.SQRT2 / escala`): `distanciaMar` (islas + puentes para espuma y superficie) y `distanciaSinPuentes` (solo islas para permitir corrientes y cardúmenes cruzar bajo los arcos de los 10 puentes Bezier de `TRAYECTOS_PUENTES_AETHELGARD`), más detección 2.5D de frente de acantilados (`esFrenteAcantilado`).
+  - **Batimetría y cáusticas cacheadas fuera de pantalla (`crearCanvasBatimetria` / `crearCanvasCausticas`):** Precalcula fosas abisales, transición continua mediante `suavizarHermite` sobre `distanciaSinPuentes` ponderando orientación vertical `nyRel` por isla (evitando halos celestes alrededor de cumbres, torres o copas de árboles y concentrando la meseta oscura sutil en los frentes costeros, con mezcla climática suave y matiz térmico volcánico al este), sombra de contacto oscura bajo acantilados y arcos de puentes, y patrón periódico `512×512` de cáusticas submarinas desplazado en doble capa opuesta; adicionalmente cachea gradientes por contexto en `WeakMap` (`cacheGradientesPorCtx` y `cacheGradientesRespaldo` en `mapa-dioramas.ts`).
+  - **Corrientes, oleaje pelágico 2.5D y resaca regional por clima (`dibujarCorrientesMarinas`, `dibujarOlasYEstelasSuperficie`, `dibujarResacaYHitosRegionales`):**
+    - 7 corrientes suavizadas con interpolación Catmull-Rom que fluyen por canales y bajo arcos de puentes mediante motas y filamentos pixel-art discontinuos.
+    - Oleaje pelágico en perspectiva 2.5D y micro-estelas en `V` pixeladas validando navegabilidad en cada extremo (`esPosicionNavegable`).
+    - Resaca orgánica adaptada al clima costero: bloques de hielo biselados 2.5D a la deriva al norte (`Bastión Norte` / `La Cumbre`), estelas portuarias junto a la escalinata de `Villa Serena` y turbulencia/rocío en la cascada de `Puesto del Río`, destellos bioluminiscentes violeta y esmeralda en aguas someras de `Lago Espejo` y `Bosque`, y reflejos ámbar/naranja rielantes con burbujas hirvientes y vapor pixelado en la costa volcánica de `Cueva Umbría`.
+  - **Fauna marina abisal y atmósfera superficial (`dibujarFaunaSubmarina`, `dibujarLeviatanAbisal`, `dibujarAvesMarinasLejanas`):**
+    - 6 cardúmenes translúcidos nadando en órbitas suaves con evasión por normal costera (`consultarNormalAgua`), 8 medusas luminosas pulsantes y 62 motas de plancton en cuencas abiertas.
+    - Aparición periódica de leviatán / serpiente marina abisal en cuencas profundas exteriores despejadas de placas (`zonasLeviatan` con ciclos de `18_000 ms`, sombra corporal sumergida, lomos acorazados y anillos de ruptura).
+    - Bandadas lejanas de gaviotas sobre mares exteriores dibujadas tras `ctx.drawImage`, respetando la claridad de todas las placas del mapa.
+- **Integración limpia en el canvas ([MapaInteractivoCanvas.tsx](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
+  - Invoca `crearRecursosOceano(img)` al cargar el WebP maestro y ejecuta `dibujarOceanoVivo` debajo de las islas y `dibujarAvesMarinasLejanas` por encima, manteniendo la ruta de respaldo (`dibujarFondoOceanoContinuo`, `dibujarAguasCosterasMapa`, `dibujarRespaldoIslasBase`), caché de viñeta (`vinetaCacheRef`), soporte íntegro de zoom/paneo sin reiniciar el bucle `rAF` al arrastrar y respeto a `prefers-reduced-motion`.
+
+### 30.3 Verificación de Calidad y Cero Regresiones
+- **Inspección Visual en Chromium Headless (6 capturas completas y zoom 2×, verificadas con `read_file` y eliminando los archivos temporales del repositorio antes de commitear):**
+  - Tiempo de renderizado observado por cuadro entre **`4.1 ms` y `13.9 ms`** (margen sólido para 60 FPS en `< 16.6 ms`) con **`0` colisiones** registradas en tierra firme (`391` puntos de resaca, `7` corrientes, `6` cardúmenes, `13` bloques de hielo, `8` medusas, `62` motas de plancton, `4` bandadas, `4` cuencas del leviatán).
+  - Confirmación visual sin halo celeste alrededor de islas, torres ni copas de árboles, canales fluidos sin costuras poligonales, leviatán y gaviotas en aguas abiertas y placas totalmente legibles.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **91 archivos** (`260ms`, 116 reglas, 0 advertencias nuevas en los módulos de Subfase 10s).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `1332.9893ms`), ampliando `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar la máscara alfa, normales costeras, cobertura de ecosistemas, cero colisiones con tierra firme, cumplimiento R1 sin emojis e integración de caché en `MapaInteractivoCanvas.tsx`.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`5.60s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `73975.4108ms`).
+
 
 

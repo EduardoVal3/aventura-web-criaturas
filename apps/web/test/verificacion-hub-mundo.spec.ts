@@ -674,6 +674,60 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
   assert.ok(canvasCodigo.includes("dibujarOceanoVivo"));
   assert.ok(canvasCodigo.includes("dibujarAvesMarinasLejanas"));
   assert.ok(canvasCodigo.includes("vinetaCacheRef"));
+
+  // 5. Presencia prolongada y expansión a mares exteriores de abisales y siluetas
+  assert.ok(
+    datos.siluetasSubmarinas.length >= 15,
+    "Debe poblar siluetas submarinas tanto en canales como en aguas exteriores abiertas",
+  );
+  assert.ok(
+    datos.siluetasSubmarinas.some(
+      (s) => s.centro.x < 0 || s.centro.x > 1616 || s.centro.y < 0 || s.centro.y > 897,
+    ),
+    "Las siluetas submarinas deben expandirse al océano abierto exterior",
+  );
+  assert.ok(
+    datos.avistamientosAbisales.length >= 10,
+    "Debe distribuir múltiples avistamientos de kraken, mosasaurus y leviatán por el mapa",
+  );
+  assert.ok(
+    datos.avistamientosAbisales.some(
+      (a) => a.centro.x < 0 || a.centro.x > 1616 || a.centro.y < 0 || a.centro.y > 897,
+    ),
+    "Los avistamientos abisales deben extenderse también fuera del perímetro cercano a las islas",
+  );
+  for (const a of datos.avistamientosAbisales) {
+    assert.ok(
+      a.duracionAparicion / a.duracionCiclo >= 0.78,
+      `Avistamiento ${a.especie} debe mantener presencia prolongada (>=78% del ciclo)`,
+    );
+  }
+
+  // 6. Eliminación de aros punteados, calibración de puentes y controles de placas en MapaInteractivoCanvas
+  const dioramasCodigo = readFileSync(
+    join(__dirname, "../src/lib/mapa-dioramas.ts"),
+    "utf-8",
+  );
+  assert.strictEqual(
+    dioramasCodigo.includes("setLineDash"),
+    false,
+    "dibujarCapaVivaMapa no debe dibujar halos animados de líneas punteadas sobre la isla actual",
+  );
+
+  const puenteRiscosCueva = TRAYECTOS_PUENTES_AETHELGARD.find(
+    (t) => t.origenId === "ZON-04" && t.destinoId === "ZON-05",
+  );
+  assert.ok(puenteRiscosCueva && puenteRiscosCueva.control.y >= 324);
+
+  assert.strictEqual(
+    canvasCodigo.includes("TÚ AQUÍ"),
+    false,
+    "El badge animado debe mostrar únicamente 'Tú'",
+  );
+  assert.ok(canvasCodigo.includes("mostrarPlacas"));
+  assert.ok(canvasCodigo.includes("escalaPlaca"));
+  assert.ok(canvasCodigo.includes("data-boton-placas-mapa"));
+  assert.ok(canvasCodigo.includes("data-placa-isla"));
 });
 
 

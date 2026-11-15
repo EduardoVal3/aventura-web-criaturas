@@ -1825,5 +1825,36 @@ Tras aislar en la Subfase 10r el mapa maestro transparente (`apps/web/public/ass
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`5.60s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `73975.4108ms`).
 
+---
+
+## 31. Sub-Fase 10s (Ampliación): Fauna Abisal Gigante y Siluetas Submarinas 2.5D
+
+### 31.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras entregar el motor oceánico multicapa en la Subfase 10s base (`1f2fb10`), la actividad de megafauna marina se concentraba en un único evento de serpiente marina (`zonasLeviatan`), cardúmenes pequeños y medusas puntuales, lo que dejaba amplios mares abisales exteriores sin variedad de depredadores ni sensación de criaturas profundas desplazándose bajo la superficie:
+- **Falta de biodiversidad colosal:** El océano requería presencia diferenciada de **Mosasaurus**, **Kraken** y **Leviatán** alternados por cuencas abisales, además de sombras submarinas reconocibles nadando debajo de olas y puentes.
+- **Hallazgos de primera captura headless (`01` a `06`):** Al auditar los primeros renderizados, las siluetas sumergidas (`alpha ~ 0.17–0.33`) resultaban excesivamente tenues sobre el fondo `#031428`, el **Mosasaurus** mostraba dos barras blancas horizontales rígidas en la línea de flotación (`03`, `06`) y el **Kraken** exhibía tentáculos de grosor uniforme y elipse lisa en superficie (`05`).
+
+### 31.2 Mejoras Implementadas (Identidad Retro, Criaturas 2.5D y Reglas de Cliente)
+- **Catálogo de Siluetas Submarinas (`apps/web/src/lib/oceano-vivo.ts`):**
+  - Introducción de la capa `SiluetaSubmarina` (`mosasaurus`, `plesiosaurio`, `mantarraya`, `kraken`, `ballena`) desplegada en **9 rutas** de aguas abiertas y canales bajo puente (`NW`, `WestMid`, `NE`, `ChanW`, `SWBay`, `SEBay`, `ChanC`, `SW_corner`, `MidN`).
+  - Renderizado 2.5D en doble capa con sombra abisal inferior difusa (`#00050e`), cuerpo translúcido adaptado al matiz regional (`glacial`, `abisal`, `mistico`), borde lunar tenue y nado continuo bajo las olas superficiales (`dibujarSiluetasSubmarinas`).
+- **Avistamientos Abisales Escalonados en Superficie (`AvistamientoAbisal`):**
+  - Expansión a **5 zonas escalonadas** alternando **Leviatán** (`NW`), **Mosasaurus** (`NE` y `SEBay`) y **Kraken** (`SWBay` y `WestMid`) con ciclos independientes (`15.5s` a `19.0s`), validación estricta contra `esPosicionNavegable(..., false)` y `!estaCercaDePlaca(...)` para jamás pisar tierra firme, puentes ni placas de zona.
+  - Extracción del helper compartido `dibujarEspumaEmergente` (arcos de ola discontinuos y gotas dispersas de resaca), rediseño del **Mosasaurus** con fauces acorazadas, espinas dorsales, aleta pectoral y cola bilobada sin líneas rígidas, y rediseño del **Kraken** con manto cefalópodo picudo, ojos luminosos y 7 tentáculos cónicos gruesos con ventosas bioluminiscentes.
+- **Presupuesto 60 FPS y Sin Asignaciones por Cuadro (`R1` / R4):**
+  - Se elevaron todas las tuplas constantes de aletas y ángulos (`ALETAS_MOSASAURUS_SUB`, `ALETAS_PLESIOSAURIO_SUB`, `LADOS_ALETA_BALLENA`, `TENTACULOS_KRAKEN_SURGIMIENTO`) a constantes de módulo para evitar asignaciones de arreglos dentro del bucle `requestAnimationFrame`.
+- **Sincronización Documental y Pruebas:** Ampliación de la suite en `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar presencia íntegra de las 5 especies sumergidas, las 3 especies de avistamiento gigante en superficie y cero colisiones con tierra firme.
+
+### 31.3 Verificación de Calidad y Cero Regresiones
+- **Verificación Visual Headless en Chromium (`01`, `03`, `04`, `05`):**
+  - Medición real en Chromium tras el pulido final: **`4.0–9.1 ms/cuadro`** (`espumas: 391`, `corrientes: 7`, `cardumenes: 6`, `siluetas: 9`, `avistamientos: 5`, `hielo: 13`, `medusas: 8`, `plancton: 62`, `aves: 4`, **`colisiones: 0`**).
+  - Confirmación visual en las capturas `01-mapa-completo-leviatan.png`, `03-zoom-norte-glacial.png`, `04-zoom-este-volcanico-viaducto.png` y `05-zoom-villa-serena-sur.png` de las 5 siluetas sumergidas claramente legibles bajo el mar, erradicación de barras horizontales en el Mosasaurus, tentáculos cónicos orgánicos del Kraken y estelas respetando acantilados y placas.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **91 archivos** (`186ms`, 116 reglas, 0 advertencias nuevas en los módulos modificados).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `2340.3786ms`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.63s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `62815.8569ms`).
+
+
 
 

@@ -528,29 +528,60 @@ function encontrarCuencaProfunda(
   permitirBajoPuente: boolean,
   evitarPlacas: boolean,
 ): (Punto2D & { dist: number }) | null {
-  const gx0 = Math.max(2, Math.floor(x0 * mascara.escala));
-  const gy0 = Math.max(2, Math.floor(y0 * mascara.escala));
-  const gx1 = Math.min(mascara.ancho - 3, Math.ceil(x1 * mascara.escala));
-  const gy1 = Math.min(mascara.alto - 3, Math.ceil(y1 * mascara.escala));
-  const campo = permitirBajoPuente ? mascara.distanciaSinPuentes : mascara.distanciaMar;
+  const dentroMapa =
+    x0 >= 0 &&
+    y0 >= 0 &&
+    x1 <= DIMENSIONES_MAPA_MUNDO.ancho &&
+    y1 <= DIMENSIONES_MAPA_MUNDO.alto;
 
-  let mejorDist = minDist - 1;
-  let mejorX = 0;
-  let mejorY = 0;
-  for (let y = gy0; y <= gy1; y += 2) {
-    const ly = y / mascara.escala;
-    const fila = y * mascara.ancho;
-    for (let x = gx0; x <= gx1; x += 2) {
-      const d = campo[fila + x];
-      if (d <= mejorDist) continue;
-      const lx = x / mascara.escala;
-      if (evitarPlacas && estaCercaDePlaca(lx, ly, 12)) continue;
-      mejorDist = d;
-      mejorX = lx;
-      mejorY = ly;
+  if (dentroMapa) {
+    const gx0 = Math.max(2, Math.floor(x0 * mascara.escala));
+    const gy0 = Math.max(2, Math.floor(y0 * mascara.escala));
+    const gx1 = Math.min(mascara.ancho - 3, Math.ceil(x1 * mascara.escala));
+    const gy1 = Math.min(mascara.alto - 3, Math.ceil(y1 * mascara.escala));
+    const campo = permitirBajoPuente ? mascara.distanciaSinPuentes : mascara.distanciaMar;
+
+    let mejorDist = minDist - 1;
+    let mejorX = 0;
+    let mejorY = 0;
+    for (let y = gy0; y <= gy1; y += 2) {
+      const ly = y / mascara.escala;
+      const fila = y * mascara.ancho;
+      for (let x = gx0; x <= gx1; x += 2) {
+        const d = campo[fila + x];
+        if (d <= mejorDist) continue;
+        const lx = x / mascara.escala;
+        if (evitarPlacas && estaCercaDePlaca(lx, ly, 12)) continue;
+        mejorDist = d;
+        mejorX = lx;
+        mejorY = ly;
+      }
+    }
+    return mejorDist >= minDist ? { x: mejorX, y: mejorY, dist: mejorDist } : null;
+  }
+
+  // En aguas exteriores abiertas fuera del lienzo 1616x897, equilibrar profundidad y centrado del sector
+  const cx = (x0 + x1) * 0.5;
+  const cy = (y0 + y1) * 0.5;
+  let mejorScore = Number.NEGATIVE_INFINITY;
+  let mejorDist = 0;
+  let mejorX = cx;
+  let mejorY = cy;
+  for (let ly = y0; ly <= y1; ly += 14) {
+    for (let lx = x0; lx <= x1; lx += 14) {
+      const d = consultarDistanciaMar(mascara, lx, ly, permitirBajoPuente);
+      if (d < minDist) continue;
+      if (evitarPlacas && estaCercaDePlaca(lx, ly, 16)) continue;
+      const score = Math.min(d, minDist + 36) - Math.hypot(lx - cx, ly - cy) * 0.05;
+      if (score > mejorScore) {
+        mejorScore = score;
+        mejorDist = d;
+        mejorX = lx;
+        mejorY = ly;
+      }
     }
   }
-  return mejorDist >= minDist ? { x: mejorX, y: mejorY, dist: mejorDist } : null;
+  return mejorScore > Number.NEGATIVE_INFINITY ? { x: mejorX, y: mejorY, dist: mejorDist } : null;
 }
 
 /**
@@ -686,7 +717,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     if (c) corrientes.push(c);
   }
 
-  // 3. Cardúmenes submarinos en cuencas profundas verificadas
+  // 3. Cardúmenes submarinos en cuencas profundas internas y mares abiertos
   const sectoresCardumen: readonly [number, number, number, number][] = [
     [60, 70, 260, 270],
     [350, 500, 560, 680],
@@ -694,6 +725,10 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     [450, 750, 600, 880],
     [1020, 760, 1180, 880],
     [1340, 40, 1570, 220],
+    [-210, 290, -70, 640],
+    [360, -145, 980, -35],
+    [1665, 220, 1815, 720],
+    [420, 945, 1180, 1050],
   ];
   const cardumenes: CardumenPeces[] = [];
   for (let i = 0; i < sectoresCardumen.length; i++) {
@@ -702,8 +737,8 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     if (!cuenca) continue;
     cardumenes.push({
       centro: { x: cuenca.x, y: cuenca.y },
-      radioX: Math.min(44, Math.max(16, cuenca.dist * 0.58)),
-      radioY: Math.min(28, Math.max(12, cuenca.dist * 0.42)),
+      radioX: Math.min(54, Math.max(16, cuenca.dist * 0.58)),
+      radioY: Math.min(34, Math.max(12, cuenca.dist * 0.42)),
       velocidad: 0.00055 + rng() * 0.00035,
       fase: rng() * Math.PI * 2,
       cantidad: 5 + Math.floor(rng() * 3),
@@ -744,14 +779,14 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     });
   }
 
-  // 5. Medusas luminosas y plancton bioluminiscente
+  // 5. Medusas luminosas y plancton bioluminiscente en canales y océano exterior
   const medusas: MedusaMistica[] = [];
-  const sepMedusa2 = 75 * 75;
-  for (let intento = 0; intento < 260 && medusas.length < 8; intento++) {
-    const lx = 50 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho - 100);
-    const ly = 70 + rng() * (DIMENSIONES_MAPA_MUNDO.alto - 110);
-    if (consultarDistanciaMar(mascara, lx, ly, false) < 18) continue;
-    if (estaCercaDePlaca(lx, ly, 14)) continue;
+  const sepMedusa2 = 82 * 82;
+  for (let intento = 0; intento < 360 && medusas.length < 14; intento++) {
+    const lx = -190 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho + 380);
+    const ly = -120 + rng() * (DIMENSIONES_MAPA_MUNDO.alto + 240);
+    if (consultarDistanciaMar(mascara, lx, ly, false) < 20) continue;
+    if (estaCercaDePlaca(lx, ly, 16)) continue;
     let choca = false;
     for (const m of medusas) {
       if ((lx - m.x) ** 2 + (ly - m.y) ** 2 < sepMedusa2) {
@@ -774,9 +809,9 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
   }
 
   const plancton: MotaPlancton[] = [];
-  for (let intento = 0; intento < 420 && plancton.length < 62; intento++) {
-    const lx = 24 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho - 48);
-    const ly = 24 + rng() * (DIMENSIONES_MAPA_MUNDO.alto - 48);
+  for (let intento = 0; intento < 540 && plancton.length < 88; intento++) {
+    const lx = -210 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho + 420);
+    const ly = -130 + rng() * (DIMENSIONES_MAPA_MUNDO.alto + 260);
     if (consultarDistanciaMar(mascara, lx, ly, false) < 8) continue;
     const gx = Math.min(ancho - 1, Math.max(0, Math.floor(lx * escala)));
     const gy = Math.min(alto - 1, Math.max(0, Math.floor(ly * escala)));
@@ -793,11 +828,11 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     });
   }
 
-  // 6. Pequeñas estelas en V sobre canales navegables
+  // 6. Pequeñas estelas en V sobre canales navegables y mar abierto
   const estelasV: EstelaSuperficie[] = [];
-  for (let intento = 0; intento < 180 && estelasV.length < 5; intento++) {
-    const lx = 80 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho - 160);
-    const ly = 70 + rng() * (DIMENSIONES_MAPA_MUNDO.alto - 140);
+  for (let intento = 0; intento < 240 && estelasV.length < 9; intento++) {
+    const lx = -160 + rng() * (DIMENSIONES_MAPA_MUNDO.ancho + 320);
+    const ly = -110 + rng() * (DIMENSIONES_MAPA_MUNDO.alto + 220);
     if (consultarDistanciaMar(mascara, lx, ly, false) < 26) continue;
     if (estaCercaDePlaca(lx, ly, 18)) continue;
     const ang = (rng() > 0.5 ? 0.25 : -2.85) + (rng() - 0.5) * 0.4;
@@ -859,7 +894,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     if (respaldo) zonasLeviatan.push({ x: respaldo.x, y: respaldo.y });
   }
 
-  // 9. Siluetas submarinas abisales (mosasaurus, plesiosaurios, mantarrayas, krakens y ballenas) bajo las olas
+  // 9. Siluetas submarinas abisales repartidas por canales internos y los 4 mares exteriores
   const recetasSiluetas: readonly {
     especie: EspecieSiluetaSubmarina;
     caja: readonly [number, number, number, number];
@@ -892,7 +927,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
       caja: [1455, 80, 1575, 225],
       minDist: 28,
       permitirBajoPuente: false,
-      escala: 1.4,
+      escala: 1.42,
       vel: 0.00018,
       matiz: "glacial",
     },
@@ -928,7 +963,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
       caja: [880, 480, 1140, 600],
       minDist: 20,
       permitirBajoPuente: true,
-      escala: 1.14,
+      escala: 1.16,
       vel: 0.00025,
       matiz: "mistico",
     },
@@ -937,7 +972,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
       caja: [35, 780, 120, 875],
       minDist: 20,
       permitirBajoPuente: false,
-      escala: 1.3,
+      escala: 1.34,
       vel: 0.0002,
       matiz: "abisal",
     },
@@ -949,6 +984,87 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
       escala: 1.36,
       vel: 0.00017,
       matiz: "glacial",
+    },
+    {
+      especie: "kraken",
+      caja: [-220, -155, -10, 50],
+      minDist: 65,
+      permitirBajoPuente: false,
+      escala: 1.56,
+      vel: 0.00016,
+      matiz: "glacial",
+    },
+    {
+      especie: "mosasaurus",
+      caja: [340, -170, 620, -55],
+      minDist: 70,
+      permitirBajoPuente: false,
+      escala: 1.62,
+      vel: 0.0002,
+      matiz: "glacial",
+    },
+    {
+      especie: "ballena",
+      caja: [1220, -165, 1560, -55],
+      minDist: 70,
+      permitirBajoPuente: false,
+      escala: 1.68,
+      vel: 0.00014,
+      matiz: "glacial",
+    },
+    {
+      especie: "kraken",
+      caja: [-240, 290, -75, 620],
+      minDist: 80,
+      permitirBajoPuente: false,
+      escala: 1.6,
+      vel: 0.00018,
+      matiz: "abisal",
+    },
+    {
+      especie: "plesiosaurio",
+      caja: [-200, 860, 60, 1060],
+      minDist: 65,
+      permitirBajoPuente: false,
+      escala: 1.5,
+      vel: 0.00022,
+      matiz: "abisal",
+    },
+    {
+      especie: "mosasaurus",
+      caja: [600, 945, 920, 1080],
+      minDist: 75,
+      permitirBajoPuente: false,
+      escala: 1.62,
+      vel: 0.00019,
+      matiz: "mistico",
+    },
+    {
+      especie: "kraken",
+      caja: [1340, 940, 1690, 1080],
+      minDist: 75,
+      permitirBajoPuente: false,
+      escala: 1.58,
+      vel: 0.00017,
+      matiz: "mistico",
+    },
+    {
+      especie: "mantarraya",
+      caja: [1675, 160, 1845, 430],
+      minDist: 80,
+      permitirBajoPuente: false,
+      escala: 1.38,
+      vel: 0.00024,
+      matiz: "abisal",
+    },
+    {
+      especie: "ballena",
+      caja: [1670, 580, 1850, 860],
+      minDist: 80,
+      permitirBajoPuente: false,
+      escala: 1.64,
+      vel: 0.00015,
+      matiz: "abisal",
     },
   ];
 
@@ -962,8 +1078,8 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     siluetasSubmarinas.push({
       especie: r.especie,
       centro: { x: cuenca.x, y: cuenca.y },
-      radioX: Math.min(44, Math.max(10, margenLibre * 0.58)),
-      radioY: Math.min(26, Math.max(8, margenLibre * 0.42)),
+      radioX: Math.min(72, Math.max(10, margenLibre * 0.65)),
+      radioY: Math.min(44, Math.max(8, margenLibre * 0.48)),
       escala: r.escala,
       velocidad: r.vel,
       fase: i * 1.45,
@@ -972,7 +1088,7 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
     });
   }
 
-  // 10. Avistamientos periódicos en superficie: leviatán, mosasaurus y kraken en mares exteriores
+  // 10. Avistamientos prolongados de kraken, mosasaurus y leviatán en canales internos y mares exteriores
   const recetasAvistamientos: readonly {
     especie: EspecieAvistamientoAbisal;
     caja: readonly [number, number, number, number];
@@ -987,50 +1103,110 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
       especie: "leviatan",
       caja: [85, 85, 255, 250],
       minDist: 38,
-      escala: 1.24,
-      duracionCiclo: 15_500,
-      duracionAparicion: 6_600,
-      desfase: 600,
+      escala: 1.28,
+      duracionCiclo: 15_200,
+      duracionAparicion: 12_400,
+      desfase: 400,
       direccion: 1,
     },
     {
       especie: "mosasaurus",
       caja: [1340, 60, 1465, 180],
       minDist: 32,
-      escala: 1.32,
-      duracionCiclo: 16_000,
-      duracionAparicion: 6_500,
-      desfase: 1_200,
+      escala: 1.34,
+      duracionCiclo: 14_800,
+      duracionAparicion: 12_200,
+      desfase: 900,
       direccion: -1,
     },
     {
       especie: "kraken",
       caja: [465, 765, 575, 855],
       minDist: 28,
-      escala: 1.18,
-      duracionCiclo: 17_000,
-      duracionAparicion: 7_000,
-      desfase: 900,
+      escala: 1.22,
+      duracionCiclo: 15_000,
+      duracionAparicion: 12_600,
+      desfase: 4_800,
       direccion: 1,
     },
     {
       especie: "mosasaurus",
       caja: [1025, 745, 1190, 865],
       minDist: 32,
-      escala: 1.16,
-      duracionCiclo: 18_500,
-      duracionAparicion: 6_400,
-      desfase: 7_800,
+      escala: 1.2,
+      duracionCiclo: 15_400,
+      duracionAparicion: 12_600,
+      desfase: 6_200,
       direccion: 1,
     },
     {
       especie: "kraken",
       caja: [20, 250, 135, 445],
       minDist: 30,
-      escala: 1.18,
-      duracionCiclo: 19_000,
-      duracionAparicion: 6_800,
-      desfase: 8_500,
+      escala: 1.24,
+      duracionCiclo: 14_500,
+      duracionAparicion: 12_200,
+      desfase: 1_200,
+      direccion: -1,
+    },
+    {
+      especie: "kraken",
+      caja: [1675, 420, 1820, 620],
+      minDist: 75,
+      escala: 1.38,
+      duracionCiclo: 15_500,
+      duracionAparicion: 13_000,
+      desfase: 2_400,
+      direccion: -1,
+    },
+    {
+      especie: "kraken",
+      caja: [-210, -120, -40, 120],
+      minDist: 65,
+      escala: 1.4,
+      duracionCiclo: 16_000,
+      duracionAparicion: 13_400,
+      desfase: 7_500,
+      direccion: 1,
+    },
+    {
+      especie: "mosasaurus",
+      caja: [620, -155, 880, -45],
+      minDist: 70,
+      escala: 1.44,
+      duracionCiclo: 16_200,
+      duracionAparicion: 13_200,
+      desfase: 3_100,
+      direccion: -1,
+    },
+    {
+      especie: "mosasaurus",
+      caja: [-225, 510, -70, 750],
+      minDist: 75,
+      escala: 1.38,
+      duracionCiclo: 15_800,
+      duracionAparicion: 12_800,
+      desfase: 9_400,
+      direccion: 1,
+    },
+    {
+      especie: "leviatan",
+      caja: [420, 955, 760, 1065],
+      minDist: 75,
+      escala: 1.42,
+      duracionCiclo: 16_400,
+      duracionAparicion: 13_400,
+      desfase: 5_200,
+      direccion: 1,
+    },
+    {
+      especie: "leviatan",
+      caja: [1580, -120, 1790, 160],
+      minDist: 75,
+      escala: 1.42,
+      duracionCiclo: 16_800,
+      duracionAparicion: 13_800,
+      desfase: 10_600,
       direccion: -1,
     },
   ];
@@ -2337,7 +2513,8 @@ function dibujarAvistamientosAbisales(
       const tiempoLocal = (t + av.desfase) % av.duracionCiclo;
       if (tiempoLocal > av.duracionAparicion) continue;
       const p = tiempoLocal / av.duracionAparicion;
-      const envolvente = Math.sin(p * Math.PI);
+      const rampa = Math.min(1, p / 0.14, (1 - p) / 0.14);
+      const envolvente = rampa * rampa * (3 - 2 * rampa);
 
       ctx.save();
       if (av.especie === "leviatan") {

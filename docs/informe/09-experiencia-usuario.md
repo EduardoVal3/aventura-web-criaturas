@@ -1855,6 +1855,37 @@ Tras entregar el motor oceánico multicapa en la Subfase 10s base (`1f2fb10`), l
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.63s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `62815.8569ms`).
 
+---
+
+## 32. Sub-Fase 10s (Rediseño Visual): Legibilidad Anatómica y Erradicación de Sombras Ovaladas
+
+### 32.1 Diagnóstico Inicial y Auditoría Impeccable
+Tras la revisión directa del usuario sobre la primera entrega de fauna abisal (`e3c23c0`), se identificaron tres puntos visuales que impedían una lectura comercial limpia:
+- **Elipses oscuras artificiales bajo la superficie:** Tanto las siluetas sumergidas (`ctx.ellipse(-2, 2.5, 25, 9, ...)`) como los avistamientos de **Mosasaurus**, **Kraken** y nodos del **Leviatán** proyectaban óvalos o charcos negros desconectados debajo del cuerpo, dando un aspecto postizo de disco plano sobre el agua.
+- **Contornos tipo alambre hueco y escala reducida en profundidades:** Las siluetas submarinas empleaban `stroke` fino de 1 px sobre tonos casi idénticos al mar (`#041b32`), perdiendo masa corporal sólida y diferenciación anatómica al mirar el archipiélago completo.
+- **Desconexión de piezas en superficie:** El **Mosasaurus** mostraba cabeza, dorso y un triángulo caudal separados en tres islotes distintos, y el **Kraken** requería mayor presencia frontal de tentáculos envolventes para ocultar su base recta en la línea del agua.
+
+### 32.2 Mejoras Implementadas (Identidad Retro, Anatomía 2.5D y Reglas de Cliente)
+- **Erradicación total de elipses ovaladas y transición a masas anatómicas continuas (`apps/web/src/lib/oceano-vivo.ts`):**
+  - **Siluetas submarinas (`dibujarSiluetasSubmarinas`):** Se eliminaron el óvalo inferior y el borde `stroke` hueco; cada criatura se traza ahora como silueta abisal sólida (`#000712`, `alpha ~ 0.62`), mayor presencia (`escala` `1.14–1.44` según amplitud de cuenca o canal), volumen dorsal interno suave y rasgos anatómicos distintivos a simple vista (cráneo triangular y cola en media luna en **Mosasaurus**; cuello largo serpentino en **Plesiosaurio**; manchas pálidas simétricas y cuernos cefálicos en **Mantarraya**; aletas apicales y tentáculos cazadores con maza en **Kraken**; largas aletas pectorales con bordes claros y cola en T en **Ballena**).
+  - **Separación espacial de cuencas:** Ajuste fino de subcuencas en `NE` (`[1455, 80, 1575, 225]` vs `[1340, 60, 1465, 180]`) y `SWBay` (`[520, 795, 625, 875]` vs `[465, 765, 575, 855]`) para evitar encimamiento entre el Kraken/Ballena sumergidos y los avistamientos en superficie.
+- **Rediseño anatómico de monstruos en superficie y salpicaduras picadas:**
+  - Sustitución de anillos elípticos geométricos por `dibujarSalpicaduraRuptura` (crestas de espuma picada y gotitas saltando en parábola exactamente donde el cuerpo corta el agua).
+  - **Leviatán:** Unión de bucles mediante trazo serpentino continuo bajo el agua, cabeza draconiana alzada con cuerno barrido, fauces con colmillos, ojo dorado `#fde047` y arcos corporales asimétricos inclinados hacia el avance.
+  - **Mosasaurus:** Cuerpo unificado continuo desde el lomo escamoso y el cuello hasta enorme cabeza cocodriliana con fauces abiertas en V mostrando dientes marfil en ambas mandíbulas, garganta carmesí oscuro `#311226`, aleta pectoral en remo y aleta caudal sólida curvada en hoz sin triángulo hueco.
+  - **Kraken:** Tentáculos sumergidos irradiando desde abajo sin charco ovalado, manto cefalópodo púrpura-índigo con aletas triangulares en flecha y ceño luminoso, y 8 brazos musculosos con puntas enrolladas, ventosas claras integradas y dos tentáculos delanteros abrazando la línea de ruptura sobre el agua.
+
+### 32.3 Verificación de Calidad y Cero Regresiones
+- **Verificación Visual Headless en Chromium (`01` a `06`):**
+  - Captura tras el pulido final con tiempos de cuadro en vivo entre **`6.7` y `12.5 ms/cuadro`** en zooms de región (`02–05`), `espumas: 391`, `corrientes: 7`, `cardumenes: 6`, `siluetas: 9`, `avistamientos: 5`, `hielo: 13`, `medusas: 8`, `plancton: 62`, `aves: 4` y **`colisiones: 0`**.
+  - Confirmación visual en `01-mapa-completo-leviatan.png`, `03-zoom-norte-glacial.png`, `04-zoom-este-volcanico-viaducto.png`, `05-zoom-villa-serena-sur.png` y `06-componente-real-placas.png` de que todas las especies se distinguen a simple vista sin sombras ovaladas ni superposición con islas, puentes ni placas.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **91 archivos** (`173ms`, 116 reglas, 0 advertencias nuevas en `oceano-vivo.ts`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `1421.3266ms`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.53s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `32220.1676ms`).
+
+
 
 
 

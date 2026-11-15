@@ -2015,7 +2015,7 @@ Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/Pantalla
 ### 37.2 Mejoras Implementadas
 - **Limpieza del HUD superior y ergonomía de rieles laterales (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`):**
   - Se eliminó la miniatura redundante `ZONA` de la tarjeta superior izquierda del HUD y se ajustó el contenedor flex (`min-w-0 flex-1` junto con `w-fit max-w-full min-w-0 sm:max-w-lg`) manteniendo los controles superiores derechos (`shrink-0`) dentro del viewport sin desbordes.
-  - Se alinearon los rieles laterales de servicios con `items-start pt-3 sm:items-center sm:pt-0` en móvil y se ajustó el margen inferior de los controles del mapa en `MapaInteractivoCanvas.tsx` (`bottom-36 sm:bottom-28`) para evitar colisiones visuales con los botones de servicio.
+  - Se alinearon los rieles laterales de servicios con `items-start pt-3 sm:items-center sm:pt-0` en móvil y se desplazaron los controles del mapa en `MapaInteractivoCanvas.tsx` exclusivamente en escritorio hacia abajo (`bottom-36 sm:bottom-28 md:bottom-3`), despejando el botón de acercar (`+`) debajo de `Santuario de Salud` sin alterar la posición en móvil.
 - **Migración de modales del Hub al patrón `Dialog` de `PantallaCatalogo.tsx`:**
   - Se reemplazaron los dos `AlertDialog` de `PantallaHubUbicacion.tsx` (menú de Aethelgard e inspección/viaje de nodo) por `Dialog` / `DialogContent` (`font="normal"`, `showCloseButton={false}`, `p-0`, `flex flex-col`, `w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden`) con cabecera/pie fijos (`bg-bastion`) y cuerpo desplazable (`overflow-y-auto overflow-x-hidden`), `min-w-0`, `flex-wrap` y `break-words`.
 - **Dock inferior completo de 6 ranuras sin ocultar criaturas:**
@@ -2025,9 +2025,9 @@ Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/Pantalla
   - Mediante consulta directa a PostgreSQL se verificó la integridad de los 9 nodos (`LOC-01`..`LOC-03`, `ZON-01`..`ZON-06`), 20 aristas dirigidas en `conexion_zona`, 5 especies por zona silvestre en `aparicion_zona` con suma de pesos exactamente 100 por zona (600 en total), y 18 registros en `evento_zona`.
 
 ### 37.3 Verificación de Calidad y Cero Regresiones
-- **Linter Focalizado Web (`pnpm --filter web exec oxlint src/paginas/PantallaHubUbicacion.tsx src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos revisados con `116` reglas en `66ms`).
-- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `2787.8752ms`), incluyendo aserciones actualizadas en `apps/web/test/verificacion-hub-mundo.spec.ts` sobre el patrón `Dialog`, eliminación de la miniatura `ZONA`, dock de 6 ranuras en móvil y ausencia de `requisitoCartografia.zonaId` en la UI.
-- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`2.38s`**).
+- **Linter Focalizado Web (`pnpm --filter web exec oxlint src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos revisados con `116` reglas en `43ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `1552.7386ms`), incluyendo aserciones actualizadas en `apps/web/test/verificacion-hub-mundo.spec.ts` sobre el patrón `Dialog`, eliminación de la miniatura `ZONA`, dock de 6 ranuras en móvil, ausencia de `requisitoCartografia.zonaId` en la UI y desplazamiento `md:bottom-3` de los controles del mapa en escritorio.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.74s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **131 de 131 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `49018.9091ms`), incluyendo la nueva prueba en `apps/api/test/progreso-tienda.spec.ts` que valida que `REGLAS_DESBLOQUEO_TERRITORIAL` y `detalleProgreso` no expongan `ZON-XX` / `LOC-XX`.
 - **Compilación API (`pnpm --filter api build`):** Compilación exitosa (`nest build`, código de salida `0`).
 

@@ -757,6 +757,10 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     false,
     "El tooltip al pasar el cursor debe mostrar únicamente el nombre real de la zona sin etiquetas inventadas",
   );
+  assert.ok(
+    canvasCodigo.includes("bottom-36 sm:bottom-28 md:bottom-3"),
+    "En desktop los controles del mapa deben desplazarse más abajo (md:bottom-3) para no quedar ocultos tras Santuario de Salud",
+  );
   assert.strictEqual(canvasCodigo.includes("data-placa-isla"), false);
   assert.strictEqual(canvasCodigo.includes("data-boton-placas-mapa"), false);
   assert.strictEqual(canvasCodigo.includes("mostrarPlacas"), false);

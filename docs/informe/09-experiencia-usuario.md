@@ -1945,6 +1945,33 @@ Tras validar la calibración previa en uso real se detectaron tres fricciones co
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`4.32s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `53272.5467ms`).
 
+---
+
+## 35. Espuma y Ondas de Choque en Pilares de Puentes + Calibración de Cadencia (Subfase 10s — Rama `funcionalidad/fase-10s-espuma-pilares-puentes`)
+
+### 35.1 Diagnóstico Inicial y Auditoría Visual
+Al revisar en detalle los puentes de Aethelgard tras integrar la Subfase 10s (`33e2de9`), la inspección sobre la máscara alfa real (`mapa-mundo-aethelgard.webp`) y las capturas interactivas revelaron dos defectos visuales concatenados:
+1. **Exclusión previa de pilares reales:** en `analizarMascaraAlfaOceano` ([apps/web/src/lib/oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)), la banda de exclusión de `28px` alrededor de cada spline Bezier de puente (`distanciaMinimaPuenteCuadrada <= 28 * 28`), sumada al filtro sur de acantilados (`enZonaAcantilado`) y a `tierraSinPuentes`, dejaba sin animación de choque de agua a las columnas de piedra que bajan hasta el mar en los viaductos multi-arco.
+2. **Regresión intermedia en arcos oblicuos y ritmo acelerado:** al incorporar una detección inicial basada solo en alcance lateral amplio, varias secciones inclinadas bajo las bóvedas de arcos (notablemente en el gran viaducto central `LOC-02 <-> ZON-03`) recibieron arcos repetidos a lo largo de la curva interna, mientras que la primera velocidad elegida (`t * 0.00095`, ~`1.05s` por ciclo) producía ondas demasiado rápidas e invasivas visualmente.
+
+### 35.2 Mejoras Implementadas
+1. **Detección Geométrica Pura de Pilares Sumergidos ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
+   - Se extendió `PuntoEspuma` con la bandera opcional `esPilar?: boolean` y se calibró una pasada dedicada en `analizarMascaraAlfaOceano` (`esFrenteAcantilado[idx] = 2`) dentro de un radio de `115px` respecto a `TRAYECTOS_PUENTES_AETHELGARD` en agua inmediata (`3 <= distanciaMar <= 7`), exigiendo espesor sólido vertical (`>= Math.round(7 * escala)`) y agua abierta inferior (`>= Math.round(4 * escala)`).
+   - Para erradicar por completo techos aéreos, muros inclinados internos de bóveda y acantilados de islas vecinos, cada celda candidata debe confirmar **flancos de agua a izquierda y derecha** a la altura `yBorde - 3` dentro de `alcanceFlancoColumna = Math.max(5, Math.round(20 * escala))` y carecer de bloque descendente contiguo `4` celdas abajo (`bajaCerca`). Con esto quedan aislados con precisión los pies de columnas reales (`14` emisores calibrados con separación mínima `sepPilar2 = 20 * 20` para evitar duplicados por columna).
+2. **Cadencia Serena y Estética Integrada al Mar:**
+   - En `dibujarResacaYHitosRegionales`, la velocidad de expansión de las ondas en `p.esPilar` se redujo de `t * 0.00095` a **`t * 0.00028`** (`~3.57s` por ciclo) con oleaje de marea suavizado (`Math.sin(t * 0.0014 + p.fase)`), collarín continuo sutil (`0.28..0.48` alfa), doble onda concéntrica en contrafase (`0.10..0.52` alfa, grosor `1.25..1.0px`), tintado por clima costero (`glacial`, `volcanico`, `templado`) y salpicaduras laterales discretas de `2×2px` bajo el nivel sólido del mapa.
+3. **Cobertura de Pruebas y Auditoría Headless ([verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts)):**
+   - Se añadió la aserción §7 verificando un puente sintético con dos columnas sumergidas y un vano de arco central aéreo (`LOC-01 <-> ZON-02`): confirma la detección de `esPilar` en ambos pies de pilar, la exclusión absoluta bajo el techo del arco central y cero invasión de mampostería sólida.
+   - Se inspeccionaron visualmente capturas reales ampliadas en Chrome headless sobre los viaductos (`LOC-02 <-> ZON-03`, `LOC-01 <-> ZON-02`, `ZON-02 <-> ZON-03`, `LOC-03 <-> ZON-06` y `ZON-05 <-> ZON-06`), comprobando la ausencia total de artefactos bajo las bóvedas antes de eliminar los archivos temporales de prueba.
+
+### 35.3 Verificación de Calidad y Cero Regresiones
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/oceano-vivo.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos en `20ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `91` archivos, `326ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `2920.5942ms`).
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`5.59s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `83152.7656ms`).
+
 
 
 

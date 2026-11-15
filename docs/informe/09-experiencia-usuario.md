@@ -2031,3 +2031,42 @@ Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/Pantalla
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **131 de 131 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `49018.9091ms`), incluyendo la nueva prueba en `apps/api/test/progreso-tienda.spec.ts` que valida que `REGLAS_DESBLOQUEO_TERRITORIAL` y `detalleProgreso` no expongan `ZON-XX` / `LOC-XX`.
 - **Compilación API (`pnpm --filter api build`):** Compilación exitosa (`nest build`, código de salida `0`).
 
+---
+
+## 38. Sub-Fase 10t: Animación Multicapa de "La Cumbre" (`ZON-06`) en el Mapa de Aethelgard
+
+> **Rama de trabajo:** `funcionalidad/fase-10t-cumbre-viva` (integrada en `desarrollo`)
+> **Módulos implicados:** [diorama-cumbre.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cumbre.ts) *(nuevo)*, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [MapaInteractivoCanvas.tsx](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/components/mundo/MapaInteractivoCanvas.tsx) y [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts)
+
+### 38.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+Antes de intervenir el diorama, se extrajo un recorte ampliado 3× de `ZON-06` directamente desde `apps/web/public/assets/mapa-mundo-aethelgard.webp` con rejilla de coordenadas lógicas `1616×897`, detectando cuatro brechas respecto al acabado Dark Fantasy del resto del archipiélago:
+1. **Efecto glaciar mínimo y desfasado en `mapa-dioramas.ts`:** `ZON-06` solo contaba con un arco lineal único de aurora, 4 halos circulares desplazados bajo los cristales (`[852,82]`, `[933,102]`, `[1247,114]`, `[1172,180]`) y 14 cuadros de nieve sobre un rectángulo sin recorte de silueta (`790..1285`), dejando sin vida las puntas cristalinas, los picos de la cordillera ni los acantilados sur.
+2. **Protagonismo desaprovechado del esqueleto del dragón ancestral:** La ilustración maestra presenta un fósil completo de dragón congelado sobre la meseta (`x: 1022..1182, y: 92..162`, con fauces en `(1024, 143)`, cuenca ocular oscura en `(1046, 130)` y columna vertebral arqueada hasta la cola), completamente estático hasta ahora.
+3. **Riesgo de solapamiento con vecinos y costo de gradientes por cuadro:** Al sur de `La Cumbre`, los picos y nubes volcánicas de `ZON-04` (*Paso de los Riscos*, pico en `(996, 186)`) colindan con el acantilado helado; además, las animaciones debían evitar `createLinearGradient` / `createRadialGradient` dentro del bucle de 60 FPS y respetar íntegramente el HUD externo, las otras 8 islas y `prefers-reduced-motion`.
+
+### 38.2 Mejoras Implementadas
+
+#### A. Identidad Visual Retro Dark Fantasy y Submódulo Dedicado (`diorama-cumbre.ts`)
+- **Medición exacta sobre el arte maestro (`1616×897`):** Se definieron las envolventes calibradas `SILUETA_ENVOLVENTE_CUMBRE` (32 vértices siguiendo cielo de cumbres, puntas de cristales y acantilado sur sin tocar `ZON-04`, `LOC-03` ni `ZON-05`) y `CONTORNO_MESETA_CUMBRE`, los 8 vértices de `PICOS_CORDILLERA_CUMBRE` (cumbre principal en `(1070, 3)`), los 4 cúmulos de `CRISTALES_GLACIARES_CUMBRE` + 2 `AGUJAS_ACANTILADO_CUMBRE`, el esqueleto completo `ESQUELETO_DRAGON_CUMBRE` (fauces, cuenca ocular, centro costal, patas y 11 vértebras), 12 `DESTELLOS_CORNISA_CUMBRE` y 5 `FRAGMENTOS_ESCARCHA_ACANTILADO`.
+- **Aurora boreal multicapa:** Sustitución del arco plano por dos cortinas ondulantes de aurora (`cortinaEsmeralda` esmeralda-cian y `cortinaVioleta` violeta-cian polar en contrafase), halo polar difuso y rayos verticales orgánicos suaves con mezcla `lighter`.
+- **Ventisca alpina en 3 planos y plumas de cresta:** Nieve lejana (`COPOS_LEJANOS`), neblina rasante confinada a la meseta (`CONTORNO_MESETA_CUMBRE` + validación contra `mascaraOceano`), plumas de nieve desprendiéndose desde los picos más altos hacia la derecha, y 34 partículas diagonales de ventisca con estela corta y contraste cian sobre nieve blanca (`#7dd3fc` / `#f0f9ff`).
+- **Cristales glaciares vivos y acantilado:** Micro-resplandor cian sobre la nieve de base, pulso interno en la arista central de cada cristal, destellos en cruz pixelada nítidos (`dibujarDestelloCruzPixel`) en las puntas principales y satélite, chispas de escarcha ascendentes, brillos intermitentes en la cornisa helada y 5 micro-fragmentos de escarcha cayendo al mar gélido (validando con `esTierraFirmeEnMascara` para no impactar terreno vecino).
+- **Esqueleto del dragón ancestral:** Exhalación cíclica de aliento helado desde las fauces `(1024, 143)` hacia la izquierda al ras del suelo, bruma gélida reptando entre costillas y garras, y pulso espectral glaciar sutil en la cuenca ocular `(1046, 130)` seguido de una onda rúnica tenue recorriendo las 11 vértebras de la espina dorsal hacia la cola.
+- **Diferenciación bloqueada vs. desbloqueada:** Cuando `ZON-06` está bloqueada (`dibujarEstadoBloqueadoCumbre`), preserva íntegro el sombreado de niebla oscura y limita el efecto a bruma fría contenida y copos tenues dispersos; al desbloquearse, despliega todas las capas atmosféricas, cristalinas y espectrales.
+
+#### B. Rendimiento 60 FPS, Componentes `8bitcn/ui` e Integración en Canvas
+- **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCumbre()` pre-renderiza una única vez 6 sprites en canvas auxiliares (`resplandorGlacial`, `resplandorEspectral`, `cortinaEsmeralda`, `cortinaVioleta`, `brumaFria`, `brumaCian`), dibujados por cuadro mediante `drawImage` y `globalAlpha`.
+- **Integración limpia y respeto a accesibilidad:** `MapaInteractivoCanvas.tsx` pasa `recursosOceano.mascara` (opcional) a `dibujarCapaVivaMapa` en `mapa-dioramas.ts`, que delega `ZON-06` a `dibujarDioramaCumbre`. El modo `reducirMovimiento` (`prefers-reduced-motion`) congela una estampa limpia y equilibrada. Toda la interfaz `8bitcn/ui` externa, controles, paletas, océano y efectos de las otras 8 islas permanecen intactos.
+
+#### C. Audio Web Audio API y Reglas del Servidor
+- Sin alteraciones en la síntesis de audio (`reproducirSonido`) ni en reglas de negocio, rutas REST o esquema PostgreSQL en `apps/api`.
+
+### 38.3 Verificación de Calidad y Cero Regresiones
+- **Inspección Visual Headless a Zoom 1× y 2× (Chrome headless sobre los módulos reales):** Validación visual en estados bloqueado, desbloqueado (múltiples instantes `t = 1500 ms` y `t = 3600 ms`) y `reducirMovimiento`, confirmando calce píxel a píxel de aurora, ventisca recortada, 4 cristales, cuenca ocular, aliento y espina del dragón, y caída de escarcha al mar sin invadir `ZON-04` ni puentes; todos los archivos temporales de scratch fueron eliminados al finalizar.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores de TypeScript.
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cumbre.ts src/lib/mapa-dioramas.ts src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`4` archivos en `23ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `92` archivos, `168ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **102 de 102 pruebas aprobadas** (`0` fallos, `0` omitidas en `2242.2429ms`), incluyendo la nueva suite `Subfase 10t` y la validación R1 (cero emojis) sobre `diorama-cumbre.ts`.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2164 módulos** transformados en **`2.56s`**).
+
+

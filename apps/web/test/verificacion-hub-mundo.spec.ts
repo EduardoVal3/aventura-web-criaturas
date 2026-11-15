@@ -833,6 +833,7 @@ test("Subfase 10t: Diorama multicapa de La Cumbre (ZON-06) calibrado sobre arte 
     ESQUELETO_DRAGON_CUMBRE,
     DESTELLOS_CORNISA_CUMBRE,
     FRAGMENTOS_ESCARCHA_ACANTILADO,
+    dibujarCieloAuroraCumbre,
     dibujarDioramaCumbre,
   } = await import("../src/lib/diorama-cumbre.ts");
 
@@ -863,11 +864,13 @@ test("Subfase 10t: Diorama multicapa de La Cumbre (ZON-06) calibrado sobre arte 
 
   // 3. Ejecución segura en Node (sin document) para ambos estados y movimiento reducido
   const ctxDummy = {} as CanvasRenderingContext2D;
+  assert.doesNotThrow(() => dibujarCieloAuroraCumbre(ctxDummy, true, 1600, false));
+  assert.doesNotThrow(() => dibujarCieloAuroraCumbre(ctxDummy, false, 1600, false));
   assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, true, 1600, false, null));
   assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, false, 1600, false, null));
   assert.doesNotThrow(() => dibujarDioramaCumbre(ctxDummy, true, 1600, true, null));
 
-  // 4. Integración en mapa-dioramas.ts y MapaInteractivoCanvas.tsx (cacheo de sprites y estado bloqueado/desbloqueado)
+  // 4. Integración en mapa-dioramas.ts y MapaInteractivoCanvas.tsx (cacheo de sprites, cielo trasero y estado bloqueado)
   const dioramaCumbreCodigo = readFileSync(join(__dirname, "../src/lib/diorama-cumbre.ts"), "utf-8");
   const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
   const canvasCodigo = readFileSync(
@@ -886,7 +889,12 @@ test("Subfase 10t: Diorama multicapa de La Cumbre (ZON-06) calibrado sobre arte 
     "No debe introducir trazos punteados en el diorama de La Cumbre",
   );
   assert.ok(dioramasCodigo.includes("dibujarDioramaCumbre"));
+  assert.ok(dioramasCodigo.includes("dibujarFondoCieloMapa"));
   assert.ok(canvasCodigo.includes("recursosOceano.mascara"));
+  assert.ok(
+    canvasCodigo.indexOf("dibujarFondoCieloMapa") < canvasCodigo.indexOf("ctx.drawImage"),
+    "La aurora de cielo debe renderizarse antes del WebP maestro para recortar las cumbres por delante",
+  );
 });
 
 

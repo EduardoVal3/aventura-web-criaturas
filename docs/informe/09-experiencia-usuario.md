@@ -2001,10 +2001,33 @@ Al auditar la captura en primer plano del área central entre `Puesto del Río`,
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`2.13s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `29078.2906ms`).
 
+---
 
+## 37. Corrección Responsive del Hub, Modales sin Desborde, Dock Completo de 6 Ranuras y Requisitos Limpios
 
+### 37.1 Diagnóstico Inicial y Auditoría Visual
+Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/PantallaHubUbicacion.tsx`) en resoluciones móviles verticales y horizontales compactas, así como en escritorio, se identificaron cuatro fricciones concretas de interfaz y legibilidad:
+1. **Redundancia y empuje en HUD superior:** La tarjeta superior izquierda incluía una miniatura etiquetada como `ZONA` con la imagen de la ubicación actual (redundante frente al mapa interactivo y al nombre de la zona), lo que ensanchaba la tarjeta en pantallas estrechas y empujaba los controles superiores derechos (monedas y botón de menú/ajustes) hacia el borde horizontal.
+2. **Desbordamiento horizontal en modales del Hub:** A diferencia de `PantallaCatalogo.tsx` (que utiliza `Dialog` / `DialogContent` en columna `flex-col`), ambos modales de `PantallaHubUbicacion.tsx` (menú de ajustes y modal de inspección/viaje de zona) seguían usando `AlertDialog` (`ShadcnAlertDialogContent` imponía `display: grid` y `data-[size=default]:max-w-xs`), ocasionando recortes laterales en la barra de cartografía, encabezados largos y etiquetas de fauna en pantallas móviles.
+3. **Ocultamiento parcial del equipo en el dock inferior y roce con controles del mapa:** El dock inferior renderizaba únicamente 4 ranuras visibles más un indicador `+1` cuando el equipo superaba 4 criaturas, ocultando integrantes activos; además, en móvil el botón `EXPLORAR` / `VIAJAR` solapaba visualmente parte del dock y las botoneras laterales centradas coincidían verticalmente con los controles de zoom de `MapaInteractivoCanvas.tsx`.
+4. **Exposición de IDs internos en textos de requisitos territoriales:** Tanto el backend (`REGLAS_DESBLOQUEO_TERRITORIAL` y `detalleProgreso` en `apps/api/src/modulos/progreso/progreso.service.ts`) como la vista de inspección de `PantallaHubUbicacion.tsx` mostraban identificadores técnicos (`(ZON-05)`, `[ZON-05]`, etc.) al jugador en lugar de presentar únicamente el nombre legible de la zona. Asimismo, se auditó la base de datos PostgreSQL para validar la consistencia de las tablas territoriales y de encuentro (`zona`, `conexion_zona`, `aparicion_zona`, `evento_zona`).
 
+### 37.2 Mejoras Implementadas
+- **Limpieza del HUD superior y ergonomía de rieles laterales (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`):**
+  - Se eliminó la miniatura redundante `ZONA` de la tarjeta superior izquierda del HUD y se ajustó el contenedor flex (`min-w-0 flex-1` junto con `w-fit max-w-full min-w-0 sm:max-w-lg`) manteniendo los controles superiores derechos (`shrink-0`) dentro del viewport sin desbordes.
+  - Se alinearon los rieles laterales de servicios con `items-start pt-3 sm:items-center sm:pt-0` en móvil y se ajustó el margen inferior de los controles del mapa en `MapaInteractivoCanvas.tsx` (`bottom-36 sm:bottom-28`) para evitar colisiones visuales con los botones de servicio.
+- **Migración de modales del Hub al patrón `Dialog` de `PantallaCatalogo.tsx`:**
+  - Se reemplazaron los dos `AlertDialog` de `PantallaHubUbicacion.tsx` (menú de Aethelgard e inspección/viaje de nodo) por `Dialog` / `DialogContent` (`font="normal"`, `showCloseButton={false}`, `p-0`, `flex flex-col`, `w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden`) con cabecera/pie fijos (`bg-bastion`) y cuerpo desplazable (`overflow-y-auto overflow-x-hidden`), `min-w-0`, `flex-wrap` y `break-words`.
+- **Dock inferior completo de 6 ranuras sin ocultar criaturas:**
+  - Se reemplazó la vista truncada de 4 ranuras + `+1` por la cuadrícula completa de ranuras del equipo activo (`limiteEquipo`, mínimo `6` espacios visibles) mediante `grid grid-cols-6` apilada sobre el botón ancho `EXPLORAR` / `VIAJAR` en pantallas `< 640px` y en fila única desde `sm:`, reubicando la etiqueta de nivel de cada criatura en `top-0.5 right-0.5`.
+- **Eliminación de IDs internos en requisitos de acceso (`progreso.service.ts` y `PantallaHubUbicacion.tsx`):**
+  - Se retiraron los prefijos/sufijos `(ZON-01)`..`(ZON-05)` de `REGLAS_DESBLOQUEO_TERRITORIAL`, se sustituyó `regla.zonaPreviaId` por `regla.nombreZonaPrevia ?? regla.zonaPreviaId` en `detalleProgreso` dentro de `evaluarEstadoRequisitoZona`, y se eliminó `[{conexionSeleccionada.requisitoCartografia.zonaId}]` del modal del Hub, dejando únicamente el nombre de la zona previa.
+  - Mediante consulta directa a PostgreSQL se verificó la integridad de los 9 nodos (`LOC-01`..`LOC-03`, `ZON-01`..`ZON-06`), 20 aristas dirigidas en `conexion_zona`, 5 especies por zona silvestre en `aparicion_zona` con suma de pesos exactamente 100 por zona (600 en total), y 18 registros en `evento_zona`.
 
-
-
+### 37.3 Verificación de Calidad y Cero Regresiones
+- **Linter Focalizado Web (`pnpm --filter web exec oxlint src/paginas/PantallaHubUbicacion.tsx src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos revisados con `116` reglas en `66ms`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `2787.8752ms`), incluyendo aserciones actualizadas en `apps/web/test/verificacion-hub-mundo.spec.ts` sobre el patrón `Dialog`, eliminación de la miniatura `ZONA`, dock de 6 ranuras en móvil y ausencia de `requisitoCartografia.zonaId` en la UI.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`2.38s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **131 de 131 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `49018.9091ms`), incluyendo la nueva prueba en `apps/api/test/progreso-tienda.spec.ts` que valida que `REGLAS_DESBLOQUEO_TERRITORIAL` y `detalleProgreso` no expongan `ZON-XX` / `LOC-XX`.
+- **Compilación API (`pnpm --filter api build`):** Compilación exitosa (`nest build`, código de salida `0`).
 

@@ -169,10 +169,10 @@ test("Hardening y Ergonomía: PantallaHubUbicacion cuenta con estética retro 8b
     "Las cajas de métricas y servicios deben emplear el marco retro táctil con sombra pixelada",
   );
 
-  // Modales de confirmación con marco retro de 8bitcn
+  // Modales de confirmación con marco retro de 8bitcn (patrón Dialog de PantallaCatalogo)
   assert.ok(
     hubCodigo.includes("border-4 border-black shadow-[8px_8px_0_0_#000]"),
-    "Los modales AlertDialog deben contar con el marco pixelado grueso de 8bitcn",
+    "Los modales Dialog deben contar con el marco pixelado grueso de 8bitcn",
   );
 
   // Sellado contra desbordamiento horizontal
@@ -206,22 +206,34 @@ test("Auditoría Impeccable: Erradicación de truncamientos, modales retro-bruta
     "Los títulos de servicios deben permitir dos líneas fluidas con break-words",
   );
 
-  // 2. Modales de viaje con marco retro de consola RPG (8-bit box) y superficie de Bastión
+  // 2. Modales de viaje basados en Dialog (referencia PantallaCatalogo) con scroll interno sin desborde
   assert.ok(
-    hubCodigo.includes("bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100"),
-    "AlertDialogContent debe renderizarse como caja de diálogo 8-bit con superficie bg-bastion",
+    hubCodigo.includes("overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col"),
+    "DialogContent debe seguir el patrón sellado de PantallaCatalogo con superficie bg-card y p-0",
+  );
+  assert.ok(
+    hubCodigo.includes("overflow-y-auto overflow-x-hidden p-3 sm:p-4"),
+    "El cuerpo del modal debe aislar el scroll vertical y bloquear cualquier desborde horizontal",
+  );
+  assert.ok(
+    hubCodigo.includes("p-3 bg-bastion border-b-2 border-black"),
+    "La cabecera del modal debe mantenerse fija sobre bg-bastion",
   );
 
   // 3. Ficha interior retro de destino
   assert.ok(
-    hubCodigo.includes("border-2 border-black bg-black/60 p-3 space-y-1.5 shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)]"),
+    hubCodigo.includes("border-2 border-black bg-black/60 p-3"),
     "Los modales deben enmarcar el destino en una ficha interior de alto contraste",
+  );
+  assert.ok(
+    hubCodigo.includes("shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)]"),
+    "La ficha interior debe conservar la sombra hundida retro",
   );
 
   // 4. Separación táctil y holgada en la botonera de los modales
   assert.ok(
-    hubCodigo.includes("gap-3 sm:gap-4 w-full mt-4"),
-    "AlertDialogFooter debe proporcionar un espaciado generoso entre botones",
+    hubCodigo.includes("p-3 bg-bastion border-t-2 border-black shrink-0 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3"),
+    "El pie del modal debe proporcionar separación generosa y apilado responsive entre botones",
   );
   assert.ok(
     hubCodigo.includes("EMPRENDER CAMINO"),
@@ -238,10 +250,24 @@ test("Auditoría Impeccable: Erradicación de truncamientos, modales retro-bruta
     "El modal de destino debe separar los requisitos con borde superior visible",
   );
 
-  // 6. Confinamiento móvil sin overflow horizontal
+  // 6. Confinamiento móvil sin overflow horizontal, HUD sin miniatura redundante y dock de 6 ranuras
   assert.ok(
     hubCodigo.includes("overflow-x-hidden"),
     "El contenedor principal debe incluir overflow-x-hidden para móviles estrechos",
+  );
+  assert.strictEqual(
+    hubCodigo.includes(">\n                ZONA\n"),
+    false,
+    "La tarjeta superior izquierda no debe incluir la miniatura redundante de ZONA",
+  );
+  assert.ok(
+    hubCodigo.includes("grid grid-cols-6 gap-1.5 sm:flex sm:items-center sm:gap-2"),
+    "El dock inferior debe mostrar las 6 ranuras del equipo en cuadrícula móvil sin solaparse con EXPLORAR",
+  );
+  assert.strictEqual(
+    hubCodigo.includes("requisitoCartografia.zonaId"),
+    false,
+    "El modal del Hub no debe exponer el ID interno de la zona en el texto del requisito",
   );
 });
 

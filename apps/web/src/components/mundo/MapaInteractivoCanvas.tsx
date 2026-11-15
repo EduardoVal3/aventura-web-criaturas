@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Compass,
   Crosshair,
-  Eye,
-  EyeOff,
   Heart,
-  Lock,
-  MapPin,
   Minus,
   Plus,
-  ShieldCheck,
-  Sparkles,
   Store,
   Swords,
   Volume2,
@@ -20,7 +13,6 @@ import type { ConexionUbicacion, NodoMapaTerritorial } from "@/api";
 import {
   DIMENSIONES_MAPA_MUNDO,
   obtenerConfiguracionIsla,
-  type ConfiguracionIslaMapa,
 } from "@/lib/mapa-mundo";
 import {
   alternarSonidoSilenciado,
@@ -74,18 +66,6 @@ function resolverZoomInicial(anchoPantalla: number): number {
   return anchoPantalla < 640 ? 0.9 : 0.86;
 }
 
-const ETIQUETA_BIOMA: Record<ConfiguracionIslaMapa["bioma"], string> = {
-  puerto: "Puerto Costero",
-  pradera: "Pradera Abierta",
-  lago: "Ribera Lacustre",
-  puesto: "Puesto Fronterizo",
-  bosque: "Bosque Umbrío",
-  riscos: "Riscos Escarpados",
-  bastion: "Bastión Fortificado",
-  volcan: "Caverna Ígnea",
-  glaciar: "Cumbre Glacial",
-};
-
 export function MapaInteractivoCanvas({
   nodos,
   conexiones,
@@ -113,7 +93,6 @@ export function MapaInteractivoCanvas({
   });
   const [nodoHoverId, setNodoHoverId] = useState<string | null>(null);
   const [silenciado, setSilenciado] = useState(() => estaSonidoSilenciado());
-  const [mostrarPlacas, setMostrarPlacas] = useState(true);
   const camaraRef = useRef<CamaraMapa>(camara);
   const punterosRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const pinchRef = useRef<{
@@ -533,11 +512,6 @@ export function MapaInteractivoCanvas({
 
           const anchoHitbox = Math.max(100, Math.round(isla.radioX * 1.68 * camara.zoom));
           const altoHitbox = Math.max(72, Math.round(isla.radioY * 1.56 * camara.zoom));
-          const desplazamientoPlacaX = Math.round((isla.placaOffsetX ?? 0) * camara.zoom);
-          const desplazamientoPlacaY = Math.round(
-            (isla.placaOffsetY ?? isla.radioY + 38) * camara.zoom,
-          );
-          const escalaPlaca = Number(Math.min(1, Math.max(0.54, camara.zoom / 1.02)).toFixed(3));
           const desplazamientoAvatarY = Math.round(-(isla.radioY * 0.96) * camara.zoom);
 
           return (
@@ -568,17 +542,14 @@ export function MapaInteractivoCanvas({
               )}
               aria-label={`Inspeccionar ${nodo.nombre}`}
             >
-              {/* Tooltip flotante con bioma, estado de acceso y servicios */}
+              {/* Tooltip flotante con el nombre real de la zona, estado de acceso y servicios */}
               {enHover && (
                 <div
                   role="tooltip"
-                  className="pointer-events-none absolute bottom-full mb-2 w-52 bg-slate-950/95 border-2 border-[#14d1e8] shadow-[4px_4px_0_0_#000] px-2.5 py-2 text-left z-40"
+                  className="pointer-events-none absolute bottom-full mb-2 w-max min-w-52 max-w-68 bg-slate-950/95 border-2 border-[#14d1e8] shadow-[4px_4px_0_0_#000] px-2.5 py-2 text-left z-40"
                 >
-                  <div className="flex items-center justify-between gap-1 border-b border-slate-800 pb-1 mb-1">
-                    <span className="retro text-[8px] text-white truncate">{nodo.nombre}</span>
-                    <span className="retro text-[7px] text-[#14d1e8] shrink-0">
-                      {ETIQUETA_BIOMA[isla.bioma]}
-                    </span>
+                  <div className="border-b border-slate-800 pb-1 mb-1">
+                    <span className="retro text-[8px] text-white leading-snug block">{nodo.nombre}</span>
                   </div>
                   <p className="text-[11px] leading-tight text-slate-200 mb-1">
                     {esActual
@@ -634,63 +605,6 @@ export function MapaInteractivoCanvas({
                   </span>
                 </div>
               )}
-
-              {/* Placa interactiva anclada bajo el acantilado sur con escala proporcional al alejar */}
-              {mostrarPlacas && (
-                <div
-                  data-placa-isla={nodo.id}
-                  style={{
-                    left: `calc(50% + ${desplazamientoPlacaX}px)`,
-                    top: "50%",
-                    marginTop: `${desplazamientoPlacaY}px`,
-                    transform: `translateX(-50%) scale(${escalaPlaca})`,
-                    transformOrigin: "top center",
-                  }}
-                  className={cn(
-                    "absolute px-2 py-0.5 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center gap-1.5 backdrop-blur-xs transition-[transform,filter] duration-150 group-hover:brightness-110",
-                    esActual
-                      ? "bg-black/90 text-[#14d1e8] border-[#14d1e8]"
-                      : esDesbloqueable
-                        ? "bg-amber-950/95 text-amber-300 border-amber-400 animate-pulse"
-                        : esViajable
-                          ? "bg-emerald-950/95 text-emerald-300 border-emerald-400"
-                          : !nodo.desbloqueada
-                            ? "bg-slate-950/90 text-slate-400 border-slate-600"
-                            : "bg-card/90 text-slate-100 border-black",
-                  )}
-                >
-                  {esActual ? (
-                    <MapPin className="size-3 shrink-0 text-[#14d1e8]" />
-                  ) : esDesbloqueable ? (
-                    <Sparkles className="size-3 shrink-0 text-amber-300" />
-                  ) : !nodo.desbloqueada ? (
-                    <Lock className="size-3 shrink-0 text-slate-400" />
-                  ) : (
-                    <Compass className="size-3 shrink-0 text-emerald-300" />
-                  )}
-
-                  <span className="retro text-[8px] sm:text-[9px] whitespace-nowrap">
-                    {isla.etiquetaCorta}
-                  </span>
-
-                  {/* Iconos rápidos de servicio o nivel de peligro */}
-                  {nodo.esSegura && nodo.desbloqueada && (
-                    <span className="flex items-center gap-0.5 text-emerald-300 shrink-0" title="Localidad segura: Santuario y Tienda">
-                      <ShieldCheck className="size-2.5" />
-                      <Heart className="size-2.5 text-rose-300" />
-                      <Store className="size-2.5 text-amber-300" />
-                    </span>
-                  )}
-
-                  {!nodo.esSegura && nodo.desbloqueada && (
-                    <span className="inline-flex items-center gap-1 whitespace-nowrap shrink-0 retro text-[7px] bg-black/70 px-1 py-0.5 border border-black/80 text-amber-300">
-                      <Swords className="size-2.5 text-rose-400" />
-                      {rangoFauna ? `${rangoFauna} · ` : ""}
-                      {nodo.progreso}%
-                    </span>
-                  )}
-                </div>
-              )}
             </button>
           );
         })}
@@ -727,24 +641,6 @@ export function MapaInteractivoCanvas({
           className="size-8 sm:size-9 bg-card/95 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center text-[#14d1e8] hover:bg-black active:translate-y-0.5"
         >
           <Crosshair className="size-4" />
-        </button>
-        <button
-          type="button"
-          data-boton-placas-mapa="true"
-          onClick={() => {
-            reproducirSonido("click", 0.3);
-            setMostrarPlacas((prev) => !prev);
-          }}
-          aria-pressed={mostrarPlacas}
-          aria-label={mostrarPlacas ? "Ocultar nombres de islas" : "Mostrar nombres de islas"}
-          title={mostrarPlacas ? "Ocultar tarjetas del mapa" : "Mostrar tarjetas del mapa"}
-          className="size-8 sm:size-9 bg-card/95 border-2 border-black shadow-[3px_3px_0_0_#000] flex items-center justify-center text-slate-100 hover:text-[#14d1e8] active:translate-y-0.5"
-        >
-          {mostrarPlacas ? (
-            <Eye className="size-4 text-[#14d1e8]" />
-          ) : (
-            <EyeOff className="size-4 text-slate-400" />
-          )}
         </button>
         <button
           type="button"

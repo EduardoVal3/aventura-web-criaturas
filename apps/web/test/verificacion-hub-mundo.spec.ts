@@ -601,8 +601,31 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
   assert.ok(datos.medusas.length >= 4, "Debe poblar medusas luminosas en aguas abiertas");
   assert.ok(datos.plancton.length >= 25, "Debe poblar plancton bioluminiscente");
   assert.ok(datos.zonasLeviatan.length >= 2, "Debe detectar cuencas profundas seguras para el leviatán");
+  assert.ok(datos.siluetasSubmarinas.length >= 5, "Debe poblar múltiples siluetas submarinas abisales");
+  assert.ok(datos.avistamientosAbisales.length >= 3, "Debe programar avistamientos de leviatán, mosasaurus y kraken");
 
-  // 3. Cero colisiones: ningún bloque de hielo, medusa, plancton, estela, espuma o leviatán toca tierra firme
+  const especiesSiluetas = new Set(datos.siluetasSubmarinas.map((s) => s.especie));
+  for (const req of ["mosasaurus", "plesiosaurio", "mantarraya", "kraken", "ballena"] as const) {
+    assert.ok(especiesSiluetas.has(req), `Falta silueta submarina de especie ${req}`);
+  }
+  const especiesSuperficie = new Set(datos.avistamientosAbisales.map((a) => a.especie));
+  for (const req of ["leviatan", "mosasaurus", "kraken"] as const) {
+    assert.ok(especiesSuperficie.has(req), `Falta avistamiento superficial de especie ${req}`);
+  }
+
+  // 3. Cero colisiones: ningún bloque de hielo, medusa, plancton, estela, espuma, silueta o monstruo abisal toca tierra firme
+  for (const s of datos.siluetasSubmarinas) {
+    assert.ok(
+      esPosicionNavegable(mascara, s.centro.x, s.centro.y, 16, s.permitirBajoPuente),
+      `Silueta submarina ${s.especie} en (${s.centro.x}, ${s.centro.y}) invadió tierra`,
+    );
+  }
+  for (const a of datos.avistamientosAbisales) {
+    assert.ok(
+      esPosicionNavegable(mascara, a.centro.x, a.centro.y, 28, false),
+      `Avistamiento ${a.especie} en (${a.centro.x}, ${a.centro.y}) invadió tierra`,
+    );
+  }
   for (const p of datos.puntosEspuma) {
     assert.ok(
       consultarDistanciaMar(mascara, p.x, p.y, false) > 0,

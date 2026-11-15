@@ -225,16 +225,24 @@ function hashCelda(col: number, fila: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-function distanciaMinimaPuenteCuadrada(lx: number, ly: number): number {
+function muestraPuenteMasCercana(lx: number, ly: number): { d2: number; yPuente: number } {
   let minD2 = Number.POSITIVE_INFINITY;
+  let yPuente = ly;
   for (let i = 0; i < MUESTRAS_PUENTES.length; i++) {
     const p = MUESTRAS_PUENTES[i];
     const dx = lx - p.x;
     const dy = ly - p.y;
     const d2 = dx * dx + dy * dy;
-    if (d2 < minD2) minD2 = d2;
+    if (d2 < minD2) {
+      minD2 = d2;
+      yPuente = p.y;
+    }
   }
-  return minD2;
+  return { d2: minD2, yPuente };
+}
+
+function distanciaMinimaPuenteCuadrada(lx: number, ly: number): number {
+  return muestraPuenteMasCercana(lx, ly).d2;
 }
 
 function estaCercaDePlaca(lx: number, ly: number, holgura = 6): boolean {
@@ -403,15 +411,16 @@ export function analizarMascaraAlfaOceano(
     for (let x = 2; x < ancho - 2; x++) {
       const idx = fila + x;
       if (tierra[idx] !== 0) continue;
-      // Aguas inmediatas al pie del pilar (d entre 3 y 7 px lógicos)
+      // Aguas pegadas al pie del pilar (d entre 2 y 6 px lógicos) por debajo o al nivel del tablero del puente
       const d = distanciaMar[idx];
-      if (d < 3 || d > 7) continue;
+      if (d < 2 || d > 6) continue;
       const lx = x / escala;
-      if (distanciaMinimaPuenteCuadrada(lx, ly) > radioDeteccionPuente2) continue;
+      const cercano = muestraPuenteMasCercana(lx, ly);
+      if (cercano.d2 > radioDeteccionPuente2 || ly < cercano.yPuente - 4) continue;
 
       // Encontrar borde inferior sólido inmediatamente encima
       let yBorde = -1;
-      for (let up = 1; up <= 4; up++) {
+      for (let up = 1; up <= 3; up++) {
         if (y - up >= 0 && tierra[(y - up) * ancho + x] === 1) {
           yBorde = y - up;
           break;
@@ -677,43 +686,116 @@ export function generarDatosOceanoVivo(mascara: MascaraOceano): DatosOceanoVivo 
   const rng = crearPrng(105019);
   const { ancho, alto, escala } = mascara;
 
-  // 1. Puntos de espuma en columnas/pilares de puentes (barrido completo) y en acantilados costeros
+  // 1. Puntos de espuma centrados en cada columna/pilar de puente y en acantilados costeros
   const puntosEspuma: PuntoEspuma[] = [];
-  const sepPilar2 = 20 * 20;
+  const candidatosPilar: { x: number; yAgua: number; idx: number; anchoCol: number }[] = [];
   for (let y = 1; y < alto - 1; y++) {
     const fila = y * ancho;
     for (let x = 1; x < ancho - 1; x++) {
       const idx = fila + x;
       if (mascara.esFrenteAcantilado[idx] !== 2) continue;
       const d = mascara.distanciaMar[idx];
-      if (d < 3 || d > 7) continue;
-      const lx = x / escala;
-      const ly = y / escala;
+      if (d < 2 || d > 6) continue;
 
-      let muyCerca = false;
-      for (let k = puntosEspuma.length - 1; k >= 0; k--) {
-        const dx = lx - puntosEspuma[k].x;
-        const dy = ly - puntosEspuma[k].y;
-        if (dx * dx + dy * dy < sepPilar2) {
-          muyCerca = true;
+      let yBorde = -1;
+      for (let up = 1; up <= 3; up++) {
+        if (y - up >= 0 && mascara.tierra[(y - up) * ancho + x] === 1) {
+          yBorde = y - up;
           break;
         }
       }
-      if (muyCerca) continue;
+      if (yBorde < 2) continue;
 
-      const normal = consultarNormalAgua(mascara, lx, ly, false);
-      const clima = CODIGO_A_CLIMA[mascara.climaPorCelda[idx]] ?? "templado";
-      puntosEspuma.push({
-        x: lx,
-        y: ly,
-        nx: normal.x,
-        ny: Math.max(0.25, normal.y),
-        clima,
-        fase: (lx * 0.041 + ly * 0.027) % (Math.PI * 2),
-        ancho: 12 + rng() * 3,
-        esPilar: true,
+      // Medir ancho real de la columna en su base sólida (yBorde - 1) para calibrar el diámetro de colindación
+      const yAncho = Math.max(0, yBorde - 1);
+      let izq = x;
+      while (izq > 0 && x - izq < 12 && mascara.tierra[yAncho * ancho + izq - 1] === 1) izq--;
+      let der = x;
+      while (der < ancho - 1 && der - x < 12 && mascara.tierra[yAncho * ancho + der + 1] === 1) der++;
+
+      candidatosPilar.push({
+        x: x / escala,
+        yAgua: (yBorde + 1) / escala,
+        idx,
+        anchoCol: (der - izq + 1) / escala,
       });
     }
+  }
+
+  // Agrupar las celdas de cada columna para centrar el emisor exactamente bajo su pie en el agua
+  const pilarVisitado = new Uint8Array(candidatosPilar.length);
+  for (let i = 0; i < candidatosPilar.length; i++) {
+    if (pilarVisitado[i] === 1) continue;
+    pilarVisitado[i] = 1;
+    const grupo = [candidatosPilar[i]];
+    const cola = [candidatosPilar[i]];
+    while (cola.length > 0) {
+      const actual = cola.pop()!;
+      for (let j = 0; j < candidatosPilar.length; j++) {
+        if (pilarVisitado[j] === 1) continue;
+        const otro = candidatosPilar[j];
+        if (Math.abs(otro.x - actual.x) <= 18 && Math.abs(otro.yAgua - actual.yAgua) <= 14) {
+          pilarVisitado[j] = 1;
+          grupo.push(otro);
+          cola.push(otro);
+        }
+      }
+    }
+
+    let xMin = Number.POSITIVE_INFINITY;
+    let xMax = Number.NEGATIVE_INFINITY;
+    let yBase = Number.NEGATIVE_INFINITY;
+    let maxAnchoCol = 0;
+    let idxRep = grupo[0].idx;
+    for (let k = 0; k < grupo.length; k++) {
+      const g = grupo[k];
+      if (g.x < xMin) xMin = g.x;
+      if (g.x > xMax) xMax = g.x;
+      if (g.yAgua >= yBase) {
+        yBase = g.yAgua;
+        idxRep = g.idx;
+      }
+      if (g.anchoCol > maxAnchoCol) maxAnchoCol = g.anchoCol;
+    }
+
+    let lx = (xMin + xMax) * 0.5;
+    let ly = yBase;
+    if (consultarDistanciaMar(mascara, lx, ly, false) === 0) {
+      if (consultarDistanciaMar(mascara, lx, ly + 2, false) > 0) {
+        ly += 2;
+      } else {
+        // Si el punto medio cae sobre un saliente irregular, elegir la celda válida más cercana al centro
+        let mejorDif = Number.POSITIVE_INFINITY;
+        let encontro = false;
+        for (let k = 0; k < grupo.length; k++) {
+          const g = grupo[k];
+          if (consultarDistanciaMar(mascara, g.x, g.yAgua, false) > 0) {
+            const dif = Math.abs(g.x - lx);
+            if (dif < mejorDif) {
+              mejorDif = dif;
+              lx = g.x;
+              ly = g.yAgua;
+              idxRep = g.idx;
+              encontro = true;
+            }
+          }
+        }
+        if (!encontro) continue;
+      }
+    }
+    const normal = consultarNormalAgua(mascara, lx, ly, false);
+    const clima = CODIGO_A_CLIMA[mascara.climaPorCelda[idxRep]] ?? "templado";
+    const anchoSpan = Math.max(xMax - xMin + 4, maxAnchoCol);
+    puntosEspuma.push({
+      x: lx,
+      y: ly,
+      nx: normal.x,
+      ny: Math.max(0.25, normal.y),
+      clima,
+      fase: (lx * 0.041 + ly * 0.027) % (Math.PI * 2),
+      ancho: Math.max(12, Math.min(20, anchoSpan * 0.72 + 2)),
+      esPilar: true,
+    });
   }
 
   const sepEspuma2 = 12 * 12;

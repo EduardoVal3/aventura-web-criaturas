@@ -33,6 +33,12 @@ import {
   dibujarFondoOceanoContinuo,
   dibujarRespaldoIslasBase,
 } from "@/lib/mapa-dioramas";
+import {
+  crearRecursosOceano,
+  dibujarAvesMarinasLejanas,
+  dibujarOceanoVivo,
+  type RecursosOceanoVivo,
+} from "@/lib/oceano-vivo";
 import { cn } from "@/lib/utils";
 
 export interface LiderMapaInfo {
@@ -88,6 +94,9 @@ export function MapaInteractivoCanvas({
   const contenedorRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mapaImagenRef = useRef<HTMLImageElement | null>(null);
+  const recursosOceanoRef = useRef<RecursosOceanoVivo | null>(null);
+  const vinetaCacheRef = useRef<{ ancho: number; alto: number; grad: CanvasGradient } | null>(null);
+  const dibujarUnaVezRef = useRef<((tiempo: number) => void) | null>(null);
 
   const [mapaImagenLista, setMapaImagenLista] = useState(false);
   const [tamanoContenedor, setTamanoContenedor] = useState({ ancho: 900, alto: 540 });
@@ -142,6 +151,7 @@ export function MapaInteractivoCanvas({
     img.onload = () => {
       if (cancelado) return;
       mapaImagenRef.current = img;
+      recursosOceanoRef.current = crearRecursosOceano(img);
       setMapaImagenLista(true);
     };
     img.onerror = () => {
@@ -198,7 +208,7 @@ export function MapaInteractivoCanvas({
     return () => cancelAnimationFrame(id);
   }, [ubicacionActualId, centrarEnUbicacion, esMovil]);
 
-  // Bucle de renderizado 2D del Canvas
+  // Bucle de renderizado 2D del Canvas a 60 FPS
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -209,7 +219,8 @@ export function MapaInteractivoCanvas({
     const reducirMovimiento =
       window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 
-    const renderizar = (tiempo: number) => {
+    const dibujarCuadro = (tiempo: number) => {
+      const camActual = camaraRef.current;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const anchoReal = Math.floor(tamanoContenedor.ancho * dpr);
       const altoReal = Math.floor(tamanoContenedor.alto * dpr);
@@ -229,20 +240,21 @@ export function MapaInteractivoCanvas({
       ctx.fillRect(0, 0, tamanoContenedor.ancho, tamanoContenedor.alto);
 
       ctx.translate(tamanoContenedor.ancho / 2, tamanoContenedor.alto / 2);
-      ctx.scale(camara.zoom, camara.zoom);
-      ctx.translate(-camara.x, -camara.y);
+      ctx.scale(camActual.zoom, camActual.zoom);
+      ctx.translate(-camActual.x, -camActual.y);
 
-      const mitadAnchoMundo = tamanoContenedor.ancho / 2 / camara.zoom;
-      const mitadAltoMundo = tamanoContenedor.alto / 2 / camara.zoom;
-      dibujarFondoOceanoContinuo(ctx, tiempo, reducirMovimiento, {
-        minX: camara.x - mitadAnchoMundo,
-        minY: camara.y - mitadAltoMundo,
-        maxX: camara.x + mitadAnchoMundo,
-        maxY: camara.y + mitadAltoMundo,
-      });
-      dibujarAguasCosterasMapa(ctx, nodos, tiempo, reducirMovimiento);
+      const mitadAnchoMundo = tamanoContenedor.ancho / 2 / camActual.zoom;
+      const mitadAltoMundo = tamanoContenedor.alto / 2 / camActual.zoom;
+      const vistaMundo = {
+        minX: camActual.x - mitadAnchoMundo,
+        minY: camActual.y - mitadAltoMundo,
+        maxX: camActual.x + mitadAnchoMundo,
+        maxY: camActual.y + mitadAltoMundo,
+      };
 
-      if (mapaImagenLista && mapaImagenRef.current) {
+      const recursosOceano = recursosOceanoRef.current;
+      if (mapaImagenLista && mapaImagenRef.current && recursosOceano) {
+        dibujarOceanoVivo(ctx, recursosOceano, tiempo, reducirMovimiento, vistaMundo);
         ctx.drawImage(
           mapaImagenRef.current,
           0,
@@ -250,45 +262,89 @@ export function MapaInteractivoCanvas({
           DIMENSIONES_MAPA_MUNDO.ancho,
           DIMENSIONES_MAPA_MUNDO.alto,
         );
+        dibujarCapaVivaMapa(
+          ctx,
+          nodos,
+          conexionesPorId,
+          ubicacionActualId,
+          tiempo,
+          reducirMovimiento,
+        );
+        dibujarAvesMarinasLejanas(ctx, recursosOceano, tiempo, reducirMovimiento);
       } else {
-        dibujarRespaldoIslasBase(ctx, nodos);
+        dibujarFondoOceanoContinuo(ctx, tiempo, reducirMovimiento, vistaMundo);
+        dibujarAguasCosterasMapa(ctx, nodos, tiempo, reducirMovimiento);
+        if (mapaImagenLista && mapaImagenRef.current) {
+          ctx.drawImage(
+            mapaImagenRef.current,
+            0,
+            0,
+            DIMENSIONES_MAPA_MUNDO.ancho,
+            DIMENSIONES_MAPA_MUNDO.alto,
+          );
+        } else {
+          dibujarRespaldoIslasBase(ctx, nodos);
+        }
+        dibujarCapaVivaMapa(
+          ctx,
+          nodos,
+          conexionesPorId,
+          ubicacionActualId,
+          tiempo,
+          reducirMovimiento,
+        );
       }
 
-      dibujarCapaVivaMapa(
-        ctx,
-        nodos,
-        conexionesPorId,
-        ubicacionActualId,
-        tiempo,
-        reducirMovimiento,
-      );
-
       ctx.restore();
 
-      // Viñeta atmosférica Dark Fantasy en los extremos del visor
+      // Viñeta atmosférica Dark Fantasy en los extremos del visor (cacheada por tamaño)
       ctx.save();
-      const vineta = ctx.createRadialGradient(
-        canvas.width / 2,
-        canvas.height / 2,
-        Math.min(canvas.width, canvas.height) * 0.42,
-        canvas.width / 2,
-        canvas.height / 2,
-        Math.max(canvas.width, canvas.height) * 0.82,
-      );
-      vineta.addColorStop(0, "rgba(0, 0, 0, 0)");
-      vineta.addColorStop(1, "rgba(2, 6, 16, 0.36)");
-      ctx.fillStyle = vineta;
+      let cacheVineta = vinetaCacheRef.current;
+      if (!cacheVineta || cacheVineta.ancho !== canvas.width || cacheVineta.alto !== canvas.height) {
+        const grad = ctx.createRadialGradient(
+          canvas.width / 2,
+          canvas.height / 2,
+          Math.min(canvas.width, canvas.height) * 0.42,
+          canvas.width / 2,
+          canvas.height / 2,
+          Math.max(canvas.width, canvas.height) * 0.82,
+        );
+        grad.addColorStop(0, "rgba(0, 0, 0, 0)");
+        grad.addColorStop(1, "rgba(2, 6, 16, 0.36)");
+        cacheVineta = { ancho: canvas.width, alto: canvas.height, grad };
+        vinetaCacheRef.current = cacheVineta;
+      }
+      ctx.fillStyle = cacheVineta.grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
+    };
 
+    dibujarUnaVezRef.current = dibujarCuadro;
+
+    const renderizar = (tiempo: number) => {
+      dibujarCuadro(tiempo);
       if (!reducirMovimiento) {
         frameId = requestAnimationFrame(renderizar);
       }
     };
 
     frameId = requestAnimationFrame(renderizar);
-    return () => cancelAnimationFrame(frameId);
-  }, [camara, conexionesPorId, mapaImagenLista, nodos, tamanoContenedor, ubicacionActualId]);
+    return () => {
+      cancelAnimationFrame(frameId);
+      dibujarUnaVezRef.current = null;
+    };
+  }, [conexionesPorId, mapaImagenLista, nodos, tamanoContenedor, ubicacionActualId]);
+
+  // En modo de movimiento reducido, refrescar el cuadro estático tras paneo o zoom
+  useEffect(() => {
+    const reducirMovimiento =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    if (!reducirMovimiento) return;
+    const id = requestAnimationFrame(() => {
+      dibujarUnaVezRef.current?.(0);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [camara]);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest("[data-controles-mapa]")) return;

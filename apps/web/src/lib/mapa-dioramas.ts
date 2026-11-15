@@ -137,7 +137,12 @@ function crearPrng(semillaInicial: number): () => number {
 
 function armonicosIsla(id: string): [number, number, number, number] {
   const r = crearPrng(semillaDesdeTexto(id));
-  return [r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2, r() * Math.PI * 2];
+  return [
+    r() * Math.PI * 2,
+    r() * Math.PI * 2,
+    r() * Math.PI * 2,
+    r() * Math.PI * 2,
+  ];
 }
 
 /**
@@ -190,7 +195,9 @@ export function puntoBordeIsla(
 /**
  * Construye la geometría base determinista de una isla (segura en Node para pruebas unitarias).
  */
-export function generarGeometriaDiorama(isla: ConfiguracionIslaMapa): GeometriaDioramaIsla {
+export function generarGeometriaDiorama(
+  isla: ConfiguracionIslaMapa,
+): GeometriaDioramaIsla {
   const contornoLocal: Punto2D[] = [];
   for (let i = 0; i < PASOS_CONTORNO; i++) {
     const ang = (i / PASOS_CONTORNO) * Math.PI * 2;
@@ -199,7 +206,12 @@ export function generarGeometriaDiorama(isla: ConfiguracionIslaMapa): GeometriaD
 
   const angulosPuente: number[] = [];
   for (const [origenId, destinoId] of CONEXIONES_AETHELGARD) {
-    const otroId = origenId === isla.id ? destinoId : destinoId === isla.id ? origenId : null;
+    const otroId =
+      origenId === isla.id
+        ? destinoId
+        : destinoId === isla.id
+          ? origenId
+          : null;
     if (!otroId) continue;
     const otro = CONFIGURACION_ISLAS_MAPA[otroId];
     if (!otro) continue;
@@ -232,9 +244,14 @@ function trazarPoligonoLocal(
   ctx.closePath();
 }
 
+const cacheGradientesRespaldo = new WeakMap<
+  CanvasRenderingContext2D,
+  { gradMar: CanvasGradient; canalCentral: CanvasGradient }
+>();
+
 /**
- * Dibuja el océano abisal completo por debajo de todo el archipiélago y hasta el horizonte infinito,
- * con corrientes marinas, brillos lunares y crestas de olas visibles incluso bajo los arcos de los puentes.
+ * Dibuja el océano abisal completo de respaldo mientras decodifica el WebP transparente,
+ * con corrientes marinas y crestas de olas visibles incluso bajo los arcos de los puentes.
  */
 export function dibujarFondoOceanoContinuo(
   ctx: CanvasRenderingContext2D,
@@ -245,25 +262,37 @@ export function dibujarFondoOceanoContinuo(
   const t = reducirMovimiento ? 0 : tiempo;
   const xMin = Math.floor((vistaMundo?.minX ?? -400) - 240);
   const yMin = Math.floor((vistaMundo?.minY ?? -300) - 240);
-  const xMax = Math.ceil((vistaMundo?.maxX ?? DIMENSIONES_MAPA_MUNDO.ancho + 400) + 240);
-  const yMax = Math.ceil((vistaMundo?.maxY ?? DIMENSIONES_MAPA_MUNDO.alto + 300) + 240);
+  const xMax = Math.ceil(
+    (vistaMundo?.maxX ?? DIMENSIONES_MAPA_MUNDO.ancho + 400) + 240,
+  );
+  const yMax = Math.ceil(
+    (vistaMundo?.maxY ?? DIMENSIONES_MAPA_MUNDO.alto + 300) + 240,
+  );
 
-  const gradMar = ctx.createLinearGradient(0, -140, 0, DIMENSIONES_MAPA_MUNDO.alto + 160);
-  gradMar.addColorStop(0, "#021327");
-  gradMar.addColorStop(0.28, "#042342");
-  gradMar.addColorStop(0.55, "#052a4e");
-  gradMar.addColorStop(0.82, "#031e3a");
-  gradMar.addColorStop(1, "#011224");
-  ctx.fillStyle = gradMar;
+  let cache = cacheGradientesRespaldo.get(ctx);
+  if (!cache) {
+    const gradMar = ctx.createLinearGradient(0, -140, 0, DIMENSIONES_MAPA_MUNDO.alto + 160);
+    gradMar.addColorStop(0, "#021327");
+    gradMar.addColorStop(0.28, "#042342");
+    gradMar.addColorStop(0.55, "#052a4e");
+    gradMar.addColorStop(0.82, "#031e3a");
+    gradMar.addColorStop(1, "#011224");
+
+    const canalCentral = ctx.createRadialGradient(808, 480, 90, 808, 480, 780);
+    canalCentral.addColorStop(0, "rgba(14, 116, 144, 0.2)");
+    canalCentral.addColorStop(0.55, "rgba(6, 78, 115, 0.1)");
+    canalCentral.addColorStop(1, "rgba(2, 19, 39, 0)");
+
+    cache = { gradMar, canalCentral };
+    cacheGradientesRespaldo.set(ctx, cache);
+  }
+
+  ctx.fillStyle = cache.gradMar;
   ctx.fillRect(xMin, yMin, xMax - xMin, yMax - yMin);
 
   // Reflejo abisal tenue entre canales internos y zona volcánica/glacial
   ctx.save();
-  const canalCentral = ctx.createRadialGradient(808, 480, 90, 808, 480, 780);
-  canalCentral.addColorStop(0, "rgba(14, 116, 144, 0.2)");
-  canalCentral.addColorStop(0.55, "rgba(6, 78, 115, 0.1)");
-  canalCentral.addColorStop(1, "rgba(2, 19, 39, 0)");
-  ctx.fillStyle = canalCentral;
+  ctx.fillStyle = cache.canalCentral;
   ctx.fillRect(xMin, yMin, xMax - xMin, yMax - yMin);
 
   // Crestas pixel-art continuas en todo el mar visible (visibles entre islas y bajo puentes)
@@ -308,7 +337,12 @@ export function dibujarAguasCosterasMapa(
   for (const ruta of TRAYECTOS_PUENTES_AETHELGARD) {
     ctx.beginPath();
     ctx.moveTo(ruta.inicio.x, ruta.inicio.y + 18);
-    ctx.quadraticCurveTo(ruta.control.x, ruta.control.y + 20, ruta.fin.x, ruta.fin.y + 18);
+    ctx.quadraticCurveTo(
+      ruta.control.x,
+      ruta.control.y + 20,
+      ruta.fin.x,
+      ruta.fin.y + 18,
+    );
     ctx.stroke();
   }
   ctx.restore();
@@ -337,7 +371,15 @@ export function dibujarAguasCosterasMapa(
     sombra.addColorStop(1, "rgba(1, 14, 34, 0)");
     ctx.fillStyle = sombra;
     ctx.beginPath();
-    ctx.ellipse(isla.x, baseY + 14, rxBase * 1.14, ryBase * 1.16, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      isla.x,
+      baseY + 14,
+      rxBase * 1.14,
+      ryBase * 1.16,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
 
     // Estela de espuma costera respirando junto al acantilado
@@ -345,7 +387,15 @@ export function dibujarAguasCosterasMapa(
     ctx.strokeStyle = `rgba(186, 230, 253, ${0.22 + (pulsoMar + 1) * 0.05})`;
     ctx.lineWidth = 3.2;
     ctx.beginPath();
-    ctx.ellipse(isla.x, baseY + 6, rxBase * expansion, ryBase * expansion, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      isla.x,
+      baseY + 6,
+      rxBase * expansion,
+      ryBase * expansion,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.stroke();
 
     ctx.strokeStyle = `rgba(56, 189, 248, ${0.14 + (1 - pulsoMar) * 0.04})`;
@@ -372,7 +422,15 @@ export function dibujarAguasCosterasMapa(
   ctx.strokeStyle = `rgba(224, 242, 254, ${(1 - faseCascada) * 0.58})`;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.ellipse(744, 591, 15 + faseCascada * 17, 4.5 + faseCascada * 5.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(
+    744,
+    591,
+    15 + faseCascada * 17,
+    4.5 + faseCascada * 5.5,
+    0,
+    0,
+    Math.PI * 2,
+  );
   ctx.stroke();
 
   // Vapor cálido donde caen las cascadas de magma de Cueva Umbría al mar
@@ -381,7 +439,15 @@ export function dibujarAguasCosterasMapa(
     [1414, 492],
     [1530, 486],
   ]) {
-    dibujarHaloFuego(ctx, vx, vy, 28, 0.34, "rgba(251, 146, 60, 0.72)", "rgba(234, 88, 12, 0.2)");
+    dibujarHaloFuego(
+      ctx,
+      vx,
+      vy,
+      28,
+      0.34,
+      "rgba(251, 146, 60, 0.72)",
+      "rgba(234, 88, 12, 0.2)",
+    );
   }
   ctx.restore();
 }
@@ -488,7 +554,9 @@ function dibujarPuentesYRutasVivas(
   for (const ruta of TRAYECTOS_PUENTES_AETHELGARD) {
     const nOrig = nodosPorId.get(ruta.origenId);
     const nDest = nodosPorId.get(ruta.destinoId);
-    const rutaDesbloqueada = Boolean(nOrig?.desbloqueada && nDest?.desbloqueada);
+    const rutaDesbloqueada = Boolean(
+      nOrig?.desbloqueada && nDest?.desbloqueada,
+    );
 
     if (!rutaDesbloqueada) {
       ctx.save();
@@ -497,7 +565,12 @@ function dibujarPuentesYRutasVivas(
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(ruta.inicio.x, ruta.inicio.y);
-      ctx.quadraticCurveTo(ruta.control.x, ruta.control.y, ruta.fin.x, ruta.fin.y);
+      ctx.quadraticCurveTo(
+        ruta.control.x,
+        ruta.control.y,
+        ruta.fin.x,
+        ruta.fin.y,
+      );
       ctx.stroke();
       ctx.restore();
       continue;
@@ -512,7 +585,9 @@ function dibujarPuentesYRutasVivas(
 
     if (!otroId) continue;
     const conexionActiva = conexionesPorId.get(otroId);
-    const esAlcanzable = Boolean(conexionActiva && !conexionActiva.estaBloqueada);
+    const esAlcanzable = Boolean(
+      conexionActiva && !conexionActiva.estaBloqueada,
+    );
     const esDesbloqueable = Boolean(
       conexionActiva?.estaBloqueada && conexionActiva.cumpleRequisito,
     );
@@ -614,15 +689,30 @@ export function dibujarCapaVivaMapa(
   }
 
   // 2. Puentes activos y flujo guiado sobre las pasarelas reales
-  dibujarPuentesYRutasVivas(ctx, nodosPorId, conexionesPorId, ubicacionActualId, t);
+  dibujarPuentesYRutasVivas(
+    ctx,
+    nodosPorId,
+    conexionesPorId,
+    ubicacionActualId,
+    t,
+  );
 
   // 3. Efectos ambientales recalibrados por centroide real sobre la lámina 1616x897
-  const desbloqueada = (id: string) => Boolean(nodosPorId.get(id)?.desbloqueada);
+  const desbloqueada = (id: string) =>
+    Boolean(nodosPorId.get(id)?.desbloqueada);
 
   // LOC-01: Villa Serena — fuente central (237, 672), 8 faroles reales y 2 chimeneas de piedra sobre tejados
   if (desbloqueada("LOC-01")) {
     const pulsoFuente = 0.7 + Math.sin(t * 0.005) * 0.3;
-    dibujarHaloFuego(ctx, 237, 672, 30, 0.44 * pulsoFuente, "rgba(165, 243, 252, 0.92)", "rgba(20, 209, 232, 0.35)");
+    dibujarHaloFuego(
+      ctx,
+      237,
+      672,
+      30,
+      0.44 * pulsoFuente,
+      "rgba(165, 243, 252, 0.92)",
+      "rgba(20, 209, 232, 0.35)",
+    );
     dibujarChispasAscendentes(ctx, 237, 667, 5, 8, 18, t, "#a5f3fc");
 
     const faroles: [number, number][] = [
@@ -637,7 +727,15 @@ export function dibujarCapaVivaMapa(
     ];
     for (const [fx, fy] of faroles) {
       const f = 0.72 + Math.sin(t * 0.009 + fx) * 0.28;
-      dibujarHaloFuego(ctx, fx, fy, 15, 0.45 * f, "rgba(254, 240, 138, 0.92)", "rgba(245, 158, 11, 0.32)");
+      dibujarHaloFuego(
+        ctx,
+        fx,
+        fy,
+        15,
+        0.45 * f,
+        "rgba(254, 240, 138, 0.92)",
+        "rgba(245, 158, 11, 0.32)",
+      );
     }
     dibujarHumoChimenea(ctx, 285, 556, t);
     dibujarHumoChimenea(ctx, 348, 609, t + 1100);
@@ -654,7 +752,15 @@ export function dibujarCapaVivaMapa(
     ];
     for (const [rx, ry] of runas) {
       const p = 0.45 + Math.sin(t * 0.0038 + rx * 0.05) * 0.45;
-      dibujarHaloFuego(ctx, rx, ry, 22, 0.46 * p, "rgba(110, 231, 183, 0.92)", "rgba(20, 209, 232, 0.35)");
+      dibujarHaloFuego(
+        ctx,
+        rx,
+        ry,
+        22,
+        0.46 * p,
+        "rgba(110, 231, 183, 0.92)",
+        "rgba(20, 209, 232, 0.35)",
+      );
     }
     dibujarChispasAscendentes(ctx, 195, 425, 6, 80, 40, t * 0.7, "#fde047");
   }
@@ -669,7 +775,15 @@ export function dibujarCapaVivaMapa(
     ];
     for (const [bx, by] of pebeteros) {
       const f = 0.75 + Math.sin(t * 0.013 + bx) * 0.25;
-      dibujarHaloFuego(ctx, bx, by, 24, 0.62 * f, "rgba(254, 240, 138, 0.95)", "rgba(249, 115, 22, 0.45)");
+      dibujarHaloFuego(
+        ctx,
+        bx,
+        by,
+        24,
+        0.62 * f,
+        "rgba(254, 240, 138, 0.95)",
+        "rgba(249, 115, 22, 0.45)",
+      );
       dibujarChispasAscendentes(ctx, bx, by - 5, 3, 5, 22, t, "#fdba74");
     }
     for (const [fx, fy] of [
@@ -678,7 +792,15 @@ export function dibujarCapaVivaMapa(
       [692, 459],
     ]) {
       const f = 0.65 + Math.sin(t * 0.01 + fx) * 0.35;
-      dibujarHaloFuego(ctx, fx, fy, 14, 0.44 * f, "rgba(253, 186, 116, 0.88)", "rgba(234, 88, 12, 0.3)");
+      dibujarHaloFuego(
+        ctx,
+        fx,
+        fy,
+        14,
+        0.44 * f,
+        "rgba(253, 186, 116, 0.88)",
+        "rgba(234, 88, 12, 0.3)",
+      );
     }
 
     // Corriente en los tramos libres del río (evitando cruzar sobre la atalaya sur) y salto ceñido a y=529..586
@@ -686,9 +808,19 @@ export function dibujarCapaVivaMapa(
     ctx.fillStyle = "rgba(186, 230, 253, 0.45)";
     for (let r = 0; r < 2; r++) {
       const pSup = (t * 0.0005 + r * 0.5) % 1;
-      ctx.fillRect(Math.round(556 + pSup * 54), Math.round(418 + pSup * 30), 6, 2);
+      ctx.fillRect(
+        Math.round(556 + pSup * 54),
+        Math.round(418 + pSup * 30),
+        6,
+        2,
+      );
       const pInf = (t * 0.0005 + r * 0.5 + 0.25) % 1;
-      ctx.fillRect(Math.round(674 + pInf * 58), Math.round(486 + pInf * 34), 6, 2);
+      ctx.fillRect(
+        Math.round(674 + pInf * 58),
+        Math.round(486 + pInf * 34),
+        6,
+        2,
+      );
     }
 
     const despRio = (t * 0.05) % 52;
@@ -710,7 +842,15 @@ export function dibujarCapaVivaMapa(
   // ZON-02: Lago Espejo — espejo lacustre (820, 718) y los 5 grupos de cristales cian/violeta exactos
   if (desbloqueada("ZON-02")) {
     const reflejo = 0.55 + Math.sin(t * 0.0032) * 0.35;
-    dibujarHaloFuego(ctx, 820, 718, 56, 0.28 * reflejo, "rgba(103, 232, 249, 0.72)", "rgba(168, 85, 247, 0.28)");
+    dibujarHaloFuego(
+      ctx,
+      820,
+      718,
+      56,
+      0.28 * reflejo,
+      "rgba(103, 232, 249, 0.72)",
+      "rgba(168, 85, 247, 0.28)",
+    );
 
     ctx.save();
     ctx.fillStyle = `rgba(186, 230, 253, ${0.26 * reflejo})`;
@@ -730,7 +870,15 @@ export function dibujarCapaVivaMapa(
     ];
     for (const [cx, cy] of cristales) {
       const k = 0.5 + Math.sin(t * 0.0045 + cx * 0.1) * 0.45;
-      dibujarHaloFuego(ctx, cx, cy, 20, 0.46 * k, "rgba(165, 243, 252, 0.92)", "rgba(6, 182, 212, 0.32)");
+      dibujarHaloFuego(
+        ctx,
+        cx,
+        cy,
+        20,
+        0.46 * k,
+        "rgba(165, 243, 252, 0.92)",
+        "rgba(6, 182, 212, 0.32)",
+      );
     }
     dibujarChispasAscendentes(ctx, 820, 732, 6, 64, 42, t * 0.6, "#a5f3fc");
   }
@@ -738,7 +886,15 @@ export function dibujarCapaVivaMapa(
   // ZON-03: Bosque — aura en escalinata/trono de piedra (1390, 668) y luciérnagas confinadas al claro
   if (desbloqueada("ZON-03")) {
     const auro = 0.65 + Math.sin(t * 0.0034) * 0.3;
-    dibujarHaloFuego(ctx, 1390, 668, 40, 0.32 * auro, "rgba(74, 222, 128, 0.85)", "rgba(16, 185, 129, 0.22)");
+    dibujarHaloFuego(
+      ctx,
+      1390,
+      668,
+      40,
+      0.32 * auro,
+      "rgba(74, 222, 128, 0.85)",
+      "rgba(16, 185, 129, 0.22)",
+    );
     for (let i = 0; i < 12; i++) {
       const ang = t * 0.001 + i * 0.85;
       const lx = 1380 + Math.cos(ang) * (24 + (i % 5) * 14);
@@ -762,7 +918,15 @@ export function dibujarCapaVivaMapa(
       [952, 420],
     ];
     for (const [gx, gy] of grietas) {
-      dibujarHaloFuego(ctx, gx, gy, 24, 0.32 * brasa, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.28)");
+      dibujarHaloFuego(
+        ctx,
+        gx,
+        gy,
+        24,
+        0.32 * brasa,
+        "rgba(251, 146, 60, 0.9)",
+        "rgba(220, 38, 38, 0.28)",
+      );
     }
     const flujoRisco = (t * 0.032) % 36;
     ctx.fillStyle = "#fef08a";
@@ -783,11 +947,27 @@ export function dibujarCapaVivaMapa(
     ];
     for (const [tx, ty] of torres) {
       const f = 0.72 + Math.sin(t * 0.011 + tx) * 0.28;
-      dibujarHaloFuego(ctx, tx, ty, 30, 0.65 * f, "rgba(254, 240, 138, 0.95)", "rgba(249, 115, 22, 0.45)");
+      dibujarHaloFuego(
+        ctx,
+        tx,
+        ty,
+        30,
+        0.65 * f,
+        "rgba(254, 240, 138, 0.95)",
+        "rgba(249, 115, 22, 0.45)",
+      );
       dibujarChispasAscendentes(ctx, tx, ty - 5, 4, 6, 24, t, "#fde047");
     }
     const fPorton = 0.6 + Math.sin(t * 0.008) * 0.3;
-    dibujarHaloFuego(ctx, 524, 198, 20, 0.38 * fPorton, "rgba(253, 186, 116, 0.85)", "rgba(234, 88, 12, 0.25)");
+    dibujarHaloFuego(
+      ctx,
+      524,
+      198,
+      20,
+      0.38 * fPorton,
+      "rgba(253, 186, 116, 0.85)",
+      "rgba(234, 88, 12, 0.25)",
+    );
 
     ctx.fillStyle = "rgba(224, 242, 254, 0.62)";
     for (let s = 0; s < 10; s++) {
@@ -801,11 +981,51 @@ export function dibujarCapaVivaMapa(
   // ZON-05: Cueva Umbría — caída de cueva (1453, 290..350), 3 cascadas completas de labio a poza y cristales violeta
   if (desbloqueada("ZON-05")) {
     const magma = 0.62 + Math.sin(t * 0.0052) * 0.35;
-    dibujarHaloFuego(ctx, 1453, 296, 24, 0.44 * magma, "rgba(254, 240, 138, 0.95)", "rgba(234, 88, 12, 0.35)");
-    dibujarHaloFuego(ctx, 1452, 352, 36, 0.5 * magma, "rgba(253, 224, 71, 0.92)", "rgba(234, 88, 12, 0.36)");
-    dibujarHaloFuego(ctx, 1327, 472, 30, 0.42 * magma, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.3)");
-    dibujarHaloFuego(ctx, 1414, 486, 44, 0.46 * magma, "rgba(251, 146, 60, 0.92)", "rgba(220, 38, 38, 0.34)");
-    dibujarHaloFuego(ctx, 1526, 478, 30, 0.42 * magma, "rgba(251, 146, 60, 0.9)", "rgba(220, 38, 38, 0.3)");
+    dibujarHaloFuego(
+      ctx,
+      1453,
+      296,
+      24,
+      0.44 * magma,
+      "rgba(254, 240, 138, 0.95)",
+      "rgba(234, 88, 12, 0.35)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1452,
+      352,
+      36,
+      0.5 * magma,
+      "rgba(253, 224, 71, 0.92)",
+      "rgba(234, 88, 12, 0.36)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1327,
+      472,
+      30,
+      0.42 * magma,
+      "rgba(251, 146, 60, 0.9)",
+      "rgba(220, 38, 38, 0.3)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1414,
+      486,
+      44,
+      0.46 * magma,
+      "rgba(251, 146, 60, 0.92)",
+      "rgba(220, 38, 38, 0.34)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1526,
+      478,
+      30,
+      0.42 * magma,
+      "rgba(251, 146, 60, 0.9)",
+      "rgba(220, 38, 38, 0.3)",
+    );
 
     const flujo = t * 0.036;
     ctx.fillStyle = "#fef08a";
@@ -818,9 +1038,33 @@ export function dibujarCapaVivaMapa(
 
     // Pulsos violetas en los 3 grupos de cristales reales y arco eléctrico en las puntas del cristal gigante
     const arc = Math.max(0, Math.sin(t * 0.008));
-    dibujarHaloFuego(ctx, 1317, 328, 34, 0.38 + arc * 0.2, "rgba(216, 180, 254, 0.88)", "rgba(147, 51, 234, 0.32)");
-    dibujarHaloFuego(ctx, 1518, 255, 48, 0.46 + arc * 0.25, "rgba(232, 121, 249, 0.92)", "rgba(147, 51, 234, 0.36)");
-    dibujarHaloFuego(ctx, 1548, 358, 30, 0.36 + arc * 0.18, "rgba(216, 180, 254, 0.86)", "rgba(147, 51, 234, 0.3)");
+    dibujarHaloFuego(
+      ctx,
+      1317,
+      328,
+      34,
+      0.38 + arc * 0.2,
+      "rgba(216, 180, 254, 0.88)",
+      "rgba(147, 51, 234, 0.32)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1518,
+      255,
+      48,
+      0.46 + arc * 0.25,
+      "rgba(232, 121, 249, 0.92)",
+      "rgba(147, 51, 234, 0.36)",
+    );
+    dibujarHaloFuego(
+      ctx,
+      1548,
+      358,
+      30,
+      0.36 + arc * 0.18,
+      "rgba(216, 180, 254, 0.86)",
+      "rgba(147, 51, 234, 0.3)",
+    );
 
     if (Math.sin(t * 0.017) > 0.72) {
       ctx.save();
@@ -843,8 +1087,14 @@ export function dibujarCapaVivaMapa(
     const onda = Math.sin(t * 0.0018) * 8;
     const gradAurora = ctx.createLinearGradient(840, 4, 1275, 48);
     gradAurora.addColorStop(0, "rgba(16, 185, 129, 0)");
-    gradAurora.addColorStop(0.32, `rgba(52, 211, 153, ${0.22 + Math.sin(t * 0.003) * 0.07})`);
-    gradAurora.addColorStop(0.68, `rgba(56, 189, 248, ${0.24 + Math.cos(t * 0.0025) * 0.07})`);
+    gradAurora.addColorStop(
+      0.32,
+      `rgba(52, 211, 153, ${0.22 + Math.sin(t * 0.003) * 0.07})`,
+    );
+    gradAurora.addColorStop(
+      0.68,
+      `rgba(56, 189, 248, ${0.24 + Math.cos(t * 0.0025) * 0.07})`,
+    );
     gradAurora.addColorStop(1, "rgba(168, 85, 247, 0)");
     ctx.strokeStyle = gradAurora;
     ctx.lineWidth = 16;
@@ -862,7 +1112,15 @@ export function dibujarCapaVivaMapa(
       [1172, 180],
     ]) {
       const d = 0.55 + Math.sin(t * 0.004 + cx) * 0.4;
-      dibujarHaloFuego(ctx, cx, cy, 26, 0.38 * d, "rgba(224, 242, 254, 0.92)", "rgba(56, 189, 248, 0.35)");
+      dibujarHaloFuego(
+        ctx,
+        cx,
+        cy,
+        26,
+        0.38 * d,
+        "rgba(224, 242, 254, 0.92)",
+        "rgba(56, 189, 248, 0.35)",
+      );
     }
 
     ctx.fillStyle = "rgba(224, 242, 254, 0.72)";

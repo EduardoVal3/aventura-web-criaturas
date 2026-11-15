@@ -402,6 +402,7 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
     join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"),
     join(__dirname, "../src/lib/mapa-mundo.ts"),
     join(__dirname, "../src/lib/mapa-dioramas.ts"),
+    join(__dirname, "../src/lib/oceano-vivo.ts"),
   ];
 
   const regexEmoji = /\p{Extended_Pictographic}/u;
@@ -520,6 +521,136 @@ test("Subfase 10p/10q/10r: Calibración sobre mapa transparente WebP (1616x897),
   assert.ok(canvasCodigo.includes("centrarEnUbicacion"));
   assert.ok(canvasCodigo.includes("placaOffsetX"));
   assert.strictEqual(canvasCodigo.includes("obtenerImagenZona"), false);
+});
+
+test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 2.5D y cero colisiones con tierra firme", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const { CONFIGURACION_ISLAS_MAPA } = await import("../src/lib/mapa-mundo.ts");
+  const { TRAYECTOS_PUENTES_AETHELGARD } = await import("../src/lib/mapa-dioramas.ts");
+  const {
+    MASCARA_OCEANO_ANCHO,
+    MASCARA_OCEANO_ALTO,
+    ESCALA_MASCARA_OCEANO,
+    analizarMascaraAlfaOceano,
+    consultarDistanciaMar,
+    consultarNormalAgua,
+    esPosicionNavegable,
+    generarDatosOceanoVivo,
+  } = await import("../src/lib/oceano-vivo.ts");
+
+  // Construir máscara alfa realista en 808x449 con las 9 islas y 10 puentes
+  const alfa = new Uint8Array(MASCARA_OCEANO_ANCHO * MASCARA_OCEANO_ALTO);
+  const pintarDisco = (cx: number, cy: number, rx: number, ry: number) => {
+    const x0 = Math.max(0, Math.floor((cx - rx) * ESCALA_MASCARA_OCEANO));
+    const x1 = Math.min(MASCARA_OCEANO_ANCHO - 1, Math.ceil((cx + rx) * ESCALA_MASCARA_OCEANO));
+    const y0 = Math.max(0, Math.floor((cy - ry) * ESCALA_MASCARA_OCEANO));
+    const y1 = Math.min(MASCARA_OCEANO_ALTO - 1, Math.ceil((cy + ry) * ESCALA_MASCARA_OCEANO));
+    for (let my = y0; my <= y1; my++) {
+      const ly = my / ESCALA_MASCARA_OCEANO;
+      for (let mx = x0; mx <= x1; mx++) {
+        const lx = mx / ESCALA_MASCARA_OCEANO;
+        const nx = (lx - cx) / rx;
+        const ny = (ly - cy) / ry;
+        if (nx * nx + ny * ny <= 1) {
+          alfa[my * MASCARA_OCEANO_ANCHO + mx] = 255;
+        }
+      }
+    }
+  };
+
+  for (const isla of Object.values(CONFIGURACION_ISLAS_MAPA)) {
+    pintarDisco(isla.x, isla.y, isla.radioX * 0.82, isla.radioY * 0.82);
+  }
+  for (const puente of TRAYECTOS_PUENTES_AETHELGARD) {
+    for (let i = 0; i <= 24; i++) {
+      const u = i / 24;
+      const inv = 1 - u;
+      const px = inv * inv * puente.inicio.x + 2 * inv * u * puente.control.x + u * u * puente.fin.x;
+      const py = inv * inv * puente.inicio.y + 2 * inv * u * puente.control.y + u * u * puente.fin.y;
+      pintarDisco(px, py, 12, 10);
+    }
+  }
+
+  const mascara = analizarMascaraAlfaOceano(
+    alfa,
+    MASCARA_OCEANO_ANCHO,
+    MASCARA_OCEANO_ALTO,
+    ESCALA_MASCARA_OCEANO,
+  );
+  const datos = generarDatosOceanoVivo(mascara);
+
+  // 1. Distancia sobre tierra firme = 0; en aguas abiertas > 30px
+  assert.strictEqual(consultarDistanciaMar(mascara, 230, 705, false), 0);
+  assert.strictEqual(esPosicionNavegable(mascara, 230, 705, 4, false), false);
+  assert.ok(consultarDistanciaMar(mascara, 120, 120, false) > 30);
+  assert.ok(esPosicionNavegable(mascara, 120, 120, 20, false));
+
+  // Normal en la costa sur debe apuntar hacia afuera/abajo (+y)
+  const normalSur = consultarNormalAgua(mascara, 808, 845, false);
+  assert.ok(normalSur.y > 0.2, `Normal sur esperada > 0.2, obtenida ${normalSur.y}`);
+
+  // 2. Cobertura completa de sistemas ambientales marinos
+  assert.ok(datos.puntosEspuma.length >= 30, "Debe muestrear espuma costera sobre bordes reales");
+  assert.ok(datos.corrientes.length >= 5, "Debe generar corrientes por canales y bajo puentes");
+  assert.ok(datos.cardumenes.length >= 4, "Debe poblar cardúmenes en cuencas profundas");
+  assert.ok(datos.bloquesHielo.length >= 4, "Debe poblar bloques de hielo en mares glaciales del norte");
+  assert.ok(datos.medusas.length >= 4, "Debe poblar medusas luminosas en aguas abiertas");
+  assert.ok(datos.plancton.length >= 25, "Debe poblar plancton bioluminiscente");
+  assert.ok(datos.zonasLeviatan.length >= 2, "Debe detectar cuencas profundas seguras para el leviatán");
+
+  // 3. Cero colisiones: ningún bloque de hielo, medusa, plancton, estela, espuma o leviatán toca tierra firme
+  for (const p of datos.puntosEspuma) {
+    assert.ok(
+      consultarDistanciaMar(mascara, p.x, p.y, false) > 0,
+      `Espuma en (${p.x}, ${p.y}) invadió tierra firme`,
+    );
+  }
+  for (const h of datos.bloquesHielo) {
+    assert.ok(
+      esPosicionNavegable(mascara, h.x, h.y, h.radio + 2, false),
+      `Bloque de hielo en (${h.x}, ${h.y}) demasiado cerca de costa`,
+    );
+  }
+  for (const m of datos.medusas) {
+    assert.ok(
+      esPosicionNavegable(mascara, m.x, m.y, 12, false),
+      `Medusa en (${m.x}, ${m.y}) invadió tierra`,
+    );
+  }
+  for (const pl of datos.plancton) {
+    assert.ok(
+      esPosicionNavegable(mascara, pl.x, pl.y, 6, false),
+      `Plancton en (${pl.x}, ${pl.y}) invadió tierra`,
+    );
+  }
+  for (const c of datos.corrientes) {
+    for (const m of c.muestras) {
+      assert.ok(
+        esPosicionNavegable(mascara, m.x, m.y, 4, true),
+        `Corriente en (${m.x}, ${m.y}) atravesó una isla`,
+      );
+    }
+  }
+  for (const zl of datos.zonasLeviatan) {
+    assert.ok(
+      esPosicionNavegable(mascara, zl.x, zl.y, 35, false),
+      `Leviatán en (${zl.x}, ${zl.y}) fuera de aguas profundas`,
+    );
+  }
+
+  // 4. Integración en MapaInteractivoCanvas y ausencia de creación de gradientes por cuadro en runtime
+  const canvasCodigo = readFileSync(
+    join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
+    "utf-8",
+  );
+  assert.ok(canvasCodigo.includes("crearRecursosOceano"));
+  assert.ok(canvasCodigo.includes("dibujarOceanoVivo"));
+  assert.ok(canvasCodigo.includes("dibujarAvesMarinasLejanas"));
+  assert.ok(canvasCodigo.includes("vinetaCacheRef"));
 });
 
 

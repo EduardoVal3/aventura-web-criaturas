@@ -2069,4 +2069,43 @@ Antes de intervenir el diorama, se extrajo un recorte ampliado 3× de `ZON-06` d
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **102 de 102 pruebas aprobadas** (`0` fallos, `0` omitidas en `3742.8139ms`), incluyendo la suite `Subfase 10t` (con validación de orden de renderizado `dibujarFondoCieloMapa` previo a `ctx.drawImage` y `dibujarCieloAuroraCumbre`) y la validación R1 (cero emojis) sobre `diorama-cumbre.ts`.
 - **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2164 módulos** transformados en **`5.91s`**).
 
+---
+
+## 39. Sub-Fase 10u: Diorama Vivo Completo de "Cueva Umbría" (`ZON-05`) en el Mapa de Aethelgard
+
+> **Rama de trabajo:** `funcionalidad/fase-10u-cueva-umbria` (integrada hacia `desarrollo` con merge `--no-ff`)
+> **Módulos implicados:** [diorama-cueva-umbria.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cueva-umbria.ts) *(nuevo)*, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts) y [INDICE.md](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/docs/INDICE.md)
+
+### 39.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+Antes de intervenir `ZON-05`, se extrajo un recorte ampliado 3× directamente de `apps/web/public/assets/mapa-mundo-aethelgard.webp` con grilla lógica `1616×897` y análisis por píxel en Chromium headless, identificando cuatro carencias respecto al estándar fijado en `diorama-cumbre.ts`:
+1. **Diorama rudimentario en `mapa-dioramas.ts` (`L983–L1083`):** `ZON-05` únicamente dibujaba halos circulares básicos (`dibujarHaloFuego`), 5 rectángulos cayendo en línea recta, chispas sueltas sin confinamiento y una polilínea rígida de 3 segmentos flotando sobre el cúmulo de cristales derecho (`(1486, 218)..(1558, 218)`), muy por encima de las puntas reales.
+2. **Desaprovechamiento del contraste volcánico vs. abisal:** La lámina maestra posee una gran caverna oscura con caída vertical de magma, una meseta de basalto con 3 ramales de lava, 3 cascadas frontales (la central bifurcada en 3 hebras por estrías de roca) y 3 cúmulos de cristales amatista; ninguno de estos relieves contaba con animación fiel ni diferenciación bloqueada vs. desbloqueada.
+3. **Proximidad crítica de fronteras vecinas:** Al oeste colinda el viaducto violeta hacia `ZON-04` (*Riscos*), al noroeste el puente de piedra hacia `ZON-06` (*La Cumbre*), y inmediatamente al sur (`y >= 510`) inicia la copa arbórea de `ZON-03` (*Bosque*), exigiendo contención estricta para que ni vapor ni lava invadan terreno vecino.
+
+### 39.2 Mejoras Implementadas
+
+#### A. Identidad Retro Dark Fantasy y Submódulo Dedicado (`diorama-cueva-umbria.ts`)
+- **Medición píxel a píxel sobre el arte maestro (`1616×897`):** Se definieron `SILUETA_ENVOLVENTE_CUEVA` (33 vértices en `x: 1246..1602, y: 206..505`), `ARCO_CAVERNA_CUEVA` (12 vértices sobre la boca oscura central), `CASCADA_TECHO_CUEVA` (grieta superior en `(1453, 294)` hasta poza interior `(1453, 353)`), `PRESENCIA_UMBRIA_CUEVA` (ojo izquierdo `(1410, 326)`, ojo derecho `(1418, 326)` y umbral `(1398, 345)`), `CAUCES_LAVA_MESETA` (ramales oeste, central, tributario y este) + 6 `BURBUJAS_LAVA_MESETA`, `CASCADAS_ACANTILADO_CUEVA` (3 caídas, con la central dividida en 3 hebras reales en `1393`, `1408` y `1422` y pozas acotadas en `y <= 488`), `CUMULOS_CRISTALES_CUEVA` (cúmulo oeste, cúmulo colosal con aguja maestra en `(1536, 225)` y cúmulo este) y 5 trayectorias de `ARCOS_CRISTAL_COLOSAL`.
+- **Atmósfera trasera tras la cresta de basalto (`dibujarFondoCuevaUmbria` -> `dibujarFondoCieloMapa`):** Resplandor dual naranja-carmesí tras la cumbre basáltica y aura abisal púrpura detrás del gran cúmulo cristalino, acompañados de columnas lentas de humo oscuro/cálido y pavesas ascendiendo detrás de la silueta WebP.
+- **Gran Caverna Sombría (`dibujarCavernaSombria`):** Chorro continuo multicapa cayendo desde la grieta superior con estelas blanco-amarillentas y salpicaduras en la poza central; neblina densa violeta-azabache confinada al arco cavernoso y umbral izquierdo, más destello esporádico y elegante de ojos abisales cada ~9.6 s en la penumbra izquierda sin tocar el chorro de magma.
+- **Ríos de lava y cascadas con choque térmico (`dibujarRiosLavaMeseta`, `dibujarCascadasYVaporCueva`):** Pulsos térmicos suaves recorriendo los ramales de la meseta, burbujas de magma que se hinchan y estallan liberando micro-chispas, estelas viscosas alargadas en cada hebra de las 3 cascadas y nubes de vapor hirviente (`vaporCaliente`) ascendiendo desde las 3 pozas costeras (validando altura y `MascaraOceano` para jamás tocar `Bosque` ni chocar con el oleaje).
+- **Cristales amatista, descargas arcanas y ceniza (`dibujarCristalesYArcosCueva`, `dibujarCenizaYPavesasCueva`):** Reflejo púrpura sobre la roca negra en la base de los 3 cúmulos, pulso mágico ascendente por cada aguja con reflejos de faceta y cruz pixelada (`dibujarDestelloCruzPixel`), 18 motas de éter violeta y arcos eléctricos orgánicos bifurcados con desplazamiento determinista de punto medio entre las puntas reales del cúmulo colosal; además de 24 cenizas grises y 18 pavesas naranjas en espiral dentro de la envolvente.
+- **Diferenciación bloqueada vs. desbloqueada (`dibujarEstadoBloqueadoCueva`):** Cuando `ZON-05` está bloqueada, oculta la atmósfera trasera y limita la isla a rescoldos apagados en poza/cascadas, un hilo tenue de humo oscuro desde la caverna y pulsos débiles en la base de los cristales.
+
+#### B. Rendimiento 60 FPS, Integración en Canvas y Componentes `8bitcn/ui`
+- **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCueva()` pre-renderiza una sola vez 7 sprites fuera de pantalla (`haloVolcanico`, `haloAbisalPurpura`, `haloMagmaNucleo`, `haloArcanoCristal`, `humoOscuro`, `vaporCaliente`, `brumaUmbria`) y reutiliza búferes estáticos `Float32Array` (`arcoBufferX`, `arcoBufferY`, `ramaBufferX`, `ramaBufferY`) para generar los arcos eléctricos sin asignaciones por cuadro.
+- **Integración modular y accesibilidad:** [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts) invoca `dibujarFondoCuevaUmbria` desde `dibujarFondoCieloMapa` y `dibujarDioramaCuevaUmbria` desde `dibujarCapaVivaMapa`, respetando `reducirMovimiento` (`prefers-reduced-motion`). No se alteraron HUD, tarjetas, botones `8bitcn/ui`, motor oceánico ni las otras 8 islas.
+
+#### C. Audio Web Audio API y Reglas del Servidor
+- Sin cambios en síntesis de audio (`assets.ts`) ni en rutas REST, DTOs o esquema PostgreSQL en `apps/api`.
+
+### 39.3 Verificación de Calidad y Cero Regresiones
+- **Inspección Visual Headless en Chromium (zoom 1× y 2.5×):** Verificación directa de capturas en contexto (`1×`), desbloqueada en múltiples instantes (`t = 2675 ms` con arco eléctrico bifurcado + ojos abisales y `t = 4000 ms` con burbujas/vapor), bloqueada (`t = 1500 ms`) y movimiento reducido, confirmando cero invasión sobre `ZON-03`, `ZON-04`, `ZON-06` ni puentes, con un tiempo promedio medido en CPU (`--disable-gpu`) de **`6.928 ms/cuadro`** sobre lienzo `1616×897` para `ZON-05`.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cueva-umbria.ts src/lib/mapa-dioramas.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos en `14ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `93` archivos en `213ms`, `0` advertencias nuevas).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **103 de 103 pruebas aprobadas** (`0` fallos, `0` omitidas en `1887.6398ms`), incluyendo la suite `Subfase 10u` sobre geometría calibrada, bifurcación central en 3 hebras, caché de sprites, ejecución segura en Node y cumplimiento de `R1`.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2165 módulos** transformados en **`1.98s`**).
+
+
 

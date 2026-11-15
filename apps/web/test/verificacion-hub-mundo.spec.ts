@@ -994,6 +994,94 @@ test("Subfase 10u: Diorama multicapa de Cueva Umbría (ZON-05) calibrado sobre a
   assert.ok(dioramasCodigo.includes("dibujarDioramaCuevaUmbria"));
 });
 
+test("Subfase 10v: Diorama vivo de Paso de los Riscos (ZON-04) calibrado, con arcos de viento, fisuras, cascada ígnea y sin asignaciones por cuadro", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const {
+    SILUETA_ENVOLVENTE_RISCOS,
+    FUMAROLAS_RISCOS,
+    ARCOS_RUINAS_RISCOS,
+    FISURAS_TECTONICAS_RISCOS,
+    CASCADA_IGNEA_RISCOS,
+    DESPRENDIMIENTOS_RISCOS,
+    RACHAS_POLVO_SENDERO_RISCOS,
+    dibujarFondoRiscos,
+    dibujarDioramaRiscos,
+  } = await import("../src/lib/diorama-riscos.ts");
+
+  // 1. Silueta exterior estrictamente confinada a ZON-04 (sin invadir LOC-03, ZON-06, ZON-05 ni el puente sur de LOC-02->ZON-03)
+  assert.ok(SILUETA_ENVOLVENTE_RISCOS.length >= 24);
+  for (const pt of SILUETA_ENVOLVENTE_RISCOS) {
+    assert.ok(pt.x >= 744 && pt.x <= 1172, `Silueta fuera de rango X en ZON-04: ${pt.x}`);
+    assert.ok(pt.y >= 196 && pt.y <= 472, `Silueta fuera de rango Y en ZON-04: ${pt.y}`);
+  }
+
+  // 2. Las 2 fumarolas superiores respetan los márgenes del hielo sur de La Cumbre
+  assert.strictEqual(FUMAROLAS_RISCOS.length, 2, "Deben modelarse las 2 fumarolas superiores de Riscos");
+  for (const fum of FUMAROLAS_RISCOS) {
+    assert.ok(fum.limiteSuperiorY >= 206 && fum.limiteSuperiorY < fum.respiradero.y);
+  }
+
+  // 3. Los 3 arcos góticos en ruinas, fisuras tectónicas, cascada ígnea sureste y micro-vida geológica
+  assert.strictEqual(ARCOS_RUINAS_RISCOS.length, 3, "Deben modelarse los 3 arcos en ruinas");
+  for (const arco of ARCOS_RUINAS_RISCOS) {
+    assert.ok(arco.clave.y < arco.vanoCentro.y);
+    assert.ok(arco.runasPilares.length >= 2);
+  }
+
+  assert.ok(FISURAS_TECTONICAS_RISCOS.length >= 8, "Deben modelarse las fisuras tectónicas medidas");
+  for (const fisura of FISURAS_TECTONICAS_RISCOS) {
+    assert.ok(fisura.trazo.length >= 3, `La fisura ${fisura.id} debe tener trazo polilínea real`);
+  }
+
+  assert.ok(CASCADA_IGNEA_RISCOS.labio.y < CASCADA_IGNEA_RISCOS.poza.y);
+  assert.ok(
+    CASCADA_IGNEA_RISCOS.labio.x >= 1068 && CASCADA_IGNEA_RISCOS.labio.x <= 1076,
+    "La cascada ígnea debe ubicarse en la pared sureste real",
+  );
+  assert.ok(DESPRENDIMIENTOS_RISCOS.length >= 3);
+  assert.ok(RACHAS_POLVO_SENDERO_RISCOS.length >= 4);
+
+  // 4. Ejecución segura en Node (sin document) para estados desbloqueado, bloqueado y movimiento reducido
+  const ctxDummy = {} as CanvasRenderingContext2D;
+  assert.doesNotThrow(() => dibujarFondoRiscos(ctxDummy, true, 2400, false));
+  assert.doesNotThrow(() => dibujarFondoRiscos(ctxDummy, false, 2400, false));
+  assert.doesNotThrow(() => dibujarDioramaRiscos(ctxDummy, true, 2400, false, null));
+  assert.doesNotThrow(() => dibujarDioramaRiscos(ctxDummy, false, 2400, false, null));
+  assert.doesNotThrow(() => dibujarDioramaRiscos(ctxDummy, true, 2400, true, null));
+
+  // 5. Integración, caché de sprites, búferes estáticos y cumplimiento de R1
+  const dioramaRiscosCodigo = readFileSync(join(__dirname, "../src/lib/diorama-riscos.ts"), "utf-8");
+  const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
+
+  assert.ok(dioramaRiscosCodigo.includes("spritesRiscosCache"), "Debe cachear sprites fuera de pantalla");
+  assert.ok(
+    dioramaRiscosCodigo.includes("fisuraBufferX") &&
+      dioramaRiscosCodigo.includes("vientoBufferX") &&
+      dioramaRiscosCodigo.includes("cascadaBufferX"),
+    "Debe reutilizar búferes estáticos sin asignaciones por cuadro",
+  );
+  assert.ok(
+    dioramaRiscosCodigo.includes("dibujarEstadoBloqueadoRiscos"),
+    "Debe diferenciar rescoldos dormidos cuando ZON-04 está bloqueada",
+  );
+  assert.strictEqual(
+    dioramaRiscosCodigo.includes("setLineDash"),
+    false,
+    "No debe introducir trazos punteados en el diorama de Paso de los Riscos",
+  );
+  assert.strictEqual(
+    /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(dioramaRiscosCodigo),
+    false,
+    "Regla R1: diorama-riscos.ts no debe contener emojis unicode",
+  );
+  assert.ok(dioramasCodigo.includes("dibujarFondoRiscos"));
+  assert.ok(dioramasCodigo.includes("dibujarDioramaRiscos"));
+});
+
 
 
 

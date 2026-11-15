@@ -19,6 +19,10 @@ import {
   dibujarDioramaCuevaUmbria,
   dibujarFondoCuevaUmbria,
 } from "./diorama-cueva-umbria.ts";
+import {
+  dibujarDioramaRiscos,
+  dibujarFondoRiscos,
+} from "./diorama-riscos.ts";
 
 const PASOS_CONTORNO = 72;
 
@@ -636,8 +640,9 @@ function dibujarPuentesYRutasVivas(
 }
 
 /**
- * Dibuja fenómenos celestes y atmosféricos de profundidad (aurora boreal de La Cumbre y resplandor/humo
- * tras la cima de Cueva Umbría) detrás de la lámina WebP para que las cumbres y cristales se recorten delante.
+ * Dibuja fenómenos celestes y atmosféricos de profundidad (aurora boreal de La Cumbre, penachos sulfurosos
+ * de Paso de los Riscos y resplandor/humo tras Cueva Umbría) detrás de la lámina WebP para que las cumbres
+ * y ruinas se recorten delante.
  */
 export function dibujarFondoCieloMapa(
   ctx: CanvasRenderingContext2D,
@@ -645,6 +650,11 @@ export function dibujarFondoCieloMapa(
   tiempo: number,
   reducirMovimiento: boolean,
 ): void {
+  const riscos = nodos.find((n) => n.id === "ZON-04");
+  if (riscos) {
+    dibujarFondoRiscos(ctx, Boolean(riscos.desbloqueada), tiempo, reducirMovimiento);
+  }
+
   const cueva = nodos.find((n) => n.id === "ZON-05");
   if (cueva) {
     dibujarFondoCuevaUmbria(ctx, Boolean(cueva.desbloqueada), tiempo, reducirMovimiento);
@@ -917,37 +927,16 @@ export function dibujarCapaVivaMapa(
     }
   }
 
-  // ZON-04: Riscos — cráteres humeantes (904,256 / 1069,266), grietas, cascada ígnea (1088, 386..428) y poza (1095, 442)
-  if (desbloqueada("ZON-04")) {
-    const brasa = 0.55 + Math.sin(t * 0.0045) * 0.38;
-    const grietas: [number, number][] = [
-      [904, 256],
-      [1069, 266],
-      [1056, 340],
-      [922, 338],
-      [1088, 405],
-      [1095, 442],
-      [952, 420],
-    ];
-    for (const [gx, gy] of grietas) {
-      dibujarHaloFuego(
-        ctx,
-        gx,
-        gy,
-        24,
-        0.32 * brasa,
-        "rgba(251, 146, 60, 0.9)",
-        "rgba(220, 38, 38, 0.28)",
-      );
-    }
-    const flujoRisco = (t * 0.032) % 36;
-    ctx.fillStyle = "#fef08a";
-    ctx.fillRect(1088, Math.round(386 + flujoRisco), 2.5, 5);
-    ctx.fillRect(1091, Math.round(388 + ((flujoRisco + 18) % 36)), 2.5, 5);
-
-    dibujarHumoChimenea(ctx, 904, 256, t, true);
-    dibujarHumoChimenea(ctx, 1069, 266, t + 1100, true);
-    dibujarChispasAscendentes(ctx, 985, 348, 6, 72, 52, t * 0.8, "#fb923c");
+  // ZON-04: Riscos — desfiladero escarpado, arcos con viento, fisuras vivas, fumarolas, cascada ígnea y micro-vida geológica
+  if (nodosPorId.has("ZON-04")) {
+    dibujarDioramaRiscos(
+      ctx,
+      desbloqueada("ZON-04"),
+      tiempo,
+      reducirMovimiento,
+      mascaraOceano,
+      auroraDetrasDibujada,
+    );
   }
 
   // LOC-03: Bastión Norte — las 3 torres exactas (363,102 / 477,150 / 584,98), portón ardiente (524, 198) y nieve ligera

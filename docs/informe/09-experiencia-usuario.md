@@ -2282,17 +2282,20 @@ Antes de intervenir el diorama, se extrajo un recorte ampliado 3× de `ZON-06` d
 ## 39. Sub-Fase 10u: Diorama Vivo Completo de "Cueva Umbría" (`ZON-05`) en el Mapa de Aethelgard
 
 > **Rama de trabajo:** `funcionalidad/fase-10u-cueva-umbria` (integrada hacia `desarrollo` con merge `--no-ff`)
-> **Módulos implicados:** [diorama-cueva-umbria.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cueva-umbria.ts) *(nuevo)*, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts) y [INDICE.md](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/docs/INDICE.md)
+> **Módulos implicados:** [diorama-cueva-umbria.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cueva-umbria.ts) _(nuevo)_, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts) y [INDICE.md](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/docs/INDICE.md)
 
 ### 39.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+
 Antes de intervenir `ZON-05`, se extrajo un recorte ampliado 3× directamente de `apps/web/public/assets/mapa-mundo-aethelgard.webp` con grilla lógica `1616×897` y análisis por píxel en Chromium headless, identificando cuatro carencias respecto al estándar fijado en `diorama-cumbre.ts`:
+
 1. **Diorama rudimentario en `mapa-dioramas.ts` (`L983–L1083`):** `ZON-05` únicamente dibujaba halos circulares básicos (`dibujarHaloFuego`), 5 rectángulos cayendo en línea recta, chispas sueltas sin confinamiento y una polilínea rígida de 3 segmentos flotando sobre el cúmulo de cristales derecho (`(1486, 218)..(1558, 218)`), muy por encima de las puntas reales.
 2. **Desaprovechamiento del contraste volcánico vs. abisal:** La lámina maestra posee una gran caverna oscura con caída vertical de magma, una meseta de basalto con 3 ramales de lava, 3 cascadas frontales (la central bifurcada en 3 hebras por estrías de roca) y 3 cúmulos de cristales amatista; ninguno de estos relieves contaba con animación fiel ni diferenciación bloqueada vs. desbloqueada.
-3. **Proximidad crítica de fronteras vecinas:** Al oeste colinda el viaducto violeta hacia `ZON-04` (*Riscos*), al noroeste el puente de piedra hacia `ZON-06` (*La Cumbre*), y inmediatamente al sur (`y >= 510`) inicia la copa arbórea de `ZON-03` (*Bosque*), exigiendo contención estricta para que ni vapor ni lava invadan terreno vecino.
+3. **Proximidad crítica de fronteras vecinas:** Al oeste colinda el viaducto violeta hacia `ZON-04` (_Riscos_), al noroeste el puente de piedra hacia `ZON-06` (_La Cumbre_), y inmediatamente al sur (`y >= 510`) inicia la copa arbórea de `ZON-03` (_Bosque_), exigiendo contención estricta para que ni vapor ni lava invadan terreno vecino.
 
 ### 39.2 Mejoras Implementadas
 
 #### A. Identidad Retro Dark Fantasy y Submódulo Dedicado (`diorama-cueva-umbria.ts`)
+
 - **Medición píxel a píxel sobre el arte maestro (`1616×897`):** Se definieron `SILUETA_ENVOLVENTE_CUEVA` (33 vértices en `x: 1246..1602, y: 206..505`), `ARCO_CAVERNA_CUEVA` (12 vértices sobre la boca oscura central), `CASCADA_TECHO_CUEVA` (grieta superior en `(1453, 294)` hasta poza interior `(1453, 353)`), `PRESENCIA_UMBRIA_CUEVA` (ojo izquierdo `(1410, 326)`, ojo derecho `(1418, 326)` y umbral `(1398, 345)`), `CAUCES_LAVA_MESETA` (ramales oeste, central bajo puente basáltico, bifurcación izquierda y este) + 6 `BURBUJAS_LAVA_MESETA`, `CASCADAS_ACANTILADO_CUEVA` (3 caídas, con la central dividida en 3 hebras reales en `1393`, `1408` y `1422` y pozas acotadas en `y <= 488`), `CUMULOS_CRISTALES_CUEVA` (cúmulo oeste, cúmulo colosal con aguja maestra en `(1536, 225)` y cúmulo este) y 12 trayectorias en `ARCOS_CRISTAL_COLOSAL` (7 en el cúmulo colosal y 5 entre los cúmulos oeste y este).
 - **Atmósfera trasera tras la cresta de basalto (`dibujarFondoCuevaUmbria` -> `dibujarFondoCieloMapa`):** Resplandor dual naranja-carmesí tras la cumbre basáltica y aura abisal púrpura detrás del gran cúmulo cristalino, acompañados de columnas lentas de humo oscuro/cálido y pavesas ascendiendo detrás de la silueta WebP.
 - **Gran Caverna Sombría (`dibujarCavernaSombria`):** Dos chorros continuos multicapa (`lineCap = "round"` sobre `flujoBufferX`/`flujoBufferY` de 14 segmentos) cayendo desde la grieta superior con manto naranja exterior, crestas sinusoidales viajeras blanco-doradas y salpicaduras en la poza central; neblina densa violeta-azabache confinada al arco cavernoso y umbral izquierdo, más destello esporádico y elegante de ojos abisales cada ~9.6 s en la penumbra izquierda sin tocar el chorro de magma.
@@ -2301,13 +2304,16 @@ Antes de intervenir `ZON-05`, se extrajo un recorte ampliado 3× directamente de
 - **Diferenciación bloqueada vs. desbloqueada (`dibujarEstadoBloqueadoCueva`):** Cuando `ZON-05` está bloqueada, oculta la atmósfera trasera y limita la isla a rescoldos apagados en poza/cascadas, un hilo tenue de humo oscuro desde la caverna y pulsos débiles en la base de los cristales.
 
 #### B. Rendimiento 60 FPS, Integración en Canvas y Componentes `8bitcn/ui`
+
 - **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCueva()` pre-renderiza una sola vez 7 sprites fuera de pantalla (`haloVolcanico`, `haloAbisalPurpura`, `haloMagmaNucleo`, `haloArcanoCristal`, `humoOscuro`, `vaporCaliente`, `brumaUmbria`) y reutiliza búferes estáticos `Float32Array` (`arcoBufferX`, `arcoBufferY`, `ramaBufferX`, `ramaBufferY`, `flujoBufferX`, `flujoBufferY`) para generar los arcos eléctricos y flujos de magma continuos sin asignaciones por cuadro.
 - **Integración modular y accesibilidad:** [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts) invoca `dibujarFondoCuevaUmbria` desde `dibujarFondoCieloMapa` y `dibujarDioramaCuevaUmbria` desde `dibujarCapaVivaMapa`, respetando `reducirMovimiento` (`prefers-reduced-motion`). No se alteraron HUD, tarjetas, botones `8bitcn/ui`, motor oceánico ni las otras 8 islas.
 
 #### C. Audio Web Audio API y Reglas del Servidor
+
 - Sin cambios en síntesis de audio (`assets.ts`) ni en rutas REST, DTOs o esquema PostgreSQL en `apps/api`.
 
 ### 39.3 Verificación de Calidad y Cero Regresiones
+
 - **Inspección Visual Headless en Chromium (zoom 1× y 2.5×):** Verificación directa de capturas en contexto (`1×`), desbloqueada en múltiples instantes (`t = 1200 ms`, `t = 2675 ms` con arco eléctrico bifurcado en los 3 cúmulos + ojos abisales y `t = 4000 ms` con ráfagas cristalinas, burbujas y vapor), bloqueada (`t = 1500 ms`) y movimiento reducido, confirmando flujo continuo de lava sin cortes ni invasión sobre rocas basálticas, `ZON-03`, `ZON-04`, `ZON-06` ni puentes, con un tiempo promedio medido en CPU (`--disable-gpu`) de **`2.617 ms/cuadro`** sobre lienzo `1616×897` para `ZON-05`.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
 - **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cueva-umbria.ts src/lib/mapa-dioramas.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos en `22ms`).
@@ -2315,5 +2321,46 @@ Antes de intervenir `ZON-05`, se extrajo un recorte ampliado 3× directamente de
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **103 de 103 pruebas aprobadas** (`0` fallos, `0` omitidas en `1746.4818ms`), incluyendo la suite `Subfase 10u` sobre geometría calibrada, bifurcación central en 3 hebras, 12 arcos en cúmulos, caché de sprites, búfer continuo `flujoBufferX`, ejecución segura en Node y cumplimiento de `R1`.
 - **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2165 módulos** transformados en **`2.05s`**).
 
+---
 
+## 40. Sub-Fase 10v: Diorama Vivo Completo de "Paso de los Riscos" (`ZON-04`) en el Mapa de Aethelgard
 
+> **Rama de trabajo:** `funcionalidad/fase-10v-riscos` (integrada hacia `desarrollo` con merge `--no-ff`)
+> **Módulos implicados:** [diorama-riscos.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-riscos.ts) _(nuevo)_, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts) y [INDICE.md](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/docs/INDICE.md)
+
+### 40.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+
+Antes de diseñar las coordenadas de `ZON-04`, se extrajeron recortes ampliados (`3×` contextual y `3.5×` de detalle) desde [mapa-mundo-aethelgard.webp](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/public/assets/mapa-mundo-aethelgard.webp) con grilla lógica `1616×897` en Chromium headless, detectando cuatro deficiencias clave en la implementación anterior (`L920–L951` de `mapa-dioramas.ts`):
+
+1. **Efectos genéricos e imprecisos:** `ZON-04` únicamente dibujaba 7 halos radiales básicos (`dibujarHaloFuego`), 2 rectángulos verticales desplazados `~18 px` al este de la cascada real (`1088` frente al cauce verdadero en `1070..1072`), `dibujarHumoChimenea` lineal y 6 chispas genéricas sin seguimiento de grietas.
+2. **Desaprovechamiento de la identidad propia del desfiladero:** A diferencia de `Cueva Umbría` (volcán abierto y cristales arcanos), *Paso de los Riscos* destaca por tres arcos góticos en ruinas azotados por vientos de altura, dos fumarolas sulfurosas ocres tras las agujas oscuras, fisuras tectónicas de magma contenido y paredes escarpadas con gravilla suelta.
+3. **Contención crítica en el centro del archipiélago:** `ZON-04` colinda al norte con el hielo sur de `ZON-06` (*La Cumbre*), al este con el viaducto violeta de `ZON-05` (*Cueva Umbría*), al noroeste con `LOC-03` (*Bastión Norte*) y al sur/suroeste con el puente de `LOC-02` (*Puesto del Río*) y el puente hacia `ZON-03` (*Bosque*), exigiendo límites estrictos para evitar solapamientos sobre puentes e islas vecinas.
+
+### 40.2 Mejoras Implementadas
+
+#### A. Identidad Retro Dark Fantasy y Submódulo Dedicado (`diorama-riscos.ts`)
+
+- **Medición píxel a píxel sobre el arte maestro (`1616×897`):** Se calibraron `SILUETA_ENVOLVENTE_RISCOS` (41 vértices en `x: 746..1168, y: 198..470` evitando todos los puentes y márgenes vecinos), `FUMAROLAS_RISCOS` (foco oeste `(905, 254)` acotado a `y >= 208` y foco este `(1072, 274)` acotado a `y >= 230`), `ARCOS_RUINAS_RISCOS` (arco oeste `(900, 312)`, arco central `(943, 298)` y arco este roto `(1053, 320)` con coordenadas de clave y runas en pilares), `FISURAS_TECTONICAS_RISCOS` (11 trazos polilínea exactos sobre crestas, explanada oeste/este y acantilados oeste/centro/este), `CASCADA_IGNEA_RISCOS` (labio en `(1070, 386)`, cauce vertical `1070..1072` hasta la poza rocosa `(1072, 443)`), `DESPRENDIMIENTOS_RISCOS` (4 canaletas frontales alejadas de la calzada de `LOC-02` y del viaducto hacia `ZON-05`) y `RACHAS_POLVO_SENDERO_RISCOS` (6 puntos guía sobre la calzada de tierra).
+- **Fondo atmosférico tras las crestas (`dibujarFondoRiscos` -> `dibujarFondoCieloMapa`):** Resplandor térmico contenido en terracota/ámbar profundo (`haloRescoldo`) detrás de las dos fumarolas y pico central, combinado con penachos volumétricos de humo sulfuroso ocre-pardo (`humoSulfuroso`) y neblina de altura gris-pizarra (`neblinaAltura`) disipándose al noreste sin rozar `ZON-06` ni `ZON-05`.
+- **Arcos en ruinas vivos (`dibujarArcosVivosRiscos`):** Filetes aerodinámicos de viento cortante y polvo mineral serpenteando a través de los 3 vanos (`vientoBufferX`/`vientoBufferY`), motas minerales iluminadas por la calidez inferior y parpadeo tenue e intermitente de brasas/runas desgastadas en los pilares rotos (`haloRunaAntigua`).
+- **Fisuras tectónicas con respiración subterránea (`dibujarFisurasTectonicasRiscos`):** Reemplaza las manchas circulares por trazos vértice a vértice sobre las grietas reales con onda térmica lenta viajando de izquierda a derecha (`Math.sin((mx - 770) * 0.022 - t * 0.0024)`) y chispas puntuales asomando únicamente en las junturas más profundas.
+- **Fumarolas frontales, cascada ígnea y micro-vida geológica (`dibujarHumoYCentellasRiscos`, `dibujarCascadaIgneaRiscos`, `dibujarMicroVidaGeologicaRiscos`):** Volutas frontales dobladas hacia el noreste por la corriente lateral del paso y ceniza mineral dispersa; hilo viscoso continuo de magma (`cascadaBufferX`/`cascadaBufferY`) con bordes carmesí, goterones ocasionales y pequeñas volutas cálidas al caer en la poza basal respetando `MascaraOceano`; además de diminutos desprendimientos esporádicos de gravilla/polvo seco que se disipan antes del océano y rachas tenues de polvo rasante cruzando el sendero entre puentes.
+- **Estado bloqueada vs. desbloqueada (`dibujarEstadoBloqueadoRiscos`):** Cuando `ZON-04` está bloqueada, oculta la atmósfera trasera y limita el diorama a fisuras dormidas en rescoldo oscuro (`#7c2d12`), rescoldo contenido en la poza basal y un hilo tenue de humo en las dos fumarolas, preservando intacto el sombreado territorial.
+
+#### B. Rendimiento 60 FPS, Integración en Canvas y Componentes `8bitcn/ui`
+
+- **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesRiscos()` pre-renderiza y cachea una sola vez 6 sprites fuera de pantalla (`haloRescoldo`, `haloMagmaNucleo`, `humoSulfuroso`, `neblinaAltura`, `haloRunaAntigua`, `polvoRoca`) y reutiliza búferes estáticos `Float32Array` (`fisuraBufferX`, `fisuraBufferY`, `vientoBufferX`, `vientoBufferY`, `cascadaBufferX`, `cascadaBufferY`) sin crear gradientes ni arreglos por cuadro.
+- **Integración y accesibilidad:** [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts) invoca `dibujarFondoRiscos` desde `dibujarFondoCieloMapa` y `dibujarDioramaRiscos` desde `dibujarCapaVivaMapa`, respetando `reducirMovimiento` (`prefers-reduced-motion`). No se alteraron el HUD externo, tarjetas, botones `8bitcn/ui`, puentes, motor oceánico ni las otras 8 islas.
+
+#### C. Audio Web Audio API y Reglas del Servidor
+
+- Sin cambios en síntesis de audio (`assets.ts`) ni en rutas REST, DTOs o esquema PostgreSQL en `apps/api`.
+
+### 40.3 Verificación de Calidad y Cero Regresiones
+
+- **Inspección Visual Headless en Chromium (zoom `1×` y `3×`):** Verificación directa sobre capturas reales en `1×` (`vista-1x-desbloqueada`), `3×` desbloqueada en múltiples instantes (`t = 900 ms`, `t = 2400 ms`, `t = 4100 ms`), bloqueada (`t = 1500 ms`) y movimiento reducido, confirmando alineación exacta de la cascada ígnea (`1070..1072, 386..443`), fisuras sobre las grietas reales, vientos dentro de los 3 arcos y cero invadimiento sobre `Bastión Norte`, `La Cumbre`, `Cueva Umbría`, `Puesto del Río`, `Bosque` ni puentes, con un costo promedio medido en CPU (`--disable-gpu`) de **`2.938 ms/cuadro`** sobre lienzo `1616×897`.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-riscos.ts src/lib/mapa-dioramas.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos en `16ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `94` archivos en `174ms`, `0` advertencias nuevas).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **104 de 104 pruebas aprobadas** (`0` fallos, `0` omitidas en `1848.4026ms`), incluyendo la nueva suite `Subfase 10v` sobre límites de silueta en `ZON-04`, 2 fumarolas, 3 arcos, fisuras polilínea, cascada sureste, ejecución segura en Node, caché de sprites, búferes estáticos y cumplimiento estricto de `R1`.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2166 módulos** transformados en **`1.79s`**).

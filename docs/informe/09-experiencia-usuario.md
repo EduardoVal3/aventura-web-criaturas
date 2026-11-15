@@ -1,13 +1,15 @@
 # 09. Experiencia de Usuario y Enriquecimiento Visual Retro (Fase 10)
 
-Este documento consolida las auditorías heurísticas con la skill `impeccable`, la evolución interactiva de cada pantalla y el cumplimiento de las directrices estéticas establecidas en `docs/DESIGN.md` para *Aethelgard: Sendas y Criaturas*.
+Este documento consolida las auditorías heurísticas con la skill `impeccable`, la evolución interactiva de cada pantalla y el cumplimiento de las directrices estéticas establecidas en `docs/DESIGN.md` para _Aethelgard: Sendas y Criaturas_.
 
 ---
 
 ## 1. Sub-Fase 10a: Autenticación de Exploradores (`PantallaRegistro.tsx` y `PantallaIngreso.tsx`)
 
 ### 1.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previo a la intervención y consolidación retro-brutalist, las vistas de autenticación cumplían con el contrato funcional pero presentaban vacíos de experiencia retro, ergonomía y contraste:
+
 1. **Jerarquía y Escala Tipográfica:** Los títulos y etiquetas utilizaban tamaños genéricos y tipografía sans-serif en descripciones y controles, provocando incoherencia con la identidad de cartucho retro de Aethelgard. Se requería la adopción rigurosa de la fuente pixelada `Press Start 2P` (`.retro`) en absolutamente todos los elementos textuales (insignias, títulos, descripciones, labels, inputs, placeholders, mensajes de error, botones, enlaces secundarios y notas de seguridad).
 2. **Deficiencias de Estética Retro-Brutalist 8-Bit:** La tarjeta de ingreso y registro empleaba sombras difusas y bordes genéricos (`shadow-2xl border-4`), careciendo del impacto visual de los marcos negros sólidos (`border-4 border-black`), esquinas ortogonales vivas (`rounded-none`) y sombras ortogonales proyectadas (`shadow-[6px_6px_0_0_#000]`) características del estándar `8bitcn/ui` y NES.css / RPG UI.
 3. **Violación de la Regla R1 (Emojis Unicode):** La cabecera de `PantallaRegistro.tsx` incorporaba el emoji unicode `⚔️` en su insignia (`⚔️ GREMIO DE AVENTUREROS`), incumpliendo la directriz de interfaz retro basada exclusivamente en SVG vectoriales.
@@ -22,6 +24,7 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
 ### 1.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-Bit (8bitcn/ui) y Jerarquía Visual (`docs/DESIGN.md`)
+
 - **Marcos Brutalistas de Alto Impacto y Sombras Ortogonales Proyectadas:**
   - **Tarjeta Principal:** Rediseño integral de las tarjetas de `PantallaIngreso.tsx` y `PantallaRegistro.tsx` con marco negro sólido de 4px (`border-4 border-black`), esquinas vivas ortogonales (`rounded-none`) y proyección de sombra dura de 6px (`shadow-[6px_6px_0_0_#000]`), proporcionando el peso estético de un cartucho de consola RPG clásico de 8-bit.
   - **Insignia Heráldica Temática (`Badge`):** Cartuchos pixel-art con borde negro (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-primary/15 text-primary px-3 py-1 rounded-none`) portando la leyenda `RETORNO AL REINO` (con icono `Sparkles`) en ingreso y `GREMIO DE AVENTUREROS` (con icono `Swords`) en registro, enmarcadas con micro-separador ornamental de degradado y borde pixel de alto contraste.
@@ -32,6 +35,7 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
   - **Insignias Inferiores de Seguridad Gremial:** Pies evocativos con `ShieldCheck` («Alianza de Exploradores de Aethelgard · Conexión Cifrada» en registro y «Conexión asegurada con el Reino de Aethelgard» en ingreso) con micro-tipografía retro centrada (`text-[8px] sm:text-[9px]`).
 
 #### B. Tipografía Retro Integral (`Press Start 2P` / `.retro` para TODO)
+
 - Aplicación estricta y universal de la fuente pixelada `Press Start 2P` (`.retro`) en absolutamente todos los elementos textuales de la interfaz de registro e ingreso:
   - **Insignia superior:** `text-[9px] sm:text-[10px] tracking-wider` («GREMIO DE AVENTUREROS» y «RETORNO AL REINO»).
   - **Título principal:** `text-sm sm:text-base md:text-lg text-primary tracking-wide leading-relaxed` («Inscripción de Aventurero» y «Portal de Ingreso»).
@@ -45,6 +49,7 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
   - **Nota inferior de seguridad:** `text-[8px] sm:text-[9px]`.
 
 #### C. Confinamiento Móvil y Ergonomía en Controles Táctiles (360px–420px)
+
 - **Confinamiento sin Desbordamiento Horizontal:** Contenedores confinados mediante `w-full max-w-sm sm:max-w-md mx-auto px-2 sm:px-4 overflow-x-hidden` y tarjetas con ancho elástico completo (`w-full`), erradicando cualquier posibilidad de scroll horizontal o deformación de márgenes en dispositivos móviles estrechos.
 - **Micro-Inspección de Contraseña Fluida sin Compresión:** El panel `#requisitos-clave` implementa cuadrícula adaptativa (`grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2`), evitando quiebres toscos o elipsis en pantallas de 360px y permitiendo lectura clara de los tres criterios de robustez.
 - **Ergonomía en Campo de Llave Secreta:** Botón de alternar visibilidad de contraseña (`Eye` / `EyeOff`) con área táctil accesible de 32px (`size-8`), centrado vertical perfecto (`top-1/2 -translate-y-1/2`) y espaciado interior derecho en el input (`pr-10 sm:pr-12`), garantizando que los caracteres ingresados jamás colisionen con el icono en resoluciones móviles.
@@ -52,6 +57,7 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
 - **Disposición Adaptativa en Enlaces Secundarios:** Reorganización del pie mediante `flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left` sobre un divisor físico claro (`border-t border-black/40 pt-3 sm:pt-4`), eliminando la compresión lateral o corte de textos en pantallas de 360px.
 
 #### D. Hardening, Audio Web Audio y Cumplimiento de Regla R1
+
 - **Cumplimiento Estricto de Regla R1:** Cero emojis unicode en toda la pantalla; empleo exclusivo de iconos SVG vectoriales de Lucide (`Swords`, `User`, `Mail`, `Lock`, `Eye`, `EyeOff`, `ShieldCheck`, `AlertCircle`, `Sparkles`, `LogIn`).
 - **Hardening Antirrebote y Prevención de Doble Envío:** Guarda inmediata ante mutaciones en vuelo (`if (enviando) return;`), inputs deshabilitados (`disabled={enviando}`), formulario y botón marcados con `aria-busy={enviando}`, despliegue de `<Spinner />` retro, y protección de enlaces secundarios mediante `pointer-events-none opacity-50` durante la llamada asíncrona.
 - **Micro-Inspección Reactiva con React Hook Form:** Supervisión dinámica de la contraseña mediante `useWatch` conectado al control del formulario, evaluando `cumpleLargoMinimo`, `cumpleNumero` y `cumpleSimbolo` en tiempo real.
@@ -60,6 +66,7 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
 ---
 
 ### 1.3 Verificación de Calidad y Cero Regresiones
+
 - **Detector Impeccable:** Verificado con 0 defectos, excelente contraste retro y ergonomía responsive probada en viewports de 360px a 1440px.
 - **Linter Web (`oxlint`):** 0 errores en 80 archivos del código web.
 - **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-auth.spec.ts`):** 86 de 86 pruebas aprobadas al 100%, incorporando las dos pruebas exhaustivas `Auditoría Impeccable: PantallaIngreso consolida estética retro-brutalist 8-bit, tipografía integral, confinamiento móvil y espaciado ergonómico` y `Auditoría Impeccable: PantallaRegistro consolida estética retro-brutalist 8-bit, tipografía integral, micro-inspección y espaciado ergonómico`.
@@ -70,7 +77,9 @@ Previo a la intervención y consolidación retro-brutalist, las vistas de autent
 ## 2. Sub-Fase 10b: Creación de Explorador y Selección de Criatura (`PantallaCrearPersonaje.tsx`)
 
 ### 2.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La auditoría heurística y técnica con la skill `impeccable` y los estándares de `docs/DESIGN.md` identificó las siguientes oportunidades de mejora visual, retro-brutalist y ergonómica en la pantalla de creación de personaje:
+
 1. **Estética Retro-Brutalist 8-Bit y Sombras Difusas:** La tarjeta exterior del formulario utilizaba bordes genéricos y sombras difusas (`shadow-2xl border-4`), desentonando con el estándar `8bitcn/ui` y NES.css / RPG UI. Se requería consolidar la superficie con marcos negros sólidos de 4px (`border-4 border-black`), esquinas vivas ortogonales (`rounded-none`) y proyección de sombra dura ortogonal de 6px (`shadow-[6px_6px_0_0_#000]`).
 2. **Tipografía Retro Integral (`Press Start 2P` / `.retro` para TODO):** Si bien el formulario incluía clases retro dispersas, diversos elementos como etiquetas secundarias, indicadores de longitud, arquetipos o valores numéricos presentaban tamaños descalibrados o dependían de fuentes sans estándar. Se requería la aplicación estricta y universal de la fuente pixelada `Press Start 2P` (`.retro`) en absolutamente todos los elementos textuales de la interfaz (insignia heráldica, escape hatch, título, narrativa de ambientación, labels, input, placeholder, títulos de criatura, badges, descripciones, atributos base, resumen de compañero y botón principal).
 3. **Desplazamiento Horizontal y Truncamiento en Móvil (360px–420px):** El contenedor exterior carecía de confinamiento explícito anti-desbordamiento (`overflow-x-hidden`), y los títulos de criaturas compañeras implementaban la clase `truncate` rígida, lo cual causaba la amputación indeseada de nombres compuestos («Cangrejo Abismal», «Lobo Estepario») en pantallas táctiles estrechas de 360px a 420px. Se requería migrar a `break-words` fluido y garantizar que las tarjetas ocuparan el ancho completo disponible en móvil con márgenes limpios.
@@ -82,6 +91,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ### 2.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-Bit (8bitcn/ui) y Jerarquía Visual (`docs/DESIGN.md`)
+
 - **Marco de Consola Clásica y Sombras Ortogonales Proyectadas:**
   - **Tarjeta Principal:** Rediseño integral de la tarjeta exterior con marco negro sólido de 4px (`border-4 border-black`), esquinas vivas ortogonales (`rounded-none`) y proyección de sombra dura de 6px (`shadow-[6px_6px_0_0_#000]`), transmitiendo la solidez física de un cartucho de consola RPG clásico de 8-bit.
   - **Insignia Heráldica Temática (`Badge`):** Cartucho pixel-art con marco negro (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-primary/15 text-primary px-2.5 py-1 rounded-none inline-flex items-center gap-1.5`) portando la leyenda `COMPAÑERO INICIAL` con icono `Sparkles`.
@@ -91,6 +101,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
   - **Botón Arcade de Acción Principal (`Button`):** Botón táctil estilo arcade con marco negro grueso (`border-4 border-black shadow-[4px_4px_0_0_#000] bg-primary text-primary-foreground active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] rounded-none`), proporcionando sensación física de pulsación en `COMENZAR EN VILLA SERENA` / `INICIANDO AVENTURA...`.
 
 #### B. Tipografía Retro Integral (`Press Start 2P` / `.retro` para TODO)
+
 - Adopción exhaustiva de la fuente pixelada `Press Start 2P` (`.retro`) en absolutamente todos los elementos textuales de la pantalla:
   - **Insignia heráldica superior:** `text-[9px] sm:text-[10px] tracking-wider` («COMPAÑERO INICIAL»).
   - **Botón de escape superior:** `text-[8px] sm:text-[9px] tracking-wider` («SALIR AL INGRESO»).
@@ -103,10 +114,11 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
   - **Pie de confirmación:** Resumen de compañero seleccionado en `text-[8px] sm:text-[9px]`, enlace de cerrar sesión en `text-[8px] sm:text-[9px]` y botón principal en `text-[10px] sm:text-xs tracking-wider`.
 
 #### C. Cuadrícula de Compañeros Iniciales y Mini-Barras de Atributos Base
+
 - **Compañeros Canónicos de Zona 1 (Villa Serena):** Despliegue de las 3 criaturas autorizadas por el SRD de Aethelgard:
-  - `Lobo Estepario` (Bestia · *Cazador Ágil y Coordinado*).
-  - `Víbora Rocosa` (Bestia · *Sigilo y Ponzoña*).
-  - `Cangrejo Abismal` (Monstruosidad · *Defensa y Coraza Marina*).
+  - `Lobo Estepario` (Bestia · _Cazador Ágil y Coordinado_).
+  - `Víbora Rocosa` (Bestia · _Sigilo y Ponzoña_).
+  - `Cangrejo Abismal` (Monstruosidad · _Defensa y Coraza Marina_).
 - **Estética de Cartucho Retro (8bitcn/ui):**
   - Tarjeta inactiva: `border-2 sm:border-3 border-black shadow-[4px_4px_0_0_#000] bg-card hover:border-primary/50 rounded-none`.
   - Tarjeta activa (seleccionada): `border-primary bg-primary/10 shadow-[6px_6px_0_0_#000] scale-[1.02] rounded-none` coronada por la insignia `ELEGIDO`.
@@ -117,12 +129,14 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
   - Barras temáticas puras con transición suave: HP con `Heart` (esmeralda `bg-emerald-500`), ATQ con `Swords` (ámbar `bg-amber-500`), DEF con `Shield` (azul `bg-blue-500`) y VEL con `Zap` (cian `bg-cyan-400`).
 
 #### D. Confinamiento Móvil, Ergonomía Táctil y Prevención de Desbordamiento (360px–420px)
+
 - **Confinamiento sin Desbordamiento Horizontal:** Contenedor confinado mediante `w-full max-w-4xl mx-auto px-2 sm:px-4 overflow-x-hidden` y tarjeta central con ancho elástico completo (`w-full rounded-none`), erradicando cualquier posibilidad de scroll horizontal en dispositivos móviles.
 - **Separación Táctil Holgada en Formulario:** Separación clara (`space-y-6 sm:space-y-8`) entre el bloque de nombre del explorador, la cuadrícula de criaturas y el pie de confirmación.
 - **Cuadrícula Responsiva de 1 a 3 Columnas:** Disposición fluida `grid grid-cols-1 md:grid-cols-3 gap-4`, ocupando el ancho completo disponible en móvil sin compresión lateral.
 - **Ergonomía en Botonera y Pie Adaptativo:** Botón de acción principal con altura ergonómica de 48px–56px (`h-12 sm:h-14`) y ancho completo en móvil (`w-full sm:w-auto`). Pie de página organizado con disposición adaptativa (`flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 w-full text-center sm:text-left`) sobre divisor físico claro (`border-t border-black/40 pt-6 pb-6`).
 
 #### E. Hardening, Escape Hatch, Audio Retro y Cumplimiento de Regla R1
+
 - **Cumplimiento Estricto de Regla R1:** Cero emojis unicode en toda la pantalla; empleo exclusivo de iconos SVG vectoriales de Lucide (`Sparkles`, `LogOut`, `User`, `AlertCircle`, `Heart`, `Swords`, `Shield`, `Zap`).
 - **Hardening Antirrebote y Prevención de Doble Envío:** Guarda inmediata ante mutaciones en vuelo (`if (enviando) return;`), formulario y botón con `aria-busy={enviando}`, inputs deshabilitados (`disabled={enviando}`), despliegue de `<Spinner />` retro con texto `INICIANDO AVENTURA...`, y protección de controles secundarios mediante `pointer-events-none opacity-50` durante la llamada asíncrona.
 - **Escape Hatch Accesible:** Botón retro `SALIR AL INGRESO` con icono `LogOut` en la cabecera y enlace en el pie para permitir cerrar sesión y volver a `/ingreso` sin trampas de navegación.
@@ -132,6 +146,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ---
 
 ### 2.3 Verificación de Calidad y Cero Regresiones
+
 - **Detector Impeccable:** Verificado con 0 defectos, excelente contraste retro y ergonomía responsive probada en viewports de 360px a 1440px.
 - **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-crear-personaje.spec.ts` y `verificacion-auth.spec.ts`):** 5 pruebas especializadas en creación de personaje: validación del esquema Zod, soporte de nombres recortados (`trim`), autorización exclusiva de las 3 criaturas iniciales canónicas de Zona 1, consistencia de atributos y sprites, hardening defensivo y la prueba exhaustiva `Auditoría Impeccable: PantallaCrearPersonaje consolida estética retro-brutalist 8-bit, tipografía integral, confinamiento móvil y espaciado de controles`.
 - **Suite Total Web (`pnpm --filter web test`):** 87 de 87 pruebas aprobadas al 100%.
@@ -143,7 +158,9 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ## 3. Sub-Fase 10c: Hub de Ubicación y Navegación del Mundo (`PantallaHubUbicacion.tsx`)
 
 ### 3.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La auditoría heurística y técnica con la skill `impeccable` y los estándares de `docs/DESIGN.md` identificó los siguientes puntos de fricción y oportunidades de consolidación estética y ergonómica en el Hub de Ubicación ("Campamento y Plaza del Gremio"):
+
 1. **Truncamiento Rígido de Títulos y Metadatos:** Se identificaron clases `truncate` rígidas en los títulos de los servicios del gremio (`servicio.titulo`) y nombres de explorador, provocando que títulos de dos o más palabras («CENTRO DE CURACIÓN», «HISTORIAL DE INCURSIONES», «ALMACÉN DE CRIATURAS») se amputaran con elipsis (`...`) en resoluciones móviles o cuadrículas estrechas.
 2. **Modales de Viaje Genéricos y Sin Ficha Interior Retro:** Los cuadros de confirmación de viaje y de rutas restringidas (`AlertDialog`) utilizaban fuentes sans genéricas, carecían de marco interior temático de destino y dependían de estilos por defecto sin el carácter brutalista de un cartucho de consola RPG clásico de 8-bit.
 3. **Falta de Separación y Espaciado en Botones de Acción:** En móviles y pantallas táctiles, los botones de confirmación (`EMPRENDER CAMINO`) y cancelación (`PERMANECER`) dentro del pie del diálogo carecían de holgura suficiente (`gap` estrecho o nulo al apilarse verticalmente). Asimismo, en las tarjetas de senderos el botón de viaje se encontraba adyacente a la información de nivel sin un divisor físico claro.
@@ -157,6 +174,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ### 3.2 Mejoras Implementadas
 
 #### A. Hero Panorámico con Marco 8-Bit de Alto Contraste (`docs/DESIGN.md` §2)
+
 - **Marco de Consola Clásica:** Enmarcado integral de la cabecera del asentamiento con borde pixelado retro (`border-4 border-black shadow-[6px_6px_0_0_#000] bg-card`), transmitiendo de inmediato la estética de cartucho clásico.
 - **Ilustración de Paisaje Regional con Fallback SVG:** Renderizado WebP con `obtenerImagenZona(...)` y sanitización kebab-case, degradado de contraste hacia el abismo (`bg-gradient-to-t from-black/90 via-black/40 to-black/30`) y degradación limpia ante desconexión.
 - **Insignias Flotantes de Seguridad y Escape Retro:**
@@ -165,6 +183,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 - **Tipografía Pixelada y Sombra Proyectada:** Nombre del asentamiento renderizado con `Press Start 2P` (`.retro`), insignia ornamental de Plaza del Gremio con `Sparkles` y sombra proyectada dura (`text-shadow-[2px_2px_0_#000] drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]`).
 
 #### B. Panel Superior del Explorador: Tipografía 8-Bit Integral y Flujo sin Truncamiento
+
 - **4 Cajas de Estado Retro con Tipografía Pixelada:** Rediseño completo de las cajas de métricas con el marco táctil `border-2 border-black shadow-[4px_4px_0_0_#000] bg-muted/60 hover:bg-muted/80 transition-colors`:
   - **Explorador:** Icono `Compass` en cian (`#14d1e8`), micro-etiqueta retro `text-[8px] sm:text-[9px] uppercase tracking-wider` y nombre del personaje en tipografía retro compacta `text-[9px] sm:text-[10px]` con `break-words leading-tight`, erradicando el truncamiento rígido.
   - **Monedas de Oro:** Icono `Coins` en oro solar (`#f5b724`), número destacado en tipografía pixelada `text-[10px] sm:text-xs` y sufijo retro `oro` (`text-[8px] sm:text-[9px]`).
@@ -172,6 +191,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
   - **Almacén:** Icono `Package` en cian (`text-cyan-400`), contador numérico de criaturas en reserva con leyenda retro `criaturas`.
 
 #### C. Cuadrícula Interactiva de Servicios del Gremio: Erradicación de Truncamientos
+
 - **8 Instalaciones Modulares:** Exploración, Equipo Activo, Almacén, Inventario, Tienda/Bazar, Santuario de Salud, Compendio Open5e y Bitácora.
 - **Flujo Tipográfico Multilínea Sin Amputaciones:** Se eliminó la clase `truncate` rígida en `servicio.titulo`. El texto se calibró a `text-[9px] sm:text-[10px]` con interlineado `leading-tight` y `break-words mb-1.5`, garantizando que títulos largos como «SANTUARIO DE SALUD», «COMPENDIO OPEN5E» o «HISTORIAL DE INCURSIONES» fluyan armoniosamente en dos renglones sin recortes ni elipsis (`...`).
 - **Descripciones Retro de Lectura Descansada:** Párrafos descriptivos formateados en tipografía retro calibrada (`retro text-[8px] sm:text-[9px] text-slate-300 sm:text-slate-400 leading-relaxed`).
@@ -181,6 +201,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
   - Protección de navegación secundaria durante desplazamientos (`viajando && "pointer-events-none opacity-50"`).
 
 #### D. Rediseño Integral de Modales de Viaje (AlertDialog 8-bit Brutalist) y Tarjetas de Rutas
+
 - **Marco de Consola Clásica RPG Box:** Los modales de confirmación de viaje y ruta restringida (`AlertDialogContent`) se transformaron en cuadros de diálogo de cartucho retro:
   - Estructura `w-[calc(100vw-2rem)] sm:max-w-md border-4 border-black shadow-[8px_8px_0_0_#000] bg-bastion p-4 sm:p-5 overflow-hidden text-slate-100`.
   - Títulos temáticos pixelados con división interior: `CONFIRMAR VIAJE` en cian astral (`#14d1e8`) con icono `Compass` y `RUTA RESTRINGIDA` en carmesí de alerta (`#ef4444`) con icono `Lock`.
@@ -195,6 +216,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 - **Confinamiento Móvil sin Overflow Horizontal:** Inclusión de `w-full max-w-5xl mx-auto px-2 sm:px-4 py-2 sm:py-4 overflow-x-hidden` en el contenedor principal y en el estado de carga (`Skeleton`), garantizando cero barras de scroll horizontal en pantallas estrechas (360px–420px).
 
 #### E. Audio Retro Centralizado y Tolerancia a Fallos
+
 - Integración de `reproducirSonido(...)` para eventos de interfaz:
   - Clic al interactuar con servicios y botones de navegación (`0.35`).
   - Confirmación al emprender viaje hacia otra zona (`0.5`).
@@ -203,6 +225,7 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ---
 
 ### 3.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-hub-mundo.spec.ts` y `verificacion-auth.spec.ts`):** 7 pruebas especializadas aprobadas al 100%:
   1. Configuración, rutas e iconos de los 8 servicios del Hub.
   2. Lógica de habilitación de servicios según localidad actual.
@@ -220,9 +243,11 @@ La auditoría heurística y técnica con la skill `impeccable` y los estándares
 ## 4. Sub-Fase 10d: Enriquecimiento de Exploración y Encuentros en Rutas (`PantallaExploracion.tsx`)
 
 ### 4.1 Diagnóstico Inicial y Auditoría Heurística Impeccable (Primera y Segunda Pasada)
+
 La auditoría de diseño e interacción con la skill `impeccable` sobre la pantalla de expedición silvestre y sus diálogos de encuentro reveló los siguientes puntos de fricción, fallas de ergonomía y oportunidades de consolidación estética:
-1. **Falta de Ambientación Visual Retro-Brutalista y Estilo de Cuadro RPG:** La versión preliminar utilizaba tarjetas con bordes delgados de color tenue (`border-2 border-[#43526d]`), careciendo del impacto visual y peso físico característico de la estética *retro-brutalist 8-bit* de cartucho de consola y `8bitcn/ui` (`border-4 border-black shadow-[6px_6px_0_0_#000]`).
-2. **Truncamientos Rígidos y Amputación de Textos en Móviles (360px–420px):** Uso de clases `truncate` y `line-clamp-2` rígidas que cortaban nombres compuestos de criaturas de varias palabras (ej. *"QUIMERA TRICÉFALA"*, *"REMORHAZ DEL GLACIAR ETERNO"*, *"CANGREJO ABISMAL"*), nombres de ítems de botín (`itemCodigo`) y títulos de zona en viewports reducidos, arruinando la lectura con puntos suspensivos innecesarios.
+
+1. **Falta de Ambientación Visual Retro-Brutalista y Estilo de Cuadro RPG:** La versión preliminar utilizaba tarjetas con bordes delgados de color tenue (`border-2 border-[#43526d]`), careciendo del impacto visual y peso físico característico de la estética _retro-brutalist 8-bit_ de cartucho de consola y `8bitcn/ui` (`border-4 border-black shadow-[6px_6px_0_0_#000]`).
+2. **Truncamientos Rígidos y Amputación de Textos en Móviles (360px–420px):** Uso de clases `truncate` y `line-clamp-2` rígidas que cortaban nombres compuestos de criaturas de varias palabras (ej. _"QUIMERA TRICÉFALA"_, _"REMORHAZ DEL GLACIAR ETERNO"_, _"CANGREJO ABISMAL"_), nombres de ítems de botín (`itemCodigo`) y títulos de zona en viewports reducidos, arruinando la lectura con puntos suspensivos innecesarios.
 3. **Disparidad Tipográfica (Ausencia de Fuente Retro Integral):** Presencia de tipografías estándar `font-sans` y `font-mono` en descripciones de zona, cuerpo de la bitácora de incursión, mensajes de modales, medidor de vitalidad y fichas de atributos del rival, diluyendo la autenticidad 8-bit de Aethelgard.
 4. **Apiñamiento y Rigidez en Botones de Acción de Modales:** Los botones `INICIAR COMBATE` y `RETIRARSE` en el diálogo de encuentro se encontraban estrechamente empaquetados en columna con un `gap-2` insuficiente para interacción táctil, sin diferenciación cromática nítida ni holgura responsive (`gap-3 sm:gap-4 flex flex-col sm:flex-row`).
 5. **Vitrina del Rival Plana y Carente de Relieve Cinemático:** El modal de encuentro hostil carecía de un cuadro escénico de combate clásico de consola; el sprite del rival y la barra de vitalidad flotaban sobre fondos estándar sin el relieve interior empotrado (`shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.7)]`) ni chips de estadísticas tácticas con código de color.
@@ -233,6 +258,7 @@ La auditoría de diseño e interacción con la skill `impeccable` sobre la panta
 ### 4.2 Mejoras Implementadas (Segunda Pasada de Excelencia Retro Impeccable)
 
 #### A. Tipografía Retro 100% Integral (`Press Start 2P` / `.retro` en Toda la Pantalla)
+
 - **Extensión Universal de `.retro`:** Se implementó la fuente pixelada `Press Start 2P` (`.retro`) en la totalidad de los elementos textuales de la pantalla:
   - Nombre de la senda en el hero panorámico, descripción ambiental y badges flotantes (`ZONA HOSTIL`, `NV. SUGERIDO: X`, `100% CARTOGRAFIA`, `LOCALIDAD SEGURA`).
   - Medidor de progreso cartográfico, conteo porcentual numérico y botón de acción (`EXPLORAR SENDA` / `RESOLVER COMBATE CON [RIVAL]`).
@@ -242,16 +268,19 @@ La auditoría de diseño e interacción con la skill `impeccable` sobre la panta
 - **Calibración Antiacortamiento y Legibilidad Óptima:** Escalas tipográficas adaptadas con interlineado holgado: `text-[8px] sm:text-[9px]` para descripciones, bitácora y mensajes; `text-[8.5px] sm:text-[9px]` para insignias de nivel y timestamps; `text-[9px] sm:text-[10px]` para chips de atributos y progreso; y `text-[10px] sm:text-xs` para nombres de bestias, títulos y botones de acción (`leading-relaxed` / `leading-snug`).
 
 #### B. Erradicación de Títulos y Textos Truncados (`break-words` Fluido)
+
 - **Eliminación Total de `truncate`:** Se suprimieron todas las clases `truncate` y `line-clamp` rígidas en el nombre de la criatura (`rivalActivo.nombre`), títulos de senda silvestre (`h1`), descripciones contextuales y códigos de botín (`ultimaRecompensa.itemCodigo`).
 - **Envoltura Multilínea Contenida:** Se integró `break-words leading-tight max-w-full`, permitiendo que criaturas con nombres extensos (ej. «REMORHAZ DEL GLACIAR ETERNO», «QUIMERA TRICÉFALA») e ítems compuestos se lean de forma íntegra en dos líneas en pantallas móviles (360px–420px) sin cortes abruptos con puntos suspensivos.
 
 #### C. Rediseño Cinemático de Modales (Dialog 8-bit Brutalist)
+
 - **Marco de Consola Clásica RPG Box:** Contenedor `DialogContent` sellado con `w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-card border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden !p-0 !gap-0 flex flex-col`.
 - **Vitrina del Rival con Relieve Interior:** Caja escénica interior en relieve retro `p-3 sm:p-4 bg-black/70 border-2 border-black shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.7)] space-y-2.5 sm:space-y-3 text-center`. Para criaturas Legendarias, se aplica iluminación dorada `bg-amber-950/30 border-amber-500/60`, corona mística flotante (`Crown` en oro solar) y halo radiante (`anim-halo-legendario`).
 - **Barra de Vitalidad del Rival Empotrada:** Canal oscuro empotrado retro `bg-[#090d16] border-2 border-black shadow-[2px_2px_0_0_#000] h-3 sm:h-3.5` con barra esmeralda `#22c55e` e indicador numérico en tipografía retro `text-[8px] sm:text-[9px]`.
 - **Chips de Estadísticas Tácticas (ATQ, DEF, VEL):** Cajas negras individuales con marco retro `bg-[#090d16] border-2 border-black shadow-[2px_2px_0_0_#000] p-1.5 sm:p-2 text-center flex flex-col items-center gap-1 min-w-0`, con iconos vectoriales SVG de Lucide codificados por color (`Swords` en rojo carmesí, `Shield` en azul cobalto, `Zap` en ámbar solar) y valores numéricos en `Press Start 2P`.
 
 #### D. Separación Táctil y Desahogada en Botones de Acción
+
 - **Botonera del Modal de Encuentro:** Espaciado generoso con `flex flex-col sm:flex-row gap-4 sm:gap-6 w-full mt-3 sm:mt-4` en un pie fijo `px-3.5 sm:px-5 py-3 sm:py-4 border-t-2 border-black bg-[#090d16]`:
   - Botón primario `INICIAR COMBATE` en carmesí retro-brutalista (`bg-red-600 hover:bg-red-500 text-white border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none py-2.5 sm:py-3 text-[10px] sm:text-xs`).
   - Botón secundario `RETIRARSE` con estilo pizarra contrastada claramente diferenciado (`bg-[#1a2332] hover:bg-[#232d3f] text-slate-300 hover:text-white border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none py-2.5 sm:py-3 text-[10px] sm:text-xs`).
@@ -260,6 +289,7 @@ La auditoría de diseño e interacción con la skill `impeccable` sobre la panta
 - **Modal de Botín:** Botón `GUARDAR EN BOLSA` en oro solar con padding táctil amplio (`py-3 text-[10px] sm:text-xs`).
 
 #### E. Confinamiento Móvil sin Overflow Horizontal (360px–420px)
+
 - **Contenedor Principal Hermético:** Inclusión de `w-full max-w-5xl mx-auto px-2 sm:px-4 py-2 sm:py-4 space-y-4 sm:space-y-6 overflow-x-hidden`, replicado idénticamente en el estado de carga (`Skeleton`).
 - **Bitácora de Incursión Elástica:** Desplazamiento vertical interno fluido (`max-h-56 sm:max-h-64 overflow-y-auto pr-1`) sin provocar scroll horizontal ni empujar el pie de página.
 - **Regla R1 Estricta:** Cero emojis unicode en toda la pantalla; despliegue exclusivo de iconografía vectorial SVG de Lucide (`Compass`, `MapPin`, `Footprints`, `Swords`, `Sparkles`, `Scroll`, `Coins`, `Backpack`, `AlertTriangle`, `ArrowLeft`, `ShieldCheck`, `Loader2`, `Shield`, `Zap`, `Eye`, `Crown`).
@@ -268,6 +298,7 @@ La auditoría de diseño e interacción con la skill `impeccable` sobre la panta
 ---
 
 ### 4.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`apps/web/test/verificacion-exploracion.spec.ts`):** 9 pruebas especializadas aprobadas al 100%:
   1. Estructura y contrato de `RespuestaExploracion` ante encuentros con criaturas salvajes.
   2. Modelado de botines con monedas e ítems de inventario.
@@ -287,7 +318,9 @@ La auditoría de diseño e interacción con la skill `impeccable` sobre la panta
 ## 5. Sub-Fase 10e: Combate Táctico y Captura de Criaturas (`PantallaCombate.tsx`)
 
 ### 5.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La versión preliminar del sistema de combate presentaba serias debilidades de experiencia, lógica de progresión y fidelidad visual:
+
 1. **Disposición Espacial Plana y Sin Profundidad:** El combate se mostraba mediante dos tarjetas estáticas colocadas una al lado de la otra, careciendo de la emoción y perspectiva clásica de los RPG por turnos de 16-bit.
 2. **Reanudación Débil de Encuentros Activos:** Al recargar la pantalla o regresar a `/combate`, el turno se reiniciaba arbitrariamente en 1, no se proveían movimientos y la bitácora anterior se perdía.
 3. **Botonera Táctica Rudimentaria:** Solo existían acciones básicas sin opciones para seleccionar movimientos específicos, consumir pociones de vitalidad en combate, relevar el liderazgo de criaturas o seleccionar talismanes específicos de captura.
@@ -301,9 +334,10 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 ### 5.2 Mejoras Implementadas
 
 #### A. Arena de Batalla Diagonal 16-Bit y Perspectiva Retro (`docs/DESIGN.md` §2)
+
 - **Disposición Espacial Clásica:** Rediseño completo de la arena con perspectiva diagonal:
-  - *Rival Hostil:* Situado en el cuadrante superior derecho sobre una plataforma de combate escalonada 16-bit (`bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000]`), exhibiendo su sprite pixelado con `.pixelated`, placa HUD con borde pixelado, barra de salud segmentada y badge de nivel.
-  - *Criatura Aliada:* Posicionada en el primer plano inferior izquierdo encarando diagonalmente al oponente, con tarjeta de estado persistente (`border-4 border-black shadow-[4px_4px_0_0_#000]`), medidor numérico de vitalidad (HP actual / HP total), barra de resonancia táctica de 10 bloques y barra de experiencia porcentual.
+  - _Rival Hostil:_ Situado en el cuadrante superior derecho sobre una plataforma de combate escalonada 16-bit (`bg-[#121927] border-2 border-black shadow-[2px_2px_0_0_#000]`), exhibiendo su sprite pixelado con `.pixelated`, placa HUD con borde pixelado, barra de salud segmentada y badge de nivel.
+  - _Criatura Aliada:_ Posicionada en el primer plano inferior izquierdo encarando diagonalmente al oponente, con tarjeta de estado persistente (`border-4 border-black shadow-[4px_4px_0_0_#000]`), medidor numérico de vitalidad (HP actual / HP total), barra de resonancia táctica de 10 bloques y barra de experiencia porcentual.
 - **Atmósfera Inmersiva de Arena:** Fondo de fantasía oscura (`#090d16`) con cuadrícula retro CRT y gradiente de penumbra que enmarca los combatientes con máximo contraste.
 - **Erradicación de Curvas y Desenfoques:** Supresión total de clases `rounded`, `rounded-full` y `blur` en la arena, pedestales y contenedores de incertidumbre de captura, reemplazándolos por marcos ortogonales geométricos.
 - **Micro-animaciones Físicas de Combate:**
@@ -312,32 +346,37 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
   - Secuencia de incertidumbre en captura (`anim-captura-incertidumbre`) con balanceo de talismán en marco retro antes de revelar el veredicto del servidor.
 
 #### B. Panel Táctil Extendido de 5 Comandos RPG y Prevención de Doble Acción (Hardening S-5)
+
 - **Comandos Tácticos Accesibles (100% SVG Lucide, Cero Emojis Unicode R1):**
-  1. *Atacar (`Swords`):* Selector interactivo de movimientos desplegando los 4 slots tácticos (M1 a M4) con chips de efectividad (`¡EFICAZ!`, `RESISTIDO`), badges de estados aplicados y bloqueo de M4 cuando la resonancia es menor al 100%.
-  2. *Usar Objeto (`HeartPulse`):* Modal retro con filtrado exclusivo de ítems curativos del inventario, restaurando vitalidad con animación esmeralda y feedback flotante inmediato.
-  3. *Cambiar Criatura (`ArrowLeftRight`):* Selector táctico de miembros del equipo con HP disponible y XP individual para relevar el liderazgo de combate mediante `PATCH /equipo/orden`.
-  4. *Capturar (`Sparkles`):* Selector interactivo de talismanes disponibles con animación de incertidumbre y balanceo antes de revelar éxito o contraataque.
-  5. *Huir (`LogOut`):* Diálogo modal retro de confirmación con probabilidad probabilística acotada. Ante fallo en huir, el contraataque rival se anima y refleja inmediatamente en la barra de salud sin requerir recargar la página.
+  1. _Atacar (`Swords`):_ Selector interactivo de movimientos desplegando los 4 slots tácticos (M1 a M4) con chips de efectividad (`¡EFICAZ!`, `RESISTIDO`), badges de estados aplicados y bloqueo de M4 cuando la resonancia es menor al 100%.
+  2. _Usar Objeto (`HeartPulse`):_ Modal retro con filtrado exclusivo de ítems curativos del inventario, restaurando vitalidad con animación esmeralda y feedback flotante inmediato.
+  3. _Cambiar Criatura (`ArrowLeftRight`):_ Selector táctico de miembros del equipo con HP disponible y XP individual para relevar el liderazgo de combate mediante `PATCH /equipo/orden`.
+  4. _Capturar (`Sparkles`):_ Selector interactivo de talismanes disponibles con animación de incertidumbre y balanceo antes de revelar éxito o contraataque.
+  5. _Huir (`LogOut`):_ Diálogo modal retro de confirmación con probabilidad probabilística acotada. Ante fallo en huir, el contraataque rival se anima y refleja inmediatamente en la barra de salud sin requerir recargar la página.
 - **Hardening contra Acciones Dobles (S-5):**
   - Guarda reactiva de cadencia visual (`cerrojoAccion.current = true`) y control de estado asíncrono (`procesandoAccion`).
   - Botones con `disabled={procesandoAccion}`, `aria-busy={procesandoAccion}` y spinners retro que imposibilitan enviar paquetes concurrentes fuera de turno al servidor.
 
 #### C. Reanudación Fiel de Encuentros y Preservación de Estado
+
 - **Enriquecimiento del Backend (`GET /encuentros/activo`):**
   - Devuelve la especie aliada con sus movimientos reales registrados en catálogo.
   - Preserva el turno cronológico real alcanzado.
   - Reconstruye la bitácora cronológica histórica completa desde los registros de combate en base de datos PostgreSQL, garantizando continuidad ininterrumpida ante recargas de página o reconexiones.
 
 #### D. Centralización Absoluta de Progresión en el Servidor (A-8 / S-6 / §2.4)
+
 - **Cálculo Determinista de Experiencia:** Todo cálculo de puntos de experiencia, nivel, umbral de subida y porcentaje de barra se ejecuta exclusivamente en el servidor mediante `ProgresoService.calcularProgresoXp`.
 - **Cliente Front-End Ligero:** La vista React actúa como cliente presentacional puro, consumiendo los campos `experiencia`, `porcentajeXp` y límites devueltos por la API sin formular cálculos locales de balance.
 
 #### E. Sellado de Modales contra Desbordamiento Tipográfico (`Press Start 2P`)
+
 - **Adaptación Responsiva sin Overflow:** Contenedores `DialogContent` y `AlertDialogContent` estructurados con `border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden` y paneles internos con scroll vertical elástico.
 - **Apilado Vertical Inteligente:** Botones de acción en el pie de los modales estructurados con `flex flex-col sm:flex-row gap-2 w-full`, eliminando colisiones horizontales y asegurando legibilidad total en resoluciones móviles (320px–425px).
 - **Sanitización de Glifos:** Supresión de caracteres acentuados mayúsculos incompatibles en la tipografía pixelada.
 
 #### F. Audio Retro Sintetizado Nativo Web Audio API
+
 - Incorporación en `apps/web/src/lib/assets.ts` de sintetizadores nativos mediante osciladores Web Audio API con disparadores acústicos en cada acción:
   - `'click'`: Pulsación física en botones de comandos y cierre de modales.
   - `'seleccionar'`: Conmutación de talismán de captura o navegación.
@@ -349,6 +388,7 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 ---
 
 ### 5.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-combate.spec.ts`):** 6 pruebas unitarias exhaustivas validando:
   1. Contrato enriquecido de combate y reanudación fiel de encuentros.
   2. Lógica del panel táctico de 5 comandos.
@@ -367,11 +407,13 @@ La versión preliminar del sistema de combate presentaba serias debilidades de e
 ## 6. Sub-Fase 10f: Equipo Activo y Almacén (`PantallaEquipo.tsx` y `PantallaAlmacen.tsx`)
 
 ### 6.1 Diagnóstico Inicial y Auditoría Heurística Impeccable
+
 Previa a la intervención y consolidación retro-brutalist, la gestión táctica de combatientes y la custodia en almacén presentaban debilidades arquitectónicas, de sincronización y de ergonomía visual:
+
 1. **Jerarquía Visual Plana entre Líder y Reserva:** La tarjeta del combatiente líder carecía de impacto visual supremo; usaba un borde dorado tenue sin sombras sólidas ortogonales, diluyéndose entre los compañeros de reserva y dificultando identificar de un vistazo quién abriría los combates.
 2. **Ausencia de Estética Retro-Brutalist 8-Bit (`8bitcn/ui`):** Las tarjetas, barras y botones presentaban estilos genéricos sin los bordes negros gruesos (`border-2 border-black`, `border-4 border-black`) ni sombras sólidas duras (`shadow-[2px_2px_0_0_#000]`, `shadow-[4px_4px_0_0_#000]`, `shadow-[6px_6px_0_0_#000]`) exigidos por `docs/DESIGN.md`.
 3. **Legibilidad Débil en Medidores de Vitalidad y Progresión:** Las barras `HealthBar` y `XpBar` no contaban con canales oscuros empotrados ni marcos protectores, y el porcentaje de EXP se camuflaba con el fondo por el uso de tokens atenuados.
-4. **Trunking Prematuro y Falta de Ergonomía Móvil (360px–420px):** En pantallas pequeñas, títulos largos en `Press Start 2P` (ej. *"Mantarraya Espectral"*) se truncaban abruptamente con elipsis (`Mantarraya Esp...`), los sprites de 64px consumían excesivo ancho útil, la tarjeta del líder dejaba un hueco asimétrico en la botonera y las ranuras vacías forzaban alturas sobredimensionadas (`min-h-[260px]`).
+4. **Trunking Prematuro y Falta de Ergonomía Móvil (360px–420px):** En pantallas pequeñas, títulos largos en `Press Start 2P` (ej. _"Mantarraya Espectral"_) se truncaban abruptamente con elipsis (`Mantarraya Esp...`), los sprites de 64px consumían excesivo ancho útil, la tarjeta del líder dejaba un hueco asimétrico en la botonera y las ranuras vacías forzaban alturas sobredimensionadas (`min-h-[260px]`).
 5. **Invasión Tipográfica No Deseada:** El componente `Card` inyectaba la clase `.retro` en contenedores internos, forzando números monoespaciados y textos sans a adoptar glifos anchos pixelados que desbordaban la cuadrícula móvil.
 6. **Inconsistencias en Servidor y Orden Táctico Indeterminado:** El endpoint `PATCH /api/equipo/orden` admitía permutaciones parciales y duplicadas. Dado que `CombateService` selecciona al combatiente líder según `ordenEquipo asc`, un reordenamiento corrupto dejaba indeterminado quién abría los combates.
 7. **Condiciones de Carrera en la Regla A-6 y Equipo Mínimo:** Las transferencias leían el estado de la criatura y el total de integrantes fuera de transacciones serializadas, permitiendo que peticiones concurrentes (doble clic o sesiones simultáneas) desbordaran el límite de 6 criaturas o vaciaran completamente el equipo.
@@ -387,9 +429,10 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
 ### 6.2 Mejoras Implementadas
 
 #### A. Mesa Táctica de Mando 16-Bit y Jerarquía Retro-Brutalist (`docs/DESIGN.md` y `8bitcn/ui`)
+
 - **Combatiente Líder (`orden === 1`):** Rediseñado con marco supremo retro-brutalista `border-4 border-black shadow-[6px_6px_0_0_#000] bg-amber-500/10 ring-1 ring-amber-400/40`, badge retro `LÍDER` con icono `Crown` (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-amber-400 text-black font-bold text-[8px] sm:text-[9px] retro rounded-none gap-1 py-0.5 px-1.5 sm:px-2`), sprite pixelado con aura luminosa dorada (`bg-amber-500/20 border-2 border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.35)] p-1`) y placa retro de mando inferior `LÍDER ACTUAL` en la botonera para preservar la simetría visual.
 - **Compañeros de Reserva:** Enmarcados con marco brutalista táctil `border-2 border-black shadow-[4px_4px_0_0_#000] bg-card`, sprite pixelado con relieve interior oscuro (`bg-black/40 border-2 border-black shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)] p-1`) y badge de nivel monoespaciado en alto contraste (`Nv. X`) con `border-2 border-black shadow-[2px_2px_0_0_#000] bg-black/50`.
-- **Estado Debilitado:** Badge destructivo retro `DEBILITADA` (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-red-600 text-white font-bold text-[8px] sm:text-[9px] retro`) e indicador contextual enmarcado: *"El combate la omitirá hasta curarla."*
+- **Estado Debilitado:** Badge destructivo retro `DEBILITADA` (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-red-600 text-white font-bold text-[8px] sm:text-[9px] retro`) e indicador contextual enmarcado: _"El combate la omitirá hasta curarla."_
 - **Barras Retro Empotradas de Vitalidad y EXP:**
   - `HealthBar` integrada en un canal oscuro protegido `border border-black bg-black/60 p-0.5 shadow-[1px_1px_0_0_#000]`, con semáforo cromático reactivo (>50% esmeralda, 20%-50% ámbar, <=20% carmesí crítico) y animación de pulso crítico.
   - `XpBar` empotrada en canal oscuro `border border-black bg-black/60 p-0.5 shadow-[1px_1px_0_0_#000]`, con porcentaje de avance en `text-purple-300 font-bold font-mono` asegurando contraste superior a 4.5:1.
@@ -399,8 +442,9 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
 - **Aviso Territorial:** Banner de advertencia territorial con `MapPinOff` con borde negro ortogonal `border-2 border-black shadow-[2px_2px_0_0_#000] bg-amber-500/10 text-amber-400`.
 
 #### B. Componentes Táctiles 8bitcn/ui, Hardening y Ergonomía Móvil (Pantallas Pequeñas 320px–420px)
+
 - **Tipografía Bimodal Estricta sin Invasión de `.retro`:** Se aplicó `font="normal"` a `Card`, `CardHeader`, `CardContent` y `CardFooter`, aislando `Press Start 2P` exclusivamente a encabezados y badges tácticos, mientras las lecturas de salud, progreso y estadísticas permanecen nítidas en fuentes sans y monoespaciadas.
-- **Erradicación de Truncamiento en Nombres de Criatura:** Se calibró el título a `text-[10px] sm:text-xs` con `break-words line-clamp-2 leading-snug` y se adaptó el sprite a `h-12 w-12 sm:h-16 sm:w-16`, permitiendo que nombres compuestos (como *"Mantarraya Espectral"*) se lean completos sin elipsis (`...`) en pantallas de 360px.
+- **Erradicación de Truncamiento en Nombres de Criatura:** Se calibró el título a `text-[10px] sm:text-xs` con `break-words line-clamp-2 leading-snug` y se adaptó el sprite a `h-12 w-12 sm:h-16 sm:w-16`, permitiendo que nombres compuestos (como _"Mantarraya Espectral"_) se lean completos sin elipsis (`...`) en pantallas de 360px.
 - **Botonera Táctica con Feedback Físico y Simetría:** Botones de subida/bajada (`ChevronUp`, `ChevronDown`) de escala compacta (`h-7 w-7 sm:h-8 sm:w-8`) y botón `Designar líder` (`text-[8.5px] sm:text-[10px] retro`) con marco `border-2 border-black shadow-[2px_2px_0_0_#000]` y efecto de compresión física (`active:translate-y-0.5 active:shadow-none`). En la tarjeta líder, se proyecta la placa dorada `LÍDER ACTUAL` en lugar de un vacío asimétrico.
 - **Bloqueo Global Reactivo contra Doble Acción:** Se implementó el estado unificado `operacion: { tipo, criaturaId } | null`. Durante cualquier petición en vuelo, **todos** los botones de la tarjeta se inhabilitan (`disabled={operacion !== null}`), aplicando `aria-busy={true}`, spinners retro pixelados y la leyenda `PROCESANDO...`.
 - **Almacén de Custodia Retro-Brutalist (`PantallaAlmacen.tsx`):** Tarjetas de combatientes en reserva enmarcadas en `border-2 border-black shadow-[4px_4px_0_0_#000] bg-card`, con distintivo retro `CUSTODIA` en marco oscuro, insignia de nivel en alto contraste (`Nv. X`), sprite pixelado en relieve interior oscuro y nombre protegido con `break-words line-clamp-2 leading-snug` contra truncamiento prematuro.
@@ -409,6 +453,7 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
 - **Cumplimiento Estricto de la Regla R1:** Cero emojis unicode en código, comentarios y textos de UI. Toda la semántica gráfica se canaliza exclusivamente mediante iconos SVG de Lucide (`Crown`, `ChevronUp`, `ChevronDown`, `Archive`, `MapPinOff`, `Warehouse`, `ArrowLeft`, `Swords`, `Shield`, `Zap`, `Heart`, `Repeat`, `ArrowUpFromLine`, `PackageOpen`).
 
 #### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
+
 - **Erradicación de Fugas de `AudioContext`:** Inserción de la directiva `osc.onended = () => void ctx.close();` en `sintetizarTonoRetro`, asegurando la liberación inmediata del canal acústico tras reproducir cualquier efecto de sonido.
 - **Sincronización Acústica Web Audio:**
   - `seleccionar`: Disparado al pulsar subir/bajar, seleccionar relevo o abrir el modal de intercambio.
@@ -417,6 +462,7 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
   - `error`: Notificación sonora ante rechazos o fallas reportadas por el servidor.
 
 #### D. Reglas de Servidor y Contratos
+
 - **Validación Estricta de Permutación en `PATCH /api/equipo/orden`:** El servidor rechaza con `400 ORDEN_INVALIDO` cualquier payload incompleto, con identificadores duplicados, criaturas ajenas o índices discontinuos, garantizando una biyección matemática estricta sobre las criaturas del equipo.
 - **Serialización Pesimista por Explorador:** Tanto `actualizarOrden` como `moverCriatura` ejecutan `SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE` al inicio de su transacción interactiva en PostgreSQL, blindando las invariantes `A-6` (máximo 6 criaturas) y equipo mínimo ($\ge 1$ criatura) frente a concurrencia extrema.
 - **Intercambio Atómico de Posición (`intercambiarConId`):** Permuta en una única transacción atómica el estado de ambas criaturas; la entrante hereda exactamente el `ordenEquipo` de la saliente, garantizando que si se releva al líder, la nueva criatura asume la jefatura de combate de inmediato sin alterar el conteo total.
@@ -425,6 +471,7 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
 ---
 
 ### 6.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-equipo-almacen.spec.ts`):** 12 pruebas unitarias exhaustivas aprobadas al 100%:
   1. Pureza e inmutabilidad de la función de reordenamiento `moverEnLista` (designación de líder al índice 0).
   2. Subida táctica de una posición ($i \to i - 1$).
@@ -449,7 +496,9 @@ Previa a la intervención y consolidación retro-brutalist, la gestión táctica
 ## 7. Sub-Fase 10g: Bolsa de Inventario y Bazar de Provisiones (`PantallaInventario.tsx` y `PantallaTienda.tsx`)
 
 ### 7.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previa a la intervención de la Sub-Fase 10g y bajo la auditoría heurística Impeccable, la gestión de objetos poseídos (`PantallaInventario.tsx`) y el comercio mercantil de provisiones (`PantallaTienda.tsx`) presentaban deficiencias críticas a nivel de experiencia de usuario, diseño retro y arquitectura:
+
 1. **Desplazamiento Horizontal en Móvil (360px–420px):** Los contenedores principales carecían de `overflow-x-hidden` y confinamiento elástico. En la tienda, la cabecera mercantil y los controles de lotes (`x1`, `x5`, `x10`) junto al ajuste fino (`+/-`) y el desglose de precios forzaban desbordamiento lateral en dispositivos móviles compactos.
 2. **Acortamiento y Truncamiento Excesivo de Textos:** Empleo de `truncate` y `line-clamp-2` rígidos que cortaban nombres largos de consumibles o talismanes y mutilaban sus descripciones tácticas, impidiendo conocer el impacto real de los artículos.
 3. **Disparidad Tipográfica (Falta de Fuente Retro Integral):** Presencia de tipografías sans y monospace estándar en contadores de oro, existencias en bolsa, etiquetas de categoría, botones de lote, ajustes finos y balances económicos, diluyendo la inmersión 8-bit de Aethelgard.
@@ -468,6 +517,7 @@ Previa a la intervención de la Sub-Fase 10g y bajo la auditoría heurística Im
 ### 7.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-bit y Tipografía Integral (`docs/DESIGN.md`)
+
 - **Tipografía Retro 100% Integral (`Press Start 2P` / `.retro` para TODO):** Despliegue universal de la fuente pixelada en todos los elementos de la interfaz de bolsa e inventario (`PantallaInventario.tsx`) y del bazar mercantil (`PantallaTienda.tsx`):
   - Título principal («Bazar de Provisiones») con sombra de texto ortogonal (`drop-shadow-[1px_1px_0_#000]`).
   - Medidores de monedas de oro (`retro text-[8px] sm:text-[9px]`) con borde negro `border-2 border-black shadow-[2px_2px_0_0_#000] bg-amber-500/10` y conteo de artículos disponibles.
@@ -479,18 +529,21 @@ Previa a la intervención de la Sub-Fase 10g y bajo la auditoría heurística Im
 - **Confinamiento Responsivo Móvil (360px–420px):** Contenedor principal delimitado con `w-full max-w-5xl mx-auto px-2 sm:px-4 overflow-x-hidden`. Cabecera mercantil elástica (`flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4`) y banner de localidad sin bazar enmarcado con `border-2 border-black shadow-[4px_4px_0_0_#000] bg-amber-500/10`.
 
 #### B. Componentes Táctiles 8bitcn/ui y Hardening
+
 - **Tarjetas de Artículos Mercantiles Retro-Brutalist:** Enmarcadas con alto relieve `border-2 border-black shadow-[4px_4px_0_0_#000] bg-card hover:shadow-[6px_6px_0_0_#000]`, contenedor de sprite con marco negro y relieve interior (`border-2 border-black bg-black/40 shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)]`), renderizado `.pixelated` con fallback SVG, selector de lotes con botones táctiles `border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none`, desglose económico en caja negra retro (`border-2 border-black bg-black/40 p-2 shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.4)]`), y botón de compra a ancho completo con icono `ShoppingCart` y retroalimentación de estado (`Adquirir lote`, `Oro insuficiente`, `Bazar Inactivo`).
 - **Modal de Confirmación de Adquisición Sellado (Dialog 8-bit Brutalist):** `DialogContent` hermético con `w-[calc(100vw-2rem)] sm:max-w-md border-4 border-black shadow-[8px_8px_0_0_#000] bg-card overflow-hidden p-4 sm:p-5`, ficha de producto con relieve, ajuste de unidades interactivo, desglose de balances financieros con código de color dinámico y prevención estricta de doble compra (`comprando`, `disabled={comprando || !resumenModal.puedeComprar}`, `aria-busy={comprando}`, spinner retro y leyenda `PROCESANDO...`).
 - **Cumplimiento Estricto de la Regla R1:** Cero emojis unicode en controles y botones retro; iconografía SVG provista exclusivamente por Lucide (`Coins`, `Package`, `Store`, `ArrowLeft`, `MapPinOff`, `HeartPulse`, `Crosshair`, `Sparkles`, `ShoppingCart`, `Minus`, `Plus`, `Layers`, `Crown`).
 
 #### C. Multimedia y Audio Retro Centralizado (`assets.ts`)
+
 - **Síntesis Acústica Web Audio para Monedas (`monedas` / `compra`):** Doble pulso metálico en onda cuadrada (`square`: 987.77 Hz a 1318.51 Hz con decaimiento exponencial en 0.22 s), activado al formalizar compras en el bazar.
 - **Síntesis Acústica para Curación (`curar` / `pocion`):** Arpegio regenerativo ascendente en onda triangular suave (`triangle`: 523.25 Hz -> 659.25 Hz -> 783.99 Hz en 0.26 s), activado al aplicar consumibles sobre criaturas.
 - **Efectos Táctiles Adicionales:** Señalización acústica `seleccionar` en cambios de filtro, ajuste de lotes y apertura de diálogos, y `error` ante saldo insuficiente o acciones inválidas.
 
 #### D. Reglas de Servidor, Seguridad S-4/S-6 y Transacciones
+
 - **Catálogo Centralizado desde PostgreSQL (`GET /api/tienda`):** Eliminación del catálogo hardcodeado. El endpoint sirve `servicioDisponible` (según `ubicacionActual.servicios.includes('TIENDA')`), `saldoMonedas` y `cantidadEnInventario` de cada objeto para actualización inmediata en Front-End.
-- **Cálculo Unilateral de Precios y Compra Atómica (`S-4`, `S-6`):** `TiendaService.comprar` calcula unilateralmente costoTotal = precioCompra * cantidad desde PostgreSQL. Rechaza campos inyectados (`whitelist: true`, `forbidNonWhitelisted: true`) y cantidades fuera del rango 1..99 (`@Max(99)` en `ComprarDto`).
+- **Cálculo Unilateral de Precios y Compra Atómica (`S-4`, `S-6`):** `TiendaService.comprar` calcula unilateralmente costoTotal = precioCompra \* cantidad desde PostgreSQL. Rechaza campos inyectados (`whitelist: true`, `forbidNonWhitelisted: true`) y cantidades fuera del rango 1..99 (`@Max(99)` en `ComprarDto`).
 - **Bloqueo Pesimista por Fila de Personaje (`FOR UPDATE`):** Tanto `TiendaService.comprar` como `InventarioService.usarObjeto` ejecutan `SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE` al inicio de la transacción de Prisma, serializando estrictamente compras y consumos concurrentes.
 - **Blindaje de Consumibles y Salvaguarda `INV-03`:** En `InventarioService.usarObjeto`:
   - Se valida estrictamente `objeto.tipo === 'CURACION'` (`400 OBJETO_NO_CONSUMIBLE`).
@@ -500,6 +553,7 @@ Previa a la intervención de la Sub-Fase 10g y bajo la auditoría heurística Im
 ---
 
 ### 7.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-inventario-tienda.spec.ts`):** 10 pruebas unitarias exhaustivas aprobadas al 100%:
   1. Inmutabilidad y filtrado correcto por categoría en `filtrarItemsPorCategoria`.
   2. Normalización y acotamiento de lotes en `[1, 99]` en `normalizarCantidadCompra`.
@@ -522,7 +576,9 @@ Previa a la intervención de la Sub-Fase 10g y bajo la auditoría heurística Im
 ## 8. Sub-Fase 10h: Santuario de Curación de Equipo en Asentamiento (`PantallaCuracion.tsx`)
 
 ### 8.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previa a la auditoría heurística Impeccable y la consolidación visual retro-brutalista de la Sub-Fase 10h, el módulo de restauración y la pantalla del Santuario de Curación presentaban deficiencias críticas a nivel de experiencia de usuario, diseño retro y arquitectura:
+
 1. **Desplazamiento Horizontal en Pantallas Móviles (360px–420px):** El contenedor principal carecía de confinamiento elástico (`w-full max-w-4xl mx-auto px-2 sm:px-4 overflow-x-hidden`). En dispositivos móviles compactos (360px–420px), la barra de 5 métricas tácticas y los márgenes rígidos generaban scroll lateral involuntario.
 2. **Acortamiento y Truncamiento Excesivo de Nombres y Apodos:** Empleo de clases `truncate` rígidas en los encabezados y apodos de las criaturas, mutilando la identidad táctica de compañeros con nombres largos o apodos personalizados.
 3. **Disparidad Tipográfica (Falta de Fuente Retro Integral):** Presencia residual de fuentes sans y monospace estándar en la descripción narrativa del manantial sagrado (`font-sans`), en las métricas tácticas del equipo (`font-mono`), en las etiquetas de vitalidad y en los botones de retorno, rompiendo la inmersión 8-bit de Aethelgard.
@@ -539,6 +595,7 @@ Previa a la auditoría heurística Impeccable y la consolidación visual retro-b
 ### 8.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-bit y Tipografía Integral (`docs/DESIGN.md`)
+
 - **Tipografía Retro 100% Integral (`Press Start 2P` / `.retro` para TODO):** Aplicación universal de la tipografía pixelada en la totalidad de los elementos textuales de la interfaz:
   - Título principal («SANTUARIO DE CURACIÓN») con sombra de texto ortogonal (`drop-shadow-[2px_2px_0_#000]`).
   - Descripción narrativa completa del manantial sagrado en tipografía retro compacta con interlineado adaptado (`retro text-[8px] sm:text-[9px] text-muted-foreground leading-relaxed break-words text-center`).
@@ -551,6 +608,7 @@ Previa a la auditoría heurística Impeccable y la consolidación visual retro-b
 - **Rejilla Táctica de 5 Métricas Elástica:** Rejilla responsiva `grid-cols-2 sm:grid-cols-5 gap-2` dentro de caja táctil negra `border-2 border-black bg-black/40 shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.5)]` donde la quinta métrica (`DÉFICIT TOTAL`) adopta `col-span-2 sm:col-span-1` para apilado natural en 360px sin forzar scroll horizontal.
 
 #### B. Componentes Táctiles 8bitcn/ui Brutalist y Cinemática
+
 - **Hero del Santuario Retro-Brutalist:** Marco exterior grueso `border-4 border-black shadow-[6px_6px_0_0_#000] bg-card overflow-hidden text-center`, banner panorámico con borde inferior negro `border-b-4 border-black bg-abismo`, paisaje WebP de zona con degradado y badges enmarcadas con `border-2 border-black shadow-[2px_2px_0_0_#000] bg-black/85`.
 - **Botón de Restauración Brutalista:** Botón principal de tamaño ampliado con marco `border-4 border-black shadow-[6px_6px_0_0_#000] active:translate-y-1 active:shadow-[2px_2px_0_0_#000] hover:shadow-[8px_8px_0_0_#000]` y prevención de doble clic con `aria-busy={restaurando}` y leyenda retro `CANALIZANDO BENDICIÓN...`.
 - **Tarjetas de Criaturas Retro-Brutalistas:**
@@ -562,10 +620,12 @@ Previa a la auditoría heurística Impeccable y la consolidación visual retro-b
 - **Cumplimiento Estricto de la Regla R1:** Cero emojis unicode en toda la pantalla; iconografía SVG provista exclusivamente por Lucide (`Heart`, `Sparkles`, `ShieldCheck`, `ArrowLeft`, `AlertCircle`, `Crown`, `HeartPulse`).
 
 #### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
+
 - **Síntesis Web Audio para Santuario (`santuario` / `bendicion`):** Fanfarria solemne ascendente de 4 notas en onda triangular cristalina (`triangle`: 523.25 Hz -> 659.25 Hz -> 783.99 Hz -> 1046.50 Hz con duración de 0.42 s), libre de fugas de `AudioContext` gracias a `osc.onended = () => void ctx.close()`.
 - **Sonidos Complementarios:** Efecto `click` en pulsaciones y `error` ante fallas o bloqueos por localidad no autorizada.
 
 #### D. Reglas de Servidor, Seguridad y Restauración Atómica (`INV-03`)
+
 - **Bloqueo Pesimista por Fila de Personaje (`FOR UPDATE`):** `CuracionService.restaurarEquipo` ejecuta `SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE` en PostgreSQL, serializando invocaciones concurrentes y evitando duplicación de registros en `historial`.
 - **Validación Estricta de Localidad Segura y Servicio:** Rechazo inmediato con `403 SERVICIO_NO_DISPONIBLE` si la ubicación no es segura (`!esSegura`) o no cuenta con `CURACION` o `CENTRO_CURACION`.
 - **Resurrección y Cumplimiento de `INV-03`:** Todo el equipo activo se restablece al 100 % de su salud ($\text{hpActual} = \text{hpMaximo}$), levantando criaturas caídas desde 0 HP sin posibilidad matemática de sobrecuración. Solo se ejecutan sentencias de actualización en BD sobre criaturas con salud incompleta.
@@ -574,6 +634,7 @@ Previa a la auditoría heurística Impeccable y la consolidación visual retro-b
 ---
 
 ### 8.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Front-End (`apps/web/test/verificacion-curacion.spec.ts`):** 9 pruebas unitarias exhaustivas aprobadas al 100%:
   1. Clasificación estricta de los 3 estados vitales y etiquetas en español.
   2. Cálculo de deltas bajo `INV-03` y resurrección de criaturas caídas.
@@ -595,7 +656,9 @@ Previa a la auditoría heurística Impeccable y la consolidación visual retro-b
 ## 9. Sub-Fase 10i / 10l: Compendio de Criaturas, Bitácora Transversal y Salón de la Fama (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`)
 
 ### 9.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previo a esta subfase y a su consolidación retro-brutalista, la experiencia del jugador en las pantallas finales de consulta y compendio presentaba importantes cuellos de botella de red, fallas heurísticas y limitaciones ergonómicas:
+
 1. **Cuello de botella $N+1$ de 26 peticiones HTTP en cascada en `PantallaCatalogo.tsx`:** Al ingresar al compendio o cambiar de tipo, el cliente invocaba `api.obtenerEspecies()` y de inmediato ejecutaba `Promise.all(res.especies.map(esp => api.obtenerEspecie(esp.slug)))`, disparando 26 peticiones en ráfaga cada vez.
 2. **Apiñamiento y Falta de Separación Táctil en Botones de Acción:** Los botones de cabecera (`ACTUALIZAR`, `Asentamiento`) y la botonera de arquetipos (`ATACANTE`, `TANQUE`, `VELOZ`, etc.) disponían de márgenes insuficientes (`gap-1.5`), careciendo de sombras sólidas ortogonales y produciendo fricción en pantallas táctiles móviles.
 3. **Desplazamiento Horizontal en Móvil (360px–420px):** El contenedor principal carecía de confinamiento con `overflow-x-hidden` y relleno responsivo, lo que ante variaciones de pantalla provocaba scroll horizontal involuntario.
@@ -610,6 +673,7 @@ Previo a esta subfase y a su consolidación retro-brutalista, la experiencia del
 ### 9.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-bit y Jerarquía Visual (`docs/DESIGN.md`)
+
 - **Compendio de Criaturas Retro-Brutalist:** Cabecera ceremonial con título en `Press Start 2P` (`COMPENDIO DE CRIATURAS`), insignia `30 ESPECIES SRD 5.2` con icono `BookOpen`, barra de avistamiento biológico (conteo de registradas, en vista, legendarias, especiales y tipos biológicos), y **vitrina central destacada de sprites pixel-art** de `h-36 sm:h-40` con fondo oscuro pixelado, bisel interior `border-y-2 border-black shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.7)]`, micro-interacción hover con escala suave (`group-hover:scale-110`), sombras retro duras (`obtenerImagenCriatura`, `.pixelated`, `manejarErrorImagen`) y badges ortogonales.
 - **Tipografía Retro 100% Integral (`Press Start 2P` / `.retro`):** Unificación tipográfica radical en todos los elementos textuales de `PantallaCatalogo.tsx`: títulos, subtítulos, métricas, inputs de búsqueda, selector biológico, botones de arquetipo, encabezados de hábitat, badges de tipo y elemento, estadísticas base (`HP`, `ATQ`, `DEF`, `VEL`), CR, Tasa de Captura, lore, barras de progreso comparativas sobre 100 y lista de movimientos tácticos M1..M4. Calibración ergonómica en `text-[8px] sm:text-[9px]` y `text-[9px] sm:text-[10px]` con `leading-relaxed` y erradicación de `truncate` rígidos mediante envoltura multilínea `break-words`.
 - **Marcos 8bitcn/ui Brutalistas y Sombras Ortogonales:** Enmarcado general con `border-2 border-black` y sombras duras `shadow-[4px_4px_0_0_#000]` y `shadow-[6px_6px_0_0_#000]`. Realce distintivo con marco dorado y animación pulsante `.anim-halo-legendario border-4 border-amber-400 bg-amber-950/25` junto a la corona `Crown` para especies legendarias.
@@ -628,18 +692,22 @@ Previo a esta subfase y a su consolidación retro-brutalista, la experiencia del
 - **Salón de la Fama y Ending RPG 16-bit (`PaginaCreditos.tsx`):** Cabecera ceremonial con marco dorado (`border-amber-500/80 bg-bastion`), insignias `SALÓN DE LA FAMA` y `ISC-305 · III PAC 2026`, galería de sprites pixel-art, Homenaje Académico al **Ingeniero Claudio**, atribución legal literal del `SRD 5.2` (CC BY 4.0), licencia MIT de `8bitcn/ui` y retorno con sonido de victoria.
 
 #### B. Componentes Táctiles 8bitcn/ui y Hardening
+
 - **Erradicación del Anti-Patrón `<Link><Button>` y Hardening `aria-busy`:** Reemplazo de enlaces anidados por navegación imperativa con `useNavigate` e integración de estados `aria-busy` en botones de recarga.
 - **Restricción R1 Estricta:** Cero emojis unicode; empleo exclusivo de iconos SVG vectoriales de Lucide (`BookOpen`, `ArrowLeft`, `RefreshCw`, `Search`, `Shield`, `Swords`, `Zap`, `Scale`, `Sparkles`, `Crown`, `MapPin`, `Eye`, `RotateCcw`, `X`, `Filter`, `ChevronDown`).
 
 #### C. Integración Multimedia y Audio Retro Centralizado (`assets.ts`)
+
 - **Síntesis Web Audio:** Integración del sintetizador 8-bit para feedback táctil en clics (`"click"`), inspección de fichas (`"seleccionar"`), retorno victorioso (`"victoria"`) y fanfarria triunfal ceremonial (`"fanfarria"`).
 - **Gestión de Assets con Fallback Seguro:** Uso universal de `obtenerImagenCriatura` y `manejarErrorImagen` con degradación a vectoriales SVG locales en caso de ausencia de sprites WebP.
 
 #### D. Reglas de Servidor, Optimización de Consultas y Erradicación de N+1
+
 - **`CriaturasService` y `CriaturasController` (`M-CRI`):** Implementación de endpoints públicos `GET /api/especies` y `GET /api/especies/:slug` en `O(1)` para las 30 especies canónicas con datos embebidos, erradicando por completo el patrón $N+1$.
 - **Normalización de Bitácora en `HistorialService` (`M-HIS`):** Función pura `normalizarCategoriaHistorial`, paginación y filtrado en servidor.
 
 ### 9.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Backend (`apps/api/test/catalogo-historial.spec.ts`):** 6 pruebas unitarias verificando erradicación de $N+1$, filtros biológicos, detalle por slug, error 404, arquetipos y categorías.
 - **Suite Total Backend (`pnpm --filter api test`):** 60 de 60 pruebas aprobadas (100% de éxito).
 - **Pruebas Frontend (`apps/web/test/verificacion-historial-catalogo.spec.ts`):** 9 pruebas unitarias aprobadas, incluyendo auditoría estática de marcos brutalistas 8bitcn, sombras sólidas ortogonales, tipografía retro integral, separación táctil y confinamiento sin overflow horizontal.
@@ -653,7 +721,9 @@ Previo a esta subfase y a su consolidación retro-brutalista, la experiencia del
 ## 10. Sub-Fase 10j: Bestiario Canónico, Jerarquía de Atributos, Sets Tácticos de Movimientos y Tablas de Aparición (30 Criaturas)
 
 ### 10.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previo a esta intervención, el ecosistema de criaturas presentaba importantes asimetrías de diseño, inconsistencias numéricas y problemas de balance competitivo:
+
 1. **Asimetría de Cobertura Regional (25 vs 30 criaturas):** El catálogo original contaba con 25 especies distribuidas desigualmente entre las 6 zonas (Z1 a Z4 con 4 especies, Z5 con 5 y Z6 con 4), generando ecosistemas incompletos y saltos arbitrarios de probabilidad.
 2. **Volatilidad de Atributos y Dependencia del SRD Externo:** Las estadísticas de juego se calculaban dinámicamente mediante fórmulas de normalización al vuelo basadas en el snapshot de Open5e, lo que provocaba anomalías estadísticas (p. ej. criaturas de zonas avanzadas con atributos inferiores a las de zonas iniciales) y carecía de progresión controlada.
 3. **Truncamiento Arbitrario de Movimientos a 3 Slots:** En la base de datos y la interfaz de usuario, los movimientos se recortaban mediante `.slice(0, 3)` sin una jerarquía táctica clara, omitiendo la distinción fundamental entre ataque básico, técnica táctica, movimiento de cobertura y técnica definitiva de Furia.
@@ -666,6 +736,7 @@ Previo a esta intervención, el ecosistema de criaturas presentaba importantes a
 ### 10.2 Mejoras Implementadas
 
 #### A. Identidad Retro y Jerarquía Visual (`docs/DESIGN.md`)
+
 - **Consagración de Criaturas Legendarias (`Crown` de Lucide):** Se consagraron formalmente `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380) como **Criaturas Legendarias** (`esLegendaria: true`). En `PantallaCatalogo.tsx`, se destacan con un marco dorado retro (`border-amber-400 shadow-[0_0_14px_rgba(251,191,36,0.4)]`), una vitrina heroica con fondo abismo pixelado y una insignia flotante dorada `LEGENDARIO` acompañada del icono `Crown` de Lucide.
 - **Paleta Canónica de Afinidades Elementales:** Asignación visual y textual de las 6 afinidades elementales retro de Aethelgard: Físico (`stone`), Fuego (`red`), Agua (`blue`), Natura (`emerald`), Sombra (`purple`) y Luz (`yellow`), desplegadas en badges retro biselados tanto en las tarjetas del catálogo como en el modal de inspección táctica.
 - **Compendio de 30 Especies SRD 5.2:** Actualización de la cabecera a `30 ESPECIES SRD 5.2` y expansión de la barra de avistamiento biológico a 5 columnas, incorporando la métrica en tiempo real de Criaturas Legendarias (`metricas.legendarias`) con texto dorado e icono `Crown`.
@@ -673,14 +744,17 @@ Previo a esta intervención, el ecosistema de criaturas presentaba importantes a
 - **Despliegue Integral de los 4 Slots Tácticos:** Se erradicó el truncamiento `.slice(0, 3)` en el modal de inspección táctica, renderizando los 4 movimientos canónicos con su identificador de slot (`M1`, `M2`, `M3`, `M4`), nombre, tipo de acción, potencia entera y badges de efectos secundarios (`PARALISIS`, `BASTION`, `DEF_DOWN`, `VENENO`, etc.).
 
 #### B. Componentes Táctiles 8bitcn/ui y Hardening en Combate
+
 - **Modal Sellado contra Overflow:** El modal de inspección mantiene la directriz Impeccable de acotamiento responsive (`w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden rounded-none border-2 border-primary bg-bastion`), previniendo desbordes horizontales en pantallas móviles de 320 px a 360 px.
 - **Panel Táctico de 4 Movimientos en `PantallaCombate.tsx`:** El desplegable de ataques de la criatura aliada renderiza ahora los 4 movimientos canónicos. El slot 4 (`mov.slot === 4` o índice 3) se muestra deshabilitado de forma reactiva con el badge retro `Furia (Bloqueado)`, borde punteado tenue, tooltip explicativo y protección `aria-disabled`, impidiendo su activación hasta que el explorador acumule el 100% de Resonancia en combate.
 - **Hardening contra Doble Clic:** Protección estricta con `aria-busy={procesandoAccion}` y desactivación de todos los botones de ataque durante la resolución de turnos.
 
 #### C. Integración Multimedia y Web Audio (`assets.ts`)
+
 - **Retroalimentación Acústica de Inspección y Combate:** Utilización del sintetizador nativo de ondas cuadradas de `assets.ts` para clics de navegación (`"click"`), apertura del modal de inspección (`"seleccionar"`), impactos de combate (`"golpe"`) y fanfarria de victoria (`"victoria"`).
 
 #### D. Reglas de Servidor, Prisma y Soberanía Interna de Atributos
+
 - **Migración Relacional de Prisma (`20261017050700_bestiario_canonico`):**
   - Modelo `Especie`: Incorporación de columnas `elemento TEXT NOT NULL DEFAULT 'fisico'` y `esLegendaria BOOLEAN NOT NULL DEFAULT false`.
   - Modelo `Movimiento`: Incorporación de `slot INTEGER NOT NULL DEFAULT 1` y `efecto TEXT`, con restricción de unicidad compuesta `@@unique([especieId, slot])` que garantiza que ninguna especie posea dos movimientos en la misma posición.
@@ -692,6 +766,7 @@ Previo a esta intervención, el ecosistema de criaturas presentaba importantes a
 ---
 
 ### 10.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas de Invariantes del Bestiario (`apps/api/test/bestiario-canonico.spec.ts`):** Suite creada con 8 pruebas unitarias aprobadas que verifican:
   1. Existencia exacta de 30 especies y 5 especies por cada una de las 6 zonas.
   2. Cumplimiento de INV-01 con suma de pesos exactamente igual a 100 en las 6 zonas.
@@ -710,26 +785,27 @@ Previo a esta intervención, el ecosistema de criaturas presentaba importantes a
 
 ## 11. Cierre Formal de la Fase 10 (Consolidado Full-Stack AV5 Definitivo)
 
-Con la culminación de las Subfases 10k y 10l, se da por **completada y auditada en su totalidad la Fase 10** del proyecto *Aethelgard: Sendas y Criaturas*, consolidando el hito **AV5 Definitivo (Entrega Final de UX Retro, Bestiario Canónico, Motor Táctico y Combate Completo Full-Stack)**.
+Con la culminación de las Subfases 10k y 10l, se da por **completada y auditada en su totalidad la Fase 10** del proyecto _Aethelgard: Sendas y Criaturas_, consolidando el hito **AV5 Definitivo (Entrega Final de UX Retro, Bestiario Canónico, Motor Táctico y Combate Completo Full-Stack)**.
 
 ### Tabla Resumen Consolidada de Subfases de la Fase 10
 
-| Subfase | Alcance / Vistas | Mejoras Principales | Pruebas Automatizadas | Estado |
-| :--- | :--- | :--- | :--- | :--- |
-| **10a** | Autenticación (`PantallaIngreso.tsx`) | Validación Zod en tiempo real, estética CRT/VGA, cero emojis y audio retro. | 3 tests web | ✅ Completada |
-| **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`) | Selección táctica de iniciales con sprites, escape hatch retro con LogOut, desbloqueo de RutaPublica y guard contra tokens huérfanos. | 6 tests web | ✅ Completada |
-| **10c** | Hub Localidad (`PantallaHubUbicacion.tsx`) | Cuadrícula de 8 servicios, ambientación dinámica WebP y navegación fluida. | 4 tests web | ✅ Completada |
-| **10d** | Exploración (`PantallaExploracion.tsx`) | Cinemática de niebla, selector ponderado en servidor e historial de incursión. | 6 tests web | ✅ Completada |
-| **10e** | Combate (`PantallaCombate.tsx`) | Bitácora de combate por turnos, animaciones CSS, cálculo de daño servidor INV-04. | 4 tests web | ✅ Completada |
-| **10f** | Equipo y Almacén (`PantallaEquipo.tsx`, `PantallaAlmacen.tsx`) | Reordenamiento de líder, regla A-6, transferencia atómica con bloqueo pesimista. | 10 tests web + 8 tests api | ✅ Completada |
-| **10g** | Inventario y Tienda (`PantallaInventario.tsx`, `PantallaTienda.tsx`) | Filtros de objetos, compras por lotes (x1, x5, x10) en servidor y uso medicinal. | 8 tests web + 12 tests api | ✅ Completada |
-| **10h** | Santuario de Curación (`PantallaCuracion.tsx`) | Restauración atómica INV-03 con FOR UPDATE, resurrección de caídas y cinemática. | 8 tests web + 6 tests api | ✅ Completada |
-| **10i** | Compendio, Bitácora y Créditos (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`) | Erradicación N+1 en catálogo, modal de inspección sellado, crónicas categorizadas con Lucide, Salón de la Fama y homenaje al Ing. Claudio. | 8 tests web + 6 tests api | ✅ Completada |
-| **10j** | Bestiario Canónico y Legendarias (`bestiario-canonico.ts`, `PantallaCatalogo.tsx`, `PantallaCombate.tsx`) | 30 especies canónicas soberanas, jerarquía J-1 a J-4, consagración de Behir y Remorhaz como Legendarias, sets de 4 movimientos M1..M4, bloqueo de Furia y tablas INV-01 al 100%. | 8 tests web + 11 tests api | ✅ Completada |
-| **10k** | Motor Elemental y Estados (`motor-combate.ts`, `combate.service.ts`) | Matriz inmutable 6×6 de afinidades, daño elemental INV-04, 6 estados alterados, DoT no letal D-4, inmunidad de 1 turno D-6, acumulador de resonancia, sinergia de captura x1.25 y bloqueo pesimista contra concurrencia. | 36 tests api | ✅ Completada |
-| **10l** | Experiencia Táctica y Catálogo (`PantallaCombate.tsx`, `PantallaCatalogo.tsx`, `PantallaExploracion.tsx`) | Panel interactivo de 4 comandos, chips de efectividad, barra de 10 bloques de Resonancia, botón «Desatar Insignia», cerrojo useRef, turnoEsperado y manejo 409, Web Audio sintetizado (eficaz, resistido, dot, furia), agrupación por 6 hábitats, halos legendarios y avistamiento mítico en exploración. | 3 tests web | ✅ Completada |
+| Subfase | Alcance / Vistas                                                                                          | Mejoras Principales                                                                                                                                                                                                                                                                                       | Pruebas Automatizadas      | Estado        |
+| :------ | :-------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------- | :------------ |
+| **10a** | Autenticación (`PantallaIngreso.tsx`)                                                                     | Validación Zod en tiempo real, estética CRT/VGA, cero emojis y audio retro.                                                                                                                                                                                                                               | 3 tests web                | ✅ Completada |
+| **10b** | Creación Personaje (`PantallaCrearPersonaje.tsx`)                                                         | Selección táctica de iniciales con sprites, escape hatch retro con LogOut, desbloqueo de RutaPublica y guard contra tokens huérfanos.                                                                                                                                                                     | 6 tests web                | ✅ Completada |
+| **10c** | Hub Localidad (`PantallaHubUbicacion.tsx`)                                                                | Cuadrícula de 8 servicios, ambientación dinámica WebP y navegación fluida.                                                                                                                                                                                                                                | 4 tests web                | ✅ Completada |
+| **10d** | Exploración (`PantallaExploracion.tsx`)                                                                   | Cinemática de niebla, selector ponderado en servidor e historial de incursión.                                                                                                                                                                                                                            | 6 tests web                | ✅ Completada |
+| **10e** | Combate (`PantallaCombate.tsx`)                                                                           | Bitácora de combate por turnos, animaciones CSS, cálculo de daño servidor INV-04.                                                                                                                                                                                                                         | 4 tests web                | ✅ Completada |
+| **10f** | Equipo y Almacén (`PantallaEquipo.tsx`, `PantallaAlmacen.tsx`)                                            | Reordenamiento de líder, regla A-6, transferencia atómica con bloqueo pesimista.                                                                                                                                                                                                                          | 10 tests web + 8 tests api | ✅ Completada |
+| **10g** | Inventario y Tienda (`PantallaInventario.tsx`, `PantallaTienda.tsx`)                                      | Filtros de objetos, compras por lotes (x1, x5, x10) en servidor y uso medicinal.                                                                                                                                                                                                                          | 8 tests web + 12 tests api | ✅ Completada |
+| **10h** | Santuario de Curación (`PantallaCuracion.tsx`)                                                            | Restauración atómica INV-03 con FOR UPDATE, resurrección de caídas y cinemática.                                                                                                                                                                                                                          | 8 tests web + 6 tests api  | ✅ Completada |
+| **10i** | Compendio, Bitácora y Créditos (`PantallaCatalogo.tsx`, `PantallaHistorial.tsx`, `PaginaCreditos.tsx`)    | Erradicación N+1 en catálogo, modal de inspección sellado, crónicas categorizadas con Lucide, Salón de la Fama y homenaje al Ing. Claudio.                                                                                                                                                                | 8 tests web + 6 tests api  | ✅ Completada |
+| **10j** | Bestiario Canónico y Legendarias (`bestiario-canonico.ts`, `PantallaCatalogo.tsx`, `PantallaCombate.tsx`) | 30 especies canónicas soberanas, jerarquía J-1 a J-4, consagración de Behir y Remorhaz como Legendarias, sets de 4 movimientos M1..M4, bloqueo de Furia y tablas INV-01 al 100%.                                                                                                                          | 8 tests web + 11 tests api | ✅ Completada |
+| **10k** | Motor Elemental y Estados (`motor-combate.ts`, `combate.service.ts`)                                      | Matriz inmutable 6×6 de afinidades, daño elemental INV-04, 6 estados alterados, DoT no letal D-4, inmunidad de 1 turno D-6, acumulador de resonancia, sinergia de captura x1.25 y bloqueo pesimista contra concurrencia.                                                                                  | 36 tests api               | ✅ Completada |
+| **10l** | Experiencia Táctica y Catálogo (`PantallaCombate.tsx`, `PantallaCatalogo.tsx`, `PantallaExploracion.tsx`) | Panel interactivo de 4 comandos, chips de efectividad, barra de 10 bloques de Resonancia, botón «Desatar Insignia», cerrojo useRef, turnoEsperado y manejo 409, Web Audio sintetizado (eficaz, resistido, dot, furia), agrupación por 6 hábitats, halos legendarios y avistamiento mítico en exploración. | 3 tests web                | ✅ Completada |
 
 ### Métricas Finales de Calidad del Proyecto
+
 - **Pruebas Unitarias de Back-End (NestJS):** 107 pruebas automatizadas con 100% de aprobación (`pnpm --filter api test`).
 - **Pruebas Unitarias de Front-End (React / Vite):** 63 pruebas automatizadas con 100% de aprobación (`pnpm --filter web test`).
 - **Total de Pruebas Automatizadas:** **170 pruebas unitarias libres de regresiones**.
@@ -743,11 +819,13 @@ Con la culminación de las Subfases 10k y 10l, se da por **completada y auditada
 A solicitud de la dirección técnica y bajo la estricta auditoría del Ingeniero Claudio, se ejecutó la consolidación definitiva entre el catálogo temático oficial (`docs/catalogo-criaturas.md`) y el ecosistema ejecutable del proyecto.
 
 ### 12.1 Diagnóstico Inicial y Auditoría
+
 1. **Desfase en Definición de Especies del Servidor:** `apps/api/src/modulos/externo/bestiario-canonico.ts` conservaba remanentes de prototipado temprano (como `lobo-gris`, `pico-de-hacha`, `arana-lobo-gigante`, `lobo-huargo`) desalineados con las 30 especies temáticas canónicas consagradas en `docs/catalogo-criaturas.md`.
 2. **Inconsistencia de Criaturas Iniciales:** El endpoint de creación de personaje (`crear-personaje.dto.ts`, `personajes.service.ts`) y la interfaz web (`criaturas-iniciales.ts`, `esquemas-auth.ts`, `PantallaCrearPersonaje.tsx`, `PaginaKitUi.tsx`) requerían restringir las especies elegibles estrictamente a rareza Común (peso 35%). Al ser `ciervo-lunar` una criatura de rareza Frecuente (15%), se seleccionó una especie común de la Zona 02 (`cangrejo-abismal`, común 35%, agua, con acceso inicial habilitado) para consolidar el trío canónico común: `lobo-estepario`, `vibora-rocosa` y `cangrejo-abismal`.
 3. **Dispersión en Snapshot de Contingencia:** El snapshot estático requería albergar exactamente los 30 identificadores externos (`idExterno`) de Open5e SRD 2024 para garantizar el 100% de aislamiento ante contingencias de red.
 
 ### 12.2 Mejoras Implementadas
+
 1. **Bestiario Soberano Unificado (`apps/api/src/modulos/externo/bestiario-canonico.ts`):** Se reemplazaron íntegramente las 30 especies de `BESTIARIO` y las 30 filas de `TABLAS_APARICION` (con alias retrocompatible `TABLA_APARICION_CANONICA`) siguiendo la matriz oficial de 5 especies por bioma regional, distribuciones INV-01 ($35\%/35\%/15\%/10\%/5\%$), atributos base dentro del intervalo $[30, 100]$, jerarquía táctica J-1 a J-4 y sets de 4 movimientos con tipos de acción y efectos.
 2. **Consagración de Criaturas Legendarias:** Se fijaron con `esLegendaria: true` y `esEspecial: true` exclusivamente a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380).
 3. **Restricción de Especies Iniciales a Rareza Común (35%):** Se sincronizaron las opciones autorizadas a `lobo-estepario` (Zona 1, común 35%, físico), `vibora-rocosa` (Zona 1, común 35%, natura) y `cangrejo-abismal` (Zona 2, común 35%, agua) en:
@@ -760,6 +838,7 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
    - Ejecución verificada de `pnpm --filter api importar:especies` en dos tandas consecutivas para garantizar idempotencia estricta sin duplicidad de registros ni desbordamiento de pesos.
 
 ### 12.3 Verificación de Calidad y Cero Regresiones
+
 - **Comprobación Estricta en Base de Datos (MCP PostgreSQL):**
   - Tabla `especie`: **30 registros soberanos** con slugs y atributos canónicos exactos.
   - Tabla `movimiento`: **120 registros tácticos** (exactamente 4 movimientos ordenados por slot `1..4` por criatura).
@@ -779,7 +858,9 @@ A solicitud de la dirección técnica y bajo la estricta auditoría del Ingenier
 A solicitud de la dirección técnica y bajo la estricta auditoría del Ingeniero Claudio, se implementó el motor autoritativo de combate táctico por turnos en el backend de NestJS, integrando afinidades elementales (6×6), catálogo autoritativo de estados alterados (persistidos en `detalleJson`), acumulador de Resonancia para desbloqueo del movimiento insignia (Slot 4 / M4) y sinergia de captura con contraataque autoritativo.
 
 ### 13.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Antes de esta intervención, la resolución de combates y acciones asociadas presentaba deficiencias arquitectónicas y de balance:
+
 1. **Fórmula de Daño Plana y Carente de Afinidades:** El cálculo de daño en `CombateService` evaluaba únicamente ataque, defensa y poder sin ponderar el tipo elemental del movimiento ni la afinidad defensora, desaprovechando las afinidades canónicas asignadas a las 30 criaturas en la Subfase 10j.
 2. **Ausencia de Estados Alterados Autoritativos:** A pesar de que los movimientos registraban efectos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), el servidor no disponía de un gestor de estados por turnos, ni de persistencia de duraciones o ejecución de daño periódico (DoT) en fin de turno.
 3. **Mecánica de Furia / Resonancia Inoperante en Servidor:** El movimiento insignia (Slot 4) se bloqueaba estáticamente en el cliente y servidor sin un mecanismo autoritativo de acumulación de Resonancia ($0-100\%$) que permitiera su desbloqueo táctico y posterior reinicio.
@@ -792,6 +873,7 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
 ### 13.2 Mejoras Implementadas
 
 #### A. Matriz Inmutable de Afinidades Elementales y Daño Elemental (`motor-combate.ts`)
+
 - **Matriz 6×6 Congelada (`TABLA_AFINIDADES`):** Implementación inmutable (`Object.freeze`) para los 6 elementos canónicos (`fisico`, `fuego`, `agua`, `natura`, `sombra`, `luz`), definiendo 5 ventajas elementales ($1.5\times$), 8 desventajas elementales ($0.75\times$) y 23 cruces neutrales ($1.0\times$):
   - Fuego vence a Natura ($1.5\times$), resistido por Fuego y Agua ($0.75\times$).
   - Agua vence a Fuego ($1.5\times$), resistido por Agua y Natura ($0.75\times$).
@@ -804,6 +886,7 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
   Garantizando $\text{danoFinal} \ge 1$ (`INV-04`) y acotamiento estricto de salud en $[0, \text{hpMaximo}]$ (`INV-03`).
 
 #### B. Catálogo Autoritativo de Estados Alterados y Persistencia
+
 - **Catálogo de 6 Estados (`CATALOGO_ESTADOS`):**
   - `QUEMADURA`: DoT del $10\%$ del HP Máximo (mínimo 1), reduce defensa efectiva en $25\%$ ($0.75\times$), duración 3 turnos.
   - `VENENO`: DoT del $12\%$ del HP Máximo (mínimo 1), duración 4 turnos.
@@ -813,10 +896,11 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
   - `BASTION`: Escudo protector equivalente al $20\%$ del HP Máximo que absorbe daño entrante antes de tocar la salud; expira al consumirse o tras 3 turnos (beneficio no alterado: `esAlterado: false`).
 - **Reglas de Supervivencia y Balance:**
   - **Decisión D-4 (DoT No Letal):** El daño por estados al final del turno nunca debilita a una criatura por sí solo; se acota con $\max(1, \text{hpActual} - \text{danoDoT})$, requiriendo un impacto directo para la derrota.
-  - **Decisión D-6 (Inmunidad Temporal de 1 Turno):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno siguiente para prevenir aturdimientos permanentes (*stunlock*).
+  - **Decisión D-6 (Inmunidad Temporal de 1 Turno):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno siguiente para prevenir aturdimientos permanentes (_stunlock_).
   - **Persistencia en `Combate.detalleJson.estadoBatalla`:** Reconstrucción determinista del estado mediante `leerEstadoBatalla(detalleJson, criaturaAliadaId)`, saneando límites y reiniciando el lado aliado si ocurre un relevo por muerte (`D-11`).
 
 #### C. Acumulador Puro de Resonancia y Desbloqueo del Movimiento Insignia
+
 - **Dinámica de Resonancia ($0-100\%$):**
   - Ganancia base por ronda: $+8\%$.
   - Bonificación por ventaja elemental: $+10\%$.
@@ -827,6 +911,7 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
   - El rival nunca ejecuta movimientos del Slot 4 en sus turnos regulares.
 
 #### D. Sinergia de Captura, Bloqueo de Turno y Resolución Unificada
+
 - **Sinergia Táctica de Captura (§2.2):**
   $$\text{probBruta} = \text{tasaCaptura} \times \left(1.0 - 0.5 \times \frac{\text{hpActual}}{\text{hpMaximo}}\right) \times \text{multTalisman} \times \text{multEstado}$$
   Donde $\text{multEstado} = 1.25$ si el rival sufre un estado alterado activo (`tieneEstadoAlterado`), acotando el resultado final en $[0.05, 0.95]$ bajo la invariante `INV-02`.
@@ -837,6 +922,7 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
 ---
 
 ### 13.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Unitarias de Back-End (`pnpm --filter api test`):**
   - `combate-elemental.spec.ts`: 22 pruebas deterministas validando afinidades 6×6, daño elemental INV-04, catálogo de estados alterados, DoT no letal D-4, absorción y desgaste de Bastión, escarcha/petrificación, refresco e inmunidades, acumulador de resonancia y resolución determinista de la ronda.
   - `captura.spec.ts`: 12 pruebas validando fórmula INV-02, sinergia $\times 1.25$ ante estados alterados y contraataque táctico autoritativo en fallo de captura.
@@ -855,28 +941,32 @@ Antes de esta intervención, la resolución de combates y acciones asociadas pre
 ## 14. Sub-Fase 10l: Experiencia Táctica de Combate, Catálogo por Zonas y Alerta Legendaria (`PantallaCombate.tsx`, `PantallaCatalogo.tsx`, `PantallaExploracion.tsx`)
 
 ### 14.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previo a esta intervención, la experiencia de combate y compendio presentaba una brecha entre la riqueza de los motores de servidor (Fase 10k) y la retroalimentación visual/acústica del jugador en el cliente web:
+
 1. **Invisibilidad del Medidor de Resonancia y M4 Desconectado:** El movimiento insignia (Slot 4 / Furia) permanecía bloqueado de forma estática en la UI (`Furia (Bloqueado)`) sin que el jugador pudiera monitorear visualmente el porcentaje de Resonancia acumulada ($0-100\%$) ni anticipar su momento de activación.
 2. **Desincronización Visual de Salud tras Daño Continuo (DoT):** Al aplicarse efectos de estado en fin de turno (`efectosFinDeTurno`), la interfaz actualizaba el HP aliada/rival basándose en el daño del ataque directo pero postergaba la deducción del DoT, dejando barras de vida desfasadas hasta la siguiente recarga forzada de pantalla.
 3. **Vulnerabilidad a Doble Clic y Concurrencia Silenciosa:** Si el explorador pulsaba rápidamente los botones de ataque antes de finalizar la cinemática o ante fluctuaciones de latencia, se emitían peticiones concurrentes sin adjuntar el número de turno esperado (`turnoEsperado`), provocando anomalías o rechazos no explicados en lugar de capturar el error `409 TURNO_DESACTUALIZADO`.
 4. **Animaciones Parásitas ante Pérdida de Turno:** Cuando una criatura perdía su turno por parálisis o petrificación (`perdioTurno: true`), el cliente reproducía animaciones parásitas de impacto (`-0`), desconcertando al jugador respecto al efecto real del aturdimiento.
 5. **Triplicación de la Lógica de Fin de Turno:** Las pantallas de combate duplicaban la resolución de contraataques rivales y DoT en tres manejadores inconexos (`handleAtacar`, `ejecutarCaptura` y `handleHuir`), elevando la deuda técnica y el riesgo de regresiones.
 6. **Compendio Plano de Especies y Desalineación Geográfica:** En `PantallaCatalogo.tsx`, las 30 criaturas se mostraban en una cuadrícula plana continua sin agrupación por zonas de hábitat biológico. Asimismo, se identificó una inversión nominal en la semilla de datos entre la Zona 2 («Bosque Susurrante») y la Zona 3 («Riberas del Lago Espejo»), contradiciendo la presencia de especies acuáticas como `cangrejo-abismal` en ZON-02.
-7. **Ausencia de Clímax Cinemático en Encuentros Legendarios:** En `PantallaExploracion.tsx`, toparse con criaturas legendarias como *Behir* o *Remorhaz* utilizaba el mismo modal y sonido de alerta que una bestia común de bajo nivel, privando al juego de la emoción retro del avistamiento de un titán mítico.
+7. **Ausencia de Clímax Cinemático en Encuentros Legendarios:** En `PantallaExploracion.tsx`, toparse con criaturas legendarias como _Behir_ o _Remorhaz_ utilizaba el mismo modal y sonido de alerta que una bestia común de bajo nivel, privando al juego de la emoción retro del avistamiento de un titán mítico.
 
 ---
 
 ### 14.2 Mejoras Implementadas
 
 #### A. Identidad Retro Aethelgard y Ergonomía Visual (`DESIGN.md`)
+
 - **Selector de 4 Movimientos con Chips Dinámicos de Efectividad:** Rediseño del panel de combate con botones retro biselados para cada slot (`M1`, `M2`, `M3`, `M4`). Integración de chips de efectividad táctica en tiempo real: `[¡EFICAZ!]` en verde esmeralda brillante (`text-emerald-400 bg-emerald-950/40 border-emerald-500/70`) ante ventaja elemental ($1.5\times$), y `[RESISTIDO]` en rojo bermellón (`text-red-400 bg-red-950/40 border-red-500/70`) ante desventaja elemental ($0.75\times$).
 - **Medidor Retro Segmentado de 10 Bloques de Resonancia:** Creación del componente `BarraResonancia` en `PanelTactico.tsx`, representando la resonancia mediante 10 bloques discretos retro (`floor(resonancia / 10)`). Al llegar al 100% de resonancia (10 bloques), la barra adquiere la animación pulsante ámbar `.anim-pulso-resonancia`, el slot 4 se desbloquea con iluminación dorada y emerge el botón heroico «Desatar Insignia».
 - **Insignias Visuales de Estados Alterados:** Creación del componente `InsigniasEstado` con iconos vectoriales SVG de Lucide estrictos bajo la Regla R1 (cero emojis unicode): `Flame` para Quemadura, `Skull` para Veneno, `Snowflake` para Escarcha, `Zap` para Parálisis, `Mountain` para Petrificación y `Shield` para Bastión. Despliega el nombre y turnos restantes (`ej. Quemadura (2)`), renderizándose en las placas de ambos combatientes.
 - **Catálogo Agrupado por 6 Hábitats Geográficos:** En `PantallaCatalogo.tsx`, se reestructuró la vista en 6 secciones temáticas `<section aria-labelledby>` utilizando la función pura `agruparEspeciesPorZona`, con badges de región (`ZON-01` a `ZON-06`), encabezados retro, recuento de especies y etiqueta dorada de «Hábitat Legendario».
-- **Consagración Visual de Criaturas Legendarias:** Las dos especies legendarias (*Behir del Abismo Ciego* en ZON-05 y *Remorhaz del Glaciar Eterno* en ZON-06) lucen el halo respirante dorado `.anim-halo-legendario`, borde ámbar pixelado `border-amber-400` y una corona dorada `Crown` junto a su nombre tanto en la tarjeta como en la ficha del modal táctico.
+- **Consagración Visual de Criaturas Legendarias:** Las dos especies legendarias (_Behir del Abismo Ciego_ en ZON-05 y _Remorhaz del Glaciar Eterno_ en ZON-06) lucen el halo respirante dorado `.anim-halo-legendario`, borde ámbar pixelado `border-amber-400` y una corona dorada `Crown` junto a su nombre tanto en la tarjeta como en la ficha del modal táctico.
 - **Cinemática de Avistamiento Legendario:** En `PantallaExploracion.tsx`, el encuentro con una bestia legendaria transforma el diálogo con borde dorado palpitante, título `¡AVISTAMIENTO LEGENDARIO!`, corona `Crown` animada, sonido triunfal `fanfarria` y notificación toast de alta prioridad.
 
 #### B. Componentes 8bitcn/ui, Hardening contra Concurrencia y Accesibilidad
+
 - **Cerrojo Síncrono `useRef` contra Doble Clic:** Implementación de `peticionEnVueloRef = useRef(false)` en `PantallaCombate.tsx`, garantizando que clics repetidos o simultáneos sean bloqueados en el mismo milisegundo antes de que React re-renderice el estado `procesandoAccion`.
 - **Integridad de Turno con `turnoEsperado` y Captura de 409:** El cliente adjunta `turnoEsperado: turno` en cada comando de combate (`atacar`, `capturar`, `huir`). Si ocurre una condición de carrera, el cliente captura el error `409 TURNO_DESACTUALIZADO`, muestra una alerta de resincronización y refresca limpiamente el estado sin desarmar la arena.
 - **Unificación de Resolución de Ronda (`reproducirContraataqueYDoT`):** Se concentró la animación del contraataque rival, el reporte de estados, el relevo de aliada debilitada y la aplicación del daño continuo DoT en una única rutina compartida, asegurando que la salud final se actualice fidedignamente tras el DoT.
@@ -884,6 +974,7 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 - **Ergonomía Responsiva Impeccable (320 px):** Verificación exhaustiva de diseño en viewport móvil estrecho (320 px a 360 px) sin desbordes horizontales ni recortes de texto.
 
 #### C. Multimedia y Síntesis Web Audio Retro Centralizada (`assets.ts`)
+
 - **Síntesis Procedural de Audio 8-bit:**
   - `reproducirAudio("eficaz")`: Trino ascendente en quinta justa retro con oscilador triangular y modulación armónica brillante.
   - `reproducirAudio("resistido")`: Doble pulso amortiguado en frecuencias graves ($110-80\text{ Hz}$) con onda sinusoidal y decaimiento rápido.
@@ -892,6 +983,7 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 - **Sonorización Dinámica de Impacto:** En combate, el impacto acústico se deriva dinámicamente según la afinidad mediante `sonidoDeGolpe(efectividad)`.
 
 #### D. Reglas de Servidor, Prisma y Contratos Autoritativos
+
 - **Corrección de Semilla de Datos de Zonas (Decisión D-1):** En `apps/api/prisma/seed.ts`, se intercambiaron los nombres y descripciones de `ZON-02` («Riberas del Lago Espejo») y `ZON-03` («Bosque Susurrante») alineándolos fidedignamente con sus biomas y especies acuáticas/forestales.
 - **Ampliación Aditiva de Contratos sin Ruptura de Esquema:**
   - `CriaturasService.obtenerEspecies` y `obtenerEspeciePorSlug` exponen `zona: { id, nombre } | null` resolviendo la relación desde `apariciones.zona` con respaldo determinista en `TABLAS_APARICION`.
@@ -902,6 +994,7 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 ---
 
 ### 14.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Unitarias de Back-End (`pnpm --filter api test`):**
   - **107 de 107 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Verificación exhaustiva de motores de combate, afinidades elementales, estados alterados, invariantes INV-01 a INV-05, compras por lotes, transferencias de almacén y persistencia de resonancia.
@@ -910,7 +1003,7 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
   - Incorporación de la suite minimalista `apps/web/test/verificacion-combate-tactico.spec.ts` (55 líneas) validando:
     1. Renderizado de 4 slots tácticos y desbloqueo de M4 exclusivamente con 100 de Resonancia.
     2. Insignias de estados activos con icono Lucide, etiqueta en español y conteo de turnos.
-    3. Agrupación por zonas de hábitat y preservación de la condición legendaria en *Behir* y *Remorhaz*.
+    3. Agrupación por zonas de hábitat y preservación de la condición legendaria en _Behir_ y _Remorhaz_.
 - **Compilación de Producción (`pnpm --filter web build`):**
   - **0 errores** TypeScript en modo estricto en Vite (construcción completada en 1.78s).
 - **Linter de Front-End (`pnpm --filter web lint`):**
@@ -921,6 +1014,7 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 ---
 
 ### 14.4 Cobertura Integral de Efectos en Combate y Badges Tácticos (Decisión D-12)
+
 - **Diagnóstico y Auditoría:** Se identificó que la base de datos y el bestiario contienen exactamente 51 efectos únicos asociados a los movimientos de las 30 criaturas. Se requería garantizar que absolutamente todos ellos produjeran impacto mecánico tangible tanto en el servidor como en el cliente visual.
 - **Mapeo Autoritativo Exhaustivo en Backend (`motor-combate.ts`):**
   1. Se expandió `EFECTO_A_ESTADO` a 40 claves que aplican formalmente los 6 estados canónicos (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), contextualizando mensajes retro específicos para variantes protectoras (`ESPINAS`, `RETRIBUCION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `INVISIBILIDAD`, `DESFASADO`, `DEF_UP`, `EVASION_UP`).
@@ -946,7 +1040,9 @@ Previo a esta intervención, la experiencia de combate y compendio presentaba un
 ## 15. Sub-Fase 10e: Rediseño Visual de Combate Móvil Impeccable (Zero-Scroll, Arena Diagonal JRPG, Consola Contextual y Estética Retro-Brutalist 8-Bit)
 
 ### 15.1 Diagnóstico Inicial y Auditoría Heurística Impeccable
+
 Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría visual y ergonómica exhaustiva de `PantallaCombate.tsx` con la skill `impeccable` y los estándares de `docs/DESIGN.md`, identificando los siguientes aspectos críticos:
+
 1. **Inconsistencia Tipográfica Híbrida (`font-mono` / `font-sans` vs `.retro`):** Existía disparidad en la presentación de datos de combate: los niveles (`Lv.X`), estadísticas numéricas de vitalidad (`HP XX/YY`), medidores de Resonancia y EXP, nombres de movimientos, etiquetas de efectividad, descripciones de estado y botones de modales utilizaban `font-mono` o `font-sans`, rompiendo la inmersión retro de consola RPG de 8-bit/16-bit.
 2. **Desplazamiento Horizontal y Truncamiento en Móvil (360px–420px):** En pantallas reducidas, las placas HUD de combate (aliado y rival) rozaban el límite del viewport, y el uso de `truncate` estricto en nombres y badges provocaba amputaciones textuales abruptas en resoluciones móviles. Asimismo, se requería garantizar `overflow-x-hidden` en el contenedor principal de combate para evitar scroll horizontal espurio.
 3. **Falta de Separación y Ergonomía en Botones de Acción:**
@@ -961,24 +1057,27 @@ Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría vis
 ### 15.2 Mejoras Implementadas
 
 #### A. Tipografía Retro Integral (`Press Start 2P` / `.retro` en Toda la Pantalla)
+
 - **Consolidación Tipográfica Absoluta:** Se erradicó el uso de `font-mono` y `font-sans` en todos los controles y datos de combate, adoptando la tipografía pixelada `Press Start 2P` (`.retro`) en:
   - **Indicador Superior de Turno:** Pastilla central ornada con marco dorado (`◆ TURNO X: TU TURNO ◆` / `TURNO ENEMIGO`) con clases `retro text-[9px] sm:text-[11px] font-bold text-[#ffd700]`.
   - **Placas HUD de Combate:** Nombres de criaturas aliada y rival con `retro text-[9px] sm:text-[10px]`, niveles formateados en español retro (`NV.{rival.nivel}` y `NV.{aliado.nivel}` con `retro text-[8px] sm:text-[9px]`), etiquetas numéricas de salud (`HP` y `XX/YY HP` en `retro`), medidor de Resonancia (`RES.` y `XX%` en `retro`), y barra de EXP (`EXP` y `XX%` en `retro`).
   - **Insignias de Efecto y Estados Alterados:** Badges temáticos de afinidad elemental (`[{FUEGO}]`, `[{AGUA}]`, etc.) y estados activos (`[{QUEMADURA}]`, `[{PARÁLISIS}]`, etc.) renderizados en tipografía pixelada `retro text-[7px] sm:text-[8px]`.
   - **Cifras Flotantes de Daño y Curación:** Daño recibido (`-{dano}`) y curación (`+{curacion} HP`) flotantes con sombra dura de alto contraste (`drop-shadow-[2px_2px_0_#000] retro text-xs sm:text-sm`).
-  - **Ticker y Drawer de Bitácora:** Ticker colapsado de 1 sola línea con tipografía retro (`retro text-[9px] sm:text-[10px]`) y hoja expandible (*bottom sheet*) con cronología completa estilizada en `retro text-[9px] sm:text-[10px]`.
+  - **Ticker y Drawer de Bitácora:** Ticker colapsado de 1 sola línea con tipografía retro (`retro text-[9px] sm:text-[10px]`) y hoja expandible (_bottom sheet_) con cronología completa estilizada en `retro text-[9px] sm:text-[10px]`.
   - **Botonera Contextual Arcade:** Comandos de consola (`ATACAR`, `USAR OBJETO`, `CAMBIAR`, `CAPTURAR`, `HUIR`) con tipografía retro `text-[10px] sm:text-xs`.
   - **Submenú de Movimientos Tácticos:** Ranuras (`M1` a `M4`), nombres de movimientos, potencia (`Pot. {poder}`), chips de efectividad (`¡EFICAZ!`, `RESISTIDO`), badges de efectos mecánicos y leyenda de bloqueo de Furia (`Requiere Resonancia 100 %`).
   - **Submenús de Objetos, Relevo y Captura:** Listados de consumibles, equipo y talismanes completamente renderizados en tipografía retro.
   - **Modales y Diálogos Cinemáticos:** Textos de Pausa, Huida, Victoria (con desglose de XP ganada, monedas obtenidas y nivel), Captura y Derrota renderizados íntegramente en `.retro`.
 
 #### B. Confinamiento Móvil y Cero Desbordamiento Horizontal (360px–420px)
+
 - **Contenedor Principal Blindado:** Estructura fija `h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]`.
 - **Ancho Fluido en Placas HUD:** Calibración a `max-w-[210px] sm:max-w-[240px]` con tamaños de texto compactos (`text-[8px]` a `text-[10px]`), garantizando que en dispositivos estrechos (360px) el HUD del rival y del aliado coexistan holgadamente con los sprites sin producir solapamientos ni desbordamientos.
 - **Cuadrícula Elástica de Movimientos:** En modo móvil, los 4 movimientos tácticos se despliegan en 2 columnas con altura mínima controlada (`min-h-[56px] sm:min-h-[64px]`) y badges con ancho máximo contenido (`max-w-[85px] sm:max-w-[100px]`), impidiendo roturas de la tarjeta.
 - **Sellado Elástico de Modales:** Todos los cuadros de diálogo (`DialogContent` y `AlertDialogContent`) sellados con `w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden`, eliminando cualquier riesgo de scrollbar horizontal.
 
 #### C. Separación Táctil y Ergonomía en Botones de Acción
+
 - **Consola Principal (`ROOT`):** Cuadrícula con separación desahogada `gap-2.5 sm:gap-3`, áreas táctiles de 56px de alto en botones superiores (`h-14 sm:h-16`) y 48px en botón Huir (`h-12 sm:h-16`), optimizadas para la zona de alcance del pulgar.
 - **Submenú de Movimientos (`ATTACK`):** Espaciado `gap-2 sm:gap-3` entre ranuras tácticas y separación nítida del botón «Volver» con micro-borde negro y sombra sólida.
 - **Diálogos de Victoria, Captura y Derrota:** Separación generosa `gap-3 sm:gap-4` en la botonera vertical del pie (`Continuar Explorando` vs `Volver al Hub`, `Ver en Equipo` vs `Continuar`, `Ir a Centro de Curación` vs `Volver al Hub`).
@@ -986,12 +1085,14 @@ Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría vis
 - **Menú de Pausa:** Espaciado `gap-3` entre opciones primarias de combate y enlaces secundarios (`/kit-ui`, `/creditos`).
 
 #### D. Estética Retro-Brutalist 8-Bit (8bitcn/ui) y Consola Arcade
+
 - **Marcos y Sombras Ortogonales:** Marco perimetral y divisores con `border-2 border-black` / `border-4 border-black` y sombras duras de alto contraste `shadow-[2px_2px_0_0_#000]`, `shadow-[4px_4px_0_0_#000]` y `shadow-[6px_6px_0_0_#000]`.
 - **Efecto de Pulsación Mecánica:** Botones arcade con micro-interacción física (`active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000]`).
 - **Arena Diagonal JRPG con Fondos Desacoplados:** Composición con `BattlefieldBackground`, pedestal de sombra difuminada y perspectiva isométrica tradicional.
 - **Barras Reactivas 8-Bit:** `HealthBar` y `XpBar` integradas con bordes negros sólidos, y medidor de Resonancia con animación de pulso áureo (`anim-pulso-resonancia`) al alcanzar el 100%.
 
 #### E. Preservación Funcional, Hardening y Audio Retro Centralizado (`assets.ts`)
+
 - **Preservación Integral de la Lógica de Servidor:** Sincronización estricta de turnos (`encuentro.turno`), motor de 4 ranuras tácticas (`construirSlotsTacticos`), bloqueo autoritativo de Movimiento Insignia / Furia (Slot 4) si Resonancia < 100%, inventario curativo (`api.usarItem`), relevo en vivo (`api.actualizarOrdenEquipo`), captura probabilística con talismán (`api.capturar`) y escape por velocidad (`api.huir`).
 - **Hardening Estricto contra Doble Clic:** Cerrojo síncrono `cerrojoAccion.current = true`, estado reactivo `procesandoAccion`, atributos de accesibilidad `aria-busy={procesandoAccion}`, `aria-disabled={estaBloqueado}` y bloqueo visual con `<Spinner />`.
 - **Audio Web Audio Retro Centralizado:** Consumo de `reproducirSonido(...)` para eventos de golpe elemental, victoria, captura exitosa, escape, uso de consumibles y clics táctiles.
@@ -1000,15 +1101,16 @@ Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría vis
 ---
 
 ### 15.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
   - **84 de 84 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Verificación en `test/verificacion-combate.spec.ts` de:
-    * Tipografía retro integral `Press Start 2P` (`.retro`) en turnos, HUDs (`NV.`), HP, Resonancia, EXP y modales.
-    * Confinamiento móvil estricto con `overflow-x-hidden`.
-    * Separación táctil en consola principal (`gap-2.5 sm:gap-3`) y modales (`gap-3 sm:gap-4`).
-    * Hardening contra doble clic con `cerrojoAccion.current`, `disabled` y `aria-busy`.
-    * Sellado elástico de modales contra desbordamiento (`w-[calc(100vw-2rem)] sm:max-w-md`).
-    * Ausencia absoluta de emojis unicode (Regla R1).
+    - Tipografía retro integral `Press Start 2P` (`.retro`) en turnos, HUDs (`NV.`), HP, Resonancia, EXP y modales.
+    - Confinamiento móvil estricto con `overflow-x-hidden`.
+    - Separación táctil en consola principal (`gap-2.5 sm:gap-3`) y modales (`gap-3 sm:gap-4`).
+    - Hardening contra doble clic con `cerrojoAccion.current`, `disabled` y `aria-busy`.
+    - Sellado elástico de modales contra desbordamiento (`w-[calc(100vw-2rem)] sm:max-w-md`).
+    - Ausencia absoluta de emojis unicode (Regla R1).
   - Verificación en `test/verificacion-combate-tactico.spec.ts` de las 4 ranuras tácticas, regla del slot 4 de Furia bloqueada y badges de estados.
 - **Auditoría Mecánica Impeccable:** Ejecución de `detect.mjs` sobre `PantallaCombate.tsx` arrojando `[]` (0 defectos).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores en 80 archivos con 116 reglas.
@@ -1019,24 +1121,27 @@ Tras la estabilización mecánica de la Fase 10l, se realizó una auditoría vis
 ### 15.4 Pulido Visual de Botones Arcade Biselados, Simetría de Placas HUD y Corrección de Placeholder Invertido (Auditoría Fotográfica)
 
 #### A. Diagnóstico de Defectos Visuales Identificados en Producción
+
 A partir de una captura de pantalla real del combate en dispositivo móvil, se identificaron cuatro defectos visuales puntuales que degradaban la experiencia estética del juego:
+
 1. **Truncamiento Asimétrico de Nombres en Placas HUD:** La placa aliada exhibía `Mantarr... NV.5 [Sombra]` debido a que el nombre, el nivel y la afinidad elemental estaban apiñados horizontalmente en un solo contenedor `flex` de ~210px. De igual forma, la placa rival truncaba nombres largos como `Mantarraya Espe... NV.3` por el uso de `truncate` rígido.
 2. **Inversión Espejada del Placeholder Aliado (`AЯUTAЯIƆ`):** El sprite del aliado aplicaba incondicionalmente la clase CSS `scale-x-[-1]` para simular la vista de espaldas/perfil hacia el rival. Cuando la criatura utilizaba el SVG de reserva `placeholder-criatura.svg`, el texto interno `CRIATURA` se invertía en espejo como `AЯUTAЯIƆ`.
 3. **Halo Cian Gigante Desalineado en Botón de Pausa:** En la esquina superior derecha, el botón de pausa utilizaba el componente `<Button variant="outline">` de `8bitcn/ui`, el cual inyectaba automáticamente la capa decorativa `ButtonDecorations` con `dark:bg-ring` absoluto, proyectando un enorme anillo circular cian descalibrado sobre la cabecera.
 4. **Ticker de Bitácora Apretado y Botones Inferiores Genéricos:** El ticker de eventos mostraba un borde dorado desarticulado y un badge invasivo (`2 eventos`) que cortaba prematuramente el texto del encuentro. Asimismo, los botones de la consola inferior (`ROOT`) lucían planos y genéricos debido a que tres de los comandos (`USAR OBJETO`, `CAMBIAR`, `CAPTURAR`) compartían el mismo tono cian opaco plano (`#0e4b5c`), sin relieve táctil de botón de arcade.
 
 #### B. Mejoras Implementadas
+
 1. **Consola Arcade con Relieve Físico Tridimensional y Paleta Cromática JRPG:**
    - **Bisel Extruido 3D:** Se dotó a cada botón de la consola de un marco biselado tridimensional con luz cenital y sombra inferior ortogonal:
      `shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000]`.
    - **Micro-Animación Mecánica de Pulsación:** Al presionar, el botón se hunde físicamente invirtiendo la iluminación interna:
      `active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000]`.
    - **Jerarquía Cromática Táctica Canónica:**
-     * **ATACAR:** Degradado rojo llama arcade (`from-[#dc2626] to-[#b91c1c]`) con icono `Swords` en amarillo solar (`#fde047`) con drop-shadow negro.
-     * **USAR OBJETO:** Degradado verde esmeralda vital (`from-[#059669] to-[#047857]`) con icono `HeartPulse` en menta brillante (`#a7f3d0`).
-     * **CAMBIAR:** Degradado azul zafiro táctico (`from-[#2563eb] to-[#1d4ed8]`) con icono `ArrowLeftRight` en cian brillante (`#7dd3fc`).
-     * **CAPTURAR:** Degradado púrpura arcano amatista (`from-[#7c3aed] to-[#6d28d9]`) con icono `Sparkles` en oro (`#fde047`).
-     * **HUIR:** Degradado carmesí oscuro de alerta (`from-[#991b1b] to-[#7f1d1d]`) con icono `LogOut` en tono carmesí claro.
+     - **ATACAR:** Degradado rojo llama arcade (`from-[#dc2626] to-[#b91c1c]`) con icono `Swords` en amarillo solar (`#fde047`) con drop-shadow negro.
+     - **USAR OBJETO:** Degradado verde esmeralda vital (`from-[#059669] to-[#047857]`) con icono `HeartPulse` en menta brillante (`#a7f3d0`).
+     - **CAMBIAR:** Degradado azul zafiro táctico (`from-[#2563eb] to-[#1d4ed8]`) con icono `ArrowLeftRight` en cian brillante (`#7dd3fc`).
+     - **CAPTURAR:** Degradado púrpura arcano amatista (`from-[#7c3aed] to-[#6d28d9]`) con icono `Sparkles` en oro (`#fde047`).
+     - **HUIR:** Degradado carmesí oscuro de alerta (`from-[#991b1b] to-[#7f1d1d]`) con icono `LogOut` en tono carmesí claro.
 2. **Simetría y Fluidez en Placas HUD:**
    - Se trasladó la afinidad elemental `{aliado.afinidad}` a la segunda fila de la placa aliada, alineándola simétricamente con la placa rival.
    - Se ampliaron los anchos máximos a `max-w-[225px] sm:max-w-[260px]`.
@@ -1052,29 +1157,21 @@ A partir de una captura de pantalla real del combate en dispositivo móvil, se i
    - Sustitución del marco dorado por marco negro de cartucho `bg-[#0c1424] border-2 border-black shadow-[2px_2px_0_0_#000]`, badge compacto `{bitacoraCombate.length} ev.` y texto en `text-[8px] sm:text-[9px] retro text-amber-100`.
 
 #### C. Verificación de Cero Regresiones
+
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **84 de 84 pruebas aprobadas** (100% de éxito).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores.
 - **Compilación de Producción (`pnpm --filter web build`):** 0 errores TypeScript, bundle completado exitosamente en Vite en 2.40s.
 
 ---
 
-
-
-
-
-
-
-
-
-
-
-
 ---
 
 ## 16. Sub-Fase 10i: Rediseño Visual de Créditos y Atribución Legal Impeccable (Estética Retro-Brutalist, Tipografía 8-Bit Integral y Cero Overflow Móvil)
 
 ### 16.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` mediante la skill `impeccable` y los lineamientos de `docs/DESIGN.md` reveló oportunidades críticas de mejora estética y adaptabilidad:
+
 1. **Apiñamiento y Separación Deficiente en Botones de Acción:** Los botones de cabecera (`CELEBRAR FANFARRIA` y `Volver al Asentamiento`) estaban dispuestos con un espaciado reducido (`gap-2`), generando apiñamiento y dificultad táctil en pantallas móviles; de igual forma, el pie de página requería una delimitación clara entre el aviso de derechos y el botón de retorno.
 2. **Riesgo de Desbordamiento Horizontal en Móvil (360px–420px):** Las cajas de licencias legales (MIT de 8bitcn y CC BY 4.0 de Wizards of the Coast / Open5e) y las tarjetas técnicas carecían de confinamiento estricto contra desbordamientos, con riesgo de provocar desplazamiento horizontal indeseado.
 3. **Acortamiento Excesivo de Textos (`truncate`):** La galería de criaturas emblemáticas utilizaba la clase utilitaria `truncate`, recortando títulos y nombres de especies con longitud media o alta en resoluciones móviles reducidas.
@@ -1086,6 +1183,7 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 ### 16.2 Mejoras Implementadas
 
 #### A. Salón de la Fama Ceremonial con Marco Retro-Brutalist de Alto Contraste
+
 - **Marco de Consola Dorada:** Enmarcado perimetral de alto impacto con `border-4 border-black shadow-[6px_6px_0_0_#000] bg-bastion p-4 sm:p-6 rounded-none space-y-5`.
 - **Insignias Ceremoniales:** Badges temáticos con relieve ortogonal (`border-2 border-black shadow-[2px_2px_0_0_#000] retro text-[8px] sm:text-[9px]`):
   - `SALÓN DE LA FAMA`: Fondo ámbar translúcido (`bg-amber-500/20 text-amber-400`) con icono SVG `Crown`.
@@ -1093,6 +1191,7 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 - **Título de Pantalla con Relieve y Sombra Densa:** Título principal «AETHELGARD: CRÉDITOS Y HONOR» en tipografía pixelada `Press Start 2P` con sombra proyectada ortogonal (`retro text-base sm:text-xl md:text-2xl font-bold tracking-tight text-primary drop-shadow-[2px_2px_0_#000] break-words leading-snug`).
 
 #### B. Separación Holgada y Relieve Táctil en Botones de Acción
+
 - **Botonera de Cabecera:** Separación táctil y vertical ampliada (`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 w-full sm:w-auto shrink-0 pt-2 sm:pt-0`), garantizando que en resoluciones móviles reducidas los botones cuenten con área de pulsación completa (`w-full sm:w-auto`), holgura superior e inferior y margen perimetral desahogado.
 - **Botón de Fanfarria Reactivo:**
   - Estilizado en oro solar con `bg-amber-500 hover:bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none hover:shadow-[4px_4px_0_0_#000] w-full sm:w-auto justify-center px-4 py-3`.
@@ -1104,6 +1203,7 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 - **Pie Ceremonial Separado:** Delimitación formal con `flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 pb-2 border-t-2 border-black`, separando el crédito institucional con `ShieldCheck` del botón de retorno secundario (`w-full sm:w-auto px-5 py-3`).
 
 #### C. Tipografía Retro Integral (`Press Start 2P` / `.retro` 100%)
+
 - **Erradicación Total de Fuentes Sans-Serif y Mono Estándar:** Adopción universal de la clase `.retro` (`Press Start 2P`) en absolutamente todos los elementos de la vista:
   - Títulos principales, insignias heráldicas y descripciones.
   - Homenaje académico al Ingeniero Claudio y principios rectores de software.
@@ -1117,12 +1217,13 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
   - Títulos y botones: `text-[10px] sm:text-xs` con interlineado fluido.
 
 #### D. Ergonomía Móvil y Rediseño Integral del Bestiario Victorioso (Vitrina de Trofeos 8-Bit)
+
 - **Confinamiento Seguro:** Contenedor raíz delimitado con `w-full max-w-5xl mx-auto px-2 sm:px-4 space-y-6 sm:space-y-8 py-4 sm:py-6 overflow-x-hidden`.
 - **Sincronización con Especies Canónicas Reales:** Erradicación de especies obsoletas o inexistentes en el compendio (`grifo`, `hidra-de-las-marismas`), sustituyéndolas por las 4 criaturas canónicas vigentes del bestiario de Aethelgard:
-  1. `lobo-estepario` (*Lobo Estepario* · Bestia · Praderas del Amanecer).
-  2. `golem-granito` (*Golem Granito* · Constructo · Paso de los Riscos).
-  3. `quimera-tricefala` (*Quimera Tricéfala* · Monstruosidad · Cueva Umbría).
-  4. `remorhaz-glaciar` (*Remorhaz Glaciar* · Monstruosidad · Pico de la Cumbre · Insignia Legendaria).
+  1. `lobo-estepario` (_Lobo Estepario_ · Bestia · Praderas del Amanecer).
+  2. `golem-granito` (_Golem Granito_ · Constructo · Paso de los Riscos).
+  3. `quimera-tricefala` (_Quimera Tricéfala_ · Monstruosidad · Cueva Umbría).
+  4. `remorhaz-glaciar` (_Remorhaz Glaciar_ · Monstruosidad · Pico de la Cumbre · Insignia Legendaria).
 - **Vitrina de Trofeos Vertical (Eliminación de Cortes Silábicos):**
   - Rediseño con pedestal centrado para el sprite pixel-art (`size-16 bg-bastion border-2 border-black shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.7)]`), otorgando el ancho completo de la tarjeta para el nombre y los badges.
   - Supresión definitiva de la partición de palabras ("Tricéfa / la" o "Estepar / io") mediante flujo centrado con tipografía retro compacta (`text-[8px] sm:text-[9px] font-bold leading-snug break-words`).
@@ -1130,12 +1231,14 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 - **Cajas de Licencias con Scroll Contenido:** Cajas legales configuradas con `max-h-48 overflow-y-auto overflow-x-hidden p-3 border-2 border-black bg-black/40 text-[8px] leading-relaxed break-words shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)]`, permitiendo inspección íntegra del texto legal sin deformar la maquetación.
 
 #### E. Cumplimiento Estricto de la Regla R1 (Cero Emojis Unicode)
+
 - Cero emojis unicode en toda la pantalla; empleo exclusivo de iconos SVG vectoriales de Lucide: `Trophy`, `Crown`, `Sparkles`, `ArrowLeft`, `Volume2`, `Award`, `GraduationCap`, `Code2`, `ShieldCheck` y `BookOpen`.
 - Todos los textos de interfaz redactados en español riguroso conforme a la directriz académica.
 
 ---
 
 ### 16.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
   - **80 de 80 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Nueva prueba especializada `Hardening, Ergonomía y Estética Retro-Brutalist: PaginaCreditos cuenta con marcos 8bitcn, sombras sólidas, tipografía retro integral y botones táctiles separados` que valida:
@@ -1150,13 +1253,14 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 - **Linter Web (`pnpm --filter web lint`):** 0 errores de TypeScript y Oxlint en los 80 archivos del proyecto.
 - **Compilación de Producción (`pnpm --filter web build`):** 0 errores de compilación, empaquetado completado en Vite en 3.27s.
 
-
 ---
 
 ## 17. Sub-Fase 10i: Rediseño Visual de Bitácora de Expediciones Impeccable (Estética Retro-Brutalist 8-Bit, Tipografía Integral y Cero Overflow Móvil en PantallaHistorial.tsx)
 
 ### 17.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` mediante la skill `impeccable` y los lineamientos de `docs/DESIGN.md` reveló oportunidades críticas de mejora estética, consistencia retro y adaptabilidad:
+
 1. **Desplazamiento Horizontal y Truncamiento en Móvil (360px–420px):** Disposición rígida en fila horizontal que asfixiaba el sello de fecha/hora, el badge de categoría y la información en pantallas estrechas. El contenedor carecía de confinamiento con `overflow-x-hidden` y utilizaba la clase `truncate` que cortaba el registro técnico del evento si el tipo era extenso o la resolución reducida.
 2. **Inconsistencia Tipográfica:** Presencia de fuentes sans-serif convencionales (`font-sans font-medium`) en el cuerpo descriptivo de las crónicas y fuentes monoespaciadas (`font-mono`) en fechas, sellos temporales y botones de filtro, rompiendo la inmersión auténtica de cartucho RPG retro.
 3. **Carencia de Separación y Ergonomía en Botones de Acción:** Filtros rápidos apiñados con un espaciado reducido (`gap-1.5`), botones de cabecera con espacio insuficiente (`gap-2`) para interacción táctil cómoda en pantallas móviles y falta de separación holgada en la barra de búsqueda y estado vacío.
@@ -1168,6 +1272,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
 ### 17.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist y Marcos 8bitcn/ui
+
 - **Cabecera Ceremonial de Crónicas:** Enmarcado perimetral contundente con `border-4 border-black bg-bastion shadow-[6px_6px_0_0_#000] p-4 sm:p-5 rounded-none`, presentando el título `BITÁCORA DE EXPEDICIONES` con sombra proyectada ortogonal (`drop-shadow-[2px_2px_0_#000] text-primary`).
 - **Insignia Heráldica de Crónicas:** Badge superior en relieve pixelado (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-background text-foreground retro text-[8px] sm:text-[9px] py-1 px-2.5 rounded-none`) con icono SVG `BookOpen`.
 - **Panel de Filtros y Búsqueda Brutalista:** Módulo de control unificado con `border-2 border-black shadow-[4px_4px_0_0_#000] bg-bastion p-3.5 sm:p-4 rounded-none space-y-4`.
@@ -1182,6 +1287,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
 - **Skeletons y Estado Vacío Retro:** Barras de carga con marcos negros pixelados (`border-2 border-black bg-muted/60 animate-pulse shadow-[2px_2px_0_0_#000] rounded-none h-20`). Tarjeta de estado vacío ceremonial sellada con `border-4 border-black shadow-[6px_6px_0_0_#000] bg-bastion text-center p-6 sm:p-8 rounded-none space-y-4`.
 
 #### B. Tipografía Retro Integral (`Press Start 2P` / `.retro` 100%)
+
 - **Erradicación Universal de Fuentes Convencionales:** Supresión total de `font-sans` y `font-mono`, aplicando la tipografía retro pixelada `Press Start 2P` (`.retro`) en **absolutamente todos** los textos y controles:
   - Título principal (`text-base sm:text-xl md:text-2xl`), subtítulo de ambientación (`text-[8px] sm:text-[9px] leading-relaxed`) e insignia de crónicas.
   - Botones de filtros rápidos por categoría y píldoras numéricas de conteo (`text-[7px] sm:text-[8px]`).
@@ -1193,6 +1299,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
   - Títulos, descripciones y botones de estado vacío (`text-[8px]` a `text-xs`).
 
 #### C. Confinamiento Móvil y Erradicación de Truncamientos (360px–420px)
+
 - **Contenedor Raíz Confinado:** `w-full max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6 overflow-x-hidden space-y-5 sm:space-y-6`, previniendo de manera estricta cualquier desbordamiento horizontal.
 - **Ajuste Flexible Sin Amputaciones:** Supresión de cualquier clase `truncate` destructiva, implementando flujo multilínea con `break-words` y `break-all`.
 - **Adaptación Fluida de Tarjetas:**
@@ -1200,6 +1307,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
   - En pantallas de escritorio (>=640px): se preserva la alineación horizontal natural (`sm:flex-row items-center gap-4`), brindando lectura cómoda sin compresión.
 
 #### D. Ergonomía Táctil, Separación de Botones y Calibración de Búsqueda
+
 - **Botones de Cabecera:** Separación vertical y horizontal ampliada (`gap-4 sm:gap-5`) en contenedor elástico (`flex flex-col sm:flex-row items-stretch sm:items-center w-full sm:w-auto`), con botones táctiles de al menos 40px de altura (`min-h-[40px] sm:h-10 px-4`), eliminando la compresión vertical en pantallas móviles y dotados de relieve táctil retro (`border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none hover:shadow-[3px_3px_0_0_#000]`).
 - **Rejilla Táctica 6-Slot y Erradicación de Truncamiento en Filtros:** Reorganización simétrica en `grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 w-full`. Se calibró la escala tipográfica a `text-[7px] sm:text-[8px] lg:text-[8.5px]` con `whitespace-nowrap tracking-tight`, icono de 12px (`w-3 h-3 sm:w-3.5 sm:h-3.5`) y padding `px-1.5 sm:px-2.5`. Esto erradica definitivamente el truncamiento de etiquetas extensas como `EXPLORACIÓN` (que en viewports estrechos se cortaba como `EXPLORAC]`), garantizando lectura íntegra en pantallas de 360px sin escalonamientos asimétricos.
 - **Barra de Búsqueda con Placeholder Inmune a Truncamiento:** Calibración del texto de sugerencia a `Buscar crónica...` (17 caracteres) con tipografía pixelada proporcional (`text-[8px] sm:text-[9px] placeholder:text-[7.5px] sm:placeholder:text-[9px]`) y sangría calibrada (`pl-8 sm:pl-9`), resolviendo de forma definitiva el corte de texto (`Buscar crónica por palabra c...`) advertido en auditoría visual móvil.
@@ -1207,6 +1315,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
 - **Botones de Estado Vacío:** Separación táctil holgada (`gap-3 sm:gap-4 flex-wrap`) entre las acciones de exploración y reseteo.
 
 #### E. Reglas de Servidor, Audio y Cero Emojis Unicode (Regla R1)
+
 - **Preservación Funcional Estricta:** Conservación íntegra de `api.obtenerHistorial()`, sincronización en tiempo real de estados de carga (`cargando`, `actualizando`), conteos reactivos por categoría y filtrado combinado (categoría canónica + búsqueda insensible a acentos mediante `filtrarEventosHistorial`).
 - **Hardening Antirrebote y Accesibilidad:** Atributo `aria-busy={actualizando}`, deshabilitación durante peticiones activas e icono animado con `RefreshCw` en estado de rotación.
 - **Audio Web Audio API Centralizado:** Disparo consistente de `reproducirSonido("click")` al interactuar con botones de navegación, cambio de categoría, búsqueda y actualización manual.
@@ -1216,6 +1325,7 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
 ---
 
 ### 17.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
   - **83 de 83 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Nueva prueba especializada `Hardening, Ergonomía y Estética Retro-Brutalist: PantallaHistorial cuenta con marcos 8bitcn, sombras sólidas, tipografía retro integral y confinamiento sin overflow` que audita:
@@ -1235,7 +1345,9 @@ La auditoría heurística y de ergonomía visual sobre `PantallaHistorial.tsx` m
 ## 18. Sub-Fase 10c: Arquitectura de Layout y Navegación Global (`LayoutPrincipal.tsx`)
 
 ### 18.1 Diagnóstico Inicial y Auditoría Impeccable
+
 La auditoría de diseño heurístico y técnico realizada con la skill `impeccable` y los lineamientos de `docs/DESIGN.md` sobre el cascarón de aplicación y navegación perimetral (`LayoutPrincipal.tsx`) detectó oportunidades cruciales de alineación visual y robustez ergonómica:
+
 1. **Inconsistencia Tipográfica:** La cabecera y el pie de página originales utilizaban tipografía sans-serif convencional por defecto en los enlaces de navegación («Kit de interfaz», «Créditos», «Créditos y licencias») y en la leyenda de derechos institucionales `(c) 2026 Aethelgard · Proyecto Integrador ISC-305`. Esta disparidad rompía la inmersión retro de cartucho de consola RPG al alternar la fuente pixelada del logo con fuentes genéricas de sistema. Se requería la unificación rigurosa al 100% bajo la tipografía pixelada `Press Start 2P` (`.retro`).
 2. **Ausencia de Marcos Retro-Brutalistas:** La cabecera superior y el pie de página descansaban sobre bordes tenues de baja definición (`border-b border-border` y `border-t border-border`), careciendo de la contundencia física de los marcos negros sólidos (`border-b-4 border-black` y `border-t-4 border-black`) y sombras ortogonales proyectadas duras (`shadow-[0_4px_0_0_#000]` y `shadow-[0_-4px_0_0_rgba(0,0,0,0.15)]`), estándar fundamental de `8bitcn/ui`, NES.css y RPG UI.
 3. **Ergonomía de Navegación en la Cabecera:** Los enlaces superiores se presentaban como texto plano con subrayado sutil, desaprovechando la oportunidad táctil de comportarse como auténticos cartuchos de consola u arcade buttons 8-bit con relieve físico (`border-2 border-black shadow-[2px_2px_0_0_#000]`), micro-interacción al clic (`active:translate-y-0.5 active:shadow-none`) y distinción cromática nítida e inmediata entre estado activo e inactivo.
@@ -1251,15 +1363,17 @@ La auditoría de diseño heurístico y técnico realizada con la skill `impeccab
 ### 18.2 Mejoras Implementadas
 
 #### A. Identidad Retro-Brutalist 8-Bit y Marcos 8bitcn/ui (`docs/DESIGN.md`)
+
 - **Cabecera Fija Superior con Relieve Ortogonal:** Barra de navegación superior fija (`sticky top-0 z-40`) enmarcada con borde negro grueso inferior de 4px (`border-b-4 border-black`), fondo de tarjeta sólida retro de alta opacidad (`bg-card/95 backdrop-blur-xs`) y sombra proyectada ortogonal de 4px (`shadow-[0_4px_0_0_#000]`), transmitiendo la firmeza de un bisel de consola retro.
 - **Logotipo Heráldico de Marca con Relieve:** Enlace hacia `/hub` con tipografía pixelada `Press Start 2P` (`.retro`), escala responsive calibrada (`text-xs sm:text-base md:text-lg font-bold tracking-wider text-primary`) y sombra proyectada ortogonal de alto contraste (`drop-shadow-[1px_1px_0_#000]`).
 - **Botones de Navegación en Formato Cartucho 8-Bit:** Los enlaces `NavLink` («Kit de interfaz» y «Créditos») fueron reconcebidos como cartuchos táctiles pixel-art:
-  - *Estado Inactivo:* Marco negro de 2px con sombra dura (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-background text-muted-foreground hover:text-foreground hover:border-primary active:translate-y-0.5 active:shadow-none`).
-  - *Estado Activo:* Fondo primario de alto impacto con marco negro y sombra sólida (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-primary text-primary-foreground font-bold`).
+  - _Estado Inactivo:_ Marco negro de 2px con sombra dura (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-background text-muted-foreground hover:text-foreground hover:border-primary active:translate-y-0.5 active:shadow-none`).
+  - _Estado Activo:_ Fondo primario de alto impacto con marco negro y sombra sólida (`border-2 border-black shadow-[2px_2px_0_0_#000] bg-primary text-primary-foreground font-bold`).
 - **Pie de Página Brutalista Ceremonial:** Borde superior negro sólido de 4px (`border-t-4 border-black bg-card/95 shadow-[0_-4px_0_0_rgba(0,0,0,0.15)] px-4 py-4 sm:px-6 mt-auto`), con enlaces inferiores estilizados con tipografía retro, subrayado pixelado grueso de alto contraste (`underline underline-offset-4 decoration-2 decoration-black/40 hover:decoration-primary`) y transiciones de color nítidas.
 - **Preservación Incondicional del Cascarón de Combate:** Rama de evaluación condicional `if (esCombate)` preservada de forma intacta a pantalla completa (`h-screen h-[100dvh] w-full overflow-hidden bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full`), aislando las cinemáticas de batalla de las barras perimetrales.
 
 #### B. Tipografía Retro Integral (`Press Start 2P` / `.retro` 100%)
+
 - Adopción absoluta y homogénea de la fuente pixelada `Press Start 2P` (`.retro`) en la totalidad de cadenas textuales del cascarón perimetral:
   - **Marca principal:** `text-xs sm:text-base md:text-lg font-bold tracking-wider` («Aethelgard»).
   - **Cartuchos de navegación superior:** `text-[8px] sm:text-[9px] md:text-[10px] uppercase tracking-wider` («Kit de interfaz» y «Créditos»).
@@ -1267,6 +1381,7 @@ La auditoría de diseño heurístico y técnico realizada con la skill `impeccab
   - **Enlaces secundarios del pie:** `text-[8px] sm:text-[9px]` («Kit de interfaz» y «Créditos y licencias»).
 
 #### C. Confinamiento Móvil, Erradicación de Desbordamiento y Calibración Ergonómica (360px–420px)
+
 - **Confinamiento Anti-Overflow Raíz:** Contenedor raíz sellado con `min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full overflow-x-hidden`.
 - **Cabecera Compacta sin Desbordamiento ni `flex-wrap`:**
   - Barra superior en una sola fila (`flex items-center justify-between gap-2 sm:gap-4 w-full`) con padding vertical/horizontal afinado (`px-2.5 py-1.5 sm:px-6 sm:py-2.5`).
@@ -1282,11 +1397,13 @@ La auditoría de diseño heurístico y técnico realizada con la skill `impeccab
   - Enlaces del pie concebidos como micro-cartuchos retro interactivos (`border border-black/80 bg-background/60 hover:bg-background shadow-[1px_1px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 px-2.5 py-1 sm:px-3 sm:py-1.5`), erradicando el subrayado tosco que causaba efecto de tachado visual.
 
 #### D. Ergonomía Táctil y Separación de Acciones
+
 - **Botonera Superior:** Separación explícita (`gap-2 sm:gap-3`) entre cartuchos, con altura ergonómica táctil de 32px–36px (`h-8 sm:h-9`) y acolchado táctil holgado (`px-2 sm:px-3 py-1 sm:py-1.5`).
 - **Botonera Inferior:** Separación generosa (`gap-4 sm:gap-6`) entre los enlaces «Kit de interfaz» y «Créditos y licencias», y separación vertical/horizontal (`gap-3 sm:gap-4`) respecto a la leyenda institucional.
 - **Cuerpo Central (`<main>`):** Relleno interior confortable (`p-3 sm:p-6 lg:p-8 flex-1 max-w-6xl w-full mx-auto`), garantizando separación física entre el contenido interactivo de las pantallas y las barras perimetrales fijas.
 
 #### E. Reglas de Servidor, Audio Web Audio y Cero Emojis (Regla R1)
+
 - **Audio Retro Centralizado:** Integración de la función `reproducirSonido("click", 0.3)` desde `@/lib/assets` en todos los eventos interactivos de clic (marca, enlaces superiores y enlaces del pie), ofreciendo retroalimentación acústica clásica de consola.
 - **Regla R1 Estricta:** 100% de textos en español normativo y cero emojis unicode en todo el cascarón.
 - **Integridad de Enrutamiento:** Preservación sin alteraciones de `Outlet`, `Link`, `NavLink`, `useLocation` y el notificador global `<Toaster />`.
@@ -1294,6 +1411,7 @@ La auditoría de diseño heurístico y técnico realizada con la skill `impeccab
 ---
 
 ### 18.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Unitarias (`pnpm --filter web test`):**
   - **88 de 88 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Verificación formal de la prueba histórica `Ergonomía y Libertad de Usuario: PantallaCrearPersonaje y PantallaHubUbicacion incluyen escape hatch con LogOut, y LayoutPrincipal es responsive` (validando ausencia estricta de `flex-wrap` en cabecera, ausencia de botón `LogOut` en el header global y persistencia del enlace a `/kit-ui`).
@@ -1308,13 +1426,14 @@ La auditoría de diseño heurístico y técnico realizada con la skill `impeccab
 - **Linter Web (`pnpm --filter web lint`):** 0 errores de tipado o calidad en 80 archivos evaluados con Oxlint.
 - **Compilación de Producción (`pnpm --filter web build`):** 0 errores de compilación, empaquetado completado en Vite en 1.76s.
 
-
 ---
 
 ## 19. Sub-Fase 10m: Desbloqueo Territorial y Jerarquía Monótona de Criaturas
 
 ### 19.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Previo a esta subfase, se detectaron las siguientes debilidades estructurales y de experiencia de usuario:
+
 1. **Anomalía del 83 % de Captura en Golem Granito (Apex de `ZON-04`):**
    - Acoplamiento al `challenge_rating = 1` externo de Open5e en `normalizador-criaturas.util.ts` (`0.90 - 0.07 * 1 = 0.83`), provocando que un Apex `ESPECIAL` de nivel 5–7 fuera más fácil de capturar que criaturas comunes.
    - Lectura cruda desde la BD sin re-siembra ni blindaje autoritativo en `CriaturasService.obtenerEspecies()`.
@@ -1329,6 +1448,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ### 19.2 Mejoras Implementadas
 
 #### A. Identidad Retro y Jerarquía Visual
+
 - **Bandas Globales Disjuntas de BST y Captura por Rareza:**
   | Rareza | Peso | Cantidad | Banda Global BST | Banda Tasa Captura Base | Separación Estricta |
   | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -1341,14 +1461,17 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 - **Selector de Ordenamiento con Criterio Alfabético:** Incorporación de 6 modos: Hábitat y Rareza (`ZONA_ASC`), Mayor Poder BST (`BST_DESC`), Menor Poder BST (`BST_ASC`), Mayor Rareza (`RAREZA_DESC`), Más Difícil Captura (`CAPTURA_ASC`) y Orden Alfabético (`NOMBRE_ASC`).
 
 #### B. Componentes Táctiles 8bitcn/ui y Hardening
+
 - **Tarjeta Táctica de Senda Sellada con `Progress`:** Visualización precisa del avance cartográfico `${progresoActual}% / ${progresoObjetivo}%` y desglose de requisitos pendientes en Hub y modal `AlertDialog`.
 - **Botón Retro de Desbloqueo Territorial:** Acción `DESBLOQUEAR SENDA` conectada a `api.verificarZona` con `aria-busy`, prevención de doble clic y feedback táctil.
 - **Insignia "LISTA PARA DESBLOQUEAR":** Notificación dorada de disponibilidad inmediata al cumplir la totalidad de condiciones de cartografía y nivel.
 
 #### C. Integración Multimedia y Audio Retro Centralizado
+
 - **Retroalimentación Acústica:** Fanfarria `confirmar` al desbloquear sendas, `error` ante bloqueos y `click` al interactuar con selectores.
 
 #### D. Reglas de Servidor y Contratos
+
 - **Fórmula Soberana y Determinística de Captura:**
   $$\text{BST} = \text{hpBase} + \text{ataqueBase} + \text{defensaBase} + \text{velocidadBase}$$
   $$\text{tasaCaptura}(\text{BST}) = \text{clamp}\left(0.10,\; 0.85,\; \text{round}\left(\left(1.35 - \frac{\text{BST}}{300}\right) \times 100\right) / 100\right)$$
@@ -1366,6 +1489,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ---
 
 ### 19.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Front-End (`pnpm --filter web test`):**
   - **92 de 92 pruebas aprobadas** (100% de éxito, 0 fallos).
   - Verificación de ordenamiento alfabético `NOMBRE_ASC`, bandas disjuntas de BST, erradicación de anomalía en Golem Granito y cero emojis unicode (R1).
@@ -1379,6 +1503,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ## 20. Sub-Fase 10n: Orientación Territorial, Mapa Topológico y Claridad Semántica de Progresión
 
 ### 20.1 Diagnóstico Inicial y Auditoría Impeccable
+
 1. **Ambigüedad Semántica Crítica en "Nivel sugerido":**
    - La etiqueta `"Nivel sugerido: 1-3"` en `PantallaHubUbicacion` y `PantallaExploracion` mezclaba erróneamente dos conceptos de dominio incompatibles: el rango de fauna salvaje hostil de la zona (`Zona.nivelMinimo`–`Zona.nivelMaximo`) y el nivel de combate del explorador.
    - En la base de datos de Prisma (`apps/api/prisma/schema.prisma`), el modelo `Personaje` carece legítimamente de columna de nivel; todo el progreso pertenece a `Criatura` (nivel, experiencia y atributos). La UI carecía de una representación visual de este poder real del equipo.
@@ -1394,6 +1519,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ### 20.2 Mejoras Implementadas
 
 #### A. Identidad Retro y Claridad Semántica: Fauna Salvaje vs. Poder de Equipo
+
 - **Distinción Semántica Canónica:**
   - **Fauna Salvaje:** Etiqueta explícita `Fauna Salvaje: Nivel X - Y` para zonas silvestres, y `Asentamiento Pacífico (Sin Fauna Hostil)` para localidades seguras (`LOC-01`, `LOC-02`, `LOC-03`).
   - **Poder del Equipo y Rango de Domador:** Cálculo soberano en memoria de las métricas tácticas del personaje:
@@ -1408,6 +1534,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
     - `ZONA SEGURA` (Esmeralda/Azul): Destino en asentamiento pacífico.
 
 #### B. Componentes Táctiles 8bitcn/ui y Ergonomía
+
 - **`BannerUbicacionActual.tsx`:**
   - Encabezado con código territorial oficial (`[LOC-01]`, `[ZON-02]`), insignias temáticas Lucide SVG (`ShieldCheck` para asentamientos, `Skull` para zonas silvestres), y badge de fauna salvaje.
   - Barra de cartografía empotrada (`<Progress />`) señalando el porcentaje de exploración o el estado de cartografía completa al 100 %.
@@ -1421,17 +1548,19 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
   - Hardening anti-doble clic en botones `DESBLOQUEAR SENDA` y `VIAJAR A ESTA RUTA`.
 - **`MinimapaRedTerritorial.tsx`:**
   - Visualización del grafo de los 9 nodos de Aethelgard distribuido en 5 escalones de progresión territorial:
-    - *Escalón 1 (Valle Inicial):* `[LOC-01] Villa Serena`.
-    - *Escalón 2 (Sendas Bajas):* `[ZON-01] Praderas del Amanecer` y `[ZON-02] Riberas del Lago Espejo`.
-    - *Escalón 3 (Frontera Media):* `[LOC-02] Puesto Fronterizo del Río` y `[ZON-03] Bosque Susurrante`.
-    - *Escalón 4 (Paso Escarpado):* `[ZON-04] Paso de los Riscos`.
-    - *Escalón 5 (Norte y Cumbre):* `[LOC-03] Bastión del Norte`, `[ZON-05] Cueva Umbría` y `[ZON-06] Pico de la Cumbre`.
+    - _Escalón 1 (Valle Inicial):_ `[LOC-01] Villa Serena`.
+    - _Escalón 2 (Sendas Bajas):_ `[ZON-01] Praderas del Amanecer` y `[ZON-02] Riberas del Lago Espejo`.
+    - _Escalón 3 (Frontera Media):_ `[LOC-02] Puesto Fronterizo del Río` y `[ZON-03] Bosque Susurrante`.
+    - _Escalón 4 (Paso Escarpado):_ `[ZON-04] Paso de los Riscos`.
+    - _Escalón 5 (Norte y Cumbre):_ `[LOC-03] Bastión del Norte`, `[ZON-05] Cueva Umbría` y `[ZON-06] Pico de la Cumbre`.
   - Señalética retro con marcadores `AQUÍ` (cian pulsante), `100%` (esmeralda), `EXPLORADA` (ámbar) y `SELLADA` (candado rojo). Diseño responsive sin desbordamiento horizontal (`overflow-x-hidden`).
 
 #### C. Integración Multimedia y Audio Retro
+
 - Respeto del motor centralizado Web Audio API: preservación de fanfarrias de clic, viaje y desbloqueo, con soporte de síntesis polifónica sin bloqueos de reproducción ni fugas de memoria.
 
 #### D. Reglas de Servidor y Contratos Enriquecidos
+
 - **Enriquecimiento de `GET /api/mundo/ubicacion-actual`:**
   - Adición de `faunaNivelMinimo`, `faunaNivelMaximo`, `especiesHabitantes` (resueltas en memoria sin queries N+1 desde `TABLAS_APARICION` y `BESTIARIO`), y `poderEquipo` (calculado a partir de las criaturas del personaje).
   - Adición de `nodosMapa` con el estado cartográfico de las 9 ubicaciones canónicas.
@@ -1442,6 +1571,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ---
 
 ### 20.3 Verificación de Calidad y Cero Regresiones
+
 - **Pruebas Automatizadas Backend (`pnpm --filter api test`):**
   - **130 de 130 pruebas aprobadas** (100% de éxito, 41 suites, 0 fallos).
   - Nueva suite dedicada `apps/api/test/mundo.spec.ts` validando la obtención de especies habitantes, cálculo de poder de equipo, rangos de domador y enriquecimiento de `obtenerUbicacionActual`.
@@ -1456,6 +1586,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ## 21. Optimización Multimedia e Integración de Sprites Canónicos (30 Criaturas)
 
 ### 21.1 Diagnóstico Inicial y Auditoría Técnica
+
 - **Inventario maestro inicial:** Se auditaron las 30 ilustraciones fuente `*_2K.jpg` en `/sprites/` (excluidas de Git en `.gitignore`), todas en `2048x2048 px`, orientación perfil `3/4` mirando estrictamente hacia la izquierda (`0` criaturas requerían espejo manual) y fondo negro con ruido de compresión JPEG, totalizando **`65.62 MB`** (`68,812,242 bytes`, ~`1.83`–`2.73 MB` por archivo).
 - **Auditoría de consumo y dimensiones reales en UI:** Mediante inspección con Graphify y búsqueda sobre `apps/web/src/`, se verificó que las 9 pantallas consumidoras (`PantallaCombate`, `PantallaCatalogo`, `PantallaEquipo`, `PantallaAlmacen`, `PantallaCuracion`, `PantallaExploracion`, `PantallaInventario`, `PantallaCrearPersonaje` y `PaginaCreditos`) ya resuelven `/assets/criaturas/<slug>.webp` mediante `obtenerImagenCriatura` en `apps/web/src/lib/assets.ts` con respaldo `onError` en cascada hacia `placeholder-criatura.svg`, renderizando en contenedores `36 px`–`128 px` (`size-9` a `size-32`) con `object-contain`, `.pixelated` (`image-rendering: pixelated`) y `scale-x-[-1]` automático para el aliado en arena.
 - **Evaluación de alternativas y resolución:** El análisis FFT de las imágenes 2K confirmó tamaños de bloque artístico no enteros respecto a potencias de 2 (`4.6–6.8 px`, ~`300–445 px` efectivos). Se descartaron `PNG` optimizado (~4× más pesado), `AVIF` (decodificación más lenta en grillas de 30 tarjetas) y `NEAREST`/`256 px` (serrucho irregular y pérdida de detalle en extremidades), seleccionando **`512x512 RGBA WebP` (`q=90`, `alpha_quality=100`, `method=6`)** escalado con filtro `BOX` premultiplicado y recorte uniforme `1:1` (`4%` margen) como equilibrio óptimo entre peso y nitidez sobre fondos oscuros (`#090D16`, `#121927`, `#1A2332`).
@@ -1463,21 +1594,26 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ### 21.2 Mejoras Implementadas
 
 #### A. Identidad Retro Aethelgard y Fidelidad Visual
+
 - **Preservación de silueta y disolución de halos oscuros:** Todas las criaturas conservan su orientación izquierda nativa, proporciones centradas con `4%` de holgura para animaciones/pedestales y contornos limpios sobre fondos tanto oscuros como claros. En una segunda iteración (`v4`), se corrigieron visualmente los defectos de borde detectados en web real mediante dos mejoras críticas: (1) una barrera morfológica perimetral (`pasos=5` en `1024 px`) que sella grietas estrechas e impide filtraciones hacia placas de armadura, corteza o escamas (`pesadilla`, `treant-anciano`, `vibora-rocosa`), y (2) protección de materiales mate oscuros (`gargola`, `treant-anciano`) combinada con rampa alfa suave + descontaminación exclusivamente sobre halos luminosos exteriores saturados sobre negro (`remorhaz-glaciar`, `vibora-rocosa`, `elemental-agua`, `basilisco`, `yeti`, `lobo-invernal`, `behir-abismo`, `anguila-penumbra`, `espectro-ceniza`).
 - **Limpieza selectiva de cavidades sin perforar sombras:** La detección de cavidades cerradas exige núcleo puro erosionado `<= 5`, `pct2 >= 72%` y media `<= 1.95`, abriendo solo huecos reales entre alas, espiras, ramas y guadañas sin afectar zonas oscuras sólidas (`mantarraya-espectral`, `arana-gigante`, `pesadilla`).
 
 #### B. Pipeline Multimedia y Optimización en Cliente (`apps/web`)
+
 - **Generación de los 30 sprites canónicos:** Mapeo completo 1 a 1 de las 30 fuentes hacia `apps/web/public/assets/criaturas/<slug>.webp`, bajando el peso total de **`65.62 MB`** (`68,812,242 bytes`) a **`1.96 MB`** (`2,056,686 bytes`, rango **`51.3 KB`** en `escorpion-obsidiana.webp` a **`93.2 KB`** en `yeti.webp`, reducción neta del **`97.01%`**) manteniendo `/sprites/` intacto como respaldo maestro local y cero dependencias agregadas a `package.json`.
 - **Decodificación asíncrona en combate:** En `apps/web/src/paginas/PantallaCombate.tsx`, se añadió `decoding="async"` a los sprites principales de rival y aliado para evitar bloqueos del hilo principal al alternar criaturas en relevo o encuentros nuevos; `apps/web/src/lib/assets.ts` se conservó intacto al cubrir ya la resolución `.webp` limpia.
 - **Documentación y decisiones arquitectónicas:** Actualización de [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) y registro de las decisiones **D-19** y **D-20** en [docs/decisiones.md](file:///docs/decisiones.md).
 
 #### C. Integración Multimedia, Entrega HTTP y Audio Retro
+
 - **Entrega individual sobre atlas:** Se mantuvo el esquema individual `/assets/criaturas/<slug>.webp` aprovechando caché HTTP por criatura y carga diferida (`loading="lazy"`) en grilla, manteniendo las 16 señales de audio Web Audio API de `assets.ts` intactas.
 
 #### D. Reglas de Servidor y Contratos
+
 - Sin cambios en contratos de API ni migraciones de base de datos; se validó correspondencia exacta de nomenclatura contra el arreglo canónico `BESTIARIO` en `apps/api/src/modulos/externo/bestiario-canonico.ts`.
 
 ### 21.3 Verificación de Calidad y Cero Regresiones
+
 - **Suite de verificación multimedia (`apps/web/test/verificacion-sprites-criaturas.spec.ts`):** Valida automáticamente que los 30 slugs de `BESTIARIO` posean archivo `.webp` propio (`VP8X`, bit de canal alfa activo, exactamente `512x512 px`, rango de tamaño acotado) y que `obtenerImagenCriatura` no caiga al placeholder SVG.
 - **Pruebas Automatizadas Front-End (`pnpm --filter web test`):** **97 de 97 pruebas aprobadas** (0 fallos, 0 omitidas).
 - **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (34 advertencias preexistentes en utilidades previas).
@@ -1489,20 +1625,23 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ## 22. Optimización e Integración Multimedia de Entornos, Arenas de Combate y Objetos del Bazar (19 Recursos)
 
 ### 22.1 Diagnóstico Inicial y Auditoría Técnica
+
 - **Inventario maestro inicial en `/faltantes/` (respaldo local excluido en `.gitignore`):**
-  - *Etapa 1 — Zonas y Localidades (`Etapa-1_Zonas-Villas/`, 9 archivos `.jpg` `2752x1536 px`):* **`25.33 MB`** totales (`~2.59`–`3.21 MB` por escena), cubriendo las 6 zonas silvestres (`ZON-01`..`ZON-06`) y las 3 localidades seguras (`LOC-01`..`LOC-03`).
-  - *Etapa 2 — Escenarios de Combate (`Etapa-2_Zonas-Combates/`, 6 archivos `.jpg` `2752x1536 px`):* **`15.76 MB`** totales (`~2.41`–`2.91 MB` por arena diagonal `ZON-01`..`ZON-06`).
-  - *Etapa 3 — Objetos del Bazar (`Etapa-3_Objetos/`, 4 archivos `.jpg` `2048x2048 px`):* **`7.02 MB`** totales (`~1.45`–`1.99 MB` por ítem) sobre fondo negro `#000000` sin transparencia nativa (`Poción de Curación Menor`, `Poción de Curación Mayor`, `Talismán Básico de Captura`, `Talismán Avanzado de Captura`).
+  - _Etapa 1 — Zonas y Localidades (`Etapa-1_Zonas-Villas/`, 9 archivos `.jpg` `2752x1536 px`):_ **`25.33 MB`** totales (`~2.59`–`3.21 MB` por escena), cubriendo las 6 zonas silvestres (`ZON-01`..`ZON-06`) y las 3 localidades seguras (`LOC-01`..`LOC-03`).
+  - _Etapa 2 — Escenarios de Combate (`Etapa-2_Zonas-Combates/`, 6 archivos `.jpg` `2752x1536 px`):_ **`15.76 MB`** totales (`~2.41`–`2.91 MB` por arena diagonal `ZON-01`..`ZON-06`).
+  - _Etapa 3 — Objetos del Bazar (`Etapa-3_Objetos/`, 4 archivos `.jpg` `2048x2048 px`):_ **`7.02 MB`** totales (`~1.45`–`1.99 MB` por ítem) sobre fondo negro `#000000` sin transparencia nativa (`Poción de Curación Menor`, `Poción de Curación Mayor`, `Talismán Básico de Captura`, `Talismán Avanzado de Captura`).
   - **Peso acumulado original:** **`48.11 MB`** (`50,450,183 bytes`).
 - **Auditoría de consumo en UI y contratos (`apps/web/src`):** Se comprobó mediante inspección directa que `BannerUbicacionActual.tsx`, `PantallaCuracion.tsx` y `PantallaExploracion.tsx` ya resuelven `/assets/zonas/<slug>.webp` mediante `obtenerImagenZona(slugZona)` + `sanitizarSlugZona`; `BattlefieldBackground.tsx` consume `/assets/battlegrounds/<slug>.webp` con respaldo progresivo hacia `caverna-cristal.svg`; y `PantallaCombate.tsx`, `PantallaTienda.tsx`, `PantallaInventario.tsx` y `PantallaExploracion.tsx` consumen `/assets/objetos/<codigo>.webp` con `obtenerImagenObjeto(codigo)` y `loading="lazy"` en listados.
 
 ### 22.2 Mejoras Implementadas
 
 #### A. Identidad Retro Aethelgard y Fidelidad Visual
-- **Preservación de proporción `16:9` sin distorsión ni franjas negras:** Se auditó la posible presencia de marcos en `Puesto_Fronterizo_del_Río_(LOC-02).jpg`, verificando que corresponde a viñeta oscura continua y no a *letterboxing*. Al tener las fuentes una relación `2752x1536` (`1.7917`), se aplicó recorte horizontal simétrico al centro (`2731x1536`) antes de reescalar a `800x450 px`, manteniendo las plataformas de suelo despejadas abajo-izquierda y arriba-derecha en las 6 arenas.
+
+- **Preservación de proporción `16:9` sin distorsión ni franjas negras:** Se auditó la posible presencia de marcos en `Puesto_Fronterizo_del_Río_(LOC-02).jpg`, verificando que corresponde a viñeta oscura continua y no a _letterboxing_. Al tener las fuentes una relación `2752x1536` (`1.7917`), se aplicó recorte horizontal simétrico al centro (`2731x1536`) antes de reescalar a `800x450 px`, manteniendo las plataformas de suelo despejadas abajo-izquierda y arriba-derecha en las 6 arenas.
 - **Extracción alfa quirúrgica para vidrio, obsidiana y destellos aditivos (`objetos/`):** Se afinó un extractor en `1024x1024` previo al submuestreo premultiplicado a `256x256` que distingue entre material sólido oscuro de baja saturación y halos luminosos externos saturados sobre negro. Esto sella herméticamente la cámara superior de vidrio oscuro de `pocion-menor.webp` y `pocion-mayor.webp` sin perforarla, y conserva los rayos y chispas sueltos de `talisman-avanzado.webp` y `talisman-basico.webp` mediante des-premultiplicación aditiva suave sin generar bloques opacos ni bordes negros sobre fondos claros u oscuros.
 
 #### B. Pipeline Multimedia y Optimización en Cliente (`apps/web`)
+
 - **`apps/web/public/assets/zonas/` (9 archivos `800x450` `WebP VP8` `q=90`, filtro `BOX`):** De **`25.33 MB`** a **`808.0 KB` (`0.79 MB`)**, ahorro del **`96.88%`** (rango `75.3 KB` en `puesto-fronterizo-del-rio.webp` a `117.9 KB` en `villa-serena.webp`).
 - **`apps/web/public/assets/battlegrounds/` (6 archivos `800x450` `WebP VP8` `q=90`, filtro `BOX`):** De **`15.76 MB`** a **`480.1 KB` (`0.47 MB`)**, ahorro del **`97.03%`** (rango `67.6 KB` en `cueva-umbria.webp` a `96.5 KB` en `praderas-del-amanecer.webp`), conservando `caverna-cristal.svg` intacto como respaldo estructural.
 - **`apps/web/public/assets/objetos/` (4 archivos `256x256` `WebP VP8X` RGBA `q=90` / `alpha_quality=100`):** De **`7.02 MB`** a **`94.2 KB` (`0.09 MB`)**, ahorro del **`98.69%`** (`18.1 KB` a `31.7 KB` c/u, con márgenes de seguridad `>= 13 px` por lado).
@@ -1510,12 +1649,15 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 - **Sincronización documental y arquitectónica:** Actualización de [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md), [docs/INDICE.md](file:///docs/INDICE.md) y decisión **D-21** en [docs/decisiones.md](file:///docs/decisiones.md).
 
 #### C. Integración Multimedia, Entrega HTTP y Audio Retro
+
 - Entrega individual por ruta canónica (`/assets/zonas/*.webp`, `/assets/battlegrounds/*.webp`, `/assets/objetos/*.webp`) sin alterar el motor procedural Web Audio API ni los contratos de resolución en `apps/web/src/lib/assets.ts`.
 
 #### D. Reglas de Servidor y Contratos
+
 - Sin cambios en endpoints ni migraciones de base de datos; nomenclatura verificada 1 a 1 contra las 9 ubicaciones en `MundoService` (`apps/api/src/modulos/mundo/mundo.service.ts`) y los 4 ítems sembrados en `apps/api/prisma/seed.ts`.
 
 ### 22.3 Verificación de Calidad y Cero Regresiones
+
 - **Suite de verificación multimedia (`apps/web/test/verificacion-assets-entornos-objetos.spec.ts`):** Valida automáticamente la correspondencia 1 a 1 de las 9 ubicaciones, 6 arenas y 4 objetos frente a servidor (`MundoService` y `seed.ts`), encabezados WebP `RIFF/WEBP`, chunk `VP8 ` `800x450` en escenarios, `VP8X` con canal alfa `256x256` en ítems, ausencia de caída a placeholders SVG y pesos acotados.
 - **Pruebas Automatizadas Front-End (`pnpm --filter web test`):** **99 de 99 pruebas aprobadas** (`0` fallos, `0` omitidas, `1579.81 ms`).
 - **Linter (`pnpm --filter web lint`):** `0` errores bajo `oxlint` (`34` advertencias preexistentes en componentes previos, `500 ms`).
@@ -1527,6 +1669,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
 ## 23. Mejora de Hub: Mapa Interactivo Navegable en Canvas, HUD Flotante y Transición 2D (`funcionalidad/mapa-interactivo-hub`)
 
 ### 23.1 Problema que Resuelve y Objetivo
+
 Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjetas de rutas, la experiencia seguía percibiéndose como una página web tradicional con scroll vertical en lugar de un videojuego RPG. Esta mejora migra el Hub (`/hub`) a una **interfaz de juego a pantalla completa (`100dvh`)** con estética **16-bit dark fantasy (tenebrosa)**, permitiendo explorar el archipiélago de Aethelgard directamente sobre un lienzo interactivo, inspeccionar cada isla antes de decidir si viajar y presenciar una transición animada 2D con la criatura líder del equipo al desplazarse entre zonas.
 
 ---
@@ -1534,10 +1677,12 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 ### 23.2 Arquitectura e Implementación
 
 #### A. Cartografía Virtual y Paleta Tenebrosa (`apps/web/src/lib/mapa-mundo.ts`)
+
 - **Espacio Lógico de 9 Islas:** Define `DIMENSIONES_MAPA_MUNDO` (`1200 × 760` unidades) y `CONFIGURACION_ISLAS_MAPA` para los 9 nodos canónicos (`LOC-01` a `LOC-03`, `ZON-01` a `ZON-06`) conectados según `CONEXIONES_AETHELGARD`.
 - **Ambientación Oscura (Dark Fantasy):** Cada bioma cuenta con paleta nocturna (`colorSuelo`, `colorBorde`, `colorCielo`, `colorAcento`) acorde a `apps/web/public/assets/README.md`: mar abisal oscuro, puerto con cabañas sombrías, estepa crepuscular con monolitos rúnicos, lago bioluminiscente, bosque maldito, riscos de obsidiana, bastión gótico, volcán con lava pulsante y cumbres lunares.
 
 #### B. Mapa Navegable en `<canvas>` (`apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`)
+
 - **Capas `absolute` + `relative`:** El `<canvas>` ocupa el fondo con `position: absolute; inset: 0`, mientras los marcadores de cada isla y los controles de cámara flotan en una capa `relative` sincronizada.
 - **Navegación y Zoom Responsive:**
   - Paneo libre mediante `PointerEvents` (arrastre con ratón o pantalla táctil en móvil).
@@ -1549,10 +1694,12 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
   - Viñeta radial calibrada a las dimensiones reales del canvas escaladas por `devicePixelRatio` (`canvas.width`, `canvas.height`) para evitar cortes rectangulares en pantallas con escalado DPI.
 
 #### C. Pantalla de Carga / Transición Animada 2D (`apps/web/src/components/mundo/TransicionViaje2D.tsx`)
+
 - **Escena Nocturna de Travesía (~1.85 s):** Al confirmar un viaje (`api.viajar()`), despliega un `<canvas>` 2D con transición de cielo entre el bioma origen y destino, luna pálida, niebla en parallax, mar abisal y un puente viejo iluminado por faroles ámbar parpadeantes.
 - **Animación del Líder y Audio Retro:** El sprite de la criatura líder (obtenido de `api.obtenerEquipo()`, invertido horizontalmente con `ctx.scale(-1, 1)` porque los sprites canónicos miran a la izquierda, con fallback seguro a `placeholder-criatura.svg`) avanza saltando por el puente generando partículas de polvo y disparando `reproducirSonido("paso")` durante el trayecto y `reproducirSonido("confirmar")` al llegar.
 
 #### D. Hub a Pantalla Completa y HUD Flotante (`LayoutPrincipal.tsx` y `PantallaHubUbicacion.tsx`)
+
 - **Viewport de Juego (`100dvh`):** `LayoutPrincipal.tsx` aplica el modo sin scroll ni cabecera/pie web a `/hub` (igual que `/combate`).
 - **HUD Flotante `relative`:**
   - **Superior:** Ficha del explorador (avatar del líder, nombre, nivel máximo, ubicación actual y `%` de progreso), saldo de monedas y botón de engrane (`Settings`) con acceso a `Kit de interfaz`, `Créditos` y cierre de sesión (`SALIR`).
@@ -1565,18 +1712,19 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 
 ### 23.3 Control de Archivos (Agregados y Modificados)
 
-| Estado | Archivo | Propósito |
-| :---: | :--- | :--- |
-| **Agregado** | `apps/web/src/lib/mapa-mundo.ts` | Coordenadas virtuales (`1200×760`) y paletas dark-fantasy de las 9 islas. |
+|    Estado    | Archivo                                                   | Propósito                                                                                           |
+| :----------: | :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Agregado** | `apps/web/src/lib/mapa-mundo.ts`                          | Coordenadas virtuales (`1200×760`) y paletas dark-fantasy de las 9 islas.                           |
 | **Agregado** | `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Mapa interactivo en `<canvas>` (`absolute`) con paneo, zoom, niebla, viñeta DPR y nodos `relative`. |
-| **Agregado** | `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Pantalla de carga 2D animada con la criatura líder cruzando el puente y sonido retro. |
-| **Editado** | `apps/web/src/components/LayoutPrincipal.tsx` | Habilita pantalla completa `100dvh` para la ruta `/hub`. |
-| **Editado** | `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Migra el Hub al HUD flotante sobre el mapa interactivo y conecta `TransicionViaje2D`. |
-| **Editado** | `apps/web/test/verificacion-hub-mundo.spec.ts` | Actualiza las aserciones estáticas para validar `MapaInteractivoCanvas` y `TransicionViaje2D`. |
+| **Agregado** | `apps/web/src/components/mundo/TransicionViaje2D.tsx`     | Pantalla de carga 2D animada con la criatura líder cruzando el puente y sonido retro.               |
+| **Editado**  | `apps/web/src/components/LayoutPrincipal.tsx`             | Habilita pantalla completa `100dvh` para la ruta `/hub`.                                            |
+| **Editado**  | `apps/web/src/paginas/PantallaHubUbicacion.tsx`           | Migra el Hub al HUD flotante sobre el mapa interactivo y conecta `TransicionViaje2D`.               |
+| **Editado**  | `apps/web/test/verificacion-hub-mundo.spec.ts`            | Actualiza las aserciones estáticas para validar `MapaInteractivoCanvas` y `TransicionViaje2D`.      |
 
 ---
 
 ### 23.4 Verificación de Calidad y Cero Regresiones
+
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript.
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** 95 de 95 pruebas aprobadas (0 fallos).
 - **Linter Web (`pnpm --filter web lint`):** 0 errores en 86 archivos.
@@ -1587,7 +1735,9 @@ Aunque el Hub anterior contaba con un minimapa estático por escalones y tarjeta
 ## 24. Sub-Fase 10o: Consolidación del Hub RPG en Canvas Interactivo, Transición 2D y Paridad Táctica (`PantallaHubUbicacion.tsx`)
 
 ### 24.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Tras integrar el PR #53 (`funcionalidad(hub): integrar mapa interactivo navegable y transicion 2d`) en la rama `desarrollo`, se ejecutó una auditoría técnica y heurística sobre el nuevo Hub interactivo sobre `<canvas>` detectando tres brechas críticas respecto a la especificación alcanzada en las subfases 10m y 10n:
+
 1. **Condición de carrera en la transición 2D de viaje (`TransicionViaje2D.tsx` y `PantallaHubUbicacion.tsx`):** La referencia `onCompletadoRef.current = onCompletado` se actualizaba directamente durante el render y el cierre de la transición dependía de un estado reactivo `pendienteTrasAnimacion` acoplado a un `useEffect`. Si la petición `api.viajarAUbicacion` demoraba más de `1850ms` mientras la animación finalizaba primero, el flujo quedaba expuesto a un bloqueo de carga, además de generar advertencias de `oxlint` por reglas de hooks.
 2. **Pérdida de paridad táctica de las Subfases 10m/10n en el Hub (`PantallaHubUbicacion.tsx`):** Al migrar a tarjetas flotantes y modal de isla sobre el canvas, se omitieron el indicador `rangoDomador` en el HUD superior, la sección de fauna del hábitat (`especiesHabitantes`), el checklist completo de progreso y requisitos de desbloqueo (`requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso`), el atributo `aria-busy` en el botón de desbloqueo, el confinamiento de altura del modal (`max-h-[90dvh] overflow-y-auto overflow-x-hidden`) y la exportación por defecto (`export default PantallaHubUbicacion;`).
 3. **Bloqueo en consulta de servicios laterales e indicador en zonas salvajes:** El acceso a rutas laterales restringía innecesariamente el modo consulta en pantallas que ya lo soportan (`PantallaTienda`, `PantallaCuracion`, `PantallaAlmacen`, `PantallaHistorial`), requiriendo diferenciar claramente la navegación de consulta frente a la disponibilidad operativa real (`activoEnZona` según `esSegura`).
@@ -1595,24 +1745,29 @@ Tras integrar el PR #53 (`funcionalidad(hub): integrar mapa interactivo navegabl
 ### 24.2 Mejoras Implementadas
 
 #### A. Identidad Visual Retro y Paridad Táctica (`PantallaHubUbicacion.tsx`)
+
 - Restauración del distintivo `rangoDomador` dentro de la tarjeta superior del HUD flotante sobre el mapa interactivo.
 - Incorporación del bloque táctico **"Fauna del Hábitat"** listando `especiesHabitantes` dentro del detalle de la isla seleccionada.
 - Reincorporación del panel **"PROGRESO DE DESBLOQUEO"** con `requisitoCartografia`, `requisitoNivelEquipo`, `detalleProgreso` y la indicación de ruta **"LISTA PARA DESBLOQUEAR"**.
 - Confinamiento responsivo del cuadro de diálogo (`AlertDialogContent`) mediante `max-h-[90dvh] overflow-y-auto overflow-x-hidden` para evitar desbordamiento en pantallas compactas.
 
 #### B. Componentes `8bitcn/ui`, Accesibilidad y Reglas del Proyecto (R1)
+
 - Preservación integral de iconografía SVG de Lucide sin emojis Unicode en los módulos nuevos y modificados (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`), validada por pruebas automatizadas.
 - Añadido de `aria-busy` en el botón de desbloqueo territorial para prevenir dobles envíos durante la llamada al servidor.
 - Restauración de `export default PantallaHubUbicacion;` para mantener compatibilidad con importaciones existentes.
 
 #### C. Sincronización Determinista de `TransicionViaje2D` y Higiene de Hooks
+
 - En `apps/web/src/components/mundo/TransicionViaje2D.tsx`, la sincronización de `onCompletadoRef.current = onCompletado;` se trasladó dentro de `useEffect`, evitando mutar referencias durante el render.
 - En `apps/web/src/paginas/PantallaHubUbicacion.tsx`, se reemplazó el patrón de estado reactivo `pendienteTrasAnimacion` + `useEffect` por referencias deterministas (`montadoRef`, `animacionCompletadaRef`, `viajePendienteRef`) coordinadas mediante el callback `finalizarViajeSiListo`, eliminando el riesgo de bloqueo cuando la API supera el tiempo mínimo de animación y erradicando las advertencias de `oxlint` en los archivos modificados.
 
 #### D. Reglas de Servidor y Consulta Libre de Servicios Laterales
+
 - En `renderBotonFlotanteServicio` dentro de `PantallaHubUbicacion.tsx`, los botones laterales permiten navegar libremente a sus rutas en modo consulta, mientras el indicador visual `activoEnZona` evalúa con precisión la regla de zonas seguras del servidor (`esSegura === false` marca como inactivos operativamente `CURACION`, `TIENDA` y `ALMACEN` fuera de localidades seguras).
 
 ### 24.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
 - **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores (`LINT=0`) sobre 88 archivos evaluados (34 advertencias preexistentes en módulos previos; 0 advertencias en `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`, `MapaInteractivoCanvas.tsx` y `verificacion-hub-mundo.spec.ts`).
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** 99 de 99 pruebas aprobadas (0 fallos, 0 omitidas), ampliando `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar ausencia de emojis en `MapaInteractivoCanvas.tsx`, `TransicionViaje2D.tsx` y `mapa-mundo.ts`, presencia de `requisitoCartografia`, `requisitoNivelEquipo`, `especiesHabitantes`, `rangoDomador`, `finalizarViajeSiListo`, `export default PantallaHubUbicacion` y cobertura de las 9 islas en `CONFIGURACION_ISLAS_MAPA`.
@@ -1635,7 +1790,7 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 
 2. **Combate por Turnos con "Game Feel" y Cartas Tácticas (`PantallaCombate.tsx`, `index.css` y `health-bar.tsx`):**
    - **Estela de daño retardada en barras de vida (`apps/web/src/components/ui/8bit/health-bar.tsx`):** Cuando la salud disminuye, una barra secundaria ámbar permanece brevemente y se drena suavemente sin alterar el cálculo real de HP (actualizada de forma asíncrona para evitar cascadas de render en `useEffect`).
-   - **Cartas Tácticas Elevables (`PantallaCombate.tsx`):** Los 4 slots del menú `ATACAR` (`C1..C4`) se presentan como cartas tácticas con coreografía diferenciada (*Físico* → `Embestida`, *Elemental* → `Proyectil`, *Defensivo/Estado* → `Escudo`, *Insignia* → clímax dorado y mini-zoom), respiración continua en reposo (`anim-respiracion-combate`), asistente contextual `TÁCTICA:` y aviso central de ataque enemigo.
+   - **Cartas Tácticas Elevables (`PantallaCombate.tsx`):** Los 4 slots del menú `ATACAR` (`C1..C4`) se presentan como cartas tácticas con coreografía diferenciada (_Físico_ → `Embestida`, _Elemental_ → `Proyectil`, _Defensivo/Estado_ → `Escudo`, _Insignia_ → clímax dorado y mini-zoom), respiración continua en reposo (`anim-respiracion-combate`), asistente contextual `TÁCTICA:` y aviso central de ataque enemigo.
    - **Etiquetas de efectividad e insignia en daño flotante:** `resolverEtiquetaImpacto()` lee `efectividad` (`VENTAJA`, `DESVENTAJA`) y `esInsignia` para mostrar etiquetas retro (`¡INSIGNIA!`, `¡MUY EFICAZ x1.5!`, `RESISTIDO x0.75`).
 
 3. **Viaje y Exploración más Inmersivos (`TransicionViaje2D.tsx` y `PantallaExploracion.tsx`):**
@@ -1651,26 +1806,28 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 ## 26. Calibración de Escenarios Reales, Mapa Volcánico, Ataques Precisos y Audio Ambiente (PR #55)
 
 ### 26.1 Problemas Detectados Tras la Integración de Escenarios WebP
+
 1. **Superposición CSS sobre las ilustraciones de combate (`BattlefieldBackground.tsx`):** La rejilla 2.5D y pilares procedurales se renderizaban también cuando la imagen `.webp` real ya estaba cargada, tapando la iluminación y el relieve natural de los escenarios.
 2. **Desalineación de criaturas y cartas HUD según la arena (`PantallaCombate.tsx`):** Cada una de las 6 arenas (`/assets/battlegrounds/*.webp`) ubica sus plataformas a distintas alturas y márgenes. Una única disposición flexbox fija hacía que en ciertas zonas los sprites flotaran o quedaran desplazados respecto a la roca.
 3. **Proyectiles saliendo detrás de las cartas y ataques físicos sin impacto visible (`PantallaCombate.tsx` + `index.css`):** Los proyectiles usaban coordenadas CSS fijas y un `z-index` en el contenedor padre, naciendo detrás de las cartas HUD en ciertas arenas, y faltaba destello de impacto unificado (`anim-impacto-golpe`).
-4. **Identidad visual del mapa de islas, HUD superior y audio ambiente (`MapaInteractivoCanvas.tsx`, `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`, `assets.ts`):** Se requerían las ilustraciones reales `/assets/zonas/*.webp` en cada isla, ambientación de obsidiana/magma acorde al tema *dark fantasy*, miniaturas de zona actual/destino y música ambiental suave diferenciada para hub y combate.
+4. **Identidad visual del mapa de islas, HUD superior y audio ambiente (`MapaInteractivoCanvas.tsx`, `PantallaHubUbicacion.tsx`, `TransicionViaje2D.tsx`, `assets.ts`):** Se requerían las ilustraciones reales `/assets/zonas/*.webp` en cada isla, ambientación de obsidiana/magma acorde al tema _dark fantasy_, miniaturas de zona actual/destino y música ambiental suave diferenciada para hub y combate.
 
 ### 26.2 Soluciones y Mejoras Implementadas
 
-| Archivo | Mejoras y Soluciones Aplicadas |
-| :--- | :--- |
-| `apps/web/src/components/combate/BattlefieldBackground.tsx` | Cuando `pasoFallback === 0` y no hay video, la arena `.webp` se muestra a opacidad completa (`opacity-100`) sin capas CSS encima; el escenario procedural 2.5D queda únicamente como respaldo si falla la carga de imagen. |
-| `apps/web/src/lib/battlegrounds.ts` *(nuevo)* | Tabla `CALIBRACION_ARENAS_ZONA` y helper `obtenerCalibracionArena(zoneId)` con coordenadas calibradas para los 6 escenarios `800x450` y anclaje de cartas HUD en esquinas libres. |
-| `apps/web/src/paginas/PantallaCombate.tsx` | Posicionamiento absoluto por plataforma con `clamp(...)`; sombras de contacto sutiles; `proyectilActivo` e `impactoVisual` en `z-40` por encima de las cartas HUD (`z-20`) usando coordenadas reales origen-destino; activación de audio ambiente de combate. |
-| `apps/web/src/index.css` | Unificación de `.anim-proyectil-aliado` / `.anim-proyectil-rival` mediante variables CSS dinámicas (`--origen-x`, `--origen-y`, `--destino-x`, `--destino-y`) y animación `.anim-impacto-golpe`. |
-| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` | Precarga y recorte elíptico de las 9 ilustraciones reales de `/assets/zonas/*.webp` sobre la superficie de cada isla; fondo abisal de obsidiana con ríos de magma pulsante, brasas ascendentes y anillo rúnico rotatorio en la isla actual. |
-| `apps/web/src/paginas/PantallaHubUbicacion.tsx` | Miniatura panorámica `16:9` de la zona actual en el HUD superior, barras de HP en el dock inferior, etiquetas `Disponible` / `Solo consulta` en servicios laterales y audio ambiente del hub. |
-| `apps/web/src/components/mundo/TransicionViaje2D.tsx` | Vista previa de la zona destino (`DESTINO`) junto al lienzo animado; abismo de magma vivo bajo el puente, faroles que se encienden al paso del líder, estela cian y destello de portal al llegar. |
-| `apps/web/src/lib/assets.ts` | Motor de audio ambiente suave con Web Audio API (`iniciarMusicaAmbiente("hub" \| "combate")`, `detenerMusicaAmbiente`) con filtro paso-bajo, baja ganancia y sincronización con el estado de silencio global. |
-| `apps/web/src/components/ui/8bit/health-bar.tsx` | Refactorización del efecto de estela retardada para evitar llamadas síncronas `setState` dentro de `useEffect` (0 advertencias nuevas en `oxlint`). |
+| Archivo                                                     | Mejoras y Soluciones Aplicadas                                                                                                                                                                                                                                |
+| :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/components/combate/BattlefieldBackground.tsx` | Cuando `pasoFallback === 0` y no hay video, la arena `.webp` se muestra a opacidad completa (`opacity-100`) sin capas CSS encima; el escenario procedural 2.5D queda únicamente como respaldo si falla la carga de imagen.                                    |
+| `apps/web/src/lib/battlegrounds.ts` _(nuevo)_               | Tabla `CALIBRACION_ARENAS_ZONA` y helper `obtenerCalibracionArena(zoneId)` con coordenadas calibradas para los 6 escenarios `800x450` y anclaje de cartas HUD en esquinas libres.                                                                             |
+| `apps/web/src/paginas/PantallaCombate.tsx`                  | Posicionamiento absoluto por plataforma con `clamp(...)`; sombras de contacto sutiles; `proyectilActivo` e `impactoVisual` en `z-40` por encima de las cartas HUD (`z-20`) usando coordenadas reales origen-destino; activación de audio ambiente de combate. |
+| `apps/web/src/index.css`                                    | Unificación de `.anim-proyectil-aliado` / `.anim-proyectil-rival` mediante variables CSS dinámicas (`--origen-x`, `--origen-y`, `--destino-x`, `--destino-y`) y animación `.anim-impacto-golpe`.                                                              |
+| `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx`   | Precarga y recorte elíptico de las 9 ilustraciones reales de `/assets/zonas/*.webp` sobre la superficie de cada isla; fondo abisal de obsidiana con ríos de magma pulsante, brasas ascendentes y anillo rúnico rotatorio en la isla actual.                   |
+| `apps/web/src/paginas/PantallaHubUbicacion.tsx`             | Miniatura panorámica `16:9` de la zona actual en el HUD superior, barras de HP en el dock inferior, etiquetas `Disponible` / `Solo consulta` en servicios laterales y audio ambiente del hub.                                                                 |
+| `apps/web/src/components/mundo/TransicionViaje2D.tsx`       | Vista previa de la zona destino (`DESTINO`) junto al lienzo animado; abismo de magma vivo bajo el puente, faroles que se encienden al paso del líder, estela cian y destello de portal al llegar.                                                             |
+| `apps/web/src/lib/assets.ts`                                | Motor de audio ambiente suave con Web Audio API (`iniciarMusicaAmbiente("hub" \| "combate")`, `detenerMusicaAmbiente`) con filtro paso-bajo, baja ganancia y sincronización con el estado de silencio global.                                                 |
+| `apps/web/src/components/ui/8bit/health-bar.tsx`            | Refactorización del efecto de estela retardada para evitar llamadas síncronas `setState` dentro de `useEffect` (0 advertencias nuevas en `oxlint`).                                                                                                           |
 
 ### 26.3 Verificación de Calidad Tras la Integración Final en `desarrollo`
+
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
 - **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores sobre **89 archivos** (`LINT=0`, 34 advertencias preexistentes en módulos previos; 0 advertencias nuevas tras la corrección en `health-bar.tsx`).
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **99 de 99 pruebas aprobadas** (`0` fallos, `0` omitidas).
@@ -1684,13 +1841,15 @@ Con el objetivo de enriquecer la experiencia visual e interactiva del jugador ma
 Con el objetivo de llevar el mapa interactivo del Hub (`/hub`) a un acabado visual de videojuego RPG comercial sin alterar un solo píxel de la interfaz retro circundante, la paleta de biomas ni las reglas autoritativas de navegación territorial, se ejecutó la **Sub-Fase 10p** sobre la rama `funcionalidad/fase-10p-mapa-dioramas-canvas`.
 
 ### 27.1 Diagnóstico Inicial y Auditoría Impeccable
+
 1. **Apariencia genérica de elipses aisladas:** La versión anterior recortaba 9 retratos panorámicos `.webp` dentro de óvalos uniformes conectados por trazos rectos originados en el centro `(isla.x, isla.y)`, generando islas desconectadas del océano y con sensación visual básica frente a la dirección artística Dark Fantasy buscada.
 2. **Cohesión geográfica y continuidad oceánica:** Al utilizar la ilustración maestra pixel-art de 9 islas (`1679×937`), el alejamiento de cámara o el desplazamiento hacia los extremos requería extender de forma natural el gradiente oceánico profundo y difuminar el perímetro de la lámina para evitar cortes rectangulares o bordes negros.
-3. **Traslapes potenciales entre placas, marcador `"TÚ AQUÍ"` y puentes:** En un lienzo denso con 9 islas y 10 puentes de mampostería/madera, anclar todas las etiquetas con un único desplazamiento vertical uniforme `(radioY + 38)` provocaba cruces puntuales sobre el puente sur de *Praderas*, el viaducto este de *Puesto del Río*, el cristal sur de *La Cumbre* o el emblema `"TÚ AQUÍ"` del *Bosque Susurrante*.
+3. **Traslapes potenciales entre placas, marcador `"TÚ AQUÍ"` y puentes:** En un lienzo denso con 9 islas y 10 puentes de mampostería/madera, anclar todas las etiquetas con un único desplazamiento vertical uniforme `(radioY + 38)` provocaba cruces puntuales sobre el puente sur de _Praderas_, el viaducto este de _Puesto del Río_, el cristal sur de _La Cumbre_ o el emblema `"TÚ AQUÍ"` del _Bosque Susurrante_.
 
 ### 27.2 Mejoras Implementadas
 
 #### A. Identidad Visual Dark Fantasy y Arquitectura Híbrida (`mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx`)
+
 - **Ilustración maestra y océano continuo:** Incorporación de `apps/web/public/assets/zonas/mapa-mundo-aethelgard.png` (`DIMENSIONES_MAPA_MUNDO = 1679×937`, con carga asíncrona en `mapaImagenRef` y respaldo vectorial automático mediante `dibujarRespaldoIslasBase`), extendida por `dibujarFondoOceanoContinuo` (`#002040 → #002c50 → #002345` con destellos de oleaje) y `dibujarFusionBordesMapa` para lograr un océano infinito sin costuras.
 - **Capa viva 60 FPS calibrada por bioma (`dibujarCapaVivaMapa`):** Conservando intactas las paletas cromáticas originales de cada región (`CONFIGURACION_ISLAS_MAPA`), se superpusieron velos de niebla sobre islas aún bloqueadas, aro rúnico cian pulsante alrededor de la costa actual (`trazarPoligonoLocal` con `generarGeometriaDiorama`), flujo guiado de orbes sobre los 10 trayectos Bezier cuadráticos calibrados (`TRAYECTOS_PUENTES_AETHELGARD`: verdes esmeralda en rutas viajables, ámbar en sendas desbloqueables y sombra en accesos cerrados) y micro-animaciones bioma por bioma respetando `prefers-reduced-motion`:
   - **Villa Serena (`LOC-01`):** brillo pulsante en la fuente central, faroles cálidos nocturnos y columnas de humo ascendentes en chimeneas.
@@ -1704,18 +1863,21 @@ Con el objetivo de llevar el mapa interactivo del Hub (`/hub`) a un acabado visu
   - **Pico de la Cumbre (`ZON-06`):** cortinas ondulantes de aurora boreal verde/cian, destellos glaciares y nevada ártica.
 
 #### B. Componentes `8bitcn/ui`, Navegación Responsive y Preservación de la UI
+
 - **Conservación estricta de la interfaz HUD (R1 y estética existente):** Panel de jugador superior, medidor de experiencia, monedas, configuraciones, menús laterales (`Almacén`, `Compendio Open5e`, `Bitácora`, `Inventario`, `Tienda / Bazar`, `Santuario de Salud`), dock inferior de criaturas, botón `EXPLORAR`, controles de zoom/recentrado/audio, tooltip interactivo, placa `"TÚ AQUÍ"` y consumo de `/assets/zonas/*.webp` en HUD/modales permanecen intactos.
 - **Compensaciones anti-traslape (`placaOffsetX` / `placaOffsetY`) e inspección geométrica:** Calibración individual de cada placa bajo su acantilado sur (`MapaInteractivoCanvas.tsx` + `CONFIGURACION_ISLAS_MAPA`) para dejar despejados los 10 puentes y evitar colisiones incluso con la placa activa `"TÚ AQUÍ"`.
-- **Cámara en escritorio y móvil:** Auto-centrado automático en `ubicacionActualId` al abrir o viajar (`centrarEnUbicacion`), ampliación de `ZOOM_MINIMO` a `0.5` para vista panorámica completa en escritorio, preservación de escala natural en móvil (`zoomInicial = 0.9` sin comprimir el archipiélago), arrastre táctil (`touch-none`), zoom por rueda y gestos *pinch-to-zoom* (`pinchRef`).
+- **Cámara en escritorio y móvil:** Auto-centrado automático en `ubicacionActualId` al abrir o viajar (`centrarEnUbicacion`), ampliación de `ZOOM_MINIMO` a `0.5` para vista panorámica completa en escritorio, preservación de escala natural en móvil (`zoomInicial = 0.9` sin comprimir el archipiélago), arrastre táctil (`touch-none`), zoom por rueda y gestos _pinch-to-zoom_ (`pinchRef`).
 
 #### C. Audio Web Audio API y Reglas del Servidor
+
 - **Sin alteración de contratos ni lógica del servidor:** Se conservan todas las reglas autoritativas de `CONEXIONES_AETHELGARD`, `TOPOLOGIA_AETHELGARD`, validación de viajes y desbloqueos en `apps/api`, manteniendo los efectos de clic/viaje sintetizados con Web Audio API y el control global de silencio (`Volume2` / `VolumeX`).
 
 ### 27.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación Visual de Calibración sobre Lámina Real (`1679×937`):** Superposición bitmap verificada visualmente confirmando coincidencia exacta de los 9 contornos, las 9 placas (`placaOffsetX/Y`), las 9 áreas `"TÚ AQUÍ"` y los 10 trayectos Bezier cuadráticos sobre las pasarelas pintadas del mapa.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
 - **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó sin errores en **90 archivos** (`LINT=0`, 34 advertencias preexistentes en módulos previos; 0 advertencias nuevas en `mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx` y `verificacion-hub-mundo.spec.ts`, ejecutado en `173ms`).
-- **Pruebas Unitarias Web (`pnpm --filter web test`):** **100 de 100 pruebas aprobadas** (`0` fallos, `0` omitidas en `1685.26ms`), incluyendo la nueva prueba integral `Subfase 10p` (validación de `DIMENSIONES_MAPA_MUNDO`, existencia en disco de `mapa-mundo-aethelgard.png`, geometría *pure-Node* de las 9 islas, cobertura bidireccional de los 10 puentes Bezier, ausencia de `obtenerImagenZona` en el canvas y verificación de Regla R1 en `mapa-dioramas.ts`).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **100 de 100 pruebas aprobadas** (`0` fallos, `0` omitidas en `1685.26ms`), incluyendo la nueva prueba integral `Subfase 10p` (validación de `DIMENSIONES_MAPA_MUNDO`, existencia en disco de `mapa-mundo-aethelgard.png`, geometría _pure-Node_ de las 9 islas, cobertura bidireccional de los 10 puentes Bezier, ausencia de `obtenerImagenZona` en el canvas y verificación de Regla R1 en `mapa-dioramas.ts`).
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`6.27s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `59.88s`).
 
@@ -1726,15 +1888,17 @@ Con el objetivo de llevar el mapa interactivo del Hub (`/hub`) a un acabado visu
 Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámina RGBA transparente libre de océano y recalibrar con exactitud milimétrica todas las luces, partículas, espuma costera y rutas Bezier sobre las 9 islas reales, se ejecutó la **Sub-Fase 10q** en la rama `funcionalidad/fase-10q-mapa-transparente-fx`.
 
 ### 28.1 Diagnóstico Inicial y Auditoría Impeccable
+
 1. **Desajuste entre lámina transparente `3232×1794` y coordenadas previas (`1679×937`):** La versión RGBA sin océano (`apps/web/public/assets/zonas/mapa-mundo-aethelgard.png`, canal alfa `0` en esquinas y canales marinos, geometría opaca en `x=[0..1614], y=[0..896]` en escala lógica `1616×897` @ 2×) desplazaba respecto a `1679×937` las posiciones de faroles, grietas, cascadas, cristales y puentes, provocando que varios efectos lucieran corridos fuera de su elemento arquitectónico o natural.
 2. **Océano oculto e integración costera 2.5D:** Con el fondo marino ahora completamente transparente en el PNG (incluidos los arcos inferiores de los 10 puentes de piedra), el lienzo necesitaba eliminar el recorte interior del océano en `dibujarFondoOceanoContinuo` y sustituir `dibujarFusionBordesMapa` por `dibujarAguasCosterasMapa` para dibujar sombras de flotación y espuma de oleaje exclusivamente en la base de los acantilados sur antes de pintar la ilustración de las islas, evitando que halos blancos asomen por detrás de cumbres nevadas o torres en el norte.
-3. **Colisiones de UI y curvatura de puente:** La inspección bitmap visual (`calibration-1616-verify.png`) detectó además un acercamiento excesivo entre el emblema flotante `"TÚ AQUÍ"` de *Bosque* (`ZON-03`) y la placa inferior de *Cueva Umbría* (`ZON-05`), así como una curvatura elevada en el spline Bezier `ZON-02 → ZON-03` sobre la pasarela de piedra.
+3. **Colisiones de UI y curvatura de puente:** La inspección bitmap visual (`calibration-1616-verify.png`) detectó además un acercamiento excesivo entre el emblema flotante `"TÚ AQUÍ"` de _Bosque_ (`ZON-03`) y la placa inferior de _Cueva Umbría_ (`ZON-05`), así como una curvatura elevada en el spline Bezier `ZON-02 → ZON-03` sobre la pasarela de piedra.
 
 ### 28.2 Mejoras Implementadas
 
 #### A. Mapa Transparente `1616×897`, Aguas Costeras y Efectos Recalibrados (`mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx`)
+
 - **Integración RGBA transparente (`Format32bppArgb`, `3232×1794`):** Actualización de `DIMENSIONES_MAPA_MUNDO = { ancho: 1616, alto: 897 }`, respaldo local en `Polish_20261114_215332459.png`, contenedor `bg-[#021327]` y centro de cámara `(808, 448)`.
-- **Pipeline multicapa por debajo y encima de las islas (`MapaInteractivoCanvas.tsx`):** Ejecución ordenada `dibujarFondoOceanoContinuo` (sin hueco central para que el oleaje fluya en canales y bajo los 10 arcos de puente) → `dibujarAguasCosterasMapa` (sombras abisales, espuma costera anclada al acantilado inferior `y + radioY * 0.36`, ondas en la cascada de *Puesto del Río* en `(742, 550)` y fulgor termal bajo el magma costero de *Cueva Umbría*) → `drawImage` de islas transparentes (con respaldo `dibujarRespaldoIslasBase`) → `dibujarCapaVivaMapa`.
+- **Pipeline multicapa por debajo y encima de las islas (`MapaInteractivoCanvas.tsx`):** Ejecución ordenada `dibujarFondoOceanoContinuo` (sin hueco central para que el oleaje fluya en canales y bajo los 10 arcos de puente) → `dibujarAguasCosterasMapa` (sombras abisales, espuma costera anclada al acantilado inferior `y + radioY * 0.36`, ondas en la cascada de _Puesto del Río_ en `(742, 550)` y fulgor termal bajo el magma costero de _Cueva Umbría_) → `drawImage` de islas transparentes (con respaldo `dibujarRespaldoIslasBase`) → `dibujarCapaVivaMapa`.
 - **Recalibración por centroides RGB y verificación bitmap en `dibujarCapaVivaMapa` y `TRAYECTOS_PUENTES_AETHELGARD`:**
   - **Villa Serena (`LOC-01`):** fuente `(237, 675)`, 8 faroles cálidos y 3 chimeneas (`[106,616]`, `[262,578]`, `[314,624]`).
   - **Praderas (`ZON-01`):** 5 monolitos rúnicos (`[81,398]`, `[147,344]`, `[133,451]`, `[249,392]`, `[288,381]`).
@@ -1748,13 +1912,16 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
   - **Puentes Bezier:** Recálculo de los 10 `TRAYECTOS_PUENTES_AETHELGARD`, ajustando `ZON-02 → ZON-03` a `inicio: { x: 1016, y: 716 }`, `control: { x: 1074, y: 696 }`, `fin: { x: 1134, y: 716 }` directamente sobre la calzada de piedra.
 
 #### B. Componentes `8bitcn/ui`, Navegación Responsive y Convivencia de Placas
-- **Preservación integral de interfaz y paletas:** Botoneras laterales, panel del jugador, monedas, dock de criaturas, botón `EXPLORAR`, controles de zoom/recentrado/silencio, paletas originales por bioma y flujo de cámara escritorio/móvil (auto-centrado en `ubicacionActualId`, paneo táctil y *pinch-to-zoom* sin encoger el mundo en móvil) permanecen intactos.
+
+- **Preservación integral de interfaz y paletas:** Botoneras laterales, panel del jugador, monedas, dock de criaturas, botón `EXPLORAR`, controles de zoom/recentrado/silencio, paletas originales por bioma y flujo de cámara escritorio/móvil (auto-centrado en `ubicacionActualId`, paneo táctil y _pinch-to-zoom_ sin encoger el mundo en móvil) permanecen intactos.
 - **Despeje `TÚ AQUÍ` vs placas:** Ajuste en `CONFIGURACION_ISLAS_MAPA` para `ZON-03` (`y: 702`, `radioY: 142`, `placaOffsetY: 158`) y `ZON-05` (`placaOffsetX: 72`, `placaOffsetY: 118`), garantizando holgura vertical y horizontal completa respecto al marcador activo del jugador.
 
 #### C. Audio Web Audio API y Reglas del Servidor
+
 - **Cero impacto en lógica autoritativa ni backend:** Las rutas REST, reglas de desbloqueo y viaje en `apps/api`, así como los efectos sintetizados Web Audio API (`reproducirSonido`), permanecen inalterados.
 
 ### 28.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación Visual de Calibración Bitmap (`calibration-1616-verify.png`):** Inspección visual positiva confirmando coincidencia exacta de las 9 siluetas costeras, las 9 placas, los 9 marcadores `"AQUI"`, los 10 splines Bezier de puentes y todas las dianas de efectos recalibradas sobre `3232×1794`.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
 - **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **90 archivos** (`158ms`, 116 reglas, 0 advertencias nuevas respecto a la línea base).
@@ -1767,12 +1934,14 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
 ## 29. Sub-Fase 10r: Optimización WebP Transparente (943.8 KB) y Calibración Milimétrica de Cascadas y Biomas (`MapaInteractivoCanvas.tsx`)
 
 ### 29.1 Diagnóstico Inicial y Auditoría Impeccable
+
 - **Peso excesivo del arte maestro:** El mapa del mundo en formato PNG transparente (`apps/web/public/assets/zonas/mapa-mundo-aethelgard.png`, `3232×1794`) ocupaba **8.46 MB** (`8,463,051` bytes), incrementando innecesariamente el tiempo de descarga inicial del hub en navegadores de escritorio y móviles, además de convivir dentro de `apps/web/public/assets/zonas/`, donde `apps/web/test/verificacion-assets-entornos-objetos.spec.ts` exige exactamente 9 fondos `.webp` de `800×450`.
 - **Cascada flotante y efectos desfasados tras inspección a zoom 2×:** Al auditar el dibujo procedural de `dibujarAguasCosterasMapa`, `dibujarCapaVivaMapa` y `TRAYECTOS_PUENTES_AETHELGARD` en `apps/web/src/lib/mapa-dioramas.ts` sobre el lienzo `1616×897`:
   - **Puesto del Río (`LOC-02`):** La caída de agua real en el arte abarca `x = 732..758`, `y = 528..587`, pero las partículas previas nacían en `y = 482..544` (sobre la empalizada/pasto superior) con salpicadura opaca en `(742, 545)` y ondas marinas en `(742, 550)`, provocando que la cascada se viera suspendida en el aire a mitad del acantilado. Además, los destellos del río cruzaban por encima de la torre de madera en primer plano y una fogata flotaba fuera de los campamentos reales.
   - **Resto del archipiélago:** Villa Serena (`LOC-01`) incluía una chimenea fantasma en `(106, 616)` sobre tejas sin tiro real y farolas ligeramente descentradas; Cueva Umbría (`ZON-05`) tenía saltos de magma con inicio debajo del labio superior del acantilado y deltas costeros desplazados; Riscos (`ZON-04`) presentaba columnas de humo fuera de los cráteres reales; y 3 puentes Bezier (`ZON-02->ZON-03`, `LOC-02->ZON-03`, `ZON-05->ZON-06`) requerían ajuste fino sobre las barandillas del arte maestro.
 
 ### 29.2 Mejoras Implementadas (Identidad Retro, Optimización WebP y Reglas de Cliente)
+
 - **Conversión a WebP RGBA Transparente (`-88.9%` de peso):**
   - Se convirtió el mapa maestro mediante Pillow (`Image.Resampling.LANCZOS`, `quality=90`, `alpha_quality=100`, `method=6`) a `apps/web/public/assets/mapa-mundo-aethelgard.webp` en resolución **`2424×1346`**, formato `WEBP RGBA` con transparencia limpia (`corner_a = 0`) y un peso final de **943.8 KB** (reducción del **88.9%** respecto a los `8,463,051` bytes del PNG previo).
   - Se retiró el archivo PNG de `apps/web/public/assets/zonas/` (`git rm`) manteniendo esa carpeta con los 9 banners `.webp` de zona exigidos por la suite de pruebas, y se simplificó el cargador en `apps/web/src/components/mundo/MapaInteractivoCanvas.tsx` para consumir directamente `/assets/mapa-mundo-aethelgard.webp` sin fallback PNG.
@@ -1783,6 +1952,7 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
 - **Sincronización Documental y Grafo:** Actualización de `Plan_Desarrollo_ISC305_Entregable1.md`, `docs/INDICE.md`, creación de `docs/workflows/fase-10/10-18-mapa-webp-calibracion.md` y reconstrucción del grafo con `graphify update .` (`2087` nodos, `4892` aristas, `137` comunidades).
 
 ### 29.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación Visual de Calibración Bitmap (`calibration-10r-full.png`, `calibration-10r-detalles.png`, `calibration-10r-puesto-final.png`):** Confirmación visual a zoom 2× de la cascada del Puesto del Río encajada en su caída real sin flotar en el aire, farolas/chimeneas/fogatas sobre sus puntos exactos y compresión WebP transparente limpia.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
 - **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **90 archivos** (`322ms`, 116 reglas, 0 advertencias nuevas).
@@ -1795,12 +1965,15 @@ Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámin
 ## 30. Sub-Fase 10s: Océano Vivo y Animación Marina 2.5D en el Mapa de Aethelgard
 
 ### 30.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Tras aislar en la Subfase 10r el mapa maestro transparente (`apps/web/public/assets/mapa-mundo-aethelgard.webp`, renderizado en el espacio lógico `1616×897`), el océano subyacente dependía de un degradado estático y elipses geométricas por isla (`dibujarAguasCosterasMapa`), mientras que algunos trazos uniformes y gradientes por cuadro limitaban la inmersión Dark Fantasy del archipiélago:
+
 - **Falta de lectura real del terreno en el agua:** Al usar radios elípticos aproximados en lugar de la silueta alfa real del archipiélago, no existía campo de distancias ni normales costeras para evitar que oleaje, corrientes o fauna atravesaran tierra firme o acantilados.
 - **Costuras geométricas y coste de renderizado por cuadro:** En la auditoría visual inicial sobre Chromium headless se detectaron tres artefactos puntuales que se corrigieron iterativamente: (1) saltos binarios entre meseta somera y aguas profundas provocados por la distancia entera Chamfer y umbrales discretos en puentes, (2) líneas rectas paralelas en pulsos de corriente y estelas vectoriales en `V` demasiado rígidas, y (3) necesidad de cachear en búferes fuera de pantalla (`WeakMap` y canvas auxiliares) para evitar asignar gradientes o patrones en `requestAnimationFrame`.
 - **Invariancia estricta del HUD y biomas calibrados:** Se mantuvo intacta la interfaz externa (barras, placas, tipografía, controles) y las coordenadas de los 9 biomas ya calibrados en `dibujarCapaVivaMapa` (`apps/web/src/lib/mapa-dioramas.ts`).
 
 ### 30.2 Mejoras Implementadas
+
 - **Nuevo motor oceánico dedicado ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
   - **Extracción única de máscara alfa y campo de distancias isotrópico (`analizarMascaraAlfaOceano` / `calcularCampoDistancia`):** Al cargar `mapa-mundo-aethelgard.webp` en `crearRecursosOceano(imagenMapa)`, se muestrea el canal alfa en `808×449` (`escala = 0.5`, umbral `110`) generando dos campos flotantes Chamfer (`1 / escala`, `Math.SQRT2 / escala`): `distanciaMar` (islas + puentes para espuma y superficie) y `distanciaSinPuentes` (solo islas para permitir corrientes y cardúmenes cruzar bajo los arcos de los 10 puentes Bezier de `TRAYECTOS_PUENTES_AETHELGARD`), más detección 2.5D de frente de acantilados (`esFrenteAcantilado`).
   - **Batimetría y cáusticas cacheadas fuera de pantalla (`crearCanvasBatimetria` / `crearCanvasCausticas`):** Precalcula fosas abisales, transición continua mediante `suavizarHermite` sobre `distanciaSinPuentes` ponderando orientación vertical `nyRel` por isla (evitando halos celestes alrededor de cumbres, torres o copas de árboles y concentrando la meseta oscura sutil en los frentes costeros, con mezcla climática suave y matiz térmico volcánico al este), sombra de contacto oscura bajo acantilados y arcos de puentes, y patrón periódico `512×512` de cáusticas submarinas desplazado en doble capa opuesta; adicionalmente cachea gradientes por contexto en `WeakMap` (`cacheGradientesPorCtx` y `cacheGradientesRespaldo` en `mapa-dioramas.ts`).
@@ -1816,6 +1989,7 @@ Tras aislar en la Subfase 10r el mapa maestro transparente (`apps/web/public/ass
   - Invoca `crearRecursosOceano(img)` al cargar el WebP maestro y ejecuta `dibujarOceanoVivo` debajo de las islas y `dibujarAvesMarinasLejanas` por encima, manteniendo la ruta de respaldo (`dibujarFondoOceanoContinuo`, `dibujarAguasCosterasMapa`, `dibujarRespaldoIslasBase`), caché de viñeta (`vinetaCacheRef`), soporte íntegro de zoom/paneo sin reiniciar el bucle `rAF` al arrastrar y respeto a `prefers-reduced-motion`.
 
 ### 30.3 Verificación de Calidad y Cero Regresiones
+
 - **Inspección Visual en Chromium Headless (6 capturas completas y zoom 2×, verificadas con `read_file` y eliminando los archivos temporales del repositorio antes de commitear):**
   - Tiempo de renderizado observado por cuadro entre **`4.1 ms` y `13.9 ms`** (margen sólido para 60 FPS en `< 16.6 ms`) con **`0` colisiones** registradas en tierra firme (`391` puntos de resaca, `7` corrientes, `6` cardúmenes, `13` bloques de hielo, `8` medusas, `62` motas de plancton, `4` bandadas, `4` cuencas del leviatán).
   - Confirmación visual sin halo celeste alrededor de islas, torres ni copas de árboles, canales fluidos sin costuras poligonales, leviatán y gaviotas en aguas abiertas y placas totalmente legibles.
@@ -1830,11 +2004,14 @@ Tras aislar en la Subfase 10r el mapa maestro transparente (`apps/web/public/ass
 ## 31. Sub-Fase 10s (Ampliación): Fauna Abisal Gigante y Siluetas Submarinas 2.5D
 
 ### 31.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Tras entregar el motor oceánico multicapa en la Subfase 10s base (`1f2fb10`), la actividad de megafauna marina se concentraba en un único evento de serpiente marina (`zonasLeviatan`), cardúmenes pequeños y medusas puntuales, lo que dejaba amplios mares abisales exteriores sin variedad de depredadores ni sensación de criaturas profundas desplazándose bajo la superficie:
+
 - **Falta de biodiversidad colosal:** El océano requería presencia diferenciada de **Mosasaurus**, **Kraken** y **Leviatán** alternados por cuencas abisales, además de sombras submarinas reconocibles nadando debajo de olas y puentes.
 - **Hallazgos de primera captura headless (`01` a `06`):** Al auditar los primeros renderizados, las siluetas sumergidas (`alpha ~ 0.17–0.33`) resultaban excesivamente tenues sobre el fondo `#031428`, el **Mosasaurus** mostraba dos barras blancas horizontales rígidas en la línea de flotación (`03`, `06`) y el **Kraken** exhibía tentáculos de grosor uniforme y elipse lisa en superficie (`05`).
 
 ### 31.2 Mejoras Implementadas (Identidad Retro, Criaturas 2.5D y Reglas de Cliente)
+
 - **Catálogo de Siluetas Submarinas (`apps/web/src/lib/oceano-vivo.ts`):**
   - Introducción de la capa `SiluetaSubmarina` (`mosasaurus`, `plesiosaurio`, `mantarraya`, `kraken`, `ballena`) desplegada en **9 rutas** de aguas abiertas y canales bajo puente (`NW`, `WestMid`, `NE`, `ChanW`, `SWBay`, `SEBay`, `ChanC`, `SW_corner`, `MidN`).
   - Renderizado 2.5D en doble capa con sombra abisal inferior difusa (`#00050e`), cuerpo translúcido adaptado al matiz regional (`glacial`, `abisal`, `mistico`), borde lunar tenue y nado continuo bajo las olas superficiales (`dibujarSiluetasSubmarinas`).
@@ -1846,6 +2023,7 @@ Tras entregar el motor oceánico multicapa en la Subfase 10s base (`1f2fb10`), l
 - **Sincronización Documental y Pruebas:** Ampliación de la suite en `apps/web/test/verificacion-hub-mundo.spec.ts` para verificar presencia íntegra de las 5 especies sumergidas, las 3 especies de avistamiento gigante en superficie y cero colisiones con tierra firme.
 
 ### 31.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación Visual Headless en Chromium (`01`, `03`, `04`, `05`):**
   - Medición real en Chromium tras el pulido final: **`4.0–9.1 ms/cuadro`** (`espumas: 391`, `corrientes: 7`, `cardumenes: 6`, `siluetas: 9`, `avistamientos: 5`, `hielo: 13`, `medusas: 8`, `plancton: 62`, `aves: 4`, **`colisiones: 0`**).
   - Confirmación visual en las capturas `01-mapa-completo-leviatan.png`, `03-zoom-norte-glacial.png`, `04-zoom-este-volcanico-viaducto.png` y `05-zoom-villa-serena-sur.png` de las 5 siluetas sumergidas claramente legibles bajo el mar, erradicación de barras horizontales en el Mosasaurus, tentáculos cónicos orgánicos del Kraken y estelas respetando acantilados y placas.
@@ -1860,12 +2038,15 @@ Tras entregar el motor oceánico multicapa en la Subfase 10s base (`1f2fb10`), l
 ## 32. Sub-Fase 10s (Rediseño Visual): Legibilidad Anatómica y Erradicación de Sombras Ovaladas
 
 ### 32.1 Diagnóstico Inicial y Auditoría Impeccable
+
 Tras la revisión directa del usuario sobre la primera entrega de fauna abisal (`e3c23c0`), se identificaron tres puntos visuales que impedían una lectura comercial limpia:
+
 - **Elipses oscuras artificiales bajo la superficie:** Tanto las siluetas sumergidas (`ctx.ellipse(-2, 2.5, 25, 9, ...)`) como los avistamientos de **Mosasaurus**, **Kraken** y nodos del **Leviatán** proyectaban óvalos o charcos negros desconectados debajo del cuerpo, dando un aspecto postizo de disco plano sobre el agua.
 - **Contornos tipo alambre hueco y escala reducida en profundidades:** Las siluetas submarinas empleaban `stroke` fino de 1 px sobre tonos casi idénticos al mar (`#041b32`), perdiendo masa corporal sólida y diferenciación anatómica al mirar el archipiélago completo.
 - **Desconexión de piezas en superficie:** El **Mosasaurus** mostraba cabeza, dorso y un triángulo caudal separados en tres islotes distintos, y el **Kraken** requería mayor presencia frontal de tentáculos envolventes para ocultar su base recta en la línea del agua.
 
 ### 32.2 Mejoras Implementadas (Identidad Retro, Anatomía 2.5D y Reglas de Cliente)
+
 - **Erradicación total de elipses ovaladas y transición a masas anatómicas continuas (`apps/web/src/lib/oceano-vivo.ts`):**
   - **Siluetas submarinas (`dibujarSiluetasSubmarinas`):** Se eliminaron el óvalo inferior y el borde `stroke` hueco; cada criatura se traza ahora como silueta abisal sólida (`#000712`, `alpha ~ 0.62`), mayor presencia (`escala` `1.14–1.44` según amplitud de cuenca o canal), volumen dorsal interno suave y rasgos anatómicos distintivos a simple vista (cráneo triangular y cola en media luna en **Mosasaurus**; cuello largo serpentino en **Plesiosaurio**; manchas pálidas simétricas y cuernos cefálicos en **Mantarraya**; aletas apicales y tentáculos cazadores con maza en **Kraken**; largas aletas pectorales con bordes claros y cola en T en **Ballena**).
   - **Separación espacial de cuencas:** Ajuste fino de subcuencas en `NE` (`[1455, 80, 1575, 225]` vs `[1340, 60, 1465, 180]`) y `SWBay` (`[520, 795, 625, 875]` vs `[465, 765, 575, 855]`) para evitar encimamiento entre el Kraken/Ballena sumergidos y los avistamientos en superficie.
@@ -1876,6 +2057,7 @@ Tras la revisión directa del usuario sobre la primera entrega de fauna abisal (
   - **Kraken:** Tentáculos sumergidos irradiando desde abajo sin charco ovalado, manto cefalópodo púrpura-índigo con aletas triangulares en flecha y ceño luminoso, y 8 brazos musculosos con puntas enrolladas, ventosas claras integradas y dos tentáculos delanteros abrazando la línea de ruptura sobre el agua.
 
 ### 32.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación Visual Headless en Chromium (`01` a `06`):**
   - Captura tras el pulido final con tiempos de cuadro en vivo entre **`6.7` y `12.5 ms/cuadro`** en zooms de región (`02–05`), `espumas: 391`, `corrientes: 7`, `cardumenes: 6`, `siluetas: 9`, `avistamientos: 5`, `hielo: 13`, `medusas: 8`, `plancton: 62`, `aves: 4` y **`colisiones: 0`**.
   - Confirmación visual en `01-mapa-completo-leviatan.png`, `03-zoom-norte-glacial.png`, `04-zoom-este-volcanico-viaducto.png`, `05-zoom-villa-serena-sur.png` y `06-componente-real-placas.png` de que todas las especies se distinguen a simple vista sin sombras ovaladas ni superposición con islas, puentes ni placas.
@@ -1890,13 +2072,16 @@ Tras la revisión directa del usuario sobre la primera entrega de fauna abisal (
 ## 33. Calibración de Puentes, Placas Escalables y Expansión Abisal de Océano (Subfase 10s — 15/11/2026)
 
 ### 33.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+
 Sobre la captura en vivo del mapa interactivo tras la Subfase 10s (`Riscos` / `La Cumbre` / `Cueva Umbría`) se identificaron 5 oportunidades directas de pulido espacial y de legibilidad:
+
 1. **Aro punteado distrayente en ubicación actual:** `dibujarCapaVivaMapa` dibujaba dos anillos orbitales (`setLineDash([13, 9])`) en rotación continua alrededor de la isla activa, cruzando puentes y bordes vecinos.
 2. **Desalineación en rutas Bezier de puentes adyacentes:** En `TRAYECTOS_PUENTES_AETHELGARD`, varias pasarelas (`Riscos -> Cueva Umbría`, `Riscos -> Bastión Norte`, `Bastión Norte -> La Cumbre`, `Cueva Umbría -> La Cumbre`, `Villa Serena -> Lago Espejo`) flotaban por encima del tablero real de piedra o cortaban agua abierta en lugar de seguir las losas caminables.
 3. **Presencia y alcance acotado de abisales:** Los 5 avistamientos de superficie (`6.4–7.0s` sobre ciclos de `15.5–19.0s`, ~38% de tiempo activo) y las 9 siluetas se concentraban únicamente dentro de `[0..1616, 0..897]`, dejando el océano abierto alrededor del archipiélago sin actividad abisal al hacer zoom alejado.
 4. **Sobrecarga de etiquetas de ubicación y tarjetas grandes al alejar:** El badge bajo el avatar leía `TÚ AQUÍ`, mientras que las tarjetas de isla mantenían tamaño completo al alejar el zoom (con quiebres multilínea en rangos de nivel), tapando costas y puentes cercanos; además faltaba un control rápido para ocultar/mostrar las tarjetas cuando el jugador desea inspeccionar el mapa limpio.
 
 ### 33.2 Mejoras Implementadas
+
 - **Calibración Geométrica sobre Máster WebP y Eliminación del Aro Punteado ([mapa-dioramas.ts](file:///apps/web/src/lib/mapa-dioramas.ts)):**
   - Medición píxel a píxel de las 10 pasarelas reales en espacio lógico `1616×897`, recalibrando `TRAYECTOS_PUENTES_AETHELGARD` (ej. `ZON-04 -> ZON-05`: `{ inicio: {1122, 346}, control: {1188, 326}, fin: {1256, 353} }`, `ZON-05 -> ZON-06`: `{ inicio: {1328, 246}, control: {1270, 192}, fin: {1214, 178} }`, `LOC-01 -> ZON-02`: `{ inicio: {424, 720}, control: {526, 718}, fin: {628, 720} }`) y afinando los 5 orbes luminosos por ruta (`radio 3.2`) en `dibujarPuentesYRutasVivas`.
   - Eliminación completa del bloque de aros punteados (`setLineDash`) alrededor de `ubicacionActualId` en `dibujarCapaVivaMapa`, conservando únicamente los velos sobre islas bloqueadas y los efectos ambientales por bioma.
@@ -1910,6 +2095,7 @@ Sobre la captura en vivo del mapa interactivo tras la Subfase 10s (`Riscos` / `L
   - Incorporación del botón accesible (`data-boton-placas-mapa`, `aria-pressed`, iconos vectoriales `Eye` / `EyeOff` de Lucide sin emojis bajo R1) dentro de la barra de controles flotantes para alternar al instante `mostrarPlacas` sin deshabilitar los nodos interactivos del archipiélago.
 
 ### 33.3 Verificación de Calidad y Cero Regresiones
+
 - **Inspección Visual en Chromium Headless (`01` a `05`):**
   - Verificación en vistas equivalentes (`loc=ZON-04` y `loc=LOC-02`), alejado al mínimo (`zoom ~ 0.50`), modo tarjetas ocultas (`placasRestantes === 0`) y océano extendido (`1680×1005`), confirmando puentes centrados sobre piedra, ausencia total de aros punteados, tarjetas compactas sin solapes ni quiebres, badge `Tú` y criaturas abisales distribuidas por todo el mapa.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores.
@@ -1923,12 +2109,15 @@ Sobre la captura en vivo del mapa interactivo tras la Subfase 10s (`Riscos` / `L
 ## 34. Erradicación de Tarjetas DOM, Tooltip con Nombre Real y Equilibrio Abisal (Subfase 10s — 15/11/2026)
 
 ### 34.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+
 Tras validar la calibración previa en uso real se detectaron tres fricciones concretas de rendimiento y claridad en la capa interactiva del mapa:
+
 1. **Latencia de desplazamiento provocada por tarjetas DOM flotantes:** Las 9 tarjetas `[data-placa-isla]` con `backdrop-blur-xs`, bordes sombreados y `animate-pulse` reproyectaban compositing sobre el lienzo WebGL/Canvas en cada cuadro de arrastre y zoom; además resultaban redundantes frente a la inspección directa mediante el tooltip de zona.
 2. **Doble denominación y truncamiento en el tooltip al pasar el cursor:** El encabezado del modal flotante combinaba `{nodo.nombre}` con una etiqueta de bioma paralela inventada (`ETIQUETA_BIOMA[isla.bioma]`, ej. `"Paso ... Riscos Escarpados"`), recortando el nombre real de la región y mostrando un rótulo ficticio inexistente en el dominio del juego.
 3. **Saturación visual de Kraken y Leviatán en superficie:** Al elevar a 11 los avistamientos de superficie y a 4 los krakens submarinos, ambas especies predominaban demasiado en pantalla en lugar de resaltar como encuentros amplios y bien espaciados.
 
 ### 34.2 Mejoras Implementadas
+
 - **Eliminación completa de tarjetas flotantes y su botón de alternancia ([MapaInteractivoCanvas.tsx](file:///apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
   - Retiro integral de las tarjetas `[data-placa-isla]`, del estado `mostrarPlacas`, de las variables `escalaPlaca` / `desplazamientoPlaca*`, del botón `[data-boton-placas-mapa]` y de las importaciones de Lucide ahora innecesarias (`Compass`, `Eye`, `EyeOff`, `Lock`, `MapPin`, `ShieldCheck`, `Sparkles`), dejando la barra flotante con sus **4 controles limpios** (`Acercar mapa`, `Alejar mapa`, `Centrar en mi ubicación` y sonido).
 - **Tooltip limpio exclusivamente con el nombre canónico real ([MapaInteractivoCanvas.tsx](file:///apps/web/src/components/mundo/MapaInteractivoCanvas.tsx)):**
@@ -1937,6 +2126,7 @@ Tras validar la calibración previa en uso real se detectaron tres fricciones co
   - Reducción de avistamientos de superficie de 11 a **6 ubicaciones espaciadas** (**2 krakens, 2 leviatanes y 2 mosasaurus** distribuidos en extremos opuestos sin solaparse) manteniendo presencia prolongada (`14.4–16.8s` activos sobre ciclos de `18.0–21.0s`, `>= 78%` del ciclo con envolvente en meseta), y ajuste de krakens submarinos de 4 a **2** preservando el resto de siluetas marinas (ballenas, plesiosaurios, mantarrayas, mosasaurus) por mares interiores y exteriores.
 
 ### 34.3 Verificación de Calidad y Cero Regresiones
+
 - **Inspección Visual en Chromium Headless (`06` y `07`):**
   - Verificación con cursor sobre `ZON-04`: el DOM reportó `placasDom: 0`, `botonPlacasDom: 0`, `controlesCount: 4` y tooltip con encabezado íntegro **`"Paso de los Riscos"`** sin segundo subtítulo inventado; en vista alejada (`zoom = 0.50`) el mapa luce despejado, fluido y sin saturación de krakens ni leviatanes.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores.
@@ -1950,11 +2140,14 @@ Tras validar la calibración previa en uso real se detectaron tres fricciones co
 ## 35. Espuma y Ondas de Choque en Pilares de Puentes + Calibración de Cadencia (Subfase 10s — Rama `funcionalidad/fase-10s-espuma-pilares-puentes`)
 
 ### 35.1 Diagnóstico Inicial y Auditoría Visual
+
 Al revisar en detalle los puentes de Aethelgard tras integrar la Subfase 10s (`33e2de9`), la inspección sobre la máscara alfa real (`mapa-mundo-aethelgard.webp`) y las capturas interactivas revelaron dos defectos visuales concatenados:
+
 1. **Exclusión previa de pilares reales:** en `analizarMascaraAlfaOceano` ([apps/web/src/lib/oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)), la banda de exclusión de `28px` alrededor de cada spline Bezier de puente (`distanciaMinimaPuenteCuadrada <= 28 * 28`), sumada al filtro sur de acantilados (`enZonaAcantilado`) y a `tierraSinPuentes`, dejaba sin animación de choque de agua a las columnas de piedra que bajan hasta el mar en los viaductos multi-arco.
 2. **Regresión intermedia en arcos oblicuos y ritmo acelerado:** al incorporar una detección inicial basada solo en alcance lateral amplio, varias secciones inclinadas bajo las bóvedas de arcos (notablemente en el gran viaducto central `LOC-02 <-> ZON-03`) recibieron arcos repetidos a lo largo de la curva interna, mientras que la primera velocidad elegida (`t * 0.00095`, ~`1.05s` por ciclo) producía ondas demasiado rápidas e invasivas visualmente.
 
 ### 35.2 Mejoras Implementadas
+
 1. **Detección Geométrica Pura de Pilares Sumergidos ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
    - Se extendió `PuntoEspuma` con la bandera opcional `esPilar?: boolean` y se calibró una pasada dedicada en `analizarMascaraAlfaOceano` (`esFrenteAcantilado[idx] = 2`) dentro de un radio de `115px` respecto a `TRAYECTOS_PUENTES_AETHELGARD` en agua inmediata (`3 <= distanciaMar <= 7`), exigiendo espesor sólido vertical (`>= Math.round(7 * escala)`) y agua abierta inferior (`>= Math.round(4 * escala)`).
    - Para erradicar por completo techos aéreos, muros inclinados internos de bóveda y acantilados de islas vecinos, cada celda candidata debe confirmar **flancos de agua a izquierda y derecha** a la altura `yBorde - 3` dentro de `alcanceFlancoColumna = Math.max(5, Math.round(20 * escala))` y carecer de bloque descendente contiguo `4` celdas abajo (`bajaCerca`). Con esto quedan aislados con precisión los pies de columnas reales (`14` emisores calibrados con separación mínima `sepPilar2 = 20 * 20` para evitar duplicados por columna).
@@ -1965,6 +2158,7 @@ Al revisar en detalle los puentes de Aethelgard tras integrar la Subfase 10s (`3
    - Se inspeccionaron visualmente capturas reales ampliadas en Chrome headless sobre los viaductos (`LOC-02 <-> ZON-03`, `LOC-01 <-> ZON-02`, `ZON-02 <-> ZON-03`, `LOC-03 <-> ZON-06` y `ZON-05 <-> ZON-06`), comprobando la ausencia total de artefactos bajo las bóvedas antes de eliminar los archivos temporales de prueba.
 
 ### 35.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
 - **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/oceano-vivo.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos en `20ms`).
 - **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `91` archivos, `326ms`).
@@ -1980,12 +2174,15 @@ Al revisar en detalle los puentes de Aethelgard tras integrar la Subfase 10s (`3
 > **Módulos implicados:** [oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)
 
 ### 36.1 Diagnóstico Inicial
+
 Al auditar la captura en primer plano del área central entre `Puesto del Río`, `Villa Serena`, `Lago Espejo` y `Riscos Escarpados`, manteniendo intacta la animación serena de ondas en columnas, se detectaron tres causas geométricas de desalineación en la extracción automática de pilares (`esPilar: true`):
+
 1. **Desplazamiento hacia el borde izquierdo de cada columna:** el barrido lineal de izquierda a derecha fijaba la semilla al primer píxel con distancia `sepPilar2 = 20 * 20`, ubicando el emisor en el borde izquierdo de columnas de `16–24px` de ancho en lugar de su eje horizontal central.
 2. **Desfase vertical bajo el pie sumergido:** al muestrear agua a distancia `3..7` de la grilla (`0.5x`), los centros descendían `4–7px` por debajo de la mampostería (`y = 634` frente a la base real en `y ≈ 630` en el viaducto central `LOC-02 <-> ZON-03`), separando visualmente la onda del pilar.
 3. **Falsos positivos aislados bajo copas de árboles en `Lago Espejo`:** `distanciaMinimaPuenteCuadrada` consideraba la cercanía lateral al trazo superior del viaducto `LOC-02 <-> ZON-03` sin validar que el punto estuviera a la altura vertical del puente (`ly >= yPuente - 4`), generando dos puntos por debajo de las copas de árboles superiores de `ZON-02`.
 
 ### 36.2 Mejoras Implementadas
+
 1. **Agrupación por Columna y Centrado Exacto en Pie de Mampostería ([oceano-vivo.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/oceano-vivo.ts)):**
    - Se incorporó `muestraPuenteMasCercana(lx, ly)` devolviendo `{ d2, yPuente }` para exigir `ly >= cercano.yPuente - 4` en la pasada de pilares dentro de `analizarMascaraAlfaOceano` (distancia inmediata `d` entre `2` y `6`, altura de agua abierta `up` entre `1` y `3`), eliminando los artefactos sobre las copas de árboles de `Lago Espejo`.
    - En `generarDatosOceanoVivo`, todas las celdas candidatas `esFrenteAcantilado === 2` se agrupan por componente conexa (`|dx| <= 18 && |dy| <= 14`) para obtener su envolvente horizontal `[xMin, xMax]` y la base real de piedra `yBorde`, fijando `lx = (xMin + xMax) * 0.5`, `yAgua = (yBorde + 1) / escala` y ancho calibrado con el grosor sólido real medido en `yBorde - 1` (`Math.max(10, Math.min(28, maxAnchoCol * 1.15))`), con respaldo seguro a la celda de agua válida más cercana al eje si el punto medio toca un saliente irregular (`consultarDistanciaMar(...) === 0`).
@@ -1994,6 +2191,7 @@ Al auditar la captura en primer plano del área central entre `Puesto del Río`,
    - Se validaron capturas ampliadas sobre `LOC-02 <-> ZON-03`, `LOC-01 <-> ZON-02`, `ZON-02 <-> ZON-03`, `ZON-04 <-> ZON-05`, `ZON-05 <-> ZON-06`, `LOC-03 <-> ZON-06` y los puentes del oeste antes de retirar los archivos temporales de inspección.
 
 ### 36.3 Verificación de Calidad y Cero Regresiones
+
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
 - **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/oceano-vivo.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos en `80ms`).
 - **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `91` archivos en `176ms`).
@@ -2006,13 +2204,16 @@ Al auditar la captura en primer plano del área central entre `Puesto del Río`,
 ## 37. Corrección Responsive del Hub, Modales sin Desborde, Dock Completo de 6 Ranuras y Requisitos Limpios
 
 ### 37.1 Diagnóstico Inicial y Auditoría Visual
+
 Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/PantallaHubUbicacion.tsx`) en resoluciones móviles verticales y horizontales compactas, así como en escritorio, se identificaron cuatro fricciones concretas de interfaz y legibilidad:
+
 1. **Redundancia y empuje en HUD superior:** La tarjeta superior izquierda incluía una miniatura etiquetada como `ZONA` con la imagen de la ubicación actual (redundante frente al mapa interactivo y al nombre de la zona), lo que ensanchaba la tarjeta en pantallas estrechas y empujaba los controles superiores derechos (monedas y botón de menú/ajustes) hacia el borde horizontal.
 2. **Desbordamiento horizontal en modales del Hub:** A diferencia de `PantallaCatalogo.tsx` (que utiliza `Dialog` / `DialogContent` en columna `flex-col`), ambos modales de `PantallaHubUbicacion.tsx` (menú de ajustes y modal de inspección/viaje de zona) seguían usando `AlertDialog` (`ShadcnAlertDialogContent` imponía `display: grid` y `data-[size=default]:max-w-xs`), ocasionando recortes laterales en la barra de cartografía, encabezados largos y etiquetas de fauna en pantallas móviles.
 3. **Ocultamiento parcial del equipo en el dock inferior y roce con controles del mapa:** El dock inferior renderizaba únicamente 4 ranuras visibles más un indicador `+1` cuando el equipo superaba 4 criaturas, ocultando integrantes activos; además, en móvil el botón `EXPLORAR` / `VIAJAR` solapaba visualmente parte del dock y las botoneras laterales centradas coincidían verticalmente con los controles de zoom de `MapaInteractivoCanvas.tsx`.
 4. **Exposición de IDs internos en textos de requisitos territoriales:** Tanto el backend (`REGLAS_DESBLOQUEO_TERRITORIAL` y `detalleProgreso` en `apps/api/src/modulos/progreso/progreso.service.ts`) como la vista de inspección de `PantallaHubUbicacion.tsx` mostraban identificadores técnicos (`(ZON-05)`, `[ZON-05]`, etc.) al jugador en lugar de presentar únicamente el nombre legible de la zona. Asimismo, se auditó la base de datos PostgreSQL para validar la consistencia de las tablas territoriales y de encuentro (`zona`, `conexion_zona`, `aparicion_zona`, `evento_zona`).
 
 ### 37.2 Mejoras Implementadas
+
 - **Limpieza del HUD superior y ergonomía de rieles laterales (`PantallaHubUbicacion.tsx`, `MapaInteractivoCanvas.tsx`):**
   - Se eliminó la miniatura redundante `ZONA` de la tarjeta superior izquierda del HUD y se ajustó el contenedor flex (`min-w-0 flex-1` junto con `w-fit max-w-full min-w-0 sm:max-w-lg`) manteniendo los controles superiores derechos (`shrink-0`) dentro del viewport sin desbordes.
   - Se alinearon los rieles laterales de servicios con `items-start pt-3 sm:items-center sm:pt-0` en móvil y se desplazaron los controles del mapa en `MapaInteractivoCanvas.tsx` exclusivamente en escritorio hacia abajo (`bottom-36 sm:bottom-28 md:bottom-3`), despejando el botón de acercar (`+`) debajo de `Santuario de Salud` sin alterar la posición en móvil.
@@ -2025,6 +2226,7 @@ Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/Pantalla
   - Mediante consulta directa a PostgreSQL se verificó la integridad de los 9 nodos (`LOC-01`..`LOC-03`, `ZON-01`..`ZON-06`), 20 aristas dirigidas en `conexion_zona`, 5 especies por zona silvestre en `aparicion_zona` con suma de pesos exactamente 100 por zona (600 en total), y 18 registros en `evento_zona`.
 
 ### 37.3 Verificación de Calidad y Cero Regresiones
+
 - **Linter Focalizado Web (`pnpm --filter web exec oxlint src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`2` archivos revisados con `116` reglas en `43ms`).
 - **Pruebas Unitarias Web (`pnpm --filter web test`):** **101 de 101 pruebas aprobadas** (`0` fallos, `0` omitidas en `1552.7386ms`), incluyendo aserciones actualizadas en `apps/web/test/verificacion-hub-mundo.spec.ts` sobre el patrón `Dialog`, eliminación de la miniatura `ZONA`, dock de 6 ranuras en móvil, ausencia de `requisitoCartografia.zonaId` en la UI y desplazamiento `md:bottom-3` de los controles del mapa en escritorio.
 - **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2163 módulos** transformados en **`1.74s`**).
@@ -2036,17 +2238,20 @@ Al revisar capturas reales del Hub de Ubicación (`apps/web/src/paginas/Pantalla
 ## 38. Sub-Fase 10t: Animación Multicapa de "La Cumbre" (`ZON-06`) en el Mapa de Aethelgard
 
 > **Rama de trabajo:** `funcionalidad/fase-10t-cumbre-viva` → refinamiento `funcionalidad/fase-10t-aurora-cumbre` (integradas en `desarrollo`)
-> **Módulos implicados:** [diorama-cumbre.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cumbre.ts) *(nuevo)*, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [MapaInteractivoCanvas.tsx](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/components/mundo/MapaInteractivoCanvas.tsx) y [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts)
+> **Módulos implicados:** [diorama-cumbre.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/diorama-cumbre.ts) _(nuevo)_, [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts), [MapaInteractivoCanvas.tsx](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/components/mundo/MapaInteractivoCanvas.tsx) y [verificacion-hub-mundo.spec.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/test/verificacion-hub-mundo.spec.ts)
 
 ### 38.1 Diagnóstico Inicial y Auditoría Visual (Impeccable)
+
 Antes de intervenir el diorama, se extrajo un recorte ampliado 3× de `ZON-06` directamente desde `apps/web/public/assets/mapa-mundo-aethelgard.webp` con rejilla de coordenadas lógicas `1616×897`, detectando cuatro brechas respecto al acabado Dark Fantasy del resto del archipiélago:
+
 1. **Efecto glaciar mínimo y desfasado en `mapa-dioramas.ts`:** `ZON-06` solo contaba con un arco lineal único de aurora, 4 halos circulares desplazados bajo los cristales (`[852,82]`, `[933,102]`, `[1247,114]`, `[1172,180]`) y 14 cuadros de nieve sobre un rectángulo sin recorte de silueta (`790..1285`), dejando sin vida las puntas cristalinas, los picos de la cordillera ni los acantilados sur.
 2. **Protagonismo desaprovechado del esqueleto del dragón ancestral:** La ilustración maestra presenta un fósil completo de dragón congelado sobre la meseta (`x: 1022..1182, y: 92..162`, con fauces en `(1024, 143)`, cuenca ocular oscura en `(1046, 130)` y columna vertebral arqueada hasta la cola), completamente estático hasta ahora.
-3. **Riesgo de solapamiento con vecinos y costo de gradientes por cuadro:** Al sur de `La Cumbre`, los picos y nubes volcánicas de `ZON-04` (*Paso de los Riscos*, pico en `(996, 186)`) colindan con el acantilado helado; además, las animaciones debían evitar `createLinearGradient` / `createRadialGradient` dentro del bucle de 60 FPS y respetar íntegramente el HUD externo, las otras 8 islas y `prefers-reduced-motion`.
+3. **Riesgo de solapamiento con vecinos y costo de gradientes por cuadro:** Al sur de `La Cumbre`, los picos y nubes volcánicas de `ZON-04` (_Paso de los Riscos_, pico en `(996, 186)`) colindan con el acantilado helado; además, las animaciones debían evitar `createLinearGradient` / `createRadialGradient` dentro del bucle de 60 FPS y respetar íntegramente el HUD externo, las otras 8 islas y `prefers-reduced-motion`.
 
 ### 38.2 Mejoras Implementadas
 
 #### A. Identidad Visual Retro Dark Fantasy y Submódulo Dedicado (`diorama-cumbre.ts`)
+
 - **Medición exacta sobre el arte maestro (`1616×897`):** Se definieron las envolventes calibradas `SILUETA_ENVOLVENTE_CUMBRE` (32 vértices siguiendo cielo de cumbres, puntas de cristales y acantilado sur sin tocar `ZON-04`, `LOC-03` ni `ZON-05`) y `CONTORNO_MESETA_CUMBRE`, los 8 vértices de `PICOS_CORDILLERA_CUMBRE` (cumbre principal en `(1070, 3)`), los 4 cúmulos de `CRISTALES_GLACIARES_CUMBRE` + 2 `AGUJAS_ACANTILADO_CUMBRE`, el esqueleto completo `ESQUELETO_DRAGON_CUMBRE` (fauces, cuenca ocular, centro costal, patas y 11 vértebras), 12 `DESTELLOS_CORNISA_CUMBRE` y 5 `FRAGMENTOS_ESCARCHA_ACANTILADO`.
 - **Aurora boreal multicapa detrás de las cumbres y reflejo polar frontal:** Se elevó la aurora a un espectáculo atmosférico de 3 cortinas plegadas en "S" con inclinación magnética orgánica (`cortinaEsmeralda` con borde inferior menta luminoso hacia corona cian-violeta, `cortinaVioleta` amatista-cian en profundidad y `rayoPilar` para 22 pilares de luz viajeros), baño polar (`haloAuroraPolar`), 18 estrellas polares titilantes y reflejo tenue en el mar norte. Mediante `dibujarFondoCieloMapa` (`mapa-dioramas.ts`) y `dibujarCieloAuroraCumbre`, las cortinas se dibujan **antes** del WebP transparente en `MapaInteractivoCanvas.tsx` para que las cumbres nevadas y cristales se recorten con nitidez por delante, complementadas por un baño polar frontal sutil y motas luminosas (`dibujarReflejoAuroraEnCumbres`) tras `ctx.drawImage`.
 - **Ventisca alpina en 3 planos y plumas de cresta:** Nieve lejana (`COPOS_LEJANOS`), neblina rasante confinada a la meseta (`CONTORNO_MESETA_CUMBRE` + validación contra `mascaraOceano`), plumas de nieve desprendiéndose desde los picos más altos hacia la derecha, y 34 partículas diagonales de ventisca con estela corta y contraste cian sobre nieve blanca (`#7dd3fc` / `#f0f9ff`).
@@ -2055,13 +2260,16 @@ Antes de intervenir el diorama, se extrajo un recorte ampliado 3× de `ZON-06` d
 - **Diferenciación bloqueada vs. desbloqueada:** Cuando `ZON-06` está bloqueada (`dibujarEstadoBloqueadoCumbre`), preserva íntegro el sombreado de niebla oscura y limita el efecto a bruma fría contenida y copos tenues dispersos; al desbloquearse, despliega todas las capas atmosféricas, cristalinas y espectrales.
 
 #### B. Rendimiento 60 FPS, Componentes `8bitcn/ui` e Integración en Canvas
+
 - **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCumbre()` pre-renderiza una única vez 8 sprites en canvas auxiliares (`resplandorGlacial`, `resplandorEspectral`, `cortinaEsmeralda`, `cortinaVioleta`, `rayoPilar`, `haloAuroraPolar`, `brumaFria`, `brumaCian`), dibujados por cuadro mediante `drawImage` y `globalAlpha`.
 - **Integración limpia y respeto a accesibilidad:** `MapaInteractivoCanvas.tsx` pasa `recursosOceano.mascara` (opcional) a `dibujarCapaVivaMapa` en `mapa-dioramas.ts`, que delega `ZON-06` a `dibujarDioramaCumbre`. El modo `reducirMovimiento` (`prefers-reduced-motion`) congela una estampa limpia y equilibrada. Toda la interfaz `8bitcn/ui` externa, controles, paletas, océano y efectos de las otras 8 islas permanecen intactos.
 
 #### C. Audio Web Audio API y Reglas del Servidor
+
 - Sin alteraciones en la síntesis de audio (`reproducirSonido`) ni en reglas de negocio, rutas REST o esquema PostgreSQL en `apps/api`.
 
 ### 38.3 Verificación de Calidad y Cero Regresiones
+
 - **Inspección Visual Headless a Zoom 1× y 2× (Chrome headless sobre los módulos reales):** Validación visual en estados bloqueado, desbloqueado (múltiples instantes `t = 1200 ms`, `t = 1500 ms`, `t = 3600 ms` y `t = 3800 ms`) y `reducirMovimiento`, confirmando las 3 cortinas S-plegadas de aurora boreal recortándose limpiamente detrás de las cumbres y cristales transparentes del WebP, ventisca recortada, 4 cristales, cuenca ocular, aliento y espina del dragón, y caída de escarcha al mar sin invadir `ZON-04` ni puentes; todos los archivos temporales de scratch fueron eliminados al finalizar.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores de TypeScript.
 - **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cumbre.ts src/lib/mapa-dioramas.ts src/components/mundo/MapaInteractivoCanvas.tsx test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`4` archivos en `53ms`).
@@ -2085,27 +2293,27 @@ Antes de intervenir `ZON-05`, se extrajo un recorte ampliado 3× directamente de
 ### 39.2 Mejoras Implementadas
 
 #### A. Identidad Retro Dark Fantasy y Submódulo Dedicado (`diorama-cueva-umbria.ts`)
-- **Medición píxel a píxel sobre el arte maestro (`1616×897`):** Se definieron `SILUETA_ENVOLVENTE_CUEVA` (33 vértices en `x: 1246..1602, y: 206..505`), `ARCO_CAVERNA_CUEVA` (12 vértices sobre la boca oscura central), `CASCADA_TECHO_CUEVA` (grieta superior en `(1453, 294)` hasta poza interior `(1453, 353)`), `PRESENCIA_UMBRIA_CUEVA` (ojo izquierdo `(1410, 326)`, ojo derecho `(1418, 326)` y umbral `(1398, 345)`), `CAUCES_LAVA_MESETA` (ramales oeste, central, tributario y este) + 6 `BURBUJAS_LAVA_MESETA`, `CASCADAS_ACANTILADO_CUEVA` (3 caídas, con la central dividida en 3 hebras reales en `1393`, `1408` y `1422` y pozas acotadas en `y <= 488`), `CUMULOS_CRISTALES_CUEVA` (cúmulo oeste, cúmulo colosal con aguja maestra en `(1536, 225)` y cúmulo este) y 5 trayectorias de `ARCOS_CRISTAL_COLOSAL`.
+- **Medición píxel a píxel sobre el arte maestro (`1616×897`):** Se definieron `SILUETA_ENVOLVENTE_CUEVA` (33 vértices en `x: 1246..1602, y: 206..505`), `ARCO_CAVERNA_CUEVA` (12 vértices sobre la boca oscura central), `CASCADA_TECHO_CUEVA` (grieta superior en `(1453, 294)` hasta poza interior `(1453, 353)`), `PRESENCIA_UMBRIA_CUEVA` (ojo izquierdo `(1410, 326)`, ojo derecho `(1418, 326)` y umbral `(1398, 345)`), `CAUCES_LAVA_MESETA` (ramales oeste, central bajo puente basáltico, bifurcación izquierda y este) + 6 `BURBUJAS_LAVA_MESETA`, `CASCADAS_ACANTILADO_CUEVA` (3 caídas, con la central dividida en 3 hebras reales en `1393`, `1408` y `1422` y pozas acotadas en `y <= 488`), `CUMULOS_CRISTALES_CUEVA` (cúmulo oeste, cúmulo colosal con aguja maestra en `(1536, 225)` y cúmulo este) y 12 trayectorias en `ARCOS_CRISTAL_COLOSAL` (7 en el cúmulo colosal y 5 entre los cúmulos oeste y este).
 - **Atmósfera trasera tras la cresta de basalto (`dibujarFondoCuevaUmbria` -> `dibujarFondoCieloMapa`):** Resplandor dual naranja-carmesí tras la cumbre basáltica y aura abisal púrpura detrás del gran cúmulo cristalino, acompañados de columnas lentas de humo oscuro/cálido y pavesas ascendiendo detrás de la silueta WebP.
-- **Gran Caverna Sombría (`dibujarCavernaSombria`):** Chorro continuo multicapa cayendo desde la grieta superior con estelas blanco-amarillentas y salpicaduras en la poza central; neblina densa violeta-azabache confinada al arco cavernoso y umbral izquierdo, más destello esporádico y elegante de ojos abisales cada ~9.6 s en la penumbra izquierda sin tocar el chorro de magma.
-- **Ríos de lava y cascadas con choque térmico (`dibujarRiosLavaMeseta`, `dibujarCascadasYVaporCueva`):** Pulsos térmicos suaves recorriendo los ramales de la meseta, burbujas de magma que se hinchan y estallan liberando micro-chispas, estelas viscosas alargadas en cada hebra de las 3 cascadas y nubes de vapor hirviente (`vaporCaliente`) ascendiendo desde las 3 pozas costeras (validando altura y `MascaraOceano` para jamás tocar `Bosque` ni chocar con el oleaje).
-- **Cristales amatista, descargas arcanas y ceniza (`dibujarCristalesYArcosCueva`, `dibujarCenizaYPavesasCueva`):** Reflejo púrpura sobre la roca negra en la base de los 3 cúmulos, pulso mágico ascendente por cada aguja con reflejos de faceta y cruz pixelada (`dibujarDestelloCruzPixel`), 18 motas de éter violeta y arcos eléctricos orgánicos bifurcados con desplazamiento determinista de punto medio entre las puntas reales del cúmulo colosal; además de 24 cenizas grises y 18 pavesas naranjas en espiral dentro de la envolvente.
+- **Gran Caverna Sombría (`dibujarCavernaSombria`):** Dos chorros continuos multicapa (`lineCap = "round"` sobre `flujoBufferX`/`flujoBufferY` de 14 segmentos) cayendo desde la grieta superior con manto naranja exterior, crestas sinusoidales viajeras blanco-doradas y salpicaduras en la poza central; neblina densa violeta-azabache confinada al arco cavernoso y umbral izquierdo, más destello esporádico y elegante de ojos abisales cada ~9.6 s en la penumbra izquierda sin tocar el chorro de magma.
+- **Ríos de lava y cascadas con choque térmico (`dibujarRiosLavaMeseta`, `dibujarCascadasYVaporCueva`):** Corrientes continuas serpeantes de magma (`18` tramos sobre `flujoBufferX`/`flujoBufferY`) calibradas exclusivamente sobre los cauces naranja expuestos sin invadir islotes de basalto, domos incandescentes (`BURBUJAS_LAVA_MESETA`) que se hinchan y estallan liberando micro-chispas, chorros viscosos continuos (`14` tramos ondulantes) en cada hebra de las 3 cascadas y nubes de vapor hirviente (`vaporCaliente`) ascendiendo desde las 3 pozas costeras (validando altura y `MascaraOceano` para jamás tocar `Bosque` ni chocar con el oleaje).
+- **Cristales amatista, descargas arcanas y ceniza (`dibujarCristalesYArcosCueva`, `dibujarCenizaYPavesasCueva`):** Reflejo púrpura sobre la roca negra en la base de los 3 cúmulos, pulso mágico ascendente por cada aguja con reflejos de faceta y cruz pixelada (`dibujarDestelloCruzPixel`), 18 motas de éter violeta y arcos eléctricos orgánicos bifurcados de 12 segmentos angulosos (`lineCap = "square"`, `lineJoin = "miter"`, triple pasada corona púrpura + halo magenta + núcleo blanco-lavanda + 1 a 2 bifurcaciones vivas) con distribución áurea de fases sobre los 3 cúmulos; además de 24 cenizas grises y 18 pavesas naranjas en espiral dentro de la envolvente.
 - **Diferenciación bloqueada vs. desbloqueada (`dibujarEstadoBloqueadoCueva`):** Cuando `ZON-05` está bloqueada, oculta la atmósfera trasera y limita la isla a rescoldos apagados en poza/cascadas, un hilo tenue de humo oscuro desde la caverna y pulsos débiles en la base de los cristales.
 
 #### B. Rendimiento 60 FPS, Integración en Canvas y Componentes `8bitcn/ui`
-- **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCueva()` pre-renderiza una sola vez 7 sprites fuera de pantalla (`haloVolcanico`, `haloAbisalPurpura`, `haloMagmaNucleo`, `haloArcanoCristal`, `humoOscuro`, `vaporCaliente`, `brumaUmbria`) y reutiliza búferes estáticos `Float32Array` (`arcoBufferX`, `arcoBufferY`, `ramaBufferX`, `ramaBufferY`) para generar los arcos eléctricos sin asignaciones por cuadro.
+- **Cero basura de memoria en `requestAnimationFrame`:** `obtenerSpritesCueva()` pre-renderiza una sola vez 7 sprites fuera de pantalla (`haloVolcanico`, `haloAbisalPurpura`, `haloMagmaNucleo`, `haloArcanoCristal`, `humoOscuro`, `vaporCaliente`, `brumaUmbria`) y reutiliza búferes estáticos `Float32Array` (`arcoBufferX`, `arcoBufferY`, `ramaBufferX`, `ramaBufferY`, `flujoBufferX`, `flujoBufferY`) para generar los arcos eléctricos y flujos de magma continuos sin asignaciones por cuadro.
 - **Integración modular y accesibilidad:** [mapa-dioramas.ts](file:///c:/Users/USER/Desktop/projects/Proyecto%20Integrador%20ISC305%20Aventura%20Web%20Criaturas/apps/web/src/lib/mapa-dioramas.ts) invoca `dibujarFondoCuevaUmbria` desde `dibujarFondoCieloMapa` y `dibujarDioramaCuevaUmbria` desde `dibujarCapaVivaMapa`, respetando `reducirMovimiento` (`prefers-reduced-motion`). No se alteraron HUD, tarjetas, botones `8bitcn/ui`, motor oceánico ni las otras 8 islas.
 
 #### C. Audio Web Audio API y Reglas del Servidor
 - Sin cambios en síntesis de audio (`assets.ts`) ni en rutas REST, DTOs o esquema PostgreSQL en `apps/api`.
 
 ### 39.3 Verificación de Calidad y Cero Regresiones
-- **Inspección Visual Headless en Chromium (zoom 1× y 2.5×):** Verificación directa de capturas en contexto (`1×`), desbloqueada en múltiples instantes (`t = 2675 ms` con arco eléctrico bifurcado + ojos abisales y `t = 4000 ms` con burbujas/vapor), bloqueada (`t = 1500 ms`) y movimiento reducido, confirmando cero invasión sobre `ZON-03`, `ZON-04`, `ZON-06` ni puentes, con un tiempo promedio medido en CPU (`--disable-gpu`) de **`6.928 ms/cuadro`** sobre lienzo `1616×897` para `ZON-05`.
+- **Inspección Visual Headless en Chromium (zoom 1× y 2.5×):** Verificación directa de capturas en contexto (`1×`), desbloqueada en múltiples instantes (`t = 1200 ms`, `t = 2675 ms` con arco eléctrico bifurcado en los 3 cúmulos + ojos abisales y `t = 4000 ms` con ráfagas cristalinas, burbujas y vapor), bloqueada (`t = 1500 ms`) y movimiento reducido, confirmando flujo continuo de lava sin cortes ni invasión sobre rocas basálticas, `ZON-03`, `ZON-04`, `ZON-06` ni puentes, con un tiempo promedio medido en CPU (`--disable-gpu`) de **`2.617 ms/cuadro`** sobre lienzo `1616×897` para `ZON-05`.
 - **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** `0` errores.
-- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cueva-umbria.ts src/lib/mapa-dioramas.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos en `14ms`).
-- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `93` archivos en `213ms`, `0` advertencias nuevas).
-- **Pruebas Unitarias Web (`pnpm --filter web test`):** **103 de 103 pruebas aprobadas** (`0` fallos, `0` omitidas en `1887.6398ms`), incluyendo la suite `Subfase 10u` sobre geometría calibrada, bifurcación central en 3 hebras, caché de sprites, ejecución segura en Node y cumplimiento de `R1`.
-- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2165 módulos** transformados en **`1.98s`**).
+- **Linter Focalizado (`pnpm --filter web exec oxlint src/lib/diorama-cueva-umbria.ts src/lib/mapa-dioramas.ts test/verificacion-hub-mundo.spec.ts`):** `0` advertencias y `0` errores (`3` archivos en `22ms`).
+- **Linter Global Web (`pnpm --filter web lint`):** `0` errores (`34` advertencias preexistentes en `93` archivos en `401ms`, `0` advertencias nuevas).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **103 de 103 pruebas aprobadas** (`0` fallos, `0` omitidas en `1746.4818ms`), incluyendo la suite `Subfase 10u` sobre geometría calibrada, bifurcación central en 3 hebras, 12 arcos en cúmulos, caché de sprites, búfer continuo `flujoBufferX`, ejecución segura en Node y cumplimiento de `R1`.
+- **Compilación de Producción Web (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2165 módulos** transformados en **`2.05s`**).
 
 
 

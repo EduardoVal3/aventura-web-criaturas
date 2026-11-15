@@ -1719,3 +1719,47 @@ Con el objetivo de llevar el mapa interactivo del Hub (`/hub`) a un acabado visu
 - **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`6.27s`**).
 - **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `59.88s`).
 
+---
+
+## 28. Sub-Fase 10q: Mapa Transparente 3232×1794 sin Océano, Mar Abisal Animado y Recalibración Pixel-Exacta de Efectos (`MapaInteractivoCanvas.tsx`)
+
+Para reemplazar el mapa con mar pre-horneado de la subfase previa por una lámina RGBA transparente libre de océano y recalibrar con exactitud milimétrica todas las luces, partículas, espuma costera y rutas Bezier sobre las 9 islas reales, se ejecutó la **Sub-Fase 10q** en la rama `funcionalidad/fase-10q-mapa-transparente-fx`.
+
+### 28.1 Diagnóstico Inicial y Auditoría Impeccable
+1. **Desajuste entre lámina transparente `3232×1794` y coordenadas previas (`1679×937`):** La versión RGBA sin océano (`apps/web/public/assets/zonas/mapa-mundo-aethelgard.png`, canal alfa `0` en esquinas y canales marinos, geometría opaca en `x=[0..1614], y=[0..896]` en escala lógica `1616×897` @ 2×) desplazaba respecto a `1679×937` las posiciones de faroles, grietas, cascadas, cristales y puentes, provocando que varios efectos lucieran corridos fuera de su elemento arquitectónico o natural.
+2. **Océano oculto e integración costera 2.5D:** Con el fondo marino ahora completamente transparente en el PNG (incluidos los arcos inferiores de los 10 puentes de piedra), el lienzo necesitaba eliminar el recorte interior del océano en `dibujarFondoOceanoContinuo` y sustituir `dibujarFusionBordesMapa` por `dibujarAguasCosterasMapa` para dibujar sombras de flotación y espuma de oleaje exclusivamente en la base de los acantilados sur antes de pintar la ilustración de las islas, evitando que halos blancos asomen por detrás de cumbres nevadas o torres en el norte.
+3. **Colisiones de UI y curvatura de puente:** La inspección bitmap visual (`calibration-1616-verify.png`) detectó además un acercamiento excesivo entre el emblema flotante `"TÚ AQUÍ"` de *Bosque* (`ZON-03`) y la placa inferior de *Cueva Umbría* (`ZON-05`), así como una curvatura elevada en el spline Bezier `ZON-02 → ZON-03` sobre la pasarela de piedra.
+
+### 28.2 Mejoras Implementadas
+
+#### A. Mapa Transparente `1616×897`, Aguas Costeras y Efectos Recalibrados (`mapa-mundo.ts`, `mapa-dioramas.ts`, `MapaInteractivoCanvas.tsx`)
+- **Integración RGBA transparente (`Format32bppArgb`, `3232×1794`):** Actualización de `DIMENSIONES_MAPA_MUNDO = { ancho: 1616, alto: 897 }`, respaldo local en `Polish_20261114_215332459.png`, contenedor `bg-[#021327]` y centro de cámara `(808, 448)`.
+- **Pipeline multicapa por debajo y encima de las islas (`MapaInteractivoCanvas.tsx`):** Ejecución ordenada `dibujarFondoOceanoContinuo` (sin hueco central para que el oleaje fluya en canales y bajo los 10 arcos de puente) → `dibujarAguasCosterasMapa` (sombras abisales, espuma costera anclada al acantilado inferior `y + radioY * 0.36`, ondas en la cascada de *Puesto del Río* en `(742, 550)` y fulgor termal bajo el magma costero de *Cueva Umbría*) → `drawImage` de islas transparentes (con respaldo `dibujarRespaldoIslasBase`) → `dibujarCapaVivaMapa`.
+- **Recalibración por centroides RGB y verificación bitmap en `dibujarCapaVivaMapa` y `TRAYECTOS_PUENTES_AETHELGARD`:**
+  - **Villa Serena (`LOC-01`):** fuente `(237, 675)`, 8 faroles cálidos y 3 chimeneas (`[106,616]`, `[262,578]`, `[314,624]`).
+  - **Praderas (`ZON-01`):** 5 monolitos rúnicos (`[81,398]`, `[147,344]`, `[133,451]`, `[249,392]`, `[288,381]`).
+  - **Puesto del Río (`LOC-02`):** 4 pebeteros en atalayas (`[525,415]`, `[637,368]`, `[638,442]`, `[762,427]`), 2 fogatas (`[589,466]`, `[676,395]`) y cascada en `(742, 515)`.
+  - **Lago Espejo (`ZON-02`):** espejo central `(806, 720)` y 5 cristales (`[689,705]`, `[839,652]`, `[969,698]`, `[781,785]`, `[942,775]`).
+  - **Bosque (`ZON-03`):** aura sobre el trono de piedra `(1392, 672)` y 12 luciérnagas esmeralda.
+  - **Riscos (`ZON-04`):** 7 grietas ígneas (`[902,255]`, `[1071,266]`, `[1018,341]`, `[905,346]`, `[1061,387]`, `[1066,420]`, `[949,419]`) y columnas de humo en `(900, 232)` y `(1002, 224)`.
+  - **Bastión del Norte (`LOC-03`):** 3 torres ardientes (`[364,103]`, `[477,151]`, `[584,99]`) y nieve en descenso.
+  - **Cueva Umbría (`ZON-05`):** colada en boca de cueva `(1452, 352)`, 3 cascadas de magma al acantilado (`(1324, 474)`, `(1412, 476)`, `(1526, 478)`), 3 grupos cristalinos violeta (`(1317, 328)`, `(1526, 255)`, `(1548, 358)`) y arco eléctrico `(1492,224)→(1522,206)→(1546,226)→(1570,208)`.
+  - **La Cumbre (`ZON-06`):** aurora boreal `(875,42)→(1055,8)→(1245,36)`, 4 cristales glaciares (`[848,72]`, `[933,94]`, `[1247,114]`, `[1172,178]`) y nevada ligera.
+  - **Puentes Bezier:** Recálculo de los 10 `TRAYECTOS_PUENTES_AETHELGARD`, ajustando `ZON-02 → ZON-03` a `inicio: { x: 1016, y: 716 }`, `control: { x: 1074, y: 696 }`, `fin: { x: 1134, y: 716 }` directamente sobre la calzada de piedra.
+
+#### B. Componentes `8bitcn/ui`, Navegación Responsive y Convivencia de Placas
+- **Preservación integral de interfaz y paletas:** Botoneras laterales, panel del jugador, monedas, dock de criaturas, botón `EXPLORAR`, controles de zoom/recentrado/silencio, paletas originales por bioma y flujo de cámara escritorio/móvil (auto-centrado en `ubicacionActualId`, paneo táctil y *pinch-to-zoom* sin encoger el mundo en móvil) permanecen intactos.
+- **Despeje `TÚ AQUÍ` vs placas:** Ajuste en `CONFIGURACION_ISLAS_MAPA` para `ZON-03` (`y: 702`, `radioY: 142`, `placaOffsetY: 158`) y `ZON-05` (`placaOffsetX: 72`, `placaOffsetY: 118`), garantizando holgura vertical y horizontal completa respecto al marcador activo del jugador.
+
+#### C. Audio Web Audio API y Reglas del Servidor
+- **Cero impacto en lógica autoritativa ni backend:** Las rutas REST, reglas de desbloqueo y viaje en `apps/api`, así como los efectos sintetizados Web Audio API (`reproducirSonido`), permanecen inalterados.
+
+### 28.3 Verificación de Calidad y Cero Regresiones
+- **Verificación Visual de Calibración Bitmap (`calibration-1616-verify.png`):** Inspección visual positiva confirmando coincidencia exacta de las 9 siluetas costeras, las 9 placas, los 9 marcadores `"AQUI"`, los 10 splines Bezier de puentes y todas las dianas de efectos recalibradas sobre `3232×1794`.
+- **Verificación de Tipos (`pnpm --filter web exec tsc -b --noEmit`):** 0 errores de TypeScript (`TSC=0`).
+- **Linter Web (`pnpm --filter web lint`):** `oxlint` finalizó con `Found 34 warnings and 0 errors` en **90 archivos** (`158ms`, 116 reglas, 0 advertencias nuevas respecto a la línea base).
+- **Pruebas Unitarias Web (`pnpm --filter web test`):** **100 de 100 pruebas aprobadas** (`0` fallos, `0` omitidas en `1121.35ms`), incluyendo `"Subfase 10p/10q: Calibración sobre mapa transparente (1616x897), aguas costeras, 10 puentes Bezier y efectos recalculados"` en `apps/web/test/verificacion-hub-mundo.spec.ts`.
+- **Compilación de Producción (`pnpm --filter web build`):** Compilación exitosa (`tsc -b && vite build`, **2162 módulos** transformados en **`3.18s`**).
+- **Pruebas Unitarias API (`pnpm --filter api test`):** **130 de 130 pruebas aprobadas** en **41 suites** (`0` fallos, `0` omitidas en `31140.60ms`).
+
+

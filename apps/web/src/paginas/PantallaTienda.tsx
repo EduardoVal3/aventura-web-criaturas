@@ -433,7 +433,7 @@ export function PantallaTienda() {
                     ) : resumen.puedeComprar ? (
                       <span>Adquirir lote ({resumen.costoTotal} oro)</span>
                     ) : (
-                      <span className="text-destructive-foreground">Oro insuficiente</span>
+                      <span>Oro insuficiente</span>
                     )}
                   </Button>
                 </CardFooter>
@@ -576,7 +576,7 @@ export function PantallaTienda() {
                   ) : resumenModal.puedeComprar ? (
                     <span>Confirmar Adquisición ({resumenModal.costoTotal} oro)</span>
                   ) : (
-                    <span className="text-destructive-foreground">Oro Insuficiente</span>
+                    <span>Oro Insuficiente</span>
                   )}
                 </Button>
 

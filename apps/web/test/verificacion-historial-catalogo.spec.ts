@@ -290,22 +290,45 @@ test('Auditoría estática de código: PantallaHistorial cuenta con iconos SVG, 
   assert.ok(!codigo.includes('<Link to') || !codigo.includes('<Button'), 'No debe anidar Button dentro de Link');
 });
 
-test('Auditoría estática de código: PaginaCreditos incluye Salón de la Fama, homenaje y licencias', () => {
+test('Auditoría estática de código: PaginaCreditos incluye Salón de la Fama, homenaje SOLID/Clean Code, versiones exactas y licencias', () => {
   const rutaCreditos = join(__dirname, '../src/paginas/PaginaCreditos.tsx');
   const codigo = readFileSync(rutaCreditos, 'utf-8');
 
-  // 1. Homenaje al Ingeniero Claudio y cátedra ISC-305
+  // 1. Homenaje al Ingeniero Claudio, cátedra ISC-305 y conceptos reales enseñados
   assert.ok(codigo.includes('Ingeniero Claudio'), 'Debe incluir homenaje al Ingeniero Claudio');
   assert.ok(codigo.includes('ISC-305'), 'Debe mencionar la asignatura ISC-305');
+  assert.ok(codigo.includes('principios SOLID'), 'Debe mencionar los principios SOLID en el homenaje');
+  assert.ok(codigo.includes('Clean Code'), 'Debe mencionar Clean Code en el homenaje');
 
-  // 2. Atribución obligatoria SRD 5.2 y CC BY 4.0
+  // 2. Precisión técnica y limpieza de términos internos del plan
+  assert.ok(codigo.includes('NestJS 10 + Prisma 6'), 'Debe reflejar las versiones reales del backend (NestJS 10 y Prisma 6)');
+  assert.ok(codigo.includes('30 especies'), 'Debe reflejar las 30 especies del bestiario');
+  for (const prohibido of ['AV5', 'FASE 10', 'NestJS 11', 'Impeccable', 'ráfagas N+1', 'trazabilidad documental', 'S-1 a S-7', 'INV-01']) {
+    assert.ok(!codigo.includes(prohibido), `PaginaCreditos no debe exponer el término interno o impreciso "${prohibido}"`);
+  }
+
+  // 3. Atribución obligatoria SRD 5.2 y CC BY 4.0
   assert.ok(codigo.includes('System Reference Document 5.2'), 'Debe incluir mención obligatoria al SRD 5.2');
   assert.ok(codigo.includes('Creative Commons Attribution 4.0 International'), 'Debe citar la licencia CC BY 4.0');
   assert.ok(codigo.includes('MIT License'), 'Debe incluir la licencia MIT de 8bitcn');
 
-  // 3. Audio retro y retorno al Asentamiento
+  // 4. Audio retro y retorno al Asentamiento
   assert.ok(codigo.includes('reproducirSonido("fanfarria")'), 'Debe incluir reproducción de fanfarria');
   assert.ok(codigo.includes('boton-volver-inicio-creditos'), 'Debe incluir el identificador del botón de retorno');
+});
+
+test('Auditoría de viewport móvil, safe-area y limpieza de copy en index.html, LayoutPrincipal y PaginaPendiente', () => {
+  const indexHtml = readFileSync(join(__dirname, '../index.html'), 'utf-8');
+  const indexCss = readFileSync(join(__dirname, '../src/index.css'), 'utf-8');
+  const layout = readFileSync(join(__dirname, '../src/components/LayoutPrincipal.tsx'), 'utf-8');
+  const pendiente = readFileSync(join(__dirname, '../src/paginas/PaginaPendiente.tsx'), 'utf-8');
+
+  assert.ok(indexHtml.includes('viewport-fit=cover'), 'index.html debe habilitar viewport-fit=cover para safe-area móvil');
+  assert.ok(indexCss.includes('safe-area-inset-bottom'), 'index.css debe definir utilidades con env(safe-area-inset-bottom)');
+  assert.ok(indexCss.includes('@supports not (height: 100dvh)'), 'index.css debe resguardar fallback sin sobreescribir 100dvh');
+  assert.ok(layout.includes('h-dvh') && !layout.includes('h-screen h-[100dvh]'), 'LayoutPrincipal debe usar h-dvh sin conflicto con h-screen');
+  assert.ok(layout.includes('pb-zona-segura'), 'LayoutPrincipal debe aplicar pb-zona-segura en el pie');
+  assert.ok(!pendiente.includes('Fase 3'), 'PaginaPendiente no debe exponer menciones internas a Fase 3');
 });
 
 test('Regla R1: Cero emojis unicode en PantallaCatalogo, PantallaHistorial y PaginaCreditos', () => {

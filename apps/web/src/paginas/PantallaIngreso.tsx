@@ -81,7 +81,7 @@ export function PantallaIngreso() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
+    <div className="relative min-h-[calc(100dvh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
       <div className="w-full max-w-sm sm:max-w-md mx-auto">
         <Card className="w-full rounded-none border-4 border-black shadow-[6px_6px_0_0_#000] bg-card/95 backdrop-blur-xs">
           <CardHeader className="text-center space-y-2 pb-4 pt-6 px-4 sm:px-6">

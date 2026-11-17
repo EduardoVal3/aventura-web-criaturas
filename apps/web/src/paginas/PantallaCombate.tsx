@@ -922,7 +922,7 @@ export function PantallaCombate() {
 
   if (cargando || !rival || !aliado) {
     return (
-      <div className="flex flex-col items-center justify-center h-full h-[100dvh] w-full bg-[#070a13] gap-3 overflow-hidden">
+      <div className="flex flex-col items-center justify-center h-dvh w-full bg-[#070a13] gap-3 overflow-hidden px-4 pb-zona-segura">
         <div className="bg-card border-4 border-black p-6 shadow-[6px_6px_0_0_#000] flex flex-col items-center gap-3">
           <Spinner className="size-8 text-[#14d1e8]" />
           <p className="text-[9px] sm:text-xs font-bold text-muted-foreground animate-pulse retro text-center">
@@ -945,20 +945,20 @@ export function PantallaCombate() {
   const calibracionArena = obtenerCalibracionArena(zonaCombateId);
 
   return (
-    <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
+    <div className="relative h-dvh w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
         zoneId={zonaCombateId}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
-        <div className="flex items-center justify-between px-3 pt-2.5 pb-1 z-20">
+        <div className="flex items-center justify-between px-3 pt-zona-segura pb-1 sm:pt-2.5 z-20">
           <div className="w-8" />
           {/* Pastilla Central Ornada de Turno Retro */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#0b1424]/95 border-2 border-[#d4af37] shadow-[2px_2px_0_0_#000]">
             <span className="text-[#ffd700] text-[9px] retro">◆</span>
             <span className="text-[9px] sm:text-[11px] font-bold text-[#ffd700] retro uppercase tracking-wider">
-              TURNO {encuentro?.turno ?? 1}: {procesandoAccion ? "ACCION..." : esTurnoJugador && !combateFinalizado ? "TU TURNO" : "TURNO ENEMIGO"}
+              TURNO {encuentro?.turno ?? 1}: {procesandoAccion ? "ACCIÓN..." : esTurnoJugador && !combateFinalizado ? "TU TURNO" : "TURNO ENEMIGO"}
             </span>
             <span className="text-[#ffd700] text-[9px] retro">◆</span>
           </div>
@@ -1210,7 +1210,7 @@ export function PantallaCombate() {
                 </span>
               )}
               <div
-                className={`relative z-10 size-28 sm:size-36 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
+                className={`relative z-10 size-24 sm:size-36 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
               >
                 {auraAliado && (
                   <div
@@ -1335,7 +1335,7 @@ export function PantallaCombate() {
       </BattlefieldBackground>
 
       {/* 2. BITÁCORA DE ENCUENTRO: Ticker Colapsado de 1 Sola Línea */}
-      <div className="px-2 py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black">
+      <div className="px-2 py-1 sm:py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black shrink-0">
         <button
           type="button"
           onClick={() => {
@@ -1366,7 +1366,7 @@ export function PantallaCombate() {
 
       {/* 3. DRAWER EXPANDIBLE: Bottom Sheet de Historial Completo */}
       {bitacoraAbierta && (
-        <div className="absolute inset-x-0 bottom-0 top-[38%] z-30 bg-[#090d16]/98 border-t-4 border-black p-3 flex flex-col shadow-[0_-6px_12px_rgba(0,0,0,0.85)] anim-revelacion-evento backdrop-blur-md">
+        <div className="absolute inset-x-0 bottom-0 top-[38%] z-30 bg-[#090d16]/98 border-t-4 border-black p-3 pb-zona-segura flex flex-col shadow-[0_-6px_12px_rgba(0,0,0,0.85)] anim-revelacion-evento backdrop-blur-md">
           <div className="flex items-center justify-between pb-2 border-b-2 border-black mb-2">
             <div className="flex items-center gap-2">
               <Scroll className="size-4 text-[#14d1e8]" aria-hidden="true" />
@@ -1421,10 +1421,10 @@ export function PantallaCombate() {
       )}
 
       {/* 4. CONSOLA DE ACCIONES EN LA ZONA DEL PULGAR (In-Place Contextual Deck) */}
-      <div className="px-2.5 pb-3 pt-1.5 bg-[#090d16] z-20">
+      <div className="px-2.5 pt-1.5 pb-zona-segura sm:px-3 sm:pt-2 bg-[#090d16] z-20 shrink-0">
         {combateFinalizado ? (
           /* Estado de Resolución Posterior al Combate */
-          <div className="space-y-2.5 py-1">
+          <div className="space-y-2 sm:space-y-2.5 py-0.5 sm:py-1">
             <div
               className={`p-2.5 border-2 border-black text-center retro text-[10px] sm:text-xs font-bold shadow-[2px_2px_0_0_#000] ${
                 estadoFinal === "VICTORIA"
@@ -1482,9 +1482,9 @@ export function PantallaCombate() {
           </div>
         ) : menuState === "ROOT" ? (
           /* Estado Raíz: Botonera Clásica Retro + Asistente Táctico Contextual */
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {!combateFinalizado && (
-              <div className="flex items-center justify-between gap-2 px-2.5 py-1 bg-[#090d16]/90 border border-slate-700 text-[9px] sm:text-[10px] text-slate-200">
+              <div className="flex items-center justify-between gap-2 px-2 py-0.5 sm:px-2.5 sm:py-1 bg-[#090d16]/90 border border-slate-700 text-[9px] sm:text-[10px] text-slate-200">
                 <span className="retro text-[7px] sm:text-[8px] text-[#14d1e8] shrink-0">
                   TÁCTICA:
                 </span>
@@ -1511,7 +1511,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("ATTACK");
                 }}
-                className="h-14 sm:h-16 bg-gradient-to-b from-[#dc2626] to-[#b91c1c] hover:from-[#ef4444] hover:to-[#dc2626] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-11 sm:h-16 bg-gradient-to-b from-[#dc2626] to-[#b91c1c] hover:from-[#ef4444] hover:to-[#dc2626] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {procesandoAccion ? (
                   <Spinner className="size-4" />
@@ -1532,7 +1532,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("ITEMS");
                 }}
-                className="h-14 sm:h-16 bg-gradient-to-b from-[#059669] to-[#047857] hover:from-[#10b981] hover:to-[#059669] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[9px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-11 sm:h-16 bg-gradient-to-b from-[#059669] to-[#047857] hover:from-[#10b981] hover:to-[#059669] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[9px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <HeartPulse className="size-4 text-emerald-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
                 <span>USAR OBJETO</span>
@@ -1547,7 +1547,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("SWAP");
                 }}
-                className="h-14 sm:h-16 bg-gradient-to-b from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-11 sm:h-16 bg-gradient-to-b from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <ArrowLeftRight className="size-4 text-cyan-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
                 <span>CAMBIAR</span>
@@ -1562,7 +1562,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setMenuState("CAPTURE");
                 }}
-                className="h-14 sm:h-16 bg-gradient-to-b from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-11 sm:h-16 bg-gradient-to-b from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <Sparkles className="size-4 text-amber-300 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
                 <span>CAPTURAR</span>
@@ -1577,7 +1577,7 @@ export function PantallaCombate() {
                   reproducirSonido("click", 0.4);
                   setDialogoHuirAbierto(true);
                 }}
-                className="h-12 sm:h-16 col-span-2 sm:col-span-1 bg-gradient-to-b from-[#991b1b] to-[#7f1d1d] hover:from-[#b91c1c] hover:to-[#991b1b] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="h-11 sm:h-16 col-span-2 sm:col-span-1 bg-gradient-to-b from-[#991b1b] to-[#7f1d1d] hover:from-[#b91c1c] hover:to-[#991b1b] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 <LogOut className="size-3.5 text-red-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
                 <span>HUIR</span>
@@ -1586,8 +1586,8 @@ export function PantallaCombate() {
           </div>
         ) : menuState === "ATTACK" ? (
           /* Submenú Contextual In-Place: Selección de 4 Movimientos */
-          <div className="space-y-2 anim-revelacion-evento">
-            <div className="flex items-center justify-between pb-1.5 border-b-2 border-black mb-1">
+          <div className="space-y-1.5 sm:space-y-2 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1 sm:pb-1.5 border-b-2 border-black mb-0.5 sm:mb-1">
               <span className="text-[10px] sm:text-xs font-bold text-amber-300 retro">
                 Elige un Movimiento:
               </span>
@@ -1633,7 +1633,7 @@ export function PantallaCombate() {
                     aria-disabled={estaBloqueado}
                     aria-busy={procesandoAccion}
                     onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
-                    className={`flex flex-col items-start justify-between min-h-[68px] sm:min-h-[76px] p-2 border-2 border-black shadow-[2px_3px_0_0_#000] text-left transition-all duration-150 ${
+                    className={`flex flex-col items-start justify-between min-h-[60px] sm:min-h-[76px] p-1.5 sm:p-2 border-2 border-black shadow-[2px_3px_0_0_#000] text-left transition-all duration-150 ${
                       estaBloqueado
                         ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
                         : esInsignia
@@ -1641,12 +1641,12 @@ export function PantallaCombate() {
                         : "bg-gradient-to-b from-[#172133] to-[#0f1624] hover:border-[#14d1e8] hover:-translate-y-1.5 hover:shadow-[4px_6px_0_0_#000] text-foreground active:translate-y-0.5 cursor-pointer"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full gap-1 min-w-0 border-b border-black/50 pb-1">
-                      <div className="flex items-center gap-1 min-w-0 truncate">
+                    <div className="flex items-start justify-between w-full gap-1 min-w-0 border-b border-black/50 pb-1">
+                      <div className="flex items-start gap-1 min-w-0 flex-1">
                         <span className="text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black bg-black/50 text-[#14d1e8] shrink-0">
                           C{slot}
                         </span>
-                        <span className="font-semibold truncate text-[8px] sm:text-[9px] retro">
+                        <span className="font-semibold text-[7.5px] sm:text-[9px] leading-tight break-words retro min-w-0">
                           {nombreMov}
                         </span>
                       </div>
@@ -1655,7 +1655,7 @@ export function PantallaCombate() {
                       ) : esInsignia ? (
                         <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
                       ) : (
-                        <span className="text-[6.5px] retro text-slate-400 shrink-0">
+                        <span className="hidden sm:inline text-[6.5px] retro text-slate-400 shrink-0">
                           {etiquetaCoreografia}
                         </span>
                       )}
@@ -1726,7 +1726,7 @@ export function PantallaCombate() {
               </Button>
             </div>
 
-            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+            <div className="max-h-24 sm:max-h-28 overflow-y-auto space-y-1.5 p-0.5">
               {itemsCuracion.length === 0 ? (
                 <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
                   <p className="text-[9px] sm:text-[10px] text-muted-foreground retro">
@@ -1789,7 +1789,7 @@ export function PantallaCombate() {
               </Button>
             </div>
 
-            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+            <div className="max-h-24 sm:max-h-28 overflow-y-auto space-y-1.5 p-0.5">
               {equipoCriaturas.filter((c) => c.criaturaId !== aliado.criaturaId).length === 0 ? (
                 <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center py-2 retro">
                   No tienes otras criaturas en tu equipo activo.
@@ -1857,7 +1857,7 @@ export function PantallaCombate() {
               </Button>
             </div>
 
-            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+            <div className="max-h-24 sm:max-h-28 overflow-y-auto space-y-1.5 p-0.5">
               {talismanes.length === 0 ? (
                 <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
                   <p className="text-[9px] sm:text-[10px] text-muted-foreground retro">
@@ -1905,7 +1905,7 @@ export function PantallaCombate() {
             </div>
 
             <Button
-              className="w-full h-10 text-[9px] sm:text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-amber-600 hover:bg-amber-500 text-white retro"
+              className="w-full h-11 sm:h-10 text-[9px] sm:text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-amber-600 hover:bg-amber-500 text-white retro"
               disabled={talismanes.length === 0 || procesandoAccion}
               onClick={ejecutarCaptura}
             >

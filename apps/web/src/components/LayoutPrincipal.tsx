@@ -39,9 +39,16 @@ export function LayoutPrincipal() {
           <Link
             to="/hub"
             onClick={() => reproducirSonido("click", 0.3)}
-            className="text-[10px] sm:text-base md:text-lg font-bold tracking-tight sm:tracking-wider text-primary retro drop-shadow-[1px_1px_0_#000] hover:text-primary/90 transition-colors shrink-0"
+            className="inline-flex items-center gap-1.5 sm:gap-2.5 text-[10px] sm:text-base md:text-lg font-bold tracking-tight sm:tracking-wider text-primary retro drop-shadow-[1px_1px_0_#000] hover:text-primary/90 transition-colors shrink-0"
           >
-            Aethelgard
+            <img
+              src="/assets/logo-aethelgard.webp"
+              alt=""
+              aria-hidden="true"
+              className="size-6 sm:size-8 object-contain shrink-0 drop-shadow-[1px_1px_0_#000]"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <span>Aethelgard</span>
           </Link>
           <nav className="flex items-center gap-2 sm:gap-3 shrink-0" aria-label="Navegación principal">
             <NavLink

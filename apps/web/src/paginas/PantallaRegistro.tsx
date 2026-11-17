@@ -85,7 +85,7 @@ export function PantallaRegistro() {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
+    <div className="relative min-h-[calc(100dvh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
       <div className="w-full max-w-sm sm:max-w-md mx-auto">
         <Card className="w-full rounded-none border-4 border-black shadow-[6px_6px_0_0_#000] bg-card/95 backdrop-blur-xs">
           <CardHeader className="text-center space-y-2 pb-4 pt-6 px-4 sm:px-6">
@@ -213,10 +213,10 @@ export function PantallaRegistro() {
                   <Input
                     id="clave"
                     type={mostrarClave ? "text" : "password"}
-                    placeholder="Mín. 8 caracteres, número y símbolo"
+                    placeholder="Mín. 8 car., número y símbolo"
                     autoComplete="new-password"
                     disabled={enviando}
-                    className="retro text-[10px] sm:text-xs placeholder:text-[9px] sm:placeholder:text-[10px] h-10 pl-3 pr-10 sm:pr-12 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] bg-background/80 focus:shadow-[3px_3px_0_0_#000] focus:border-primary transition-colors tracking-wide"
+                    className="retro text-[10px] sm:text-xs placeholder:text-[8px] sm:placeholder:text-[10px] h-10 pl-3 pr-10 sm:pr-12 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] bg-background/80 focus:shadow-[3px_3px_0_0_#000] focus:border-primary transition-colors tracking-wide"
                     aria-invalid={!!errors.clave}
                     aria-describedby={errors.clave ? "error-clave" : "requisitos-clave"}
                     {...register("clave")}

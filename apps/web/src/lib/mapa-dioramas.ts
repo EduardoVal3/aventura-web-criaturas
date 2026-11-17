@@ -14,14 +14,17 @@ import type { MascaraOceano } from "./oceano-vivo.ts";
 import {
   dibujarCieloAuroraCumbre,
   dibujarDioramaCumbre,
+  SILUETA_ENVOLVENTE_CUMBRE,
 } from "./diorama-cumbre.ts";
 import {
   dibujarDioramaCuevaUmbria,
   dibujarFondoCuevaUmbria,
+  SILUETA_ENVOLVENTE_CUEVA,
 } from "./diorama-cueva-umbria.ts";
 import {
   dibujarDioramaRiscos,
   dibujarFondoRiscos,
+  SILUETA_ENVOLVENTE_RISCOS,
 } from "./diorama-riscos.ts";
 
 const PASOS_CONTORNO = 72;
@@ -75,22 +78,22 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
     origenId: "ZON-01",
     destinoId: "LOC-02",
     inicio: { x: 336, y: 466 },
-    control: { x: 408, y: 439 },
+    control: { x: 408, y: 444 },
     fin: { x: 474, y: 468 },
   },
   {
     origenId: "ZON-02",
     destinoId: "ZON-03",
     inicio: { x: 1018, y: 725 },
-    control: { x: 1076, y: 704 },
+    control: { x: 1078, y: 711 },
     fin: { x: 1138, y: 725 },
   },
   {
     origenId: "LOC-02",
     destinoId: "ZON-03",
     inicio: { x: 794, y: 503 },
-    control: { x: 956, y: 422 },
-    fin: { x: 1134, y: 594 },
+    control: { x: 964, y: 416 },
+    fin: { x: 1142, y: 588 },
   },
   {
     origenId: "LOC-02",
@@ -102,9 +105,9 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
   {
     origenId: "ZON-04",
     destinoId: "LOC-03",
-    inicio: { x: 738, y: 288 },
-    control: { x: 682, y: 256 },
-    fin: { x: 614, y: 250 },
+    inicio: { x: 750, y: 294 },
+    control: { x: 698, y: 261 },
+    fin: { x: 636, y: 254 },
   },
   {
     origenId: "ZON-04",
@@ -118,14 +121,14 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
     destinoId: "ZON-06",
     inicio: { x: 626, y: 168 },
     control: { x: 696, y: 122 },
-    fin: { x: 780, y: 122 },
+    fin: { x: 774, y: 123 },
   },
   {
     origenId: "ZON-05",
     destinoId: "ZON-06",
-    inicio: { x: 1328, y: 246 },
-    control: { x: 1270, y: 192 },
-    fin: { x: 1214, y: 178 },
+    inicio: { x: 1378, y: 274 },
+    control: { x: 1320, y: 206 },
+    fin: { x: 1238, y: 186 },
   },
 ];
 
@@ -284,7 +287,12 @@ export function dibujarFondoOceanoContinuo(
 
   let cache = cacheGradientesRespaldo.get(ctx);
   if (!cache) {
-    const gradMar = ctx.createLinearGradient(0, -140, 0, DIMENSIONES_MAPA_MUNDO.alto + 160);
+    const gradMar = ctx.createLinearGradient(
+      0,
+      -140,
+      0,
+      DIMENSIONES_MAPA_MUNDO.alto + 160,
+    );
     gradMar.addColorStop(0, "#021327");
     gradMar.addColorStop(0.28, "#042342");
     gradMar.addColorStop(0.55, "#052a4e");
@@ -571,23 +579,7 @@ function dibujarPuentesYRutasVivas(
       nOrig?.desbloqueada && nDest?.desbloqueada,
     );
 
-    if (!rutaDesbloqueada) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(4, 9, 22, 0.52)";
-      ctx.lineWidth = 14;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(ruta.inicio.x, ruta.inicio.y);
-      ctx.quadraticCurveTo(
-        ruta.control.x,
-        ruta.control.y,
-        ruta.fin.x,
-        ruta.fin.y,
-      );
-      ctx.stroke();
-      ctx.restore();
-      continue;
-    }
+    if (!rutaDesbloqueada) continue;
 
     const otroId =
       ruta.origenId === ubicacionActualId
@@ -652,17 +644,358 @@ export function dibujarFondoCieloMapa(
 ): void {
   const riscos = nodos.find((n) => n.id === "ZON-04");
   if (riscos) {
-    dibujarFondoRiscos(ctx, Boolean(riscos.desbloqueada), tiempo, reducirMovimiento);
+    dibujarFondoRiscos(
+      ctx,
+      Boolean(riscos.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
   }
 
   const cueva = nodos.find((n) => n.id === "ZON-05");
   if (cueva) {
-    dibujarFondoCuevaUmbria(ctx, Boolean(cueva.desbloqueada), tiempo, reducirMovimiento);
+    dibujarFondoCuevaUmbria(
+      ctx,
+      Boolean(cueva.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
   }
 
   const cumbre = nodos.find((n) => n.id === "ZON-06");
   if (cumbre) {
-    dibujarCieloAuroraCumbre(ctx, Boolean(cumbre.desbloqueada), tiempo, reducirMovimiento);
+    dibujarCieloAuroraCumbre(
+      ctx,
+      Boolean(cumbre.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
+  }
+}
+
+const IDS_ISLAS_VELLUM = Object.keys(CONFIGURACION_ISLAS_MAPA);
+const INDICE_ISLA_POR_ID = new Map(IDS_ISLAS_ORDENADOS_INIT());
+
+function IDS_ISLAS_ORDENADOS_INIT(): [string, number][] {
+  return IDS_ISLAS_VELLUM.map((id, idx) => [id, idx]);
+}
+
+const SILUETAS_CALIBRADAS_POR_ID: Record<string, readonly Punto2D[]> = {
+  "ZON-04": SILUETA_ENVOLVENTE_RISCOS,
+  "ZON-05": SILUETA_ENVOLVENTE_CUEVA,
+  "ZON-06": SILUETA_ENVOLVENTE_CUMBRE,
+};
+
+const MUESTRAS_EXCLUSION_PUENTES: readonly {
+  x: number;
+  y: number;
+  r2: number;
+}[] = (() => {
+  const muestras: { x: number; y: number; r2: number }[] = [];
+  for (const ruta of TRAYECTOS_PUENTES_AETHELGARD) {
+    const pasos = 28;
+    const esGranPuenteCentral =
+      (ruta.origenId === "LOC-02" && ruta.destinoId === "ZON-03") ||
+      (ruta.origenId === "ZON-03" && ruta.destinoId === "LOC-02");
+    for (let i = 4; i <= pasos - 4; i++) {
+      const u = i / pasos;
+      const cercaBorde = u < 0.2 || u > 0.8;
+      const radio = esGranPuenteCentral
+        ? cercaBorde
+          ? 12
+          : 18
+        : cercaBorde
+          ? 9
+          : 13;
+      const inv = 1 - u;
+      muestras.push({
+        x:
+          inv * inv * ruta.inicio.x +
+          2 * inv * u * ruta.control.x +
+          u * u * ruta.fin.x,
+        y:
+          inv * inv * ruta.inicio.y +
+          2 * inv * u * ruta.control.y +
+          u * u * ruta.fin.y,
+        r2: radio * radio,
+      });
+    }
+  }
+  return muestras;
+})();
+
+function estaDentroPoligono(
+  x: number,
+  y: number,
+  poligono: readonly Punto2D[],
+): boolean {
+  let dentro = false;
+  for (let i = 0, j = poligono.length - 1; i < poligono.length; j = i++) {
+    const xi = poligono[i].x;
+    const yi = poligono[i].y;
+    const xj = poligono[j].x;
+    const yj = poligono[j].y;
+    const intersecta =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-9) + xi;
+    if (intersecta) dentro = !dentro;
+  }
+  return dentro;
+}
+
+/**
+ * Indica si un punto lógico del mapa pertenece al tablero o arcos de alguno de los 10 puentes,
+ * para excluirlo de cualquier velo oscuro de islas bloqueadas.
+ */
+export function esPuntoSobrePuenteMapa(lx: number, ly: number): boolean {
+  for (let i = 0; i < MUESTRAS_EXCLUSION_PUENTES.length; i++) {
+    const m = MUESTRAS_EXCLUSION_PUENTES[i];
+    const dx = lx - m.x;
+    const dy = ly - m.y;
+    if (dx * dx + dy * dy <= m.r2) return true;
+  }
+  return false;
+}
+
+/**
+ * Resuelve el índice canónico de la isla propietaria para una coordenada lógica dentro del terreno.
+ */
+export function resolverIndiceIslaEnMapa(lx: number, ly: number): number {
+  for (const [id, silueta] of Object.entries(SILUETAS_CALIBRADAS_POR_ID)) {
+    if (estaDentroPoligono(lx, ly, silueta)) {
+      return INDICE_ISLA_POR_ID.get(id) ?? 0;
+    }
+  }
+  let mejorIdx = 0;
+  let mejorScore = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < IDS_ISLAS_VELLUM.length; i++) {
+    const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[i]];
+    const nx = (lx - isla.x) / Math.max(40, isla.radioX);
+    const ny = (ly - isla.y) / Math.max(40, isla.radioY);
+    const d2 = nx * nx + ny * ny;
+    if (d2 < mejorScore) {
+      mejorScore = d2;
+      mejorIdx = i;
+    }
+  }
+  return mejorIdx;
+}
+
+interface CacheVeloBloqueadas {
+  islaPorCelda: Int8Array;
+  bitmaskActual: number;
+  canvasSilueta: HTMLCanvasElement;
+  ctxSilueta: CanvasRenderingContext2D;
+  canvasComp: HTMLCanvasElement;
+  ctxComp: CanvasRenderingContext2D;
+  imageData: ImageData;
+}
+
+const cacheVeloPorMascara = new WeakMap<MascaraOceano, CacheVeloBloqueadas>();
+
+function obtenerCacheVeloBloqueadas(
+  mascara: MascaraOceano,
+): CacheVeloBloqueadas | null {
+  if (typeof document === "undefined") return null;
+  const existente = cacheVeloPorMascara.get(mascara);
+  if (existente) return existente;
+
+  const { ancho, alto, escala, tierra } = mascara;
+  const total = ancho * alto;
+  const islaPorCelda = new Int8Array(total);
+  islaPorCelda.fill(-1);
+
+  for (let y = 0; y < alto; y++) {
+    const ly = y / escala;
+    const fila = y * ancho;
+    for (let x = 0; x < ancho; x++) {
+      const idx = fila + x;
+      if (tierra[idx] !== 1) continue;
+      const lx = x / escala;
+      if (esPuntoSobrePuenteMapa(lx, ly)) continue;
+      islaPorCelda[idx] = resolverIndiceIslaEnMapa(lx, ly);
+    }
+  }
+
+  const canvasSilueta = document.createElement("canvas");
+  canvasSilueta.width = ancho;
+  canvasSilueta.height = alto;
+  const ctxSilueta = canvasSilueta.getContext("2d");
+  const canvasComp = document.createElement("canvas");
+  canvasComp.width = ancho;
+  canvasComp.height = alto;
+  const ctxComp = canvasComp.getContext("2d");
+  if (!ctxSilueta || !ctxComp) return null;
+
+  const cache: CacheVeloBloqueadas = {
+    islaPorCelda,
+    bitmaskActual: -1,
+    canvasSilueta,
+    ctxSilueta,
+    canvasComp,
+    ctxComp,
+    imageData: ctxSilueta.createImageData(ancho, alto),
+  };
+  cacheVeloPorMascara.set(mascara, cache);
+  return cache;
+}
+
+function reconstruirSiluetaBloqueadas(
+  cache: CacheVeloBloqueadas,
+  mascara: MascaraOceano,
+  bitmaskBloq: number,
+): void {
+  const { ancho, alto, escala } = mascara;
+  const { islaPorCelda, imageData, ctxSilueta } = cache;
+  const data = imageData.data;
+
+  for (let y = 0; y < alto; y++) {
+    const ly = y / escala;
+    const fila = y * ancho;
+    for (let x = 0; x < ancho; x++) {
+      const idx = fila + x;
+      const p = idx * 4;
+      const islaIdx = islaPorCelda[idx];
+      if (islaIdx < 0 || (bitmaskBloq & (1 << islaIdx)) === 0) {
+        data[p + 3] = 0;
+        continue;
+      }
+
+      const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[islaIdx]];
+      const lx = x / escala;
+      const nx = (lx - isla.x) / Math.max(40, isla.radioX);
+      const ny = (ly - isla.y) / Math.max(40, isla.radioY);
+      const distNorm = Math.min(1.25, Math.hypot(nx, ny));
+      // Suavizado ligero en el borde costero sin salirse de la silueta sólida
+      const esBorde =
+        x === 0 ||
+        x === ancho - 1 ||
+        y === 0 ||
+        y === alto - 1 ||
+        islaPorCelda[idx - 1] !== islaIdx ||
+        islaPorCelda[idx + 1] !== islaIdx ||
+        islaPorCelda[idx - ancho] !== islaIdx ||
+        islaPorCelda[idx + ancho] !== islaIdx;
+
+      const factorCentro = Math.max(0, 1 - distNorm * 0.42);
+      const alturaRel = Math.max(
+        0,
+        Math.min(
+          1,
+          (ly - (isla.y - isla.radioY)) / Math.max(1, isla.radioY * 2),
+        ),
+      );
+      const alfaBase = 138 + factorCentro * 36 + alturaRel * 14;
+      const alfaFinal = esBorde
+        ? Math.round(alfaBase * 0.72)
+        : Math.round(alfaBase);
+
+      // Tinte azul crepuscular profundo para unificar biomas bloqueados bajo penumbra mística
+      data[p] = 8;
+      data[p + 1] = 15;
+      data[p + 2] = 36;
+      data[p + 3] = Math.min(198, Math.max(96, alfaFinal));
+    }
+  }
+
+  ctxSilueta.putImageData(imageData, 0, 0);
+  cache.bitmaskActual = bitmaskBloq;
+}
+
+function dibujarVeloIslasBloqueadas(
+  ctx: CanvasRenderingContext2D,
+  nodos: NodoMapaTerritorial[],
+  t: number,
+  reducirMovimiento: boolean,
+  mascaraOceano?: MascaraOceano | null,
+): void {
+  let bitmaskBloq = 0;
+  for (const nodo of nodos) {
+    if (nodo.desbloqueada) continue;
+    const idx = INDICE_ISLA_POR_ID.get(nodo.id);
+    if (idx !== undefined) bitmaskBloq |= 1 << idx;
+  }
+  if (bitmaskBloq === 0) return;
+
+  const cache = mascaraOceano
+    ? obtenerCacheVeloBloqueadas(mascaraOceano)
+    : null;
+  if (cache && mascaraOceano) {
+    if (cache.bitmaskActual !== bitmaskBloq) {
+      reconstruirSiluetaBloqueadas(cache, mascaraOceano, bitmaskBloq);
+    }
+
+    const { ctxComp, canvasSilueta, canvasComp } = cache;
+    const escala = mascaraOceano.escala;
+    ctxComp.save();
+    ctxComp.globalCompositeOperation = "copy";
+    ctxComp.drawImage(canvasSilueta, 0, 0);
+    ctxComp.globalCompositeOperation = "source-atop";
+
+    // Brumas crepusculares suaves confinadas estrictamente a los píxeles de las islas bloqueadas
+    const anim = reducirMovimiento ? 0 : t;
+    for (let i = 0; i < IDS_ISLAS_VELLUM.length; i++) {
+      if ((bitmaskBloq & (1 << i)) === 0) continue;
+      const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[i]];
+      for (let b = 0; b < 2; b++) {
+        const fase = i * 1.7 + b * 2.6;
+        const bx =
+          (isla.x +
+            Math.sin(anim * 0.00045 + fase) * isla.radioX * 0.28 +
+            (b === 0 ? -24 : 26)) *
+          escala;
+        const by =
+          (isla.y +
+            Math.cos(anim * 0.00038 + fase) * isla.radioY * 0.16 +
+            (b === 0 ? -12 : 16)) *
+          escala;
+        const rx = isla.radioX * (0.62 + b * 0.14) * escala;
+        const grad = ctxComp.createRadialGradient(
+          bx,
+          by,
+          rx * 0.08,
+          bx,
+          by,
+          rx,
+        );
+        grad.addColorStop(
+          0,
+          b === 0 ? "rgba(148, 178, 224, 0.24)" : "rgba(129, 140, 248, 0.16)",
+        );
+        grad.addColorStop(1, "rgba(148, 178, 224, 0)");
+        ctxComp.fillStyle = grad;
+        ctxComp.beginPath();
+        ctxComp.arc(bx, by, rx, 0, Math.PI * 2);
+        ctxComp.fill();
+      }
+    }
+    ctxComp.restore();
+
+    ctx.drawImage(
+      canvasComp,
+      0,
+      0,
+      DIMENSIONES_MAPA_MUNDO.ancho,
+      DIMENSIONES_MAPA_MUNDO.alto,
+    );
+    return;
+  }
+
+  // Respaldo geométrico calibrado cuando aún no existe la máscara alfa del WebP
+  for (const nodo of nodos) {
+    if (nodo.desbloqueada) continue;
+    const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
+    if (!isla) continue;
+    const siluetaCalibrada = SILUETAS_CALIBRADAS_POR_ID[nodo.id];
+    ctx.save();
+    ctx.fillStyle = "rgba(8, 15, 36, 0.62)";
+    if (siluetaCalibrada) {
+      trazarPoligonoLocal(ctx, siluetaCalibrada as Punto2D[]);
+    } else {
+      const geomBloq = generarGeometriaDiorama(isla);
+      trazarPoligonoLocal(ctx, geomBloq.contornoLocal, isla.x, isla.y, 0.94);
+    }
+    ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -670,6 +1003,8 @@ export function dibujarFondoCieloMapa(
  * Superpone toda la capa viva 60 FPS recalibrada píxel a píxel sobre la lámina transparente (1616x897):
  * velos de niebla ceñidos a zonas bloqueadas, orbes guiados sobre los 10 puentes reales
  * y efectos ambientales sincronizados con cada monumento, cascada, cráter, antorcha y cristal.
+ * velos crepusculares ceñidos únicamente a las islas bloqueadas (sin cubrir puentes),
+ * orbes guiados sobre puentes alcanzables y efectos ambientales sincronizados por bioma.
  */
 export function dibujarCapaVivaMapa(
   ctx: CanvasRenderingContext2D,
@@ -684,31 +1019,8 @@ export function dibujarCapaVivaMapa(
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
 
-  // 1. Velo oscuro ceñido a islas aún bloqueadas
-  for (const nodo of nodos) {
-    const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
-    if (!isla) continue;
-
-    if (!nodo.desbloqueada) {
-      ctx.save();
-      const gradNiebla = ctx.createRadialGradient(
-        isla.x,
-        isla.y,
-        isla.radioX * 0.18,
-        isla.x,
-        isla.y,
-        isla.radioX * 1.05,
-      );
-      gradNiebla.addColorStop(0, "rgba(3, 9, 22, 0.56)");
-      gradNiebla.addColorStop(0.7, "rgba(3, 9, 22, 0.4)");
-      gradNiebla.addColorStop(1, "rgba(3, 9, 22, 0)");
-      ctx.fillStyle = gradNiebla;
-      const geomBloq = generarGeometriaDiorama(isla);
-      trazarPoligonoLocal(ctx, geomBloq.contornoLocal, isla.x, isla.y, 1.02);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
+  // 1. Velo crepuscular pixel-perfect ceñido únicamente a islas bloqueadas (cero cobertura sobre puentes)
+  dibujarVeloIslasBloqueadas(ctx, nodos, t, reducirMovimiento, mascaraOceano);
 
   // 2. Puentes activos y flujo guiado sobre las pasarelas reales
   dibujarPuentesYRutasVivas(

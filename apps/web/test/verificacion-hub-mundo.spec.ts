@@ -269,6 +269,21 @@ test("Auditoría Impeccable: Erradicación de truncamientos, modales retro-bruta
     false,
     "El modal del Hub no debe exponer el ID interno de la zona en el texto del requisito",
   );
+
+  // 7. Viewport dinámico seguro y safe-area inferior en el dock del Hub
+  assert.ok(
+    hubCodigo.includes("h-dvh") && !hubCodigo.includes("h-screen h-[100dvh]"),
+    "PantallaHubUbicacion debe usar h-dvh sin conflicto con h-screen",
+  );
+  assert.ok(
+    hubCodigo.includes("pb-zona-segura") && hubCodigo.includes("pt-zona-segura"),
+    "El Hub debe aplicar pb-zona-segura y pt-zona-segura en barras superior e inferior",
+  );
+  assert.strictEqual(
+    SERVICIOS_HUB.some((s) => s.titulo.includes("Open5e")),
+    false,
+    "Los títulos de servicios del Hub deben ser inmersivos y no exponer 'Open5e'",
+  );
 });
 
 test("Subfase 10m: Desbloqueo territorial en PantallaHubUbicacion incluye api.verificarZona, DESBLOQUEAR SENDA y barra de progreso", async () => {
@@ -742,6 +757,35 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     false,
     "dibujarCapaVivaMapa no debe dibujar halos animados de líneas punteadas sobre la isla actual",
   );
+  assert.strictEqual(
+    dioramasCodigo.includes("rgba(4, 9, 22, 0.52)"),
+    false,
+    "Los puentes no deben recibir trazos oscuros de bloqueo",
+  );
+  assert.ok(
+    dioramasCodigo.includes("if (!rutaDesbloqueada) continue;") &&
+      dioramasCodigo.includes("dibujarVeloIslasBloqueadas"),
+    "El efecto crepuscular de bloqueo debe limitarse exclusivamente a las islas bloqueadas",
+  );
+
+  const { esPuntoSobrePuenteMapa, resolverIndiceIslaEnMapa } = await import(
+    "../src/lib/mapa-dioramas.ts"
+  );
+  for (const puente of TRAYECTOS_PUENTES_AETHELGARD) {
+    const mx = 0.25 * puente.inicio.x + 0.5 * puente.control.x + 0.25 * puente.fin.x;
+    const my = 0.25 * puente.inicio.y + 0.5 * puente.control.y + 0.25 * puente.fin.y;
+    assert.strictEqual(
+      esPuntoSobrePuenteMapa(mx, my),
+      true,
+      `El centro del puente ${puente.origenId}<->${puente.destinoId} debe excluirse del velo bloqueado`,
+    );
+  }
+  const idsIslas = Object.keys(CONFIGURACION_ISLAS_MAPA);
+  for (let i = 0; i < idsIslas.length; i++) {
+    const isla = CONFIGURACION_ISLAS_MAPA[idsIslas[i]];
+    assert.strictEqual(resolverIndiceIslaEnMapa(isla.x, isla.y), i);
+    assert.strictEqual(esPuntoSobrePuenteMapa(isla.x, isla.y), false);
+  }
 
   const puenteRiscosCueva = TRAYECTOS_PUENTES_AETHELGARD.find(
     (t) => t.origenId === "ZON-04" && t.destinoId === "ZON-05",
@@ -759,7 +803,7 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     "El tooltip al pasar el cursor debe mostrar únicamente el nombre real de la zona sin etiquetas inventadas",
   );
   assert.ok(
-    canvasCodigo.includes("bottom-36 sm:bottom-28 md:bottom-3"),
+    canvasCodigo.includes("bottom-40 sm:bottom-28 md:bottom-3"),
     "En desktop los controles del mapa deben desplazarse más abajo (md:bottom-3) para no quedar ocultos tras Santuario de Salud",
   );
   assert.strictEqual(canvasCodigo.includes("data-placa-isla"), false);

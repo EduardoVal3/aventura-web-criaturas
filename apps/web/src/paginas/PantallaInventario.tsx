@@ -565,7 +565,7 @@ export function PantallaInventario() {
               </div>
 
               {/* Lista Desplazable del Equipo con HealthBar y Vista Previa */}
-              <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-1 py-1">
+              <div className="max-h-[50dvh] overflow-y-auto space-y-2 pr-1 py-1">
                 {equipo.length === 0 ? (
                   <p className="retro text-[8px] sm:text-[9px] text-muted-foreground text-center py-4">
                     No tienes criaturas asignadas en tu equipo activo.

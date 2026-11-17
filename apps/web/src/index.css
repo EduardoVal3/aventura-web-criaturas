@@ -200,6 +200,25 @@
   image-rendering: crisp-edges;
 }
 
+@supports not (height: 100dvh) {
+  .h-dvh {
+    height: 100vh;
+  }
+  .min-h-dvh {
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .pb-zona-segura {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  .pt-zona-segura {
+    padding-top: max(0.625rem, env(safe-area-inset-top, 0px));
+  }
+}
+
 /* ==========================================================================
    Micro-interacciones y Animaciones Retro - Fase 10
    ========================================================================== */

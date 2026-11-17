@@ -61,8 +61,8 @@ export const SERVICIOS_HUB: readonly ServicioHub[] = [
   {
     id: "catalogo",
     ruta: "/catalogo",
-    titulo: "Compendio Open5e",
-    descripcion: "Bestiario de especies y criaturas de Aethelgard",
+    titulo: "Bestiario",
+    descripcion: "Enciclopedia de especies y criaturas de Aethelgard",
     icono: "book-open",
   },
   {

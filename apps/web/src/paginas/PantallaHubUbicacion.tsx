@@ -361,7 +361,7 @@ export function PantallaHubUbicacion() {
 
   if (cargando) {
     return (
-      <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden p-4 flex flex-col justify-between animate-pulse">
+      <div className="relative h-dvh w-full bg-[#070d18] overflow-hidden overflow-x-hidden p-4 pt-zona-segura pb-zona-segura flex flex-col justify-between animate-pulse">
         <Skeleton className="h-14 w-full max-w-md bg-[#1a2332] border-4 border-black" />
         <Skeleton className="h-24 w-full max-w-xl mx-auto bg-[#1a2332] border-4 border-black" />
       </div>
@@ -392,7 +392,7 @@ export function PantallaHubUbicacion() {
     : undefined;
 
   return (
-    <div className="relative h-screen h-[100dvh] w-full bg-[#070d18] overflow-hidden overflow-x-hidden flex flex-col justify-between">
+    <div className="relative h-dvh w-full bg-[#070d18] overflow-hidden overflow-x-hidden flex flex-col justify-between">
       {/* Capa 1: Canvas Interactivo de fondo con position: absolute */}
       {ubicacion && (
         <div className="absolute inset-0 z-0">
@@ -422,7 +422,7 @@ export function PantallaHubUbicacion() {
       {ubicacion && (
         <header
           aria-label="HUD superior del explorador"
-          className="relative z-20 pointer-events-none px-2.5 pt-2.5 sm:px-4 sm:pt-3 flex items-start justify-between gap-2 sm:gap-3"
+          className="relative z-20 pointer-events-none px-2.5 pt-zona-segura sm:px-4 sm:pt-3 flex items-start justify-between gap-2 sm:gap-3"
         >
           {/* Ficha del Jugador (sin miniatura redundante de zona para evitar desbordes en móvil) */}
           <div className="min-w-0 flex-1 flex items-start">
@@ -596,7 +596,7 @@ export function PantallaHubUbicacion() {
       {ubicacion && (
         <footer
           aria-label="Dock inferior de equipo y acción principal"
-          className="relative z-20 pointer-events-none px-2.5 pb-2.5 sm:px-4 sm:pb-3 flex flex-col items-center gap-2"
+          className="relative z-20 pointer-events-none px-2.5 pb-zona-segura sm:px-4 flex flex-col items-center gap-2 shrink-0"
         >
           <div className="pointer-events-auto w-full max-w-2xl bg-gradient-to-r from-[#0b1322]/95 via-[#14223b]/95 to-[#0b1322]/95 backdrop-blur-xs border-4 border-black shadow-[6px_6px_0_0_#000] ring-1 ring-[#14d1e8]/60 p-2 sm:p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
             {/* Ranuras completas del equipo activo (hasta 6 criaturas visibles sin truncar ni ocultar) */}

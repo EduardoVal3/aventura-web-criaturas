@@ -618,10 +618,10 @@ export function MapaInteractivoCanvas({
         })}
       </div>
 
-      {/* Controles de Zoom y Centrado (en móvil sobre el dock; en desktop abajo a la derecha despejando Santuario de Salud) */}
+      {/* Controles de Zoom y Centrado (en móvil sobre el dock con holgura; en desktop abajo a la derecha despejando Santuario de Salud) */}
       <div
         data-controles-mapa="true"
-        className="absolute right-2.5 bottom-36 sm:bottom-28 md:bottom-3 z-30 flex flex-col gap-1.5"
+        className="absolute right-2.5 bottom-40 sm:bottom-28 md:bottom-3 mb-[env(safe-area-inset-bottom,0px)] z-30 flex flex-col gap-1.5"
       >
         <button
           type="button"

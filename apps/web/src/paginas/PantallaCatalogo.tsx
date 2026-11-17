@@ -71,6 +71,7 @@ import {
   filtrarEspeciesCatalogo,
   agruparEspeciesPorZona,
 } from "@/lib/catalogo-historial";
+import { resolverBadgeEfectoMovimiento } from "@/lib/combate-tactico";
 
 const ARQUETIPOS_FILTRO = [
   { id: "TODOS", etiqueta: "TODOS", icono: BookOpen },
@@ -614,10 +615,10 @@ export function PantallaCatalogo() {
         <DialogContent
           font="normal"
           showCloseButton={false}
-          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col"
+          className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col"
         >
           {especieSeleccionada && (
-            <div className="flex flex-col max-h-[85vh] overflow-hidden">
+            <div className="flex flex-col max-h-[85dvh] overflow-hidden">
               {/* Cabecera del Modal con Título y Botón Cerrar */}
               <div className="p-3 bg-bastion border-b-2 border-black flex items-center justify-between gap-3 shrink-0">
                 <div className="min-w-0 flex-1">
@@ -797,7 +798,7 @@ export function PantallaCatalogo() {
                               </span>
                               {mov.efecto && (
                                 <span className="retro text-[7px] sm:text-[8px] uppercase px-1 py-0.5 border border-primary/60 bg-primary/20 text-primary">
-                                  {mov.efecto}
+                                  {resolverBadgeEfectoMovimiento(mov.efecto)?.nombre ?? mov.efecto}
                                 </span>
                               )}
                             </div>

@@ -389,7 +389,7 @@ export function PantallaExploracion() {
                   className="bg-amber-950/90 text-[#f5b724] border-2 border-black shadow-[2px_2px_0_0_#000] gap-1 py-0.5 sm:py-1 px-1.5 sm:px-2.5 text-[8px] sm:text-[9px]"
                 >
                   <Sparkles className="size-2.5 sm:size-3 text-[#f5b724] shrink-0" />
-                  <span>100% CARTOGRAFIA</span>
+                  <span>100% CARTOGRAFÍA</span>
                 </Badge>
               )}
             </div>
@@ -545,7 +545,7 @@ export function PantallaExploracion() {
           <div className="flex items-center gap-2">
             <Compass className="size-4 text-[#14d1e8] shrink-0" />
             <h2 className="retro text-[10px] sm:text-xs md:text-sm text-[#14d1e8] tracking-wider uppercase">
-              CARTOGRAFIA Y AVANCE
+              CARTOGRAFÍA Y AVANCE
             </h2>
           </div>
           <span className="retro font-bold text-[9px] sm:text-[10px] text-[#14d1e8] bg-[#090d16] px-2.5 py-1 border-2 border-black shadow-[2px_2px_0_0_#000]">
@@ -655,7 +655,7 @@ export function PantallaExploracion() {
           <div className="flex items-center gap-2">
             <Scroll className="size-4 text-[#14d1e8] shrink-0" />
             <h3 className="retro text-[10px] sm:text-xs text-slate-200 tracking-wider uppercase">
-              BITACORA DE INCURSION
+              BITÁCORA DE INCURSIÓN
             </h3>
           </div>
           <span className="retro text-[8px] sm:text-[9px] text-slate-400">
@@ -774,7 +774,7 @@ export function PantallaExploracion() {
         <DialogContent
           font="normal"
           className={cn(
-            "!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-card border-4 border-black shadow-[8px_8px_0_0_#000] text-slate-100 !p-0 !gap-0 overflow-hidden",
+            "!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] bg-card border-4 border-black shadow-[8px_8px_0_0_#000] text-slate-100 !p-0 !gap-0 overflow-hidden",
             rivalActivo?.esLegendaria && "anim-halo-legendario",
           )}
         >
@@ -945,7 +945,7 @@ export function PantallaExploracion() {
       <Dialog open={modalBotinAbierto} onOpenChange={setModalBotinAbierto}>
         <DialogContent
           font="normal"
-          className="!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85vh] bg-card border-4 border-black shadow-[8px_8px_0_0_#000] text-slate-100 !p-0 !gap-0 overflow-hidden"
+          className="!flex flex-col w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] bg-card border-4 border-black shadow-[8px_8px_0_0_#000] text-slate-100 !p-0 !gap-0 overflow-hidden"
         >
           <DialogHeader className="shrink-0 px-3.5 sm:px-4 pt-3.5 pb-2 text-center border-b-2 border-black/80 relative pr-10 bg-[#090d16]">
             <DialogTitle
@@ -953,7 +953,7 @@ export function PantallaExploracion() {
               className="retro text-[10px] sm:text-xs md:text-sm text-[#f5b724] text-center flex items-center justify-center gap-2 uppercase tracking-wider whitespace-normal leading-snug"
             >
               <Coins className="size-4 text-[#f5b724] shrink-0" />
-              <span>¡BOTIN DESCUBIERTO!</span>
+              <span>¡BOTÍN DESCUBIERTO!</span>
             </DialogTitle>
             <DialogDescription className="retro text-[8px] sm:text-[9px] text-slate-300 text-center mt-1 leading-relaxed break-words">
               Tus pasos por la ruta han revelado un recurso valioso para la expedición.

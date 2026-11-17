@@ -268,4 +268,18 @@ test("Auditoría Impeccable: Tipografía retro integral Press Start 2P, separaci
     combateCodigo.includes("gap-3 sm:gap-4"),
     "Los diálogos cinemáticos deben incluir separación desahogada gap-3 sm:gap-4 entre botones",
   );
+
+  // 4. Viewport dinámico seguro y safe-area inferior para móviles reales
+  assert.ok(
+    combateCodigo.includes("h-dvh") && !combateCodigo.includes("h-full h-[100dvh]"),
+    "PantallaCombate debe usar h-dvh sin conflicto con h-full",
+  );
+  assert.ok(
+    combateCodigo.includes("pb-zona-segura") && combateCodigo.includes("shrink-0"),
+    "La consola de acciones debe reservar safe-area inferior con pb-zona-segura y shrink-0",
+  );
+  assert.ok(
+    combateCodigo.includes('"ACCIÓN..."') && !combateCodigo.includes('"ACCION..."'),
+    "La etiqueta de acción en curso debe llevar tilde correcta según R1",
+  );
 });

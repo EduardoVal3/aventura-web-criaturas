@@ -355,7 +355,7 @@ export function PaginaKitUi() {
             <DialogTrigger asChild>
               <Button>Abrir diálogo de encuentro</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>¡Encuentro en el camino!</DialogTitle>
                 <DialogDescription>
@@ -380,7 +380,7 @@ export function PaginaKitUi() {
             <AlertDialogTrigger asChild>
               <Button variant="destructive">Confirmar retirada</Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="w-[calc(100vw-2rem)] sm:max-w-md">
               <AlertDialogHeader>
                 <AlertDialogTitle>¿Huir de la batalla?</AlertDialogTitle>
                 <AlertDialogDescription>

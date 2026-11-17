@@ -45,7 +45,7 @@ export type { DetalleCriaturaRestaurada } from "./ApiJuego";
 let tokenActual: string | null = null;
 
 async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
-  const urlBase = import.meta.env.VITE_URL_API ?? "";
+  const urlBase = (import.meta.env.VITE_URL_API ?? "").trim().replace(/\/+$/, "");
   const url = `${urlBase}/api${ruta}`;
 
   const encabezados: Record<string, string> = {

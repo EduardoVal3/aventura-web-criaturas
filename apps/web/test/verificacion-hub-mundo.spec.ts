@@ -269,6 +269,21 @@ test("Auditoría Impeccable: Erradicación de truncamientos, modales retro-bruta
     false,
     "El modal del Hub no debe exponer el ID interno de la zona en el texto del requisito",
   );
+
+  // 7. Viewport dinámico seguro y safe-area inferior en el dock del Hub
+  assert.ok(
+    hubCodigo.includes("h-dvh") && !hubCodigo.includes("h-screen h-[100dvh]"),
+    "PantallaHubUbicacion debe usar h-dvh sin conflicto con h-screen",
+  );
+  assert.ok(
+    hubCodigo.includes("pb-zona-segura") && hubCodigo.includes("pt-zona-segura"),
+    "El Hub debe aplicar pb-zona-segura y pt-zona-segura en barras superior e inferior",
+  );
+  assert.strictEqual(
+    SERVICIOS_HUB.some((s) => s.titulo.includes("Open5e")),
+    false,
+    "Los títulos de servicios del Hub deben ser inmersivos y no exponer 'Open5e'",
+  );
 });
 
 test("Subfase 10m: Desbloqueo territorial en PantallaHubUbicacion incluye api.verificarZona, DESBLOQUEAR SENDA y barra de progreso", async () => {

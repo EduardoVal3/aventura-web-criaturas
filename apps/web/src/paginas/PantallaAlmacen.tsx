@@ -186,7 +186,7 @@ export function PantallaAlmacen() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-4">
+    <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-4 overflow-x-hidden">
       {/* Cabecera y Navegación Rápida */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b-2 border-black/40">
         <div className="space-y-1">
@@ -483,7 +483,7 @@ export function PantallaAlmacen() {
             <div
               role="radiogroup"
               aria-label="Criaturas del equipo para relevar"
-              className="max-h-[55vh] overflow-y-auto space-y-2.5 pr-1"
+              className="max-h-[55dvh] overflow-y-auto space-y-2.5 pr-1"
             >
               {equipoParaIntercambio.map((comp) => {
                 const seleccionada = criaturaSalienteId === comp.criaturaId;

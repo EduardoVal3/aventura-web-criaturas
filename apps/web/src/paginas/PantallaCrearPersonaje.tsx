@@ -119,7 +119,7 @@ export function PantallaCrearPersonaje() {
   );
 
   return (
-    <div className="relative min-h-[calc(100vh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
+    <div className="relative min-h-[calc(100dvh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
       <div className="w-full max-w-4xl mx-auto">
         <Card className="w-full rounded-none border-4 border-black shadow-[6px_6px_0_0_#000] bg-card/95 backdrop-blur-xs">
           <CardHeader className="text-center space-y-2 pb-4 pt-6 px-4 sm:px-6">
@@ -478,14 +478,14 @@ export function PantallaCrearPersonaje() {
 
               <Button
                 type="submit"
-                className="w-full sm:w-auto px-6 sm:px-8 py-3.5 h-12 sm:h-14 rounded-none border-4 border-black shadow-[4px_4px_0_0_#000] bg-primary text-primary-foreground active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 sm:px-8 py-3.5 h-12 sm:h-14 rounded-none border-4 border-black shadow-[4px_4px_0_0_#000] bg-primary text-primary-foreground active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={enviando}
                 aria-busy={enviando}
               >
                 {enviando ? (
                   <>
                     <Spinner className="size-4 shrink-0 text-primary-foreground mr-2" />
-                    <span className="retro text-[10px] sm:text-xs tracking-wider">
+                    <span className="retro text-[9px] sm:text-xs tracking-wider">
                       INICIANDO AVENTURA...
                     </span>
                   </>
@@ -495,7 +495,7 @@ export function PantallaCrearPersonaje() {
                       className="size-4 mr-1 text-primary-foreground shrink-0"
                       aria-hidden="true"
                     />
-                    <span className="retro text-[10px] sm:text-xs tracking-wider">
+                    <span className="retro text-[9px] sm:text-xs tracking-wider">
                       COMENZAR EN VILLA SERENA
                     </span>
                   </>

@@ -162,7 +162,7 @@ export function PantallaEquipo() {
   const ranurasLibres = Math.max(0, limiteEquipo - equipo.length);
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-4">
+    <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto py-2 sm:py-4 px-2 sm:px-4 overflow-x-hidden">
       {/* Cabecera y Navegación Rápida */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b-2 border-black/40">
         <div className="space-y-1">

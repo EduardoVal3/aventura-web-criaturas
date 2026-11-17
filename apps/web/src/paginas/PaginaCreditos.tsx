@@ -92,7 +92,7 @@ export function PaginaCreditos() {
               AETHELGARD: CRÉDITOS Y HONOR
             </h1>
             <p className="retro text-[8px] sm:text-[9px] text-muted-foreground leading-relaxed break-words">
-              Conclusión del desarrollo full-stack, homenajes académicos y licencias abiertas.
+              Reconocimientos académicos, arquitectura de ingeniería y licencias abiertas del proyecto.
             </p>
           </div>
 
@@ -134,7 +134,7 @@ export function PaginaCreditos() {
               Bestiario Victorioso de Aethelgard
             </span>
             <span className="retro text-[7px] text-muted-foreground uppercase">
-              Especies Canónicas del Compendio
+              Criaturas Destacadas del Reino
             </span>
           </div>
 
@@ -201,17 +201,17 @@ export function PaginaCreditos() {
           </CardHeader>
           <CardContent className="p-4 sm:p-5 pt-2 space-y-3.5 retro text-[8px] sm:text-[9px] leading-relaxed text-muted-foreground break-words">
             <p>
-              Dedicamos este proyecto al <strong className="text-foreground font-bold">Ingeniero Claudio</strong> en agradecimiento por su exigencia metodológica y su visión docente en la asignatura <strong className="text-foreground font-bold">ISC-305 Programación Web</strong>. Su énfasis constante en el rigor arquitectónico, la eliminación de antipatrones como las ráfagas N+1, la validación estricta en servidor y la trazabilidad documental impulsó cada decisión técnica detrás de <em>Aethelgard: Sendas y Criaturas</em>.
+              Dedicamos este proyecto al <strong className="text-foreground font-bold">Ingeniero Claudio</strong> en agradecimiento por su guía y exigencia académica en la asignatura <strong className="text-foreground font-bold">ISC-305 Programación Web</strong>. Sus enseñanzas sobre <strong className="text-foreground font-bold">principios SOLID</strong>, <strong className="text-foreground font-bold">Clean Code</strong>, arquitectura limpia en capas y separación de responsabilidades guiaron el diseño de una base de código clara, mantenible y confiable para <em>Aethelgard: Sendas y Criaturas</em>.
             </p>
             <div className="p-3 sm:p-4 bg-black/40 border-2 border-black shadow-[inset_2px_2px_0_0_rgba(0,0,0,0.6)] space-y-2">
               <div className="flex items-center gap-2 text-primary font-bold retro text-[8px] sm:text-[9px]">
                 <Award className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                <span>Principios Rectores Aplicados:</span>
+                <span>Principios de Ingeniería Aplicados:</span>
               </div>
               <ul className="list-disc list-inside text-muted-foreground space-y-1.5 leading-relaxed break-words">
-                <li>Validación soberana en Back-End (NestJS) y salvaguarda de invariantes estocásticas.</li>
-                <li>Ergonomía responsive sin overflow horizontal en 320px bajo el estándar Impeccable.</li>
-                <li>Arquitectura en capas, contratos unificados en TypeScript y 100% de pruebas verdes.</li>
+                <li>Aplicación de principios SOLID, Clean Code y arquitectura limpia en capas con clara separación de responsabilidades.</li>
+                <li>Validaciones autoritativas en servidor (NestJS) y código mantenible con contratos tipados en TypeScript.</li>
+                <li>Diseño responsive adaptado a escritorio y móvil sin desbordamientos ni pérdida de legibilidad.</li>
               </ul>
             </div>
           </CardContent>
@@ -230,7 +230,7 @@ export function PaginaCreditos() {
                 </CardTitle>
               </div>
               <Badge variant="outline" className="border-2 border-black shadow-[2px_2px_0_0_#000] retro text-[8px] sm:text-[9px] px-2 py-0.5 rounded-none bg-secondary text-secondary-foreground">
-                AV5 · FASE 10
+                VERSIÓN 1.0
               </Badge>
             </div>
             <CardDescription className="retro text-[8px] sm:text-[9px] text-muted-foreground mt-1 leading-relaxed break-words">
@@ -239,7 +239,7 @@ export function PaginaCreditos() {
           </CardHeader>
           <CardContent className="p-4 sm:p-5 pt-2 space-y-3.5 retro text-[8px] sm:text-[9px] leading-relaxed text-muted-foreground break-words">
             <p>
-              El proyecto <em>Aethelgard: Sendas y Criaturas</em> fue concebido como un juego de rol y estrategia web que revive la era dorada de los videojuegos de 8 y 16 bits, combinando estándares contemporáneos de seguridad (S-1 a S-7) e invariantes de negocio inquebrantables (INV-01 a INV-05).
+              El proyecto <em>Aethelgard: Sendas y Criaturas</em> fue concebido como un juego de rol y estrategia web que revive la era dorada de los videojuegos de 8 y 16 bits, combinando seguridad robusta en la sesión, arquitectura modular y reglas de juego verificadas en el servidor.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1">
               <div className="p-3 bg-black/40 border-2 border-black shadow-[2px_2px_0_0_#000] space-y-1">
@@ -249,7 +249,7 @@ export function PaginaCreditos() {
               </div>
               <div className="p-3 bg-black/40 border-2 border-black shadow-[2px_2px_0_0_#000] space-y-1">
                 <span className="retro text-[8px] text-amber-400 block uppercase font-bold tracking-wider">Back-End</span>
-                <span className="retro text-[9px] sm:text-[10px] text-foreground font-bold block leading-snug break-words">NestJS 11 + Prisma</span>
+                <span className="retro text-[9px] sm:text-[10px] text-foreground font-bold block leading-snug break-words">NestJS 10 + Prisma 6</span>
                 <p className="retro text-[8px] text-muted-foreground mt-1 leading-relaxed break-words">PostgreSQL & Swagger OpenAPI</p>
               </div>
               <div className="p-3 bg-black/40 border-2 border-black shadow-[2px_2px_0_0_#000] space-y-1">
@@ -342,7 +342,7 @@ SOFTWARE.`}
           </CardHeader>
           <CardContent className="p-4 sm:p-5 pt-2 space-y-3.5 retro text-[8px] sm:text-[9px] leading-relaxed text-muted-foreground break-words">
             <p>
-              Los datos base de las 25 especies del compendio biológico fueron normalizados a partir del repositorio y API abierta de{" "}
+              Los datos base de las 30 especies del bestiario fueron normalizados a partir del repositorio y API abierta de{" "}
               <a
                 href="https://open5e.com/"
                 target="_blank"
@@ -379,7 +379,7 @@ SOFTWARE.`}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 pb-2 border-t-2 border-black">
         <div className="flex items-center gap-2 retro text-[8px] sm:text-[9px] text-muted-foreground text-center sm:text-left">
           <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
-          <span className="leading-relaxed">Aethelgard: Sendas y Criaturas · Proyecto Integrador Final</span>
+          <span className="leading-relaxed">Aethelgard: Sendas y Criaturas · Edición Web</span>
         </div>
 
         <Button

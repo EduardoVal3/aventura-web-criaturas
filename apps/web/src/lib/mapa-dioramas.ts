@@ -1019,33 +1019,8 @@ export function dibujarCapaVivaMapa(
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
 
-  // 1. Velo oscuro ceñido a islas aún bloqueadas
-  for (const nodo of nodos) {
-    const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
-    if (!isla) continue;
-    // 1. Velo crepuscular pixel-perfect ceñido únicamente a islas bloqueadas (cero cobertura sobre puentes)
-    dibujarVeloIslasBloqueadas(ctx, nodos, t, reducirMovimiento, mascaraOceano);
-
-    if (!nodo.desbloqueada) {
-      ctx.save();
-      const gradNiebla = ctx.createRadialGradient(
-        isla.x,
-        isla.y,
-        isla.radioX * 0.18,
-        isla.x,
-        isla.y,
-        isla.radioX * 1.05,
-      );
-      gradNiebla.addColorStop(0, "rgba(3, 9, 22, 0.56)");
-      gradNiebla.addColorStop(0.7, "rgba(3, 9, 22, 0.4)");
-      gradNiebla.addColorStop(1, "rgba(3, 9, 22, 0)");
-      ctx.fillStyle = gradNiebla;
-      const geomBloq = generarGeometriaDiorama(isla);
-      trazarPoligonoLocal(ctx, geomBloq.contornoLocal, isla.x, isla.y, 1.02);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
+  // 1. Velo crepuscular pixel-perfect ceñido únicamente a islas bloqueadas (cero cobertura sobre puentes)
+  dibujarVeloIslasBloqueadas(ctx, nodos, t, reducirMovimiento, mascaraOceano);
 
   // 2. Puentes activos y flujo guiado sobre las pasarelas reales
   dibujarPuentesYRutasVivas(

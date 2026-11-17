@@ -757,6 +757,35 @@ test("Subfase 10s: Motor oceánico multicapa respeta máscara alfa, acantilados 
     false,
     "dibujarCapaVivaMapa no debe dibujar halos animados de líneas punteadas sobre la isla actual",
   );
+  assert.strictEqual(
+    dioramasCodigo.includes("rgba(4, 9, 22, 0.52)"),
+    false,
+    "Los puentes no deben recibir trazos oscuros de bloqueo",
+  );
+  assert.ok(
+    dioramasCodigo.includes("if (!rutaDesbloqueada) continue;") &&
+      dioramasCodigo.includes("dibujarVeloIslasBloqueadas"),
+    "El efecto crepuscular de bloqueo debe limitarse exclusivamente a las islas bloqueadas",
+  );
+
+  const { esPuntoSobrePuenteMapa, resolverIndiceIslaEnMapa } = await import(
+    "../src/lib/mapa-dioramas.ts"
+  );
+  for (const puente of TRAYECTOS_PUENTES_AETHELGARD) {
+    const mx = 0.25 * puente.inicio.x + 0.5 * puente.control.x + 0.25 * puente.fin.x;
+    const my = 0.25 * puente.inicio.y + 0.5 * puente.control.y + 0.25 * puente.fin.y;
+    assert.strictEqual(
+      esPuntoSobrePuenteMapa(mx, my),
+      true,
+      `El centro del puente ${puente.origenId}<->${puente.destinoId} debe excluirse del velo bloqueado`,
+    );
+  }
+  const idsIslas = Object.keys(CONFIGURACION_ISLAS_MAPA);
+  for (let i = 0; i < idsIslas.length; i++) {
+    const isla = CONFIGURACION_ISLAS_MAPA[idsIslas[i]];
+    assert.strictEqual(resolverIndiceIslaEnMapa(isla.x, isla.y), i);
+    assert.strictEqual(esPuntoSobrePuenteMapa(isla.x, isla.y), false);
+  }
 
   const puenteRiscosCueva = TRAYECTOS_PUENTES_AETHELGARD.find(
     (t) => t.origenId === "ZON-04" && t.destinoId === "ZON-05",

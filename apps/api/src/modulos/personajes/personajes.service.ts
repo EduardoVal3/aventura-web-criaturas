@@ -8,10 +8,9 @@ import { PrismaService } from '../../comun/prisma/prisma.service';
 import { CrearPersonajeDto } from './dto/crear-personaje.dto';
 
 const ESPECIES_INICIALES_VALIDAS = [
-  'lobo-gris',
-  'oso-negro',
-  'arana-lobo-gigante',
-  'pico-de-hacha',
+  'lobo-estepario',
+  'vibora-rocosa',
+  'cangrejo-abismal',
 ];
 
 @Injectable()
@@ -106,13 +105,18 @@ export class PersonajesService {
         });
       }
 
-      // 4. Desbloquear las zonas accesibles iniciales: LOC-01, LOC-02, ZON-01, ZON-02
-      const zonasIniciales = ['LOC-01', 'LOC-02', 'ZON-01', 'ZON-02'];
-      for (const zonaId of zonasIniciales) {
+      // 4. Desbloquear las zonas accesibles iniciales: LOC-01 (100%), ZON-01 (0%), ZON-02 (0%)
+      const zonasIniciales = [
+        { zonaId: 'LOC-01', progreso: 100 },
+        { zonaId: 'ZON-01', progreso: 0 },
+        { zonaId: 'ZON-02', progreso: 0 },
+      ];
+      for (const item of zonasIniciales) {
         await tx.zonaDesbloqueada.create({
           data: {
             personajeId: personaje.id,
-            zonaId,
+            zonaId: item.zonaId,
+            progreso: item.progreso,
           },
         });
       }

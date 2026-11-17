@@ -13,7 +13,7 @@ import {
 describe('AdaptadorCriaturasExternas y Normalizador', () => {
   const adaptador = new AdaptadorCriaturasExternas();
 
-  it('Prueba 1: normaliza correctamente las estadísticas de lobo-gris', () => {
+  it('Prueba 1: normaliza correctamente las estadísticas de lobo-estepario', () => {
     // Valores de catálogo para srd-2024_wolf (docs/catalogo-criaturas.md §2)
     const hp = calcularHpBase(11);
     const ataque = calcularAtaqueBase(5.5);
@@ -54,9 +54,7 @@ describe('AdaptadorCriaturasExternas y Normalizador', () => {
     assert.strictEqual(dto.hitPoints, 11);
     assert.strictEqual(dto.armorClass, 12);
     assert.strictEqual(dto.speedMax, 40);
-    assert.strictEqual(dto.ataques.length, 1);
-    assert.strictEqual(dto.ataques[0].nombreOriginal, 'Bite');
-    assert.strictEqual(dto.ataques[0].poder, 5.5);
+    assert.strictEqual(dto.ataques.length, 0, 'El adaptador no decide movimientos');
   });
 
   it('Prueba 2: tolera y calcula correctamente el poder ante damage_bonus null', () => {

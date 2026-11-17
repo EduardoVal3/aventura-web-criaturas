@@ -40,17 +40,68 @@ export class CuracionService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // simplificacion: bloqueo pesimista por fila de personaje para serializar la restauracion del santuario; suficiente en monolito conectado a una instancia PostgreSQL.
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE`;
+      }
+
       const criaturasEquipo = await tx.criatura.findMany({
         where: {
           personajeId: personaje.id,
           enEquipo: true,
         },
+        include: {
+          especie: true,
+        },
+        orderBy: {
+          ordenEquipo: 'asc',
+        },
       });
 
+      const detalles: {
+        criaturaId: string;
+        nombre: string;
+        hpPrevio: number;
+        hpNuevo: number;
+        hpMaximo: number;
+        hpRestaurado: number;
+        fueRevivida: boolean;
+      }[] = [];
+
+      let criaturasCuradas = 0;
+      let criaturasRevividas = 0;
+      let hpTotalRestaurado = 0;
+
       for (const criatura of criaturasEquipo) {
-        await tx.criatura.update({
-          where: { id: criatura.id },
-          data: { hpActual: criatura.hpMaximo },
+        const hpMaximo = Math.max(1, criatura.hpMaximo);
+        const hpPrevio = Math.max(0, Math.min(hpMaximo, criatura.hpActual));
+        const hpNuevo = hpMaximo;
+        const hpRestaurado = Math.max(0, hpNuevo - hpPrevio);
+        const fueRevivida = hpPrevio === 0 && hpNuevo > 0;
+
+        if (criatura.hpActual !== hpNuevo) {
+          await tx.criatura.update({
+            where: { id: criatura.id },
+            data: { hpActual: hpNuevo },
+          });
+        }
+
+        if (hpRestaurado > 0) {
+          criaturasCuradas += 1;
+          hpTotalRestaurado += hpRestaurado;
+        }
+        if (fueRevivida) {
+          criaturasRevividas += 1;
+        }
+
+        detalles.push({
+          criaturaId: criatura.id,
+          nombre: criatura.apodo || criatura.especie?.nombre || 'Criatura',
+          hpPrevio,
+          hpNuevo,
+          hpMaximo,
+          hpRestaurado,
+          fueRevivida,
         });
       }
 
@@ -58,10 +109,13 @@ export class CuracionService {
         data: {
           personajeId: personaje.id,
           tipo: 'CURACION',
-          descripcion: `Restauración completa de ${criaturasEquipo.length} criaturas en el centro médico de ${personaje.ubicacionActual.nombre}.`,
+          descripcion: `Restauración en el santuario de ${personaje.ubicacionActual.nombre}: ${criaturasCuradas} sanadas, ${criaturasRevividas} revividas (+${hpTotalRestaurado} HP).`,
           datosJson: {
             ubicacionId: personaje.ubicacionActual.id,
             totalRestauradas: criaturasEquipo.length,
+            criaturasCuradas,
+            criaturasRevividas,
+            hpTotalRestaurado,
           },
         },
       });
@@ -70,6 +124,11 @@ export class CuracionService {
         mensaje:
           'Todas las criaturas de tu equipo han sido completamente restauradas.',
         criaturasRestauradas: criaturasEquipo.length,
+        criaturasCuradas,
+        criaturasRevividas,
+        hpTotalRestaurado,
+        ubicacionNombre: personaje.ubicacionActual.nombre,
+        detalles,
       };
     });
   }

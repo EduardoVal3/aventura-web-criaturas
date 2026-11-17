@@ -7,10 +7,7 @@ import {
   AtaqueExternoDto,
 } from './proveedor-criaturas.interface';
 import {
-  calcularPoderAtaque,
   extraerVelocidadMaxima,
-  CATALOGO_ESPECIES_PROPENSO,
-  TRADUCCION_MOVIMIENTOS,
 } from './normalizador-criaturas.util';
 
 interface Open5eAttackRaw {
@@ -128,38 +125,11 @@ export class AdaptadorCriaturasExternas implements ProveedorCriaturas {
   }
 
   public mapearACriaturaExternaDto(crudo: Open5eCreatureRaw): CriaturaExternaDto {
-    const metaEspecie = CATALOGO_ESPECIES_PROPENSO[crudo.key];
-    const slug = metaEspecie ? metaEspecie.slug : crudo.key;
-
     let tipoExterno = 'beast';
     if (typeof crudo.type === 'object' && crudo.type !== null) {
       tipoExterno = crudo.type.key || crudo.type.name || 'beast';
     } else if (typeof crudo.type === 'string') {
       tipoExterno = crudo.type;
-    }
-
-    const ataques: AtaqueExternoDto[] = [];
-    const accionesConAtaques = (crudo.actions || []).filter(
-      (a) => a.attacks && a.attacks.length > 0,
-    );
-
-    // Hasta 3 acciones con ataques
-    for (const accion of accionesConAtaques.slice(0, 3)) {
-      const primerAtaque = accion.attacks![0];
-      const poderCalculado = calcularPoderAtaque(
-        primerAtaque.damage_die_count ?? 1,
-        primerAtaque.damage_die_type ?? 'D6',
-        primerAtaque.damage_bonus ?? 0,
-      );
-
-      const traduccion = TRADUCCION_MOVIMIENTOS[slug]?.[accion.name];
-      const tipoAccion = traduccion?.tipoAccion ?? 'Ataque melé';
-
-      ataques.push({
-        nombreOriginal: accion.name,
-        tipoAccion,
-        poder: poderCalculado,
-      });
     }
 
     return {
@@ -169,7 +139,7 @@ export class AdaptadorCriaturasExternas implements ProveedorCriaturas {
       armorClass: crudo.armor_class,
       speedMax: extraerVelocidadMaxima(crudo.speed_all),
       challengeRating: crudo.challenge_rating,
-      ataques,
+      ataques: [],
     };
   }
 }

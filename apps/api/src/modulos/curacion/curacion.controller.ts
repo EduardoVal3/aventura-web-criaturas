@@ -19,6 +19,15 @@ export class CuracionController {
     status: 200,
     description: 'Criaturas completamente restauradas a su HP máximo.',
   })
+  @ApiResponse({
+    status: 403,
+    description:
+      'La ubicación actual no cuenta con un centro de curación autorizado o no es segura.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'No se encontró el personaje activo del explorador.',
+  })
   restaurar(@UsuarioActual('sub') usuarioId: string) {
     return this.curacionService.restaurarEquipo(usuarioId);
   }

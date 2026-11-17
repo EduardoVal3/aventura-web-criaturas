@@ -26,27 +26,39 @@ export class TiendaService {
       });
     }
 
-    const servicios = personaje.ubicacionActual.servicios ?? [];
-    if (!servicios.includes('TIENDA')) {
-      throw new ForbiddenException({
-        codigo: 'SERVICIO_NO_DISPONIBLE',
-        mensaje: 'La ubicación actual no cuenta con una tienda comercial.',
-      });
-    }
+    const servicioDisponible = (personaje.ubicacionActual.servicios ?? []).includes('TIENDA');
 
-    const objetos = await this.prisma.objeto.findMany({
-      where: { precioCompra: { gt: 0 } },
-      orderBy: { codigo: 'asc' },
-    });
+    const [objetos, posesiones] = await Promise.all([
+      this.prisma.objeto.findMany({
+        where: { precioCompra: { gt: 0 } },
+        orderBy: { precioCompra: 'asc' },
+      }),
+      this.prisma.inventarioPersonaje.findMany({
+        where: { personajeId: personaje.id },
+      }),
+    ]);
+
+    const cantidadesPorObjeto = new Map<string, number>();
+    for (const p of posesiones) {
+      cantidadesPorObjeto.set(p.objetoId, p.cantidad);
+    }
 
     return {
       saldoMonedas: personaje.monedas,
+      servicioDisponible,
+      ubicacionActual: {
+        id: personaje.ubicacionActual.id,
+        nombre: personaje.ubicacionActual.nombre,
+        esSegura: personaje.ubicacionActual.esSegura,
+      },
       items: objetos.map((o) => ({
         codigo: o.codigo,
         nombre: o.nombre,
         descripcion: o.descripcion,
         tipo: o.tipo,
         precioCompra: o.precioCompra,
+        efectoValor: o.efectoValor,
+        cantidadEnInventario: cantidadesPorObjeto.get(o.id) ?? 0,
       })),
     };
   }
@@ -79,18 +91,23 @@ export class TiendaService {
       where: { codigo: itemCodigo },
     });
 
-    if (!objeto) {
+    if (!objeto || objeto.precioCompra <= 0) {
       throw new NotFoundException({
         codigo: 'OBJETO_NO_ENCONTRADO',
         mensaje: 'El objeto solicitado no se encuentra en el catálogo.',
       });
     }
 
-    const unidades = Math.max(1, cantidad);
+    const unidades = Math.max(1, Math.min(99, Math.trunc(cantidad)));
     // Servidor calcula unilateralmente el costo oficial (S-6)
     const costoTotal = objeto.precioCompra * unidades;
 
     return this.prisma.$transaction(async (tx) => {
+      // simplificacion: bloqueo pesimista por fila de personaje para serializar compras concurrentes; suficiente para sesiones individuales sin migrar a aislamiento Serializable.
+      if (typeof tx.$queryRaw === 'function') {
+        await tx.$queryRaw`SELECT id FROM personaje WHERE id = ${personaje.id} FOR UPDATE`;
+      }
+
       const personajeActual = await tx.personaje.findUnique({
         where: { id: personaje.id },
       });
@@ -111,7 +128,7 @@ export class TiendaService {
       });
 
       // Acreditar objetos en inventario mediante upsert aditivo
-      await tx.inventarioPersonaje.upsert({
+      const registroInventario = await tx.inventarioPersonaje.upsert({
         where: {
           personajeId_objetoId: {
             personajeId: personaje.id,
@@ -142,9 +159,12 @@ export class TiendaService {
 
       return {
         itemCodigo: objeto.codigo,
+        nombre: objeto.nombre,
         cantidadComprada: unidades,
+        precioUnitario: objeto.precioCompra,
         costoTotal,
         saldoRestante: personajeActualizado.monedas,
+        cantidadEnInventario: registroInventario?.cantidad ?? unidades,
       };
     });
   }

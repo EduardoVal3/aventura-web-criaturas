@@ -42,8 +42,8 @@ Rutas y parajes naturales que albergan vida salvaje y desafíos:
 | ID | Nombre | Conexiones inmediatas | Nivel sugerido | Requisito de desbloqueo (`M-PRO`) |
 | --- | --- | --- | --- | --- |
 | `ZON-01` | Praderas del Amanecer | `LOC-01` (Villa Serena), `LOC-02` (Puesto Fronterizo) | Nivel 1–3 | Ninguno (acceso inicial libre). |
-| `ZON-02` | Bosque Susurrante | `LOC-01` (Villa Serena), `ZON-03` (Riberas Lago Espejo) | Nivel 2–4 | Ninguno (acceso inicial libre). |
-| `ZON-03` | Riberas del Lago Espejo | `ZON-02` (Bosque Susurrante), `LOC-02` (Puesto Fronterizo) | Nivel 3–5 | Ninguno (acceso libre). |
+| `ZON-02` | Riberas del Lago Espejo | `LOC-01` (Villa Serena), `ZON-03` (Bosque Susurrante) | Nivel 2–4 | Ninguno (acceso inicial libre). |
+| `ZON-03` | Bosque Susurrante | `ZON-02` (Riberas del Lago Espejo), `LOC-02` (Puesto Fronterizo) | Nivel 3–5 | Ninguno (acceso libre). |
 | `ZON-04` | Paso de los Riscos | `LOC-02` (Puesto Fronterizo), `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 5–7 | Ninguno (acceso libre desde Puesto Fronterizo). |
 | `ZON-05` | Cueva Umbría | `ZON-04` (Paso de los Riscos), `ZON-06` (Pico de la Cumbre) | Nivel 7–10 | **Bloqueada:** Requiere poseer al menos 3 criaturas en el equipo de nivel ≥ 5 y haber alcanzado el Puesto Fronterizo. |
 | `ZON-06` | Pico de la Cumbre | `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 8–12 | **Bloqueada:** Requiere haber superado la expedición de la Cueva Umbría y rango de explorador veterano en el Bastión del Norte. |
@@ -60,8 +60,8 @@ flowchart LR
 
     subgraph Zonas ["Rutas y Zonas Salvajes"]
         ZON01["ZON-01: Praderas del Amanecer\n(Nv. 1-3)"]
-        ZON02["ZON-02: Bosque Susurrante\n(Nv. 2-4)"]
-        ZON03["ZON-03: Riberas Lago Espejo\n(Nv. 3-5)"]
+        ZON02["ZON-02: Riberas del Lago Espejo\n(Nv. 2-4)"]
+        ZON03["ZON-03: Bosque Susurrante\n(Nv. 3-5)"]
         ZON04["ZON-04: Paso de los Riscos\n(Nv. 5-7)"]
         ZON05["ZON-05: Cueva Umbría\n(Nv. 7-10 | BLOQUEADA)"]
         ZON06["ZON-06: Pico de la Cumbre\n(Nv. 8-12 | BLOQUEADA)"]

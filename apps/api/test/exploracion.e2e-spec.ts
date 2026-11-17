@@ -61,7 +61,7 @@ describe('Exploración, Encuentros e Historial (E2E)', () => {
       },
       body: JSON.stringify({
         nombre: 'Caminante',
-        especieInicialSlug: 'lobo-gris',
+        especieInicialSlug: 'lobo-estepario',
       }),
     });
     assert.strictEqual(resPersonaje.status, 201, 'Creación de personaje debe responder 201');

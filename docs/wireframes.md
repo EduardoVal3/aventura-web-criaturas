@@ -96,7 +96,7 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 | Conexiones y Rutas Disponibles:                                       |
 | +-------------------------------------------------------------------+ |
 | | [boton-viajar-zon01] -> Praderas del Amanecer (Nv. 1-3) [Abierta] | |
-| | [boton-viajar-zon02] -> Bosque Susurrante    (Nv. 2-4) [Abierta] | |
+| | [boton-viajar-zon02] -> Riberas Lago Espejo   (Nv. 2-4) [Abierta] | |
 | | [indicador-bloqueado]-> Cueva Umbría (Nv. 7-10) [BLOQUEADA - M-PRO] |
 | +-------------------------------------------------------------------+ |
 | [boton-ver-catalogo]                      [boton-cerrar-sesion]       |
@@ -186,170 +186,261 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 
 ## 6. PantallaEquipo y PantallaAlmacen
 - **Módulos cubiertos:** `M-EQU` (Equipo y Almacén).
-- **Propósito:** Administración de criaturas activas (máximo 6) y reserva en almacén.
+- **Propósito:** Administración de criaturas activas (máximo 6), relevo táctico del líder de combate, ranuras libres e intercambio atómico directo con el almacén.
 
 ```text
 +-----------------------------------------------------------------------+
-| GESTIÓN DE CRIATURAS: EQUIPO ACTIVO Y ALMACÉN                         |
+| EQUIPO ACTIVO (3/6)                   [Ir al Almacén] [Asentamiento] |
+| Localidad Segura: Activa (Transferencias autorizadas)                 |
 +-----------------------------------------------------------------------+
-| EQUIPO ACTIVO (Máximo 6 criaturas):                                   |
-| 1. [Lobo Gris]    Nv. 2 | HP: 25/30 | ATK: 42 | [boton-enviar-almacen]|
-| 2. [Oso Negro]    Nv. 2 | HP: 33/33 | ATK: 42 | [boton-enviar-almacen]|
-| 3. [Pico Hacha]   Nv. 1 | HP: 19/19 | ATK: 42 | [boton-enviar-almacen]|
-| (Espacios 4, 5 y 6 vacíos)                                            |
-+-----------------------------------------------------------------------+
-| ALMACÉN CENTRAL (Villa Serena):                                       |
-| - [Araña Lobo]    Nv. 1 | HP: 11/11 | [boton-mover-equipo-1]          |
-| - [Cocatriza]     Nv. 2 | HP: 22/22 | [boton-mover-equipo-2]          |
+| 1. [Lobo Alfa] [LÍDER] Nv.5 | HP: 45/45 | ATK:14 DEF:10 VEL:12        |
+|    Sprite 8-bit | [Subir ^ (off)] [Bajar v] | [boton-enviar-almacen]  |
 |                                                                       |
-| [boton-ordenar-equipo]                    [boton-volver-hub]          |
+| 2. [Gólem Roca]        Nv.4 | HP: 60/60 | ATK:16 DEF:20 VEL:6         |
+|    Sprite 8-bit | [Subir ^] [Bajar v] [Designar Líder] | [almacén]    |
+|                                                                       |
+| 3. [Fénix Menor]       Nv.3 | HP:  0/35 | [DEBILITADA] (omite combate)|
+|    Sprite 8-bit | [Subir ^] [Bajar v (off)] [Líder (off)] | [almacén] |
+|                                                                       |
+| [ RANURA LIBRE 4 de 6 ]   [ RANURA LIBRE 5 de 6 ]   [ RANURA LIBRE 6] |
++-----------------------------------------------------------------------+
+| ALMACÉN DE CRIATURAS (2 en reserva)   [Ver Equipo (3/6)] [Asentamiento|
++-----------------------------------------------------------------------+
+| - [Araña Lobo]  Nv.1 | HP:11/11 | ATK:35 DEF:40 VEL:48 | [Mover Equipo]|
+| - [Cocatriza]   Nv.2 | HP:22/22 | ATK:40 DEF:30 VEL:52 | [Mover Equipo]|
+| (Si equipo está lleno 6/6: Botón muta a [Intercambiar] -> Modal)      |
++-----------------------------------------------------------------------+
+| MODAL TÁCTICO: "Elegir relevo" (Dialog sellado sin scroll horizontal) |
+| "Cocatriza ocupará el puesto de la criatura que elijas:"              |
+| [o] Lobo Alfa [LÍDER] (Nv. 5 • 45/45 HP)                             |
+| ( ) Gólem Roca        (Nv. 4 • 60/60 HP)                             |
+| [ Confirmar intercambio (PROCESANDO...) ] [ Cancelar ]                |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-enviar-almacen`: Transfiere criatura del equipo al almacén (deshabilitado si solo queda 1 criatura activa).
-  - `boton-mover-equipo-1`, `boton-mover-equipo-2`: Pasa criatura del almacén al equipo (deshabilitado si el equipo tiene 6).
-  - `boton-volver-hub`: Regresa a `PantallaHubUbicacion`.
+  - `Subir ^` / `Bajar v`: Reordena interactivamente la criatura en la formación activa invocando `PATCH /api/equipo/orden`.
+  - `Designar Líder`: Coloca a la criatura en la posición 1 (`orden === 1`), convirtiéndola en quien abre el combate.
+  - `boton-enviar-almacen`: Transfiere criatura al almacén si el equipo cuenta con más de 1 integrante y está en localidad segura.
+  - `Mover al equipo`: Pasa la criatura al equipo si hay ranuras libres ($< 6$).
+  - `Intercambiar`: Despliega el modal "Elegir relevo" cuando el equipo está completo ($6/6$), realizando una sustitución atómica directa que preserva la posición táctica original.
+  - `[Ir al Almacén]`, `[Ver Equipo]`, `[Asentamiento]`: Navegación accesible con `Button asChild` hacia `/almacen`, `/equipo` y `/hub`.
 
 ---
 
 ## 7. PantallaInventario y PantallaTienda
-- **Módulos cubiertos:** `M-INV` (Inventario y Comercio).
-- **Propósito:** Consulta de objetos poseídos y adquisición de consumibles en localidades.
+- **Módulos cubiertos:** `M-INV` (Inventario y Comercio), `M-CUR` (Curación fuera de combate).
+- **Propósito:** Gestión táctica de la bolsa por categorías con capacidad de ranuras, y comercio mercantil con lotes autoritativo desde servidor.
 
 ```text
 +-----------------------------------------------------------------------+
-| BAZAR DE PROVISIONES: PUESTO FRONTERIZO | Monedas: [texto-oro-tienda] |
+| BAZAR DE PROVISIONES | Oro: 120 G | Ubicación: Puesto Fronterizo      |
+| [boton-ir-inventario]                             [boton-ir-asentamiento] |
 +-----------------------------------------------------------------------+
-| Artículos en Venta:                                                   |
-| 1. Talismán Básico de Captura   | 50 Monedas  | [boton-comprar-tal-bas] |
-| 2. Talismán Resonante Captura   | 150 Monedas | [boton-comprar-tal-res] |
-| 3. Poción de Curación Menor     | 40 Monedas  | [boton-comprar-poc-men] |
-| 4. Poción de Curación Mayor     | 100 Monedas | [boton-comprar-poc-may] |
-+-----------------------------------------------------------------------+
-| Tu Inventario Actual:                                                 |
-| - Talismán Básico: 3 unidades                 [boton-usar-item-1]     |
-| - Poción de Curación Menor: 2 unidades        [boton-usar-item-2]     |
+| CATÁLOGO MERCANTIL (Precios oficiales desde servidor):                |
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Poción Menor (+20 HP)       | | [img] Talismán Básico (Nv.1)  | |
+| | 30 Oro | En bolsa: x2             | | 50 Oro | En bolsa: x3         | |
+| | Lote: [x1] [x5] [x10]  [-] 1x [+] | | Lote: [x1] [x5] [x10]  [-]1x[+] |
+| | Costo: 30 Oro                     | | Costo: 50 Oro                 | |
+| | [boton-adquirir-lote-poc-menor]   | | [boton-adquirir-lote-tal-bas] | |
+| +-----------------------------------+ +-------------------------------+ |
 |                                                                       |
-| [boton-volver-hub-tienda]                                             |
+| >> MODAL SELLADO DE CONFIRMACIÓN DE COMPRA [overflow-hidden]:        |
+|    "Confirmar adquisición de 5x Poción Menor por 150 Oro"             |
+|    Saldo actual: 200 Oro -> Saldo proyectado: 50 Oro                  |
+|    [BOTON-CONFIRMAR-ADQUISICION]   [BOTON-CANCELAR]                   |
++-----------------------------------------------------------------------+
+
++-----------------------------------------------------------------------+
+| BOLSA E INVENTARIO | Oro: 120 G | Ranuras: 2/20 (10%) • 5 uds.       |
+| Barra de carga: [==------------------] 10% de ocupación               |
+| [boton-ir-bazar]                                  [boton-ir-asentamiento] |
++-----------------------------------------------------------------------+
+| Filtros: [TODOS (2)] [CURACIÓN (1)] [CAPTURA (1)] [ESPECIAL (0)]      |
+|                                                                       |
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Poción de Curación Menor    | | [img] Talismán Básico Captura | |
+| | Cód: pocion-menor | Restaura +20HP| | Cód: talisman-basico | Bono x1| |
+| | Cantidad en bolsa: x2 unidades    | | Cantidad en bolsa: x3 unidades| |
+| | [BOTON-APLICAR-A-CRIATURA]        | | [BOTON-USO-EN-COMBATE]        | |
+| +-----------------------------------+ +-------------------------------+ |
+|                                                                       |
+| >> MODAL SELLADO DE CURACIÓN REACTIVA [INV-03, overflow-hidden]:      |
+|    Poción Menor (+20 HP) | Disponibles: x2                            |
+|    - Lobo Alfa Nv.3 | [====------] 15/30 HP (+15 HP) -> [SANAR +15 HP]|
+|    - Oso Pardo Nv.2 | [==========] 33/33 HP ---------> [SALUD COMPLETA|
+|    [BOTON-CERRAR-MODAL]                                               |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-comprar-tal-bas`, `boton-comprar-tal-res`, etc.: Descuenta monedas y añade el ítem al inventario.
-  - `boton-usar-item-2`: Permite consumir poción fuera de combate para sanar al equipo.
-  - `boton-volver-hub-tienda`: Regresa a `PantallaHubUbicacion`.
+  - `boton-adquirir-lote`: Despliega el modal sellado de confirmación con desglose de saldo actual y proyectado; previene dobles clics con `aria-busy`.
+  - `BOTON-APLICAR-A-CRIATURA`: Abre el modal reactivo de equipo con vista previa de incremento de HP (`INV-03`) y animación `anim-restauracion-salud`.
+  - `BOTON-USO-EN-COMBATE`: Notifica al explorador que los talismanes de captura solo se aplican durante los encuentros tácticos de combate.
+  - `boton-ir-bazar` / `boton-ir-inventario` / `boton-ir-asentamiento`: Enlaces accesibles mediante `<Button asChild>`.
 
 ---
 
 ## 8. PantallaCuracion
-- **Módulos cubiertos:** `M-CUR` (Curación).
-- **Propósito:** Restaurar la vitalidad del equipo activo en centros de servicio.
+- **Módulos cubiertos:** `M-CUR` (Curación y Santuario).
+- **Propósito:** Restaurar la vitalidad del equipo activo y revivir compañeros caídos en centros de servicio seguros.
 
 ```text
 +-----------------------------------------------------------------------+
-| SANTUARIO DE RECUPERACIÓN - VILLA SERENA                              |
+| [img-paisaje-villa-serena .pixelated opacity-40]                      |
+| [SANTUARIO ANCESTRAL]                             [SERVICIO GRATUITO] |
+|                                                                       |
+|                       SANTUARIO DE CURACIÓN                           |
+| "Las aguas místicas del manantial sagrado en Villa Serena restauran   |
+| la vitalidad, alivian la fatiga y reviven a las criaturas caídas."    |
 +-----------------------------------------------------------------------+
-| Estado de tu Equipo:                                                  |
-| 1. Lobo Gris      Nv. 2 | HP Actual: 12/30 [====------] Herido        |
-| 2. Oso Negro      Nv. 2 | HP Actual: 0/33  [----------] Debilitado    |
-| 3. Pico de Hacha  Nv. 1 | HP Actual: 19/19 [==========] Saludable     |
+| TOTAL: 3/6 | PLENA SALUD: 1 | HERIDAS: 1 | CAÍDAS: 1 | DÉFICIT: +51 HP|
++-----------------------------------------------------------------------+
+| [RESTAURAR TODO EL EQUIPO]                     [Volver al Asentamiento|
+| (aria-busy / CANALIZANDO BENDICIÓN...)                                |
++-----------------------------------------------------------------------+
+| DESGLOSE TÁCTICO DEL EQUIPO:                                          |
 |                                                                       |
-| "Las aguas termales del santuario restauran la fuerza vital de tus    |
-| compañeros de viaje sin coste alguno."                                |
-|                                                                       |
-| [boton-sanar-equipo-completo]                 [boton-volver-santuario]|
+| +-----------------------------------+ +-------------------------------+ |
+| | [img] Lobo Alfa           [LÍDER] | | [img] Oso Pardo               | |
+| | Nv. 3 • Posición #1     [HERIDA]  | | Nv. 2 • Posición #2 [CAÍDA]   | |
+| | Vitalidad: 12/30 HP (40%)         | | Vitalidad: 0/35 HP (0%)       | |
+| | [====------]        (+18 HP ^)    | | [----------] (¡REVIVIDA!+35HP^| |
+| +-----------------------------------+ +-------------------------------+ |
+| +-----------------------------------+                                 |
+| | [img] Pico de Hacha               |                                 |
+| | Nv. 1 • Posición #3 [PLENA SALUD] |                                 |
+| | Vitalidad: 19/19 HP (100%)        |                                 |
+| | [==========]                      |                                 |
+| +-----------------------------------+                                 |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-sanar-equipo-completo`: Ejecuta `POST /api/curacion/restaurar`; restaura el HP de todas las criaturas activas a su `hpMaximo` y actualiza las barras de estado.
-  - `boton-volver-santuario`: Retorna a `PantallaHubUbicacion`.
+  - `RESTAURAR TODO EL EQUIPO`: Dispara `POST /api/curacion/restaurar`; previene doble clic con `aria-busy` y estado `CANALIZANDO BENDICIÓN...`, activa secuencia cinemática esmeralda (`anim-curacion`), despliega cifras flotantes `+XX HP` / `¡REVIVIDA! +XX HP` (`anim-curacion-flotante`) y reproduce fanfarria de 8-bit sintetizada en Web Audio (`santuario`).
+  - `Volver al Asentamiento`: Navegación directa con `useNavigate("/hub")` sin anidar controles interactivos.
 
 ---
 
-## 9. PantallaCatalogo y PantallaFichaCriatura
+## 9. PantallaCatalogo y Modal de Inspección Táctica
 - **Módulos cubiertos:** `M-CRI` (Criaturas).
-- **Propósito:** Enciclopedia de las 25 especies del juego y visualización de atributos detallados.
+- **Propósito:** Compendio biológico de las 30 especies del juego sin ráfagas N+1, clasificación de arquetipos, afinidad elemental retro, consagración de criaturas legendarias con corona dorada y modal de inspección con 4 slots tácticos.
 
 ```text
 +-----------------------------------------------------------------------+
-| COMPENDIO DE CRIATURAS DE AETHELGARD (25 Especies Registradas)        |
+| COMPENDIO DE CRIATURAS                 [ACTUALIZAR] [Asentamiento]    |
+| [BookOpen] 30 ESPECIES SRD 5.2                                        |
 +-----------------------------------------------------------------------+
-| Filtro Tipo: [selector-tipo: Todos v] | Buscar: [campo-buscar-especie]|
-|                                                                       |
+| AVISTAMIENTO: Registradas: 30 | En Vista: 30 | Legendarias: 2 | Tipos:6|
++-----------------------------------------------------------------------+
+| [Buscar especie por nombre...]                [Tipo: Todos los tipos v]|
+| Arquetipo: [TODOS] [ATACANTE] [TANQUE] [VELOZ] [EQUILIBRADO] [ESPECIAL]|
+|            [Crown LEGENDARIAS]                        [Limpiar filtros]|
++-----------------------------------------------------------------------+
+| TARJETAS DE CRIATURA (Grid 3 columnas):                               |
+| +-----------------------------------+ +-------------------------------+ |
+| | Lobo Estepario  [Bestia][FÍSICO]  | | Behir del Abismo [Crown LEGEND] |
+| | srd-2024_wolf           [VELOZ]   | | srd-2024_behir [SOMBRA][ATAC] | |
+| | ================================= | | ============================= | |
+| |       [ VITRINA SPRITE 128x128 ]  | |    [ VITRINA SPRITE DORADA ]  | |
+| | ================================= | | ============================= | |
+| | HP: 38 | ATQ: 44 | DEF: 38|VEL: 52| | HP: 94 | ATQ: 94 | DEF: 88|VEL:79| |
+| | CR: 0.25      Captura: 88%        | | CR: 11.00     Captura: 15%    | |
+| | [INSPECCIONAR FICHA]              | | [INSPECCIONAR FICHA]          | |
+| +-----------------------------------+ +-------------------------------+ |
++-----------------------------------------------------------------------+
+| MODAL DE INSPECCIÓN TÁCTICA (Dialog 8bitcn sellado max-h-[85vh]):     |
 | +-------------------------------------------------------------------+ |
-| | [Lobo Gris]        | Bestia       | CR: 0.25 | [boton-ver-ficha-1]| |
-| | [Lobo Huargo]      | Bestia       | CR: 1.00 | [boton-ver-ficha-2]| |
-| | [Cocatriza]        | Monstruosidad| CR: 0.50 | [boton-ver-ficha-3]| |
-| | [Quimera Tricéfala]| Monstruosidad| CR: 6.00 | [boton-ver-ficha-4]| |
+| | [ VITRINA HEROICA SPRITE 112x112 pixelated ]  [Crown LEGENDARIO]  | |
+| | Behir del Abismo · CR: 11.00 · Tasa Captura: 15%                  | |
+| | srd-2024_behir · [Monstruosidad] [Sombra] [ATACANTE]              | |
+| | Lore: Serpentina criatura colosal que domina las profundidades.   | |
+| | HP Base:   94 [=========--]  | Ataque Base: 94 [=========--]      | |
+| | Def Base:  88 [========---]  | Vel Base:    79 [=======----]      | |
+| | Movimientos Tácticos (4 Slots Canónicos):                         | |
+| | - M1 Descarga Eléctrica (Ataque elemental · Pot. 20 · PARALISIS)  | |
+| | - M2 Mordedura Titánica (Ataque melé · Pot. 24 · CRITICO)         | |
+| | - M3 Constricción Relámpago (Control · Pot. 22 · ATURDIMIENTO)    | |
+| | - M4 Relámpago del Abismo (Furia · Pot. 38 · SOBRECARGA_LEGEND)   | |
+| | [Cerrar Ficha Táctica]                                            | |
 | +-------------------------------------------------------------------+ |
-|                                                                       |
-| [boton-volver-hub-compendio]                                          |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `selector-tipo`, `campo-buscar-especie`: Filtros en cliente.
-  - `boton-ver-ficha-1`: Abre modal/vista de detalle con las estadísticas normalizadas (`hpBase`, `ataqueBase`, etc.) y movimientos.
-  - `boton-volver-hub-compendio`: Retorna a `PantallaHubUbicacion`.
+  - `campo-buscar-especie`, `selector-tipo`, botones de arquetipo y filtro `LEGENDARIAS`: Filtrado instantáneo en cliente.
+  - `INSPECCIONAR FICHA`: Abre modal retro sellado (`w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden rounded-none`) con lore, barras comparativas sobre 100, badges de afinidad elemental y lista completa de los 4 movimientos tácticos con slots M1..M4.
+  - `ACTUALIZAR`: Recarga el compendio en una única petición O(1) con hardening `aria-busy`.
+  - `Asentamiento`: Navegación con `useNavigate("/hub")`.
 
 ---
 
 ## 10. PantallaHistorial
 - **Módulos cubiertos:** `M-HIS` (Historial).
-- **Propósito:** Bitácora cronológica de eventos de exploración, capturas y combates.
+- **Propósito:** Bitácora transversal categorizada por iconografía Lucide SVG y filtros rápidos.
 
 ```text
 +-----------------------------------------------------------------------+
-| BITÁCORA DE EXPEDICIONES DEL EXPLORADOR                               |
+| BITÁCORA DE EXPEDICIONES               [ACTUALIZAR] [Asentamiento]    |
+| [BookOpen] 45 CRÓNICAS REGISTRADAS                                    |
 +-----------------------------------------------------------------------+
-| Registro de Eventos Recientes:                                        |
+| FILTROS RÁPIDOS POR CATEGORÍA:                                        |
+| [TODOS (45)] [COMBATE (20)] [CAPTURA (8)] [EXPLORACIÓN (10)]          |
+| [TIENDA (5)] [CURACIÓN (2)]                                           |
+| [Buscar crónica por palabra clave...]              [Limpiar filtros]  |
++-----------------------------------------------------------------------+
+| CRÓNICAS CRONOLÓGICAS (Estilo retro):                                 |
 | +-------------------------------------------------------------------+ |
-| | 12:45 | Victoria contra Pico de Hacha (Nv. 2) en Praderas (+45 XP)| |
-| | 12:42 | Captura exitosa de Lobo Gris con Talismán Básico          | |
-| | 12:40 | Descubrimiento de 25 monedas en Bosque Susurrante         | |
-| | 12:35 | Huida exitosa de encuentro hostil con Oso Pardo           | |
+| | [12:45 | 16/10] [Swords COMBATE]                                  | |
+| | Victoria frente a Pico de Hacha en Praderas del Amanecer (+45 XP) | |
 | +-------------------------------------------------------------------+ |
-|                                                                       |
-| [boton-limpiar-filtros]                       [boton-volver-bitacora] |
+| | [12:42 | 16/10] [Sparkles CAPTURA]                                | |
+| | Capturaste un Lobo Gris con Talismán Básico (Nv. 1)                | |
+| +-------------------------------------------------------------------+ |
+| | [12:30 | 16/10] [ShoppingBag TIENDA]                              | |
+| | Compraste Poción de Curación Mayor x5 en Puesto Ribereño (-200 O) | |
+| +-------------------------------------------------------------------+ |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-volver-bitacora`: Retorna a `PantallaHubUbicacion`.
+  - Botones de categoría: Filtro instantáneo por `COMBATE`, `CAPTURA`, `EXPLORACIÓN`, `TIENDA` y `CURACIÓN`.
+  - `Limpiar filtros`: Restablece categoría y buscador a sus valores por defecto.
+  - `ACTUALIZAR`: Refresca la bitácora con protección `aria-busy`.
+  - `Asentamiento`: Retorna al Hub mediante `useNavigate("/hub")`.
 
 ---
 
-## 11. PantallaCreditos
+## 11. PantallaCreditos (Salón de la Fama 16-bit)
 - **Módulos cubiertos:** Requisito legal y académico (Anexo A.4).
-- **Propósito:** Atribución obligatoria de la API Open5e (`srd-2024` bajo CC BY 4.0) y licencias de dependencias.
+- **Propósito:** Salón de la Fama retro 16-bit, homenaje académico al Ingeniero Claudio y atribución obligatoria de Open5e, SRD 5.2 y 8bitcn/ui.
 
 ```text
 +-----------------------------------------------------------------------+
-|                     CRÉDITOS Y ATRIBUCIONES LEGALES                   |
+| [Crown SALÓN DE LA FAMA] [Trophy ISC-305 · III PAC 2026]              |
+| AETHELGARD: CRÉDITOS Y HONOR           [CELEBRAR FANFARRIA]           |
+|                                        [boton-volver-inicio-creditos] |
+| Bestiario Victorioso: [Lobo] [Grifo] [Quimera] [Hidra]                |
 +-----------------------------------------------------------------------+
-| PROYECTO: Aethelgard: Sendas y Criaturas                              |
-| ASIGNATURA: ISC-305 Programación Web · III PAC 2026                   |
-|                                                                       |
-| DATOS EXTERNOS Y REGLAS DE CRIATURAS:                                 |
-| "This work includes material taken from the System Reference          |
-|  Document 5.2 (“SRD 5.2”) by Wizards of the Coast LLC, available at   |
-|  https://dnd.wizards.com/resources/systems-reference-document,        |
-|  and licensed under the Creative Commons Attribution 4.0              |
-|  International License available at                                   |
-|  https://creativecommons.org/licenses/by/4.0/legalcode."              |
-|                                                                       |
-| API CONSUMIDA:                                                        |
-| Open5e API v2 (https://open5e.com)                                    |
-|                                                                       |
-| SISTEMA DE DISEÑO E INTERFAZ:                                         |
-| 8bitcn/ui (shadcn/ui pixel art components)                            |
-| Licencia MIT (Copyright (c) 2024 8bitcn)                              |
-|                                                                       |
-| [boton-volver-inicio-creditos]                                        |
+| [GraduationCap] HOMENAJE ACADÉMICO — INGENIERO CLAUDIO                 |
+| Cátedra de Programación Web y Arquitectura de Sistemas de Información |
+| Reconocimiento al rigor metodológico, erradicación de N+1,             |
+| validación en servidor y trazabilidad en ISC-305.                     |
++-----------------------------------------------------------------------+
+| [Code2] EQUIPO DE DESARROLLO Y ARQUITECTURA FULL-STACK (FASE 10 · AV5)|
+| React 19 + Tailwind CSS v4 + NestJS 11 + Prisma + PostgreSQL          |
+| Salvaguarda de invariantes estocásticas y seguridad S-1 a S-7.        |
++-----------------------------------------------------------------------+
+| [BookOpen] CATÁLOGO DE CRIATURAS: OPEN5E Y SRD 5.2 (CC BY 4.0)        |
+| Atribución literal obligatoria a Wizards of the Coast LLC.            |
++-----------------------------------------------------------------------+
+| [Sparkles] SISTEMA DE DISEÑO 8BITCN/UI (MIT) Y WEB AUDIO API          |
+| Licencia MIT completa y motor nativo de síntesis 8-bit.               |
+|                                        [Regresar al Asentamiento]     |
 +-----------------------------------------------------------------------+
 ```
 
 - **Elementos interactivos y navegación:**
-  - `boton-volver-inicio-creditos`: Retorna a `PantallaIngreso` o `PantallaHubUbicacion`.
+  - `CELEBRAR FANFARRIA`: Dispara síntesis Web Audio retro (`assets.ts`).
+  - `boton-volver-inicio-creditos` / `Regresar al Asentamiento`: Retorna a `PantallaHubUbicacion` con sonido de victoria.

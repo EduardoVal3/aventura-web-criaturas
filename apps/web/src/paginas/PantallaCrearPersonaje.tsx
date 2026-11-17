@@ -3,6 +3,16 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import {
+  Heart,
+  Swords,
+  Shield,
+  Zap,
+  AlertCircle,
+  LogOut,
+  Sparkles,
+  User,
+} from "lucide-react";
 
 import {
   Card,
@@ -23,54 +33,18 @@ import {
 } from "@/lib/esquemas-auth";
 import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import { api, ErrorApi } from "@/api";
-
-interface CriaturaOpcion {
-  slug: "lobo-gris" | "pico-de-hacha" | "arana-lobo-gigante";
-  nombre: string;
-  tipo: string;
-  hpBase: number;
-  ataqueBase: number;
-  defensaBase: number;
-  velocidadBase: number;
-  descripcion: string;
-}
-
-const OPCIONES_CRIATURAS: CriaturaOpcion[] = [
-  {
-    slug: "lobo-gris",
-    nombre: "Lobo Gris",
-    tipo: "Bestia",
-    hpBase: 30,
-    ataqueBase: 42,
-    defensaBase: 58,
-    velocidadBase: 50,
-    descripcion: "Fiel cazador de manada. Posee gran resistencia física y defensas sólidas.",
-  },
-  {
-    slug: "pico-de-hacha",
-    nombre: "Pico de Hacha",
-    tipo: "Bestia",
-    hpBase: 19,
-    ataqueBase: 42,
-    defensaBase: 51,
-    velocidadBase: 60,
-    descripcion: "Ave veloz y agresiva de las planicies con un impacto cortante letal.",
-  },
-  {
-    slug: "arana-lobo-gigante",
-    nombre: "Araña Lobo Gigante",
-    tipo: "Bestia",
-    hpBase: 11,
-    ataqueBase: 44,
-    defensaBase: 48,
-    velocidadBase: 65,
-    descripcion: "Depredadora nocturna de reflejos fulgurantes y mordedura venenosa.",
-  },
-];
+import {
+  obtenerImagenCriatura,
+  manejarErrorImagen,
+  reproducirSonido,
+} from "@/lib/assets";
+import { OPCIONES_CRIATURAS } from "@/lib/criaturas-iniciales";
+import { cn } from "@/lib/utils";
 
 export function PantallaCrearPersonaje() {
   const navigate = useNavigate();
-  const { actualizarPersonajeActivo } = useAutenticacion();
+  const { actualizarPersonajeActivo, establecerPersonajeActivo, cerrarSesion } =
+    useAutenticacion();
   const [enviando, setEnviando] = useState(false);
 
   const {
@@ -83,8 +57,9 @@ export function PantallaCrearPersonaje() {
     resolver: zodResolver(esquemaCrearPersonaje),
     defaultValues: {
       nombre: "",
-      especieInicialSlug: "lobo-gris",
+      especieInicialSlug: "lobo-estepario",
     },
+    mode: "onChange",
   });
 
   const especieSeleccionada = useWatch({
@@ -93,17 +68,43 @@ export function PantallaCrearPersonaje() {
   });
 
   const onSubmit = async (valores: DatosCrearPersonaje) => {
+    if (enviando) return;
     try {
       setEnviando(true);
-      await api.crearPersonaje({
+      reproducirSonido("click", 0.4);
+
+      const respuesta = await api.crearPersonaje({
         nombre: valores.nombre,
         especieInicialSlug: valores.especieInicialSlug,
       });
-      await actualizarPersonajeActivo();
+
+      const personajeSincronizado = await actualizarPersonajeActivo();
+      if (!personajeSincronizado && respuesta) {
+        establecerPersonajeActivo({
+          personajeId: respuesta.personajeId,
+          nombre: respuesta.nombre,
+          monedas: respuesta.monedas,
+          ubicacionActualId: respuesta.ubicacionActualId,
+          totalCriaturasEquipo: 1,
+          totalCriaturasAlmacen: 0,
+        });
+      }
+
+      reproducirSonido("confirmar", 0.5);
       toast.success(`¡Explorador ${valores.nombre} creado con éxito!`);
       navigate("/hub");
     } catch (error) {
+      reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
+        // simplificacion: si la sesión no existe en el servidor o expiró, se limpia y remite al ingreso
+        if (error.estado === 401 || error.codigo === "USUARIO_NO_ENCONTRADO") {
+          toast.error(
+            "Sesión inválida o expirada. Por favor regístrate o inicia sesión de nuevo."
+          );
+          await cerrarSesion();
+          navigate("/ingreso");
+          return;
+        }
         toast.error(error.message);
       } else {
         toast.error("Ocurrió un error al crear el personaje.");
@@ -113,58 +114,134 @@ export function PantallaCrearPersonaje() {
     }
   };
 
+  const criaturaActiva = OPCIONES_CRIATURAS.find(
+    (c) => c.slug === especieSeleccionada
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] py-8 px-2 sm:px-4">
-      <div className="w-full max-w-3xl">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center space-y-1">
-            <CardTitle className="text-xl sm:text-3xl text-primary">
+    <div className="relative min-h-[calc(100vh-10rem)] w-full flex flex-col items-center justify-center py-6 sm:py-10 px-2 sm:px-4 overflow-x-hidden">
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="w-full rounded-none border-4 border-black shadow-[6px_6px_0_0_#000] bg-card/95 backdrop-blur-xs">
+          <CardHeader className="text-center space-y-2 pb-4 pt-6 px-4 sm:px-6">
+            {/* Cabecera con Insignia retro-brutalist y Escape Hatch accesible */}
+            <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-2">
+              <Badge
+                variant="outline"
+                className="retro text-[9px] sm:text-[10px] tracking-wider text-primary border-2 border-black shadow-[2px_2px_0_0_#000] bg-primary/15 px-2.5 py-1 rounded-none inline-flex items-center gap-1.5"
+              >
+                <Sparkles className="size-3 text-primary shrink-0" aria-hidden="true" />
+                <span>COMPAÑERO INICIAL</span>
+              </Badge>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={enviando}
+                onClick={async () => {
+                  if (enviando) return;
+                  reproducirSonido("click", 0.4);
+                  await cerrarSesion();
+                  navigate("/ingreso");
+                }}
+                className={cn(
+                  "retro text-[8px] sm:text-[9px] tracking-wider flex items-center gap-1.5 h-8 px-2.5 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] bg-card hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer transition-colors active:translate-y-0.5 active:shadow-[1px_1px_0_0_#000]",
+                  enviando && "pointer-events-none opacity-50"
+                )}
+                title="Cerrar sesión y volver al portal de ingreso"
+              >
+                <LogOut className="size-3.5 shrink-0" aria-hidden="true" />
+                <span>SALIR AL INGRESO</span>
+              </Button>
+            </div>
+
+            <CardTitle className="retro text-sm sm:text-base md:text-lg text-primary tracking-wide leading-relaxed">
               Crea tu Explorador
             </CardTitle>
-            <CardDescription className="text-xs sm:text-sm text-muted-foreground">
-              Define tu identidad de aventurero y elige a tu primera criatura compañera.
+
+            <CardDescription className="retro text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed max-w-md mx-auto">
+              Define la identidad de tu aventurero y elige a tu primera criatura
+              compañera para iniciar la senda en Villa Serena.
             </CardDescription>
+
+            {/* Separador ornamental retro pixelado de alto contraste */}
+            <div
+              className="w-full h-1 bg-gradient-to-r from-transparent via-black to-transparent dark:via-primary/50 mt-2"
+              aria-hidden="true"
+            />
           </CardHeader>
 
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <CardContent className="space-y-6 pt-2">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+            aria-busy={enviando}
+          >
+            <CardContent className="space-y-6 sm:space-y-8 pt-2 px-4 sm:px-6">
+              {/* Campo: Nombre del explorador con estética retro-brutalist 8bitcn */}
               <div className="space-y-1.5 max-w-md mx-auto">
-                <Label htmlFor="nombre">Nombre del explorador</Label>
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="nombre"
+                    className="retro text-[9px] sm:text-[10px] font-semibold text-foreground/90 uppercase tracking-wider flex items-center gap-1.5"
+                  >
+                    <User className="size-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+                    <span>Nombre del explorador</span>
+                  </Label>
+                  <span className="retro text-[9px] sm:text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+                    Mín. 3 car.
+                  </span>
+                </div>
                 <Input
                   id="nombre"
                   type="text"
                   placeholder="ej. Arturo de Sendas"
                   disabled={enviando}
                   aria-invalid={!!errors.nombre}
-                  aria-describedby={errors.nombre ? "error-nombre-pj" : undefined}
+                  aria-describedby={
+                    errors.nombre ? "error-nombre-pj" : "guia-nombre-pj"
+                  }
+                  className="retro text-[10px] sm:text-xs placeholder:text-[9px] sm:placeholder:text-[10px] h-10 px-3 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] bg-background/80 focus:shadow-[3px_3px_0_0_#000] focus:border-primary transition-colors tracking-wide"
                   {...register("nombre")}
                 />
+                <p id="guia-nombre-pj" className="sr-only">
+                  Introduce al menos 3 caracteres para nombrar a tu explorador.
+                </p>
                 {errors.nombre && (
-                  <p
+                  <div
                     id="error-nombre-pj"
-                    className="text-xs text-destructive font-medium"
+                    className="retro flex items-center gap-1.5 text-[9px] sm:text-[10px] text-destructive pt-0.5"
                     role="alert"
                   >
-                    {errors.nombre.message}
-                  </p>
+                    <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span>{errors.nombre.message}</span>
+                  </div>
                 )}
               </div>
 
-              <div className="space-y-3">
-                <div className="text-center">
-                  <Label className="text-sm font-semibold">
-                    Selecciona tu criatura inicial
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Esta criatura será tu primer aliado en los combates y expediciones.
+              {/* Selección interactiva de criatura inicial */}
+              <div className="space-y-4">
+                <div className="text-center space-y-1.5">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Sparkles className="size-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+                    <Label className="retro text-[10px] sm:text-xs text-foreground uppercase tracking-wide">
+                      Selecciona tu criatura inicial
+                    </Label>
+                  </div>
+                  <p className="retro text-[9px] sm:text-[10px] text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                    Esta criatura será tu primer aliado en los combates y
+                    expediciones por Aethelgard.
                   </p>
                   {errors.especieInicialSlug && (
-                    <p className="text-xs text-destructive font-medium mt-1" role="alert">
-                      {errors.especieInicialSlug.message}
-                    </p>
+                    <div
+                      className="retro flex items-center justify-center gap-1.5 text-[9px] sm:text-[10px] text-destructive pt-1"
+                      role="alert"
+                    >
+                      <AlertCircle className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>{errors.especieInicialSlug.message}</span>
+                    </div>
                   )}
                 </div>
 
+                {/* Cuadrícula responsiva de criaturas iniciales (360px apilado, md en 3 columnas) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {OPCIONES_CRIATURAS.map((criatura) => {
                     const seleccionada = especieSeleccionada === criatura.slug;
@@ -172,39 +249,193 @@ export function PantallaCrearPersonaje() {
                       <button
                         key={criatura.slug}
                         type="button"
-                        onClick={() => setValue("especieInicialSlug", criatura.slug, { shouldValidate: true })}
-                        className={`text-left transition-all cursor-pointer p-1 rounded focus:outline-hidden ${
-                          seleccionada ? "ring-2 ring-primary scale-[1.02]" : "opacity-80 hover:opacity-100"
-                        }`}
+                        disabled={enviando}
+                        onClick={() => {
+                          setValue("especieInicialSlug", criatura.slug, {
+                            shouldValidate: true,
+                          });
+                          reproducirSonido("seleccionar", 0.35);
+                        }}
+                        className={cn(
+                          "group text-left transition-all cursor-pointer p-0 rounded-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary w-full active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000]",
+                          seleccionada
+                            ? "scale-[1.02]"
+                            : "opacity-90 hover:opacity-100 hover:scale-[1.01]",
+                          enviando && "pointer-events-none opacity-60"
+                        )}
                         aria-pressed={seleccionada}
                       >
-                        <Card className={`h-full border-2 ${seleccionada ? "border-primary bg-primary/5" : ""}`}>
-                          <CardHeader className="p-3 pb-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <CardTitle className="text-sm font-bold text-foreground">
+                        <Card
+                          className={cn(
+                            "h-full transition-all p-0 relative rounded-none border-2 sm:border-3",
+                            seleccionada
+                              ? "border-primary bg-primary/10 shadow-[6px_6px_0_0_#000]"
+                              : "border-black shadow-[4px_4px_0_0_#000] bg-card hover:border-primary/50"
+                          )}
+                        >
+                          <CardHeader className="p-3 pb-2 space-y-1.5">
+                            <div className="flex items-center justify-between gap-1.5">
+                              <CardTitle className="retro text-[10px] sm:text-[11px] font-bold text-foreground break-words">
                                 {criatura.nombre}
                               </CardTitle>
-                              <Badge variant={seleccionada ? "default" : "secondary"} className="text-[10px]">
-                                {criatura.tipo}
-                              </Badge>
+                              {seleccionada ? (
+                                <Badge
+                                  variant="default"
+                                  className="retro text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-none border border-black bg-primary text-primary-foreground shadow-[1px_1px_0_0_#000]"
+                                >
+                                  ELEGIDO
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="retro text-[8px] sm:text-[9px] px-1.5 py-0.5 rounded-none border-2 border-black/80 bg-background/80 text-muted-foreground shadow-[1px_1px_0_0_#000]"
+                                >
+                                  {criatura.tipo}
+                                </Badge>
+                              )}
                             </div>
+                            <p className="retro text-[9px] sm:text-[10px] text-primary tracking-wide font-medium">
+                              {criatura.arquetipo}
+                            </p>
                           </CardHeader>
-                          <CardContent className="p-3 pt-0 space-y-2 text-xs">
-                            <p className="text-muted-foreground line-clamp-2">
+
+                          <CardContent className="p-3 pt-0 space-y-3">
+                            {/* Visualizador pixelado del sprite con fallback SVG */}
+                            <div className="relative w-full h-28 bg-muted/30 border-2 border-black flex items-center justify-center p-2 overflow-hidden shadow-[inset_2px_2px_0_0_#000]">
+                              <img
+                                src={obtenerImagenCriatura(criatura.slug)}
+                                alt={`Sprite de ${criatura.nombre}`}
+                                onError={(e) =>
+                                  manejarErrorImagen(e, "criatura")
+                                }
+                                className={cn(
+                                  "size-20 object-contain pixelated transition-transform duration-200",
+                                  seleccionada
+                                    ? "scale-110 drop-shadow-[0_0_8px_rgba(20,209,232,0.5)]"
+                                    : "group-hover:scale-105"
+                                )}
+                                loading="lazy"
+                              />
+                            </div>
+
+                            <p className="retro text-[8px] sm:text-[9px] text-muted-foreground line-clamp-3 leading-relaxed min-h-[2.75rem]">
                               {criatura.descripcion}
                             </p>
-                            <div className="grid grid-cols-3 gap-1 pt-2 border-t border-border/60 text-center font-mono text-[11px]">
-                              <div>
-                                <span className="text-muted-foreground block text-[9px]">HP</span>
-                                <span className="font-semibold">{criatura.hpBase}</span>
+
+                            {/* Desglose de Atributos Base 8-Bit (HP, ATQ, DEF, VEL) */}
+                            <div className="space-y-1.5 pt-2 border-t border-black/30">
+                              {/* HP Base */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <Heart
+                                      className="size-3 text-emerald-400 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                    <span>HP</span>
+                                  </span>
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-emerald-400">
+                                    {criatura.hpBase}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-black/70 h-2 overflow-hidden border border-black p-[1px] shadow-[inset_1px_1px_0_0_#000]">
+                                  <div
+                                    className="bg-emerald-500 h-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(
+                                        100,
+                                        Math.round((criatura.hpBase / 50) * 100)
+                                      )}%`,
+                                    }}
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-muted-foreground block text-[9px]">ATQ</span>
-                                <span className="font-semibold">{criatura.ataqueBase}</span>
+
+                              {/* Ataque Base */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <Swords
+                                      className="size-3 text-amber-400 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                    <span>ATQ</span>
+                                  </span>
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-amber-400">
+                                    {criatura.ataqueBase}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-black/70 h-2 overflow-hidden border border-black p-[1px] shadow-[inset_1px_1px_0_0_#000]">
+                                  <div
+                                    className="bg-amber-500 h-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(
+                                        100,
+                                        Math.round(
+                                          (criatura.ataqueBase / 60) * 100
+                                        )
+                                      )}%`,
+                                    }}
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <span className="text-muted-foreground block text-[9px]">DEF</span>
-                                <span className="font-semibold">{criatura.defensaBase}</span>
+
+                              {/* Defensa Base */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <Shield
+                                      className="size-3 text-blue-400 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                    <span>DEF</span>
+                                  </span>
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-blue-400">
+                                    {criatura.defensaBase}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-black/70 h-2 overflow-hidden border border-black p-[1px] shadow-[inset_1px_1px_0_0_#000]">
+                                  <div
+                                    className="bg-blue-500 h-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(
+                                        100,
+                                        Math.round(
+                                          (criatura.defensaBase / 75) * 100
+                                        )
+                                      )}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Velocidad Base */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <Zap
+                                      className="size-3 text-cyan-400 shrink-0"
+                                      aria-hidden="true"
+                                    />
+                                    <span>VEL</span>
+                                  </span>
+                                  <span className="retro text-[8px] sm:text-[9px] font-bold text-cyan-400">
+                                    {criatura.velocidadBase}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-black/70 h-2 overflow-hidden border border-black p-[1px] shadow-[inset_1px_1px_0_0_#000]">
+                                  <div
+                                    className="bg-cyan-400 h-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.min(
+                                        100,
+                                        Math.round(
+                                          (criatura.velocidadBase / 75) * 100
+                                        )
+                                      )}%`,
+                                    }}
+                                  />
+                                </div>
                               </div>
                             </div>
                           </CardContent>
@@ -216,19 +447,58 @@ export function PantallaCrearPersonaje() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-3 pt-4 border-t border-border">
+            <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 w-full text-center sm:text-left pt-6 pb-6 px-4 sm:px-6 border-t border-black/40">
+              <div className="flex flex-col gap-1.5 text-center sm:text-left">
+                <div className="retro text-[8px] sm:text-[9px] text-muted-foreground">
+                  <span className="font-semibold text-foreground">
+                    Compañero seleccionado:
+                  </span>{" "}
+                  <span className="text-primary font-bold">
+                    {criaturaActiva?.nombre} ({criaturaActiva?.arquetipo})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  disabled={enviando}
+                  onClick={async () => {
+                    if (enviando) return;
+                    reproducirSonido("click", 0.4);
+                    await cerrarSesion();
+                    navigate("/ingreso");
+                  }}
+                  className={cn(
+                    "retro text-[8px] sm:text-[9px] text-muted-foreground hover:text-primary transition-colors underline underline-offset-2 flex items-center justify-center sm:justify-start gap-1.5 cursor-pointer",
+                    enviando && "pointer-events-none opacity-50"
+                  )}
+                >
+                  <LogOut className="size-3 shrink-0" aria-hidden="true" />
+                  <span>¿Deseas ingresar con otra cuenta? Cerrar sesión</span>
+                </button>
+              </div>
+
               <Button
                 type="submit"
-                className="w-full sm:w-auto px-8 flex items-center justify-center gap-2 mx-auto"
+                className="w-full sm:w-auto px-6 sm:px-8 py-3.5 h-12 sm:h-14 rounded-none border-4 border-black shadow-[4px_4px_0_0_#000] bg-primary text-primary-foreground active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={enviando}
+                aria-busy={enviando}
               >
                 {enviando ? (
                   <>
-                    <Spinner className="size-4" />
-                    <span>Iniciando aventura...</span>
+                    <Spinner className="size-4 shrink-0 text-primary-foreground mr-2" />
+                    <span className="retro text-[10px] sm:text-xs tracking-wider">
+                      INICIANDO AVENTURA...
+                    </span>
                   </>
                 ) : (
-                  <span>Comenzar aventura en Villa Serena</span>
+                  <>
+                    <Swords
+                      className="size-4 mr-1 text-primary-foreground shrink-0"
+                      aria-hidden="true"
+                    />
+                    <span className="retro text-[10px] sm:text-xs tracking-wider">
+                      COMENZAR EN VILLA SERENA
+                    </span>
+                  </>
                 )}
               </Button>
             </CardFooter>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 225" width="400" height="225">
+  <rect width="400" height="225" fill="#0f172a" rx="6"/>
+  <rect x="6" y="6" width="388" height="213" fill="none" stroke="#1e293b" stroke-width="4" stroke-dasharray="8 8"/>
+  <!-- Montañas retro pixeladas y luna -->
+  <circle cx="320" cy="55" r="24" fill="#fef08a" opacity="0.8"/>
+  <path d="M40 180 L120 90 L200 180 Z" fill="#334155"/>
+  <path d="M160 180 L250 80 L340 180 Z" fill="#1e293b"/>
+  <path d="M260 180 L320 120 L380 180 Z" fill="#475569"/>
+  <!-- Suelo -->
+  <rect x="10" y="175" width="380" height="40" fill="#0284c7" opacity="0.3"/>
+  <text x="200" y="205" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#38bdf8" text-anchor="middle" letter-spacing="2">ZONA / PAISAJE</text>
+</svg>

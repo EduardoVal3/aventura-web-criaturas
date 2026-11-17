@@ -15,6 +15,7 @@ La configuración real vive en `.agents/mcp_config.json`, que **no se versiona**
 | `sequential-thinking` | `@modelcontextprotocol/server-sequential-thinking` | Razonar fórmulas y máquinas de estado | 1, 6, 7 |
 | `memory` | `@modelcontextprotocol/server-memory` | Apoyo de contexto; la fuente de verdad es `docs/reglas-juego.md` | 1, 6, 7 |
 | `github` | `@modelcontextprotocol/server-github` | Crear repo y ramas, abrir PR y mergear con merge commit | 0 a 11 |
+| `graphify` | `graphifyy` (Python MCP) | Navegación de AST y dependencias con grafo de conocimiento (reducción masiva de tokens) | 10 a 13 |
 
 ## Plantilla de configuración
 
@@ -30,7 +31,8 @@ Copia esto a `.agents/mcp_config.json` y reemplaza los marcadores `<...>`. Usuar
     "context7": { "command": "npx", "args": ["-y", "@upstash/context7-mcp"] },
     "sequential-thinking": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"] },
     "memory": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-memory"] },
-    "github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "<token-personal>" } }
+    "github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"], "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "<token-personal>" } },
+    "graphify": { "command": "py", "args": ["-m", "graphify.serve", "graphify-out/graph.json"] }
   }
 }
 ```

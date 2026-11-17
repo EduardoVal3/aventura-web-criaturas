@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect width="128" height="128" fill="#14141e" rx="6"/>
+  <rect x="4" y="4" width="120" height="120" fill="none" stroke="#28283c" stroke-width="2" stroke-dasharray="4 4"/>
+  <!-- Pocion / Cofre pixelado -->
+  <g fill="#10b981" opacity="0.9">
+    <rect x="52" y="24" width="24" height="16" fill="#6ee7b7"/>
+    <rect x="44" y="40" width="40" height="12"/>
+    <rect x="36" y="52" width="56" height="44"/>
+    <rect x="44" y="96" width="40" height="8"/>
+    <!-- Brillo -->
+    <rect x="44" y="60" width="8" height="16" fill="#ffffff" opacity="0.7"/>
+  </g>
+  <text x="64" y="118" font-family="'Courier New', monospace" font-size="10" font-weight="bold" fill="#6ee7b7" text-anchor="middle" letter-spacing="1">ÍTEM</text>
+</svg>

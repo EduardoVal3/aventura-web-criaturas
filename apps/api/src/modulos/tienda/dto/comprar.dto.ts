@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ComprarDto {
   @ApiProperty({
@@ -18,5 +18,6 @@ export class ComprarDto {
   @IsOptional()
   @IsInt({ message: 'La cantidad debe ser un número entero.' })
   @Min(1, { message: 'La cantidad mínima a comprar es 1.' })
+  @Max(99, { message: 'La cantidad máxima a comprar por operación es 99.' })
   cantidad?: number = 1;
 }

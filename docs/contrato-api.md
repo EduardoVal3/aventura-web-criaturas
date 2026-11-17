@@ -14,7 +14,7 @@ Este documento define la especificación técnica de la API REST que comunica el
    - `200 OK`: Petición procesada exitosamente.
    - `201 Created`: Recurso creado satisfactoriamente.
    - `400 Bad Request`: Parámetros de petición inválidos o malformados.
-   - `401 Unauthorized`: Falta de token de autenticación o sesión inválida.
+   - `401 Unauthorized`: Falta de token de autenticación o sesión inválida (`NO_AUTORIZADO`, `CREDENCIALES_INVALIDAS` o `USUARIO_NO_ENCONTRADO` si el usuario no existe en la base de datos).
    - `403 Forbidden`: Acción no autorizada por reglas de seguridad o estado de juego (ej. moverse a zona bloqueada o actuar fuera de turno).
    - `404 Not Found`: Recurso solicitado no encontrado.
    - `409 Conflict`: Conflicto de estado (ej. nombre de usuario duplicado o equipo completo sin almacén).
@@ -110,8 +110,10 @@ Este documento define la especificación técnica de la API REST que comunica el
     "mensaje": "Sesión cerrada correctamente."
   }
   ```
+- **Salvaguarda de Autenticación Global (`AutenticacionGuard`):** Todas las rutas protegidas validan tanto la firma criptográfica del JWT como la existencia efectiva del usuario en PostgreSQL (`Usuario.id`). Si el registro fue eliminado o la base de datos fue reseteada, el guard arroja `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`, provocando que el Front-End purgue de inmediato `aethelgard_token_acceso` y emita el evento global `aethelgard:no-autorizado`.
 
 ---
+
 
 ### 2.3 Personaje y progreso inicial (`M-PJ`)
 
@@ -122,7 +124,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   ```json
   {
     "nombre": "Arturo",
-    "especieInicialSlug": "lobo-gris"
+    "especieInicialSlug": "lobo-estepario"
   }
   ```
 - **Respuesta exitosa (`201 Created`):**
@@ -134,8 +136,8 @@ Este documento define la especificación técnica de la API REST que comunica el
     "ubicacionActualId": "LOC-01",
     "criaturaInicial": {
       "criaturaId": "cri-301",
-      "especieSlug": "lobo-gris",
-      "nombre": "Lobo Gris",
+      "especieSlug": "lobo-estepario",
+      "nombre": "Lobo Estepario",
       "nivel": 1,
       "hpActual": 30,
       "hpMaximo": 30,
@@ -170,30 +172,114 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/mundo/ubicacion-actual`
 - **Módulo:** `M-MUN`.
-- **Descripción:** Retorna los detalles de la ubicación actual del personaje, sus servicios y destinos conectados.
+- **Descripción:** Retorna los detalles de la ubicación actual del personaje, su slug para recursos multimedia, nivel de fauna salvaje (`faunaNivelMinimo` y `faunaNivelMaximo`), especies autóctonas del hábitat, poder y rango del equipo del explorador, red territorial de 9 nodos para minimapa, servicios y conexiones con checklist estructurado.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "ubicacionId": "LOC-01",
     "nombre": "Villa Serena",
+    "slug": "villa-serena",
     "tipo": "LOCALIDAD",
     "esSegura": true,
     "descripcion": "Aldea pacífica en el valle donde inician los reclutas del gremio.",
+    "nivelMinimo": null,
+    "nivelMaximo": null,
+    "nivelSugerido": null,
+    "faunaNivelMinimo": null,
+    "faunaNivelMaximo": null,
     "servicios": ["CURACION", "ALMACEN", "HISTORIAL"],
+    "progresoZona": 100,
+    "especiesHabitantes": [],
+    "poderEquipo": {
+      "nivelMaximoEquipo": 5,
+      "nivelPromedioEquipo": 4,
+      "nivelMaximoColeccion": 5,
+      "criaturasEquipoNv5": 2,
+      "rangoDomador": "Domador Novato"
+    },
+    "nodosMapa": [
+      {
+        "id": "LOC-01",
+        "nombre": "Villa Serena",
+        "tipo": "LOCALIDAD",
+        "esSegura": true,
+        "faunaNivelMinimo": null,
+        "faunaNivelMaximo": null,
+        "desbloqueada": true,
+        "progreso": 100,
+        "esActual": true,
+        "esAdyacente": false,
+        "conexionesIds": ["ZON-01", "ZON-02"]
+      },
+      {
+        "id": "ZON-01",
+        "nombre": "Praderas del Amanecer",
+        "tipo": "ZONA",
+        "esSegura": false,
+        "faunaNivelMinimo": 1,
+        "faunaNivelMaximo": 3,
+        "desbloqueada": true,
+        "progreso": 100,
+        "esActual": false,
+        "esAdyacente": true,
+        "conexionesIds": ["LOC-01", "LOC-02"]
+      }
+    ],
     "conexiones": [
       {
         "ubicacionDestinoId": "ZON-01",
         "nombre": "Praderas del Amanecer",
+        "tipoDestino": "ZONA",
+        "esSegura": false,
+        "faunaNivelMinimo": 1,
+        "faunaNivelMaximo": 3,
         "nivelSugerido": "1-3",
         "estaBloqueada": false,
-        "requisito": null
+        "desbloqueada": true,
+        "puedeDesbloquear": false,
+        "cumpleRequisito": true,
+        "requisito": null,
+        "detalleProgreso": null,
+        "progresoActual": 100,
+        "progresoObjetivo": 100,
+        "especiesHabitantes": [
+          {
+            "slug": "lobo-estepario",
+            "nombre": "Lobo Estepario",
+            "tipo": "BESTIA",
+            "elemento": "Natura",
+            "esEspecial": false,
+            "esLegendaria": false,
+            "pesoAparicion": 35
+          }
+        ],
+        "requisitoCartografia": null,
+        "requisitoNivelEquipo": null
       },
       {
-        "ubicacionDestinoId": "ZON-02",
-        "nombre": "Bosque Susurrante",
-        "nivelSugerido": "2-4",
-        "estaBloqueada": false,
-        "requisito": null
+        "ubicacionDestinoId": "LOC-02",
+        "nombre": "Puesto Fronterizo del Río",
+        "tipoDestino": "LOCALIDAD",
+        "esSegura": true,
+        "faunaNivelMinimo": null,
+        "faunaNivelMaximo": null,
+        "nivelSugerido": "Rango libre",
+        "estaBloqueada": true,
+        "desbloqueada": false,
+        "puedeDesbloquear": true,
+        "cumpleRequisito": true,
+        "requisito": "Requiere explorar Praderas del Amanecer al 100%",
+        "detalleProgreso": "Requiere cartografiar ZON-01 al 100%",
+        "progresoActual": 100,
+        "progresoObjetivo": 100,
+        "especiesHabitantes": [],
+        "requisitoCartografia": {
+          "zonaId": "ZON-01",
+          "nombre": "Praderas del Amanecer",
+          "completada": true,
+          "progresoActual": 100
+        },
+        "requisitoNivelEquipo": null
       }
     ]
   }
@@ -226,13 +312,14 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/exploracion/explorar`
 - **Módulo:** `M-EXP`.
-- **Descripción:** Ejecuta una tirada probabilística de exploración en la zona activa.
+- **Descripción:** Ejecuta una tirada probabilística de exploración en la ruta silvestre activa. Si el evento es `OBJETO` o `SIN_EVENTO`, computa y persiste el avance cartográfico (+20% hasta 100%). Si resulta en `ENCUENTRO`, el progreso de la zona se mantiene en su valor actual sin incremento prematuro, acreditándose el +20% al resolver el combate en el servidor (`VICTORIA` o `CAPTURADO`).
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`) - Caso Encuentro:**
   ```json
   {
     "tipoEvento": "ENCUENTRO",
     "mensaje": "¡Una criatura salvaje te desafía en el camino!",
+    "progresoZona": 0,
     "encuentro": {
       "encuentroId": "enc-401",
       "estado": "EN_CURSO",
@@ -254,6 +341,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "tipoEvento": "OBJETO",
     "mensaje": "Has encontrado un cofre oculto en la maleza con 20 monedas.",
+    "progresoZona": 40,
     "recompensa": {
       "tipo": "MONEDAS",
       "cantidad": 20
@@ -265,6 +353,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "tipoEvento": "SIN_EVENTO",
     "mensaje": "Recorres la senda con tranquilidad; el viento sopla apacible.",
+    "progresoZona": 60,
     "recompensa": null
   }
   ```
@@ -274,28 +363,51 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/encuentros/activo`
 - **Módulo:** `M-ENC`.
-- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo.
+- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo, incluyendo movimientos de la aliada líder, turno real y bitácora reconstruida para reanudación fiel.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "encuentroId": "enc-401",
     "estado": "EN_CURSO",
-    "turno": 1,
+    "turno": 2,
     "esTurnoJugador": true,
     "criaturaRival": {
       "slug": "pico-de-hacha",
       "nombre": "Pico de Hacha",
       "nivel": 2,
       "hpActual": 14,
-      "hpMaximo": 19
+      "hpMaximo": 19,
+      "ataque": 42,
+      "defensa": 51,
+      "velocidad": 60
     },
     "criaturaAliada": {
       "criaturaId": "cri-301",
+      "slug": "lobo-gris",
       "nombre": "Lobo Gris",
+      "nombreEspecie": "Lobo Gris",
       "nivel": 2,
       "hpActual": 25,
-      "hpMaximo": 30
-    }
+      "hpMaximo": 30,
+      "ataque": 42,
+      "defensa": 58,
+      "velocidad": 50,
+      "experiencia": 45,
+      "porcentajeXp": 30,
+      "xpSiguienteNivel": 150,
+      "xpNivelActual": 0,
+      "movimientos": [
+        {
+          "nombre": "Mordisco Feroz",
+          "poder": 14,
+          "tipoAccion": "ATAQUE"
+        }
+      ]
+    },
+    "bitacora": [
+      "Turno 1: ¡Un Pico de Hacha salvaje (Nv. 2) está frente a ti!",
+      "¡Tu aliada es Lobo Gris (Nv. 2)!"
+    ]
   }
   ```
 - **Errores posibles:**
@@ -307,7 +419,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/combate/atacar`
 - **Módulo:** `M-COM`.
-- **Descripción:** Ejecuta el movimiento seleccionado por el jugador y resuelve el contraataque rival.
+- **Descripción:** Ejecuta el movimiento seleccionado por el jugador (`movimientoIndice: 0..2` correspondiente a los slots 1, 2 y 3) y resuelve el contraataque rival (sorteado exclusivamente entre sus slots 1 a 3). En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas.
 - **Cuerpo de petición:**
   ```json
   {
@@ -322,19 +434,48 @@ Este documento define la especificación técnica de la API REST que comunica el
     "estado": "EN_CURSO",
     "turno": 2,
     "accionJugador": {
-      "movimiento": "Mordisco Feroz",
+      "movimiento": "Mordisco",
       "danoCausado": 5,
       "hpRestanteRival": 9
     },
     "accionRival": {
-      "movimiento": "Picotazo Cortante",
+      "movimiento": "Picotazo",
       "danoCausado": 4,
       "hpRestanteAliado": 21
     },
-    "resultadoFinal": null
+    "resultadoFinal": null,
+    "progreso": null
+  }
+  ```
+- **Respuesta exitosa en Victoria (`200 OK`):**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "estado": "VICTORIA",
+    "turno": 3,
+    "accionJugador": {
+      "movimiento": "Mordisco",
+      "danoCausado": 12,
+      "hpRestanteRival": 0
+    },
+    "accionRival": null,
+    "resultadoFinal": "VICTORIA",
+    "progreso": {
+      "xpGanada": 45,
+      "monedasGanadas": 60,
+      "subioNivel": true,
+      "nivelAnterior": 2,
+      "nivelNuevo": 3,
+      "porcentajeXp": 12,
+      "xpSiguienteNivel": 661,
+      "xpNivelActual": 374,
+      "saldoMonedas": 260
+    }
   }
   ```
 - **Errores posibles:**
+  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.") si se envía `movimientoIndice: 3` (Slot 4 de Furia, Decisión D-4).
+  - `400 Bad Request` ("movimientoIndice must not be greater than 3") ante índices inválidos.
   - `400 ACCION_FUERA_DE_TURNO` (regla `S-5`).
   - `404 ENCUENTRO_NO_ENCONTRADO`.
 
@@ -392,12 +533,25 @@ Este documento define la especificación técnica de la API REST que comunica el
     "encuentroId": "enc-401"
   }
   ```
-- **Respuesta exitosa (`200 OK`):**
+- **Respuesta exitosa - Huida lograda (`200 OK`):**
   ```json
   {
     "exito": true,
     "mensaje": "¡Lograste huir del combate con éxito!",
     "estado": "HUIDO"
+  }
+  ```
+- **Respuesta exitosa - Huida fallida con contraataque rival (`200 OK`):**
+  ```json
+  {
+    "exito": false,
+    "mensaje": "¡No pudiste escapar! El rival aprovecha tu distracción.",
+    "estado": "EN_CURSO",
+    "contraataqueRival": {
+      "movimiento": "Mordisco Feroz",
+      "danoCausado": 6,
+      "hpRestanteAliado": 14
+    }
   }
   ```
 
@@ -407,7 +561,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/equipo`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Obtiene la lista de hasta 6 criaturas activas del equipo.
+- **Descripción:** Obtiene la lista de hasta 6 criaturas activas del equipo, capacidad máxima y condición de localidad segura.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -416,21 +570,28 @@ Este documento define la especificación técnica de la API REST que comunica el
         "criaturaId": "cri-301",
         "slug": "lobo-gris",
         "nombre": "Lobo Gris",
+        "apodo": "Colmillo",
         "nivel": 2,
         "hpActual": 25,
         "hpMaximo": 30,
         "ataque": 42,
         "defensa": 58,
         "velocidad": 50,
+        "experiencia": 45,
+        "porcentajeXp": 30,
+        "xpSiguienteNivel": 150,
+        "xpNivelActual": 0,
         "orden": 1
       }
-    ]
+    ],
+    "limiteEquipo": 6,
+    "enLocalidadSegura": true
   }
   ```
 
 #### `GET /api/almacen`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Lista las criaturas resguardadas en el almacén de reserva.
+- **Descripción:** Lista las criaturas resguardadas en el almacén de reserva con estadísticas completas, capacidad máxima, localidad segura y conteo del equipo.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -439,35 +600,81 @@ Este documento define la especificación técnica de la API REST que comunica el
         "criaturaId": "cri-303",
         "slug": "arana-lobo-gigante",
         "nombre": "Araña Lobo Gigante",
+        "apodo": null,
         "nivel": 1,
         "hpActual": 11,
-        "hpMaximo": 11
+        "hpMaximo": 11,
+        "ataque": 35,
+        "defensa": 40,
+        "velocidad": 48,
+        "experiencia": 0,
+        "porcentajeXp": 0,
+        "xpSiguienteNivel": 150,
+        "xpNivelActual": 0,
+        "orden": null
       }
-    ]
+    ],
+    "limiteEquipo": 6,
+    "enLocalidadSegura": true,
+    "totalEnEquipo": 2
   }
   ```
 
-#### `POST /api/equipo/transferir`
+#### `PATCH /api/equipo/orden`
 - **Módulo:** `M-EQU`.
-- **Descripción:** Mueve una criatura entre el equipo activo y el almacén (solo en localidades autorizadas).
-- **Cuerpo de petición:**
+- **Descripción:** Actualiza el orden táctico de las criaturas del equipo mediante una permutación íntegra y serializada por personaje (`FOR UPDATE`). El líder de combate es siempre la criatura en la posición 1. Puede invocarse en cualquier zona (incluyendo combate o zonas hostiles).
+- **Cuerpo de petición (Variante lista ordenada de IDs):**
+  ```json
+  {
+    "criaturaIds": ["cri-302", "cri-301"]
+  }
+  ```
+- **Cuerpo de petición (Variante pares de posición):**
+  ```json
+  {
+    "orden": [
+      { "criaturaId": "cri-302", "orden": 1 },
+      { "criaturaId": "cri-301", "orden": 2 }
+    ]
+  }
+  ```
+- **Respuesta exitosa (`200 OK`):** Retorna la estructura de `RespuestaEquipo` con el orden actualizado.
+- **Errores posibles:**
+  - `400 ORDEN_INVALIDO` (lista parcial, IDs repetidos, posiciones no consecutivas de 1 a n o criaturas no pertenecientes al equipo activo).
+  - `400 DATOS_INVALIDOS` (cuerpo vacío o sin listas válidas).
+
+#### `POST /api/equipo/transferir` (o `/api/equipo/mover`)
+- **Módulo:** `M-EQU`.
+- **Descripción:** Mueve una criatura entre el equipo activo y el almacén, o efectúa un intercambio atómico directo (`intercambiarConId`) cuando el equipo está completo (6/6). La criatura entrante hereda la posición táctica de la saliente. Requiere estar en una localidad segura.
+- **Cuerpo de petición - Transferencia regular:**
   ```json
   {
     "criaturaId": "cri-303",
     "haciaEquipo": true
   }
   ```
+- **Cuerpo de petición - Intercambio atómico (Equipo lleno):**
+  ```json
+  {
+    "criaturaId": "cri-303",
+    "haciaEquipo": true,
+    "intercambiarConId": "cri-301"
+  }
+  ```
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "mensaje": "Criatura transferida exitosamente.",
-    "totalEnEquipo": 2,
-    "totalEnAlmacen": 0
+    "mensaje": "Intercambio completado: Araña Lobo Gigante ocupa el puesto de Lobo Gris.",
+    "totalEnEquipo": 6,
+    "totalEnAlmacen": 4
   }
   ```
 - **Errores posibles:**
-  - `409 EQUIPO_COMPLETO` (no se puede transferir al equipo porque ya cuenta con 6 criaturas, regla `A-6`).
+  - `403 ACCION_NO_PERMITIDA` (la ubicación actual del explorador no es una localidad segura).
+  - `404 CRIATURA_NO_ENCONTRADA` (criatura no encontrada o no pertenece al jugador).
+  - `409 EQUIPO_COMPLETO` (se intentó mover al equipo sin intercambio teniendo 6 criaturas, regla `A-6`).
   - `400 EQUIPO_MINIMO_REQUERIDO` (no se puede enviar al almacén la última criatura del equipo).
+  - `400 DATOS_INVALIDOS` (se especificó el mismo ID para entrar y salir).
 
 ---
 
@@ -475,23 +682,86 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/inventario`
 - **Módulo:** `M-INV`.
-- **Descripción:** Obtiene los objetos y cantidades pertenecientes al explorador.
+- **Descripción:** Obtiene los objetos, existencias, desglose de ranuras y capacidad máxima del inventario del personaje activo.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "monedas": 120,
+    "capacidadMaxima": 20,
+    "ranurasOcupadas": 2,
+    "totalUnidades": 5,
     "items": [
       {
         "codigo": "talisman-basico",
         "nombre": "Talismán Básico de Captura",
+        "descripcion": "Talismán estándar para sintonizar y capturar criaturas salvajes.",
         "tipo": "CAPTURA",
+        "efectoValor": 1,
+        "precioCompra": 50,
         "cantidad": 3
       },
       {
         "codigo": "pocion-menor",
         "nombre": "Poción de Curación Menor",
+        "descripcion": "Brebaje medicinal que restaura 20 puntos de salud.",
         "tipo": "CURACION",
+        "efectoValor": 20,
+        "precioCompra": 30,
         "cantidad": 2
+      }
+    ]
+  }
+  ```
+
+#### `GET /api/tienda`
+- **Módulo:** `M-INV`.
+- **Descripción:** Consulta el catálogo oficial del bazar en la localidad activa, informando la disponibilidad del servicio mercantil (`servicioDisponible`), el saldo actual en monedas y las existencias que el jugador ya posee de cada artículo (`cantidadEnInventario`).
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "saldoMonedas": 120,
+    "servicioDisponible": true,
+    "ubicacionActual": {
+      "id": "LOC-02",
+      "nombre": "Puesto Fronterizo del Río",
+      "esSegura": true
+    },
+    "items": [
+      {
+        "codigo": "pocion-menor",
+        "nombre": "Poción de Curación Menor",
+        "descripcion": "Brebaje medicinal que restaura 20 puntos de salud.",
+        "tipo": "CURACION",
+        "precioCompra": 30,
+        "efectoValor": 20,
+        "cantidadEnInventario": 2
+      },
+      {
+        "codigo": "talisman-basico",
+        "nombre": "Talismán Básico de Captura",
+        "descripcion": "Talismán estándar para sintonizar y capturar criaturas salvajes.",
+        "tipo": "CAPTURA",
+        "precioCompra": 50,
+        "efectoValor": 1,
+        "cantidadEnInventario": 3
+      },
+      {
+        "codigo": "pocion-mayor",
+        "nombre": "Poción de Curación Mayor",
+        "descripcion": "Elixir reconstituyente que restaura 50 puntos de salud.",
+        "tipo": "CURACION",
+        "precioCompra": 80,
+        "efectoValor": 50,
+        "cantidadEnInventario": 0
+      },
+      {
+        "codigo": "talisman-avanzado",
+        "nombre": "Talismán Avanzado de Captura",
+        "descripcion": "Talismán reforzado con mayor resonancia para criaturas de alto desafío.",
+        "tipo": "CAPTURA",
+        "precioCompra": 150,
+        "efectoValor": 2,
+        "cantidadEnInventario": 0
       }
     ]
   }
@@ -499,30 +769,35 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/tienda/comprar`
 - **Módulo:** `M-INV`.
-- **Descripción:** Compra un artículo en la tienda de la localidad descontando monedas.
+- **Descripción:** Ejecuta una compra atómica en el bazar mercantil. El servidor valida unilateralmente el precio oficial (`S-6`), acota la cantidad a `[1, 99]` (`ComprarDto`), serializa la operación mediante bloqueo de fila de personaje (`S-4`), descuenta las monedas y acredita los objetos en inventario mediante upsert aditivo.
 - **Cuerpo de petición:**
   ```json
   {
-    "itemCodigo": "talisman-basico",
-    "cantidad": 1
+    "itemCodigo": "pocion-menor",
+    "cantidad": 5
   }
   ```
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "itemCodigo": "talisman-basico",
-    "cantidadComprada": 1,
-    "costoTotal": 50,
-    "saldoRestante": 70
+    "itemCodigo": "pocion-menor",
+    "nombre": "Poción de Curación Menor",
+    "cantidadComprada": 5,
+    "precioUnitario": 30,
+    "costoTotal": 150,
+    "saldoRestante": 50,
+    "cantidadEnInventario": 7
   }
   ```
 - **Errores posibles:**
-  - `400 MONEDAS_INSUFICIENTES`.
-  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no posee tienda).
+  - `400 MONEDAS_INSUFICIENTES` (saldo menor a `costoTotal`).
+  - `400 Bad Request` (si se inyectan campos adicionales como `costoTotal` vía `forbidNonWhitelisted` o cantidad fuera de rango `1..99`).
+  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no cuenta con el servicio `TIENDA`).
+  - `404 OBJETO_NO_ENCONTRADO` (el código no existe o no tiene precio de compra positivo en catálogo).
 
 #### `POST /api/inventario/usar`
 - **Módulo:** `M-INV`, `M-CUR`.
-- **Descripción:** Aplica un consumible de curación sobre una criatura aliada.
+- **Descripción:** Aplica un consumible de curación sobre una criatura aliada fuera de combate. Serializa concurrentemente la fila del personaje (`FOR UPDATE`), valida que el objeto sea de tipo `CURACION`, rechaza si la criatura ya tiene salud completa (`INV-03`), descuenta la unidad de inventario y registra el evento en el historial.
 - **Cuerpo de petición:**
   ```json
   {
@@ -534,11 +809,19 @@ Este documento define la especificación técnica de la API REST que comunica el
   ```json
   {
     "criaturaId": "cri-301",
+    "criaturaNombre": "Ignis",
     "hpPrevio": 10,
     "hpNuevo": 30,
+    "hpMaximo": 30,
+    "curacionAplicada": 20,
     "cantidadRestante": 1
   }
   ```
+- **Errores posibles:**
+  - `400 OBJETO_NO_CONSUMIBLE` (el objeto no es de tipo `CURACION`, p. ej. talismán de captura).
+  - `400 SALUD_COMPLETA` (la criatura seleccionada ya cuenta con sus puntos de vida al máximo).
+  - `400 ITEM_NO_DISPONIBLE` (el jugador no posee el objeto en su bolsa o su cantidad es 0).
+  - `404 CRIATURA_NO_ENCONTRADA` (la criatura no pertenece al personaje o no existe).
 
 ---
 
@@ -546,17 +829,51 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `POST /api/curacion/restaurar`
 - **Módulo:** `M-CUR`.
-- **Descripción:** Restaura por completo los puntos de golpe de todas las criaturas del equipo en un centro de curación autorizado.
+- **Descripción:** Restaura por completo los puntos de golpe de todas las criaturas del equipo en un centro o santuario de curación autorizado (`esSegura: true` y servicio `CURACION` o `CENTRO_CURACION`). Serializa la transacción mediante bloqueo pesimista `FOR UPDATE` por fila de personaje, revive a criaturas caídas (`hpActual = 0 -> hpMaximo`) bajo el invariante `INV-03`, actualiza en base de datos exclusivamente las criaturas con déficit de salud y registra un evento en el historial con el consolidado del ritual.
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "mensaje": "Todas las criaturas de tu equipo han sido completamente restauradas.",
-    "criaturasRestauradas": 3
+    "criaturasRestauradas": 3,
+    "criaturasCuradas": 2,
+    "criaturasRevividas": 1,
+    "hpTotalRestaurado": 53,
+    "ubicacionNombre": "Villa Serena",
+    "detalles": [
+      {
+        "criaturaId": "cri-301",
+        "nombre": "Lobo Alfa",
+        "hpPrevio": 30,
+        "hpNuevo": 30,
+        "hpMaximo": 30,
+        "hpRestaurado": 0,
+        "fueRevivida": false
+      },
+      {
+        "criaturaId": "cri-302",
+        "nombre": "Águila Veloz",
+        "hpPrevio": 12,
+        "hpNuevo": 30,
+        "hpMaximo": 30,
+        "hpRestaurado": 18,
+        "fueRevivida": false
+      },
+      {
+        "criaturaId": "cri-303",
+        "nombre": "Oso Pardo",
+        "hpPrevio": 0,
+        "hpNuevo": 35,
+        "hpMaximo": 35,
+        "hpRestaurado": 35,
+        "fueRevivida": true
+      }
+    ]
   }
   ```
 - **Errores posibles:**
-  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no cuenta con centro de curación).
+  - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no es una localidad segura o no cuenta con servicio de curación autorizado).
+  - `404 PERSONAJE_NO_ENCONTRADO` (no se encontró el personaje activo del explorador).
 
 ---
 
@@ -605,24 +922,67 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Lista las 25 especies del catálogo almacenadas en la base de datos (con soporte para filtro por tipo).
-- **Parámetros de consulta opcionales:** `?tipo=beast`
+- **Descripción:** Lista las 30 especies del compendio biológico en una sola llamada `O(1)` erradicando el cuello de botella $N+1$, enriquecidas con afinidad elemental (`fisico`, `fuego`, `agua`, `natura`, `sombra`, `luz`), indicador de criatura legendaria (`esLegendaria`), arquetipo táctico (`TANQUE`, `ATACANTE`, `VELOZ`, `EQUILIBRADO`), lore descriptivo y sus 4 movimientos tácticos ordenados por slot (`1..4`).
+- **Parámetros de consulta opcionales:** `?tipo=beast` (soporta los 6 tipos biológicos: `beast`, `monstrosity`, `undead`, `elemental`, `construct`, `plant`).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "total": 25,
+    "total": 30,
     "especies": [
       {
-        "slug": "lobo-gris",
-        "nombre": "Lobo Gris",
+        "slug": "lobo-estepario",
+        "keyExterna": "srd-2024_wolf",
+        "nombre": "Lobo Estepario",
         "tipo": "beast",
+        "elemento": "fisico",
         "challengeRating": 0.25,
-        "hpBase": 30,
-        "ataqueBase": 42,
-        "defensaBase": 58,
-        "velocidadBase": 50,
-        "tasaCaptura": 0.88,
-        "esEspecial": false
+        "hpBase": 34,
+        "ataqueBase": 39,
+        "defensaBase": 32,
+        "velocidadBase": 45,
+        "tasaCaptura": 0.85,
+        "esEspecial": false,
+        "esLegendaria": false,
+        "zona": {
+          "id": "ZON-01",
+          "nombre": "Praderas del Amanecer"
+        },
+        "descripcion": "Cazador en manada ágil y coordinado que recorre las praderas abiertas.",
+        "arquetipo": "VELOZ",
+        "movimientos": [
+          {
+            "slot": 1,
+            "nombre": "Mordisco",
+            "nombreOriginal": "Bite",
+            "tipoAccion": "Ataque melé",
+            "poder": 12,
+            "efecto": null
+          },
+          {
+            "slot": 2,
+            "nombre": "Acometida Ágil",
+            "nombreOriginal": null,
+            "tipoAccion": "Ataque veloz",
+            "poder": 14,
+            "efecto": "VEL_UP"
+          },
+          {
+            "slot": 3,
+            "nombre": "Aullido Estepario",
+            "nombreOriginal": null,
+            "tipoAccion": "Técnica de apoyo",
+            "poder": 10,
+            "efecto": "DEF_DOWN"
+          },
+          {
+            "slot": 4,
+            "nombre": "Furia de Manada",
+            "nombreOriginal": null,
+            "tipoAccion": "Furia táctica",
+            "poder": 24,
+            "efecto": "CRITICO"
+          }
+        ]
       }
     ]
   }
@@ -630,29 +990,67 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/especies/:slug`
 - **Módulo:** `M-CRI`.
-- **Descripción:** Ficha técnica detallada de una especie con sus movimientos disponibles.
+- **Descripción:** Ficha técnica táctica y detallada de una especie específica identificada por su slug (ej. `behir-abismo`, `remorhaz-glaciar`).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "slug": "lobo-gris",
-    "keyExterna": "srd-2024_wolf",
-    "nombre": "Lobo Gris",
-    "tipo": "beast",
-    "challengeRating": 0.25,
-    "hpBase": 30,
-    "ataqueBase": 42,
-    "defensaBase": 58,
-    "velocidadBase": 50,
-    "tasaCaptura": 0.88,
+    "slug": "behir-abismo",
+    "keyExterna": "srd-2024_behir",
+    "nombre": "Behir del Abismo",
+    "tipo": "monstrosity",
+    "elemento": "sombra",
+    "challengeRating": 11,
+    "hpBase": 94,
+    "ataqueBase": 94,
+    "defensaBase": 88,
+    "velocidadBase": 79,
+    "tasaCaptura": 0.15,
+    "esEspecial": true,
+    "esLegendaria": true,
+    "zona": {
+      "id": "ZON-05",
+      "nombre": "Abismo Ciego"
+    },
+    "descripcion": "Serpentina criatura colosal que domina las profundidades del abismo.",
+    "arquetipo": "ATACANTE",
     "movimientos": [
       {
-        "nombre": "Mordisco Feroz",
+        "slot": 1,
+        "nombre": "Descarga Eléctrica",
+        "nombreOriginal": "Lightning Breath",
+        "tipoAccion": "Ataque elemental",
+        "poder": 20,
+        "efecto": "PARALISIS"
+      },
+      {
+        "slot": 2,
+        "nombre": "Mordedura Titánica",
         "nombreOriginal": "Bite",
-        "poder": 5.5
+        "tipoAccion": "Ataque melé",
+        "poder": 24,
+        "efecto": "CRITICO"
+      },
+      {
+        "slot": 3,
+        "nombre": "Constricción Relámpago",
+        "nombreOriginal": "Constrict",
+        "tipoAccion": "Control físico",
+        "poder": 22,
+        "efecto": "ATURDIMIENTO"
+      },
+      {
+        "slot": 4,
+        "nombre": "Relámpago del Abismo",
+        "nombreOriginal": null,
+        "tipoAccion": "Furia legendaria",
+        "poder": 38,
+        "efecto": "SOBRECARGA_LEGENDARIA"
       }
     ]
   }
   ```
+- **Errores posibles:**
+  - `404 ESPECIE_NO_ENCONTRADA` ("No se encontró la especie solicitada en el compendio.").
 
 ---
 
@@ -660,23 +1058,220 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/historial`
 - **Módulo:** `M-HIS`.
-- **Descripción:** Consulta la lista cronológica de eventos relevantes del explorador.
+- **Descripción:** Consulta la bitácora transversal cronológica de crónicas del explorador autenticado, normalizada a 5 categorías canónicas (`COMBATE`, `CAPTURA`, `EXPLORACION`, `TIENDA`, `CURACION`), con soporte de paginación y filtrado por categoría en servidor.
+- **Parámetros de consulta opcionales:**
+  - `pagina`: Número de página (por defecto `1`).
+  - `limite`: Elementos por página (por defecto `20`, máximo `100`).
+  - `categoria`: Filtro por categoría canónica (`COMBATE`, `CAPTURA`, `EXPLORACION`, `TIENDA`, `CURACION`).
+  - `tipo`: Alias o filtro directo por tipo de evento registrado.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
+    "total": 45,
+    "pagina": 1,
+    "limite": 20,
     "eventos": [
       {
         "eventoId": "his-501",
         "tipo": "VICTORIA_COMBATE",
+        "categoria": "COMBATE",
         "descripcion": "Victoria contra Pico de Hacha (Nv. 2) en Praderas del Amanecer (+45 XP)",
-        "marcaTiempo": "2026-10-07T12:45:00.000Z"
+        "marcaTiempo": "2026-10-07T12:45:00.000Z",
+        "datosJson": { "monedas": 25, "xp": 45 }
       },
       {
         "eventoId": "his-502",
         "tipo": "CAPTURA",
+        "categoria": "CAPTURA",
         "descripcion": "Captura exitosa de Lobo Gris con Talismán Básico",
-        "marcaTiempo": "2026-10-07T12:42:00.000Z"
+        "marcaTiempo": "2026-10-07T12:42:00.000Z",
+        "datosJson": { "criaturaId": "cri-101" }
       }
     ]
   }
   ```
+- **Errores posibles:**
+  - `404 PERSONAJE_NO_ENCONTRADO` ("No se encontró un personaje activo para el usuario autenticado.").
+
+---
+
+### 2.13 Encuentros y combate táctico por turnos (`M-ENC` / `M-CBT`) (Subfase 10k)
+
+#### `GET /api/encuentros/activo`
+- **Módulo:** `M-ENC`.
+- **Descripción:** Reanuda el encuentro activo del explorador en sesión, entregando el estado táctico integral: afinidades elementales, multiplicador y etiqueta de ventaja elemental, barras de Resonancia ($0-100\%$), catálogo de estados alterados activos en ambos lados y estado de bloqueo de movimientos (`bloqueado: true` en el slot 4 si la resonancia aliada es $<100\%$).
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "estado": "EN_CURSO",
+    "turno": 2,
+    "esTurnoJugador": true,
+    "efectividadAliadaSobreRival": {
+      "multiplicador": 1.5,
+      "etiqueta": "VENTAJA"
+    },
+    "criaturaRival": {
+      "slug": "salamandra-roca",
+      "nombre": "Salamandra de Roca",
+      "nivel": 5,
+      "hpActual": 35,
+      "hpMaximo": 45,
+      "ataque": 18,
+      "defensa": 12,
+      "velocidad": 10,
+      "afinidad": "agua",
+      "resonancia": 24,
+      "esLegendaria": false,
+      "estados": [
+        { "codigo": "QUEMADURA", "turnosRestantes": 2, "valor": 5 }
+      ]
+    },
+    "criaturaAliada": {
+      "criaturaId": "cri-101",
+      "slug": "lobo-bosque",
+      "nombre": "Lobo del Bosque",
+      "nombreEspecie": "Lobo del Bosque",
+      "nivel": 5,
+      "hpActual": 42,
+      "hpMaximo": 50,
+      "ataque": 20,
+      "defensa": 15,
+      "velocidad": 14,
+      "afinidad": "natura",
+      "resonancia": 86,
+      "estados": [],
+      "experiencia": 1250,
+      "porcentajeXp": 45,
+      "xpSiguienteNivel": 1500,
+      "xpNivelActual": 1006,
+      "movimientos": [
+        { "nombre": "Arañazo", "poder": 10, "tipoAccion": "ATAQUE", "slot": 1, "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Liana", "poder": 20, "tipoAccion": "ATAQUE", "slot": 2, "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Esporas", "poder": 0, "tipoAccion": "ESTADO", "slot": 3, "efecto": "VENENO", "estadoAplicado": "VENENO", "bloqueado": false },
+        { "nombre": "Furia de la Selva", "poder": 60, "tipoAccion": "INSIGNIA", "slot": 4, "efecto": null, "estadoAplicado": null, "bloqueado": true }
+      ]
+    },
+    "bitacora": [
+      "¡Lobo del Bosque usó Liana causando 25 de daño!",
+      "Turno 1: ¡Un Salamandra de Roca salvaje (Nv. 5) está frente a ti!"
+    ]
+  }
+  ```
+- **Errores posibles:**
+  - `404 ENCUENTRO_NO_ENCONTRADO` ("No tienes ningún encuentro o combate activo en este momento.").
+
+#### `POST /api/combates/:id/acciones` y `POST /api/combate/atacar`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Despachador de acciones tácticas del turno (`ATACAR`, `RESONANCIA`, `HUIR`, `CAPTURAR`). Soporta ejecución del movimiento insignia (`RESONANCIA` o `movimientoIndice: 3`) previa validación de `resonancia === 100`, con reinicio inmediato a 0% tras el ataque. Incluye validación de concurrencia y serialización mediante `turnoEsperado`.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "tipoAccion": "ATACAR",
+    "movimientoIndice": 1,
+    "turnoEsperado": 2
+  }
+  ```
+- **Respuesta exitosa (`200 OK`):**
+  ```json
+  {
+    "turno": 2,
+    "accionJugador": {
+      "movimiento": "Liana",
+      "danoCausado": 22,
+      "hpRestanteRival": 23,
+      "efectividad": "VENTAJA",
+      "multiplicadorAfinidad": 1.5,
+      "danoAbsorbido": 0,
+      "estadoAplicado": null,
+      "perdioTurno": null,
+      "esInsignia": false
+    },
+    "accionRival": {
+      "movimiento": "Placaje",
+      "danoCausado": 8,
+      "hpRestanteAliado": 34,
+      "efectividad": "DESVENTAJA",
+      "multiplicadorAfinidad": 0.75,
+      "danoAbsorbido": 0,
+      "estadoAplicado": null,
+      "perdioTurno": null
+    },
+    "efectosFinDeTurno": [
+      {
+        "objetivo": "RIVAL",
+        "codigo": "QUEMADURA",
+        "dano": 5,
+        "hpRestante": 18
+      }
+    ],
+    "resonancia": {
+      "aliada": 94,
+      "rival": 32
+    },
+    "estados": {
+      "aliada": [],
+      "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }]
+    },
+    "mensajes": [
+      "¡Lobo del Bosque usó Liana causando 22 de daño! (¡Es súper efectivo!)",
+      "El rival respondió con Placaje causando 8 de daño.",
+      "Salamandra de Roca sufre 5 de daño por QUEMADURA."
+    ],
+    "estado": "EN_CURSO"
+  }
+  ```
+- **Errores posibles:**
+  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.").
+  - `400 ACCION_FUERA_DE_TURNO` ("No es el turno del jugador en este combate.").
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+
+#### `POST /api/combate/capturar`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Resuelve el intento probabilístico de captura aplicando $\times 1.25$ al multiplicador de estado si la criatura rival padece un estado alterado activo (`tieneEstadoAlterado`). Si la captura fracasa, el rival contraataca y resuelve el fin de turno con el motor determinista.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "itemCodigo": "talisman-basico",
+    "turnoEsperado": 2
+  }
+  ```
+- **Respuesta fallida (`200 OK` con `exito: false`):**
+  ```json
+  {
+    "exito": false,
+    "mensaje": "¡El talismán no logró contener a la criatura! Se ha roto.",
+    "encuentroId": "enc-401",
+    "estado": "EN_CURSO",
+    "contraataqueRival": {
+      "movimiento": "Placaje",
+      "danoCausado": 10,
+      "hpRestanteAliado": 32
+    },
+    "efectosFinDeTurno": [],
+    "resonancia": { "aliada": 16, "rival": 30 },
+    "estados": { "aliada": [], "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }] },
+    "mensajes": [
+      "¡El talismán no logró contener a la criatura! Se ha roto.",
+      "El rival respondió con Placaje causando 10 de daño."
+    ]
+  }
+  ```
+- **Errores posibles:**
+  - `400 ITEM_NO_DISPONIBLE` ("No posees este talismán en tu inventario.").
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+
+#### `POST /api/combate/huir`
+- **Módulo:** `M-CBT`.
+- **Descripción:** Evalúa la huida usando velocidades efectivas ($\text{vel} \times 0.60$ si sufre Escarcha, $\times 0.75$ si sufre Parálisis). Si fracasa, ejecuta contraataque rival determinista.
+- **Cuerpo de petición:**
+  ```json
+  {
+    "encuentroId": "enc-401",
+    "turnoEsperado": 2
+  }
+  ```
+- **Errores posibles:**
+  - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
+

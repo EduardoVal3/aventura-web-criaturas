@@ -306,4 +306,215 @@ describe('Sistema de captura de criaturas (Fase 7b)', () => {
       assert.strictEqual(criaturaActualizada.ordenEquipo, null);
     });
   });
+
+  describe('Sinergia de estados alterados en captura y contraataque táctico (Subfase 10k)', () => {
+    it('aplica multiplicadorEstado = 1.25 cuando el rival sufre un estado alterado activo (§2.2)', () => {
+      const probBase = calcularProbabilidadCaptura(0.5, 30, 60, 1.0, 1.0);
+      const probConEstado = calcularProbabilidadCaptura(0.5, 30, 60, 1.0, 1.25);
+
+      assert.strictEqual(probBase, 0.375);
+      assert.strictEqual(probConEstado, 0.46875);
+      assert.strictEqual(Math.round((probConEstado / probBase) * 100) / 100, 1.25);
+
+      // Clamp INV-02 superior
+      const probSaturada = calcularProbabilidadCaptura(0.9, 1, 100, 1.5, 1.25);
+      assert.strictEqual(probSaturada, 0.95);
+
+      // Clamp INV-02 inferior
+      const probMinima = calcularProbabilidadCaptura(0.01, 100, 100, 0.5, 1.25);
+      assert.strictEqual(probMinima, 0.05);
+    });
+
+    it('detecta estado activo en detalleJson del combate previo y modula probabilidad', async () => {
+      let combateRegistrado: any = null;
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRivalId: 'cri-rival-1',
+            criaturaRival: {
+              id: 'cri-rival-1',
+              nivel: 5,
+              hpActual: 30,
+              hpMaximo: 60,
+              especie: {
+                nombre: 'Víbora Glacial',
+                tasaCaptura: 0.5,
+                elemento: 'hielo',
+                movimientos: [],
+              },
+            },
+            combates: [
+              {
+                turno: 1,
+                detalleJson: {
+                  estadoBatalla: {
+                    turno: 1,
+                    aliada: { estados: [], inmunidades: [], resonancia: 0 },
+                    rival: {
+                      estados: [
+                        { codigo: 'QUEMADURA', turnosRestantes: 2, valor: 5 },
+                      ],
+                      inmunidades: [],
+                      resonancia: 10,
+                    },
+                  },
+                },
+              },
+            ],
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-1',
+            codigo: 'talisman-basico',
+            nombre: 'Talismán Básico',
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            inventarioPersonaje: {
+              findUnique: async () => ({ id: 'inv-1', cantidad: 1 }),
+              delete: async () => {},
+            },
+            combate: {
+              findFirst: async () => ({ turno: 1 }),
+              create: async (args: any) => {
+                combateRegistrado = args.data;
+              },
+            },
+            encuentro: { update: async () => {} },
+            criatura: {
+              count: async () => 1,
+              update: async (args: any) => ({
+                id: 'cri-rival-1',
+                ...args.data,
+                especie: { nombre: 'Víbora Glacial' },
+              }),
+            },
+            historial: { create: async () => {} },
+          };
+          return cb(txMock);
+        },
+      };
+
+      // probBase = 0.375, probConEstado (1.25) = 0.46875.
+      // Un valor de 0.40 tiene éxito con estado, pero fallaría sin él.
+      const gen = new GeneradorAleatorioFijo([0.4]);
+      const servicio = new CapturaService(prismaMock, {} as any, gen);
+
+      const res = await servicio.capturar('usr-1', 'enc-1', 'talisman-basico');
+      assert.strictEqual(res.exito, true);
+      assert.strictEqual(combateRegistrado.detalleJson.multiplicadorEstado, 1.25);
+    });
+
+    it('en fallo de captura resuelve el contraataque rival usando el motor táctico autoritativo', async () => {
+      let combateRegistrado: any = null;
+      let hpAliadaPersistido: number = -1;
+
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        encuentro: {
+          findUnique: async () => ({
+            id: 'enc-1',
+            personajeId: 'pj-1',
+            estado: 'EN_CURSO',
+            criaturaRivalId: 'cri-rival-1',
+            criaturaRival: {
+              id: 'cri-rival-1',
+              nivel: 5,
+              ataque: 20,
+              defensa: 15,
+              velocidad: 12,
+              hpActual: 50,
+              hpMaximo: 50,
+              especie: {
+                nombre: 'Oso Ígneo',
+                elemento: 'fuego',
+                tasaCaptura: 0.1,
+                movimientos: [
+                  {
+                    nombre: 'Garra Ardiente',
+                    poder: 25,
+                    categoria: 'FISICO',
+                    elemento: 'fuego',
+                    efecto: 'QUEMADURA',
+                  },
+                ],
+              },
+            },
+            combates: [],
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-1',
+            codigo: 'talisman-basico',
+            nombre: 'Talismán Básico',
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            inventarioPersonaje: {
+              findUnique: async () => ({ id: 'inv-1', cantidad: 1 }),
+              delete: async () => {},
+            },
+            combate: {
+              findFirst: async () => null,
+              create: async (args: any) => {
+                combateRegistrado = args.data;
+              },
+            },
+            criatura: {
+              findFirst: async () => ({
+                id: 'aliada-1',
+                nivel: 5,
+                ataque: 15,
+                defensa: 15,
+                velocidad: 10,
+                hpActual: 60,
+                hpMaximo: 60,
+                especie: {
+                  nombre: 'Guardián del Roble',
+                  elemento: 'planta',
+                  movimientos: [
+                    { nombre: 'Golpe', poder: 10, categoria: 'FISICO', elemento: 'planta' },
+                  ],
+                },
+              }),
+              update: async (args: any) => {
+                if (args.where.id === 'aliada-1') {
+                  hpAliadaPersistido = args.data.hpActual;
+                }
+              },
+              count: async () => 1,
+            },
+            encuentro: { update: async () => {} },
+            historial: { create: async () => {} },
+          };
+          return cb(txMock);
+        },
+      };
+
+      // Tirada 0.99 asegura fallo de captura
+      const genFallo = new GeneradorAleatorioFijo([0.99]);
+      const servicio = new CapturaService(prismaMock, {} as any, genFallo);
+
+      const res = await servicio.capturar('usr-1', 'enc-1', 'talisman-basico');
+
+      assert.strictEqual(res.exito, false);
+      assert.strictEqual(res.contraataqueRival !== null, true);
+      assert.strictEqual(res.contraataqueRival.movimiento, 'Garra Ardiente');
+      assert.strictEqual(res.contraataqueRival.danoCausado >= 1, true);
+      assert.strictEqual(hpAliadaPersistido < 60, true);
+      assert.strictEqual(combateRegistrado.detalleJson.estadoBatalla !== undefined, true);
+      assert.strictEqual(Array.isArray(res.mensajes), true);
+      assert.strictEqual(res.resonancia !== undefined, true);
+      assert.strictEqual(res.estados !== undefined, true);
+    });
+  });
 });
+

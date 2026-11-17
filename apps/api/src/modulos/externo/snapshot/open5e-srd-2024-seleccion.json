@@ -1,0 +1,3000 @@
+[
+  {
+    "key": "srd-2024_wolf",
+    "name": "Wolf",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 12,
+    "hit_points": 11,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_poisonous-snake",
+    "name": "Poisonous Snake",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.125,
+    "armor_class": 13,
+    "hit_points": 12,
+    "speed_all": {
+      "walk": 30
+    },
+    "actions": [
+      {
+        "name": "Ataque Canónico",
+        "attacks": [
+          {
+            "name": "Ataque",
+            "attack_type": "WEAPON",
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_deer",
+    "name": "Deer",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Medium",
+      "key": "medium"
+    },
+    "challenge_rating": 0,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 50,
+      "unit": "feet"
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 13,
+    "armor_detail": "natural armor",
+    "hit_points": 4,
+    "hit_dice": "1d8",
+    "experience_points": 0,
+    "ability_scores": {
+      "strength": 11,
+      "dexterity": 16,
+      "constitution": 11,
+      "intelligence": 2,
+      "wisdom": 14,
+      "charisma": 5
+    },
+    "modifiers": {
+      "strength": 0,
+      "dexterity": 3,
+      "constitution": 0,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -3
+    },
+    "initiative_bonus": 3,
+    "saving_throws": {
+      "strength": 0,
+      "dexterity": 3,
+      "constitution": 0,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -3
+    },
+    "saving_throws_all": {
+      "strength": 0,
+      "dexterity": 3,
+      "constitution": 0,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -3
+    },
+    "skill_bonuses": {
+      "perception": 4
+    },
+    "skill_bonuses_all": {
+      "acrobatics": 3,
+      "animal_handling": 2,
+      "arcana": -4,
+      "athletics": 0,
+      "deception": -3,
+      "history": -4,
+      "insight": 2,
+      "intimidation": -3,
+      "investigation": -4,
+      "medicine": 2,
+      "nature": -4,
+      "perception": 4,
+      "performance": -3,
+      "persuasion": -3,
+      "religion": -4,
+      "sleight_of_hand": 3,
+      "stealth": 3,
+      "survival": 2
+    },
+    "passive_perception": 14,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": 60,
+    "blindsight_range": null,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Ram",
+        "desc": "Melee Attack Roll: +2, reach 5 ft. 2 (1d4) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Ram attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 2,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": null,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [
+      {
+        "name": "Agile",
+        "desc": "The deer doesn't provoke an Opportunity Attack when it moves out of an enemy's reach."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_hawk",
+    "name": "Hawk",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Small",
+      "key": "small"
+    },
+    "challenge_rating": 0,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 10,
+      "unit": "feet",
+      "fly": 60
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 10,
+      "crawl": 5,
+      "hover": false,
+      "fly": 60,
+      "burrow": 0,
+      "climb": 5,
+      "swim": 5
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 13,
+    "armor_detail": "natural armor",
+    "hit_points": 1,
+    "hit_dice": "1d4 - 1",
+    "experience_points": 0,
+    "ability_scores": {
+      "strength": 5,
+      "dexterity": 16,
+      "constitution": 8,
+      "intelligence": 2,
+      "wisdom": 14,
+      "charisma": 6
+    },
+    "modifiers": {
+      "strength": -3,
+      "dexterity": 3,
+      "constitution": -1,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -2
+    },
+    "initiative_bonus": 3,
+    "saving_throws": {
+      "strength": -3,
+      "dexterity": 3,
+      "constitution": -1,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -2
+    },
+    "saving_throws_all": {
+      "strength": -3,
+      "dexterity": 3,
+      "constitution": -1,
+      "intelligence": -4,
+      "wisdom": 2,
+      "charisma": -2
+    },
+    "skill_bonuses": {
+      "perception": 6
+    },
+    "skill_bonuses_all": {
+      "acrobatics": 3,
+      "animal_handling": 2,
+      "arcana": -4,
+      "athletics": -3,
+      "deception": -2,
+      "history": -4,
+      "insight": 2,
+      "intimidation": -2,
+      "investigation": -4,
+      "medicine": 2,
+      "nature": -4,
+      "perception": 6,
+      "performance": -2,
+      "persuasion": -2,
+      "religion": -4,
+      "sleight_of_hand": 3,
+      "stealth": 3,
+      "survival": 2
+    },
+    "passive_perception": 16,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": null,
+    "blindsight_range": null,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Talons",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 1 Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_black-bear",
+    "name": "Black Bear",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 30
+    },
+    "armor_class": 11,
+    "hit_points": 19,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The bear makes two Rend attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_crab",
+    "name": "Crab",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Small",
+      "key": "small"
+    },
+    "challenge_rating": 0,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 20,
+      "unit": "feet",
+      "swim": 20
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 20
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 11,
+    "armor_detail": "natural armor",
+    "hit_points": 3,
+    "hit_dice": "1d4 + 1",
+    "experience_points": 0,
+    "ability_scores": {
+      "strength": 6,
+      "dexterity": 11,
+      "constitution": 12,
+      "intelligence": 1,
+      "wisdom": 8,
+      "charisma": 2
+    },
+    "modifiers": {
+      "strength": -2,
+      "dexterity": 0,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "initiative_bonus": 0,
+    "saving_throws": {
+      "strength": -2,
+      "dexterity": 0,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "saving_throws_all": {
+      "strength": -2,
+      "dexterity": 0,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "skill_bonuses": {
+      "stealth": 2
+    },
+    "skill_bonuses_all": {
+      "acrobatics": 0,
+      "animal_handling": -1,
+      "arcana": -5,
+      "athletics": -2,
+      "deception": -4,
+      "history": -5,
+      "insight": -1,
+      "intimidation": -4,
+      "investigation": -5,
+      "medicine": -1,
+      "nature": -5,
+      "perception": -1,
+      "performance": -4,
+      "persuasion": -4,
+      "religion": -5,
+      "sleight_of_hand": 0,
+      "stealth": 2,
+      "survival": -1
+    },
+    "passive_perception": 9,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": null,
+    "blindsight_range": 30,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +2, reach 5 ft. 1 Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [
+      {
+        "name": "Amphibious",
+        "desc": "The crab can breathe air and water."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_giant-eel",
+    "name": "Giant Eel",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.5,
+    "armor_class": 13,
+    "hit_points": 18,
+    "speed_all": {
+      "walk": 30
+    },
+    "actions": [
+      {
+        "name": "Ataque Canónico",
+        "attacks": [
+          {
+            "name": "Ataque",
+            "attack_type": "WEAPON",
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_plesiosaurus",
+    "name": "Plesiosaurus",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 40
+    },
+    "armor_class": 13,
+    "hit_points": 68,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +6, reach 10 ft. 11 (2d6 + 4) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_reef-shark",
+    "name": "Reef Shark",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Medium",
+      "key": "medium"
+    },
+    "challenge_rating": 0.5,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 5,
+      "unit": "feet",
+      "swim": 30
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 5,
+      "crawl": 2,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 2,
+      "swim": 30
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 12,
+    "armor_detail": "natural armor",
+    "hit_points": 22,
+    "hit_dice": "4d8 + 4",
+    "experience_points": 100,
+    "ability_scores": {
+      "strength": 14,
+      "dexterity": 15,
+      "constitution": 13,
+      "intelligence": 1,
+      "wisdom": 10,
+      "charisma": 4
+    },
+    "modifiers": {
+      "strength": 2,
+      "dexterity": 2,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "initiative_bonus": 2,
+    "saving_throws": {
+      "strength": 2,
+      "dexterity": 2,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "saving_throws_all": {
+      "strength": 2,
+      "dexterity": 2,
+      "constitution": 1,
+      "intelligence": -5,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "skill_bonuses": {
+      "perception": 2
+    },
+    "skill_bonuses_all": {
+      "acrobatics": 2,
+      "animal_handling": 0,
+      "arcana": -5,
+      "athletics": 2,
+      "deception": -3,
+      "history": -5,
+      "insight": 0,
+      "intimidation": -3,
+      "investigation": -5,
+      "medicine": 0,
+      "nature": -5,
+      "perception": 2,
+      "performance": -3,
+      "persuasion": -3,
+      "religion": -5,
+      "sleight_of_hand": 2,
+      "stealth": 2,
+      "survival": 0
+    },
+    "passive_perception": 12,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": null,
+    "blindsight_range": 30,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 7 (2d4 + 2) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D4",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [
+      {
+        "name": "Pack Tactics",
+        "desc": "The shark has Advantage on an attack roll against a creature if at least one of the shark's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition."
+      },
+      {
+        "name": "Water Breathing",
+        "desc": "The shark can breathe only underwater."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_giant-sea-horse",
+    "name": "Giant Sea Horse",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 2,
+    "armor_class": 13,
+    "hit_points": 40,
+    "speed_all": {
+      "walk": 30
+    },
+    "actions": [
+      {
+        "name": "Ataque Canónico",
+        "attacks": [
+          {
+            "name": "Ataque",
+            "attack_type": "WEAPON",
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_giant-spider",
+    "name": "Giant Spider",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Large",
+      "key": "large"
+    },
+    "challenge_rating": 1,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 30,
+      "unit": "feet",
+      "climb": 30
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 15
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 14,
+    "armor_detail": "natural armor",
+    "hit_points": 26,
+    "hit_dice": "4d10 + 4",
+    "experience_points": 200,
+    "ability_scores": {
+      "strength": 14,
+      "dexterity": 16,
+      "constitution": 12,
+      "intelligence": 2,
+      "wisdom": 11,
+      "charisma": 4
+    },
+    "modifiers": {
+      "strength": 2,
+      "dexterity": 3,
+      "constitution": 1,
+      "intelligence": -4,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "initiative_bonus": 3,
+    "saving_throws": {
+      "strength": 2,
+      "dexterity": 3,
+      "constitution": 1,
+      "intelligence": -4,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "saving_throws_all": {
+      "strength": 2,
+      "dexterity": 3,
+      "constitution": 1,
+      "intelligence": -4,
+      "wisdom": 0,
+      "charisma": -3
+    },
+    "skill_bonuses": {
+      "perception": 4,
+      "stealth": 7
+    },
+    "skill_bonuses_all": {
+      "acrobatics": 3,
+      "animal_handling": 0,
+      "arcana": -4,
+      "athletics": 2,
+      "deception": -3,
+      "history": -4,
+      "insight": 0,
+      "intimidation": -3,
+      "investigation": -4,
+      "medicine": 0,
+      "nature": -4,
+      "perception": 4,
+      "performance": -3,
+      "persuasion": -3,
+      "religion": -4,
+      "sleight_of_hand": 3,
+      "stealth": 7,
+      "survival": 0
+    },
+    "passive_perception": 14,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": 60,
+    "blindsight_range": null,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 7 (1d8 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Web",
+        "desc": "Dexterity Saving Throw: DC 13, one creature the spider can see within 60 feet. Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage).",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      }
+    ],
+    "traits": [
+      {
+        "name": "Spider Climb",
+        "desc": "The spider can climb difficult surfaces, including along ceilings, without needing to make an ability check."
+      },
+      {
+        "name": "Web Walker",
+        "desc": "The spider ignores movement restrictions caused by webs, and it knows the location of any other creature in contact with the same web."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_boar",
+    "name": "Boar",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 11,
+    "hit_points": 13,
+    "actions": [
+      {
+        "name": "Gore",
+        "desc": "Melee Attack Roll: +3, reach 5 ft. 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature and the boar moved 20+ feet straight toward it immediately before the hit, the target takes an extra 3 (1d6) Piercing damage and has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Gore attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 3,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 1,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_basilisk",
+    "name": "Basilisk",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 15,
+    "hit_points": 52,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 10 (2d6 + 3) Piercing damage plus 7 (2d6) Poison damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Petrifying Gaze (Recharge 4-6)",
+        "desc": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If the basilisk sees its reflection within the Cone, the basilisk must make this save. First Failure The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure The target has the Petrified condition instead of the Restrained condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE",
+          "param": 4
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_awakened-tree",
+    "name": "Awakened Tree",
+    "type": {
+      "name": "Plant",
+      "key": "plant"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 13,
+    "hit_points": 59,
+    "actions": [
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +6, reach 10 ft. 13 (2d8 + 4) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_cockatrice",
+    "name": "Cockatrice",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 0.5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 20,
+      "crawl": 10,
+      "hover": false,
+      "fly": 40,
+      "burrow": 0,
+      "climb": 10,
+      "swim": 10
+    },
+    "armor_class": 11,
+    "hit_points": 22,
+    "actions": [
+      {
+        "name": "Petrifying Bite",
+        "desc": "Melee Attack Roll: +3, reach 5 ft. 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure The target has the Petrified condition, instead of the Restrained condition, for 24 hours.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Petrifying Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 3,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D4",
+            "damage_bonus": 1,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_gargoyle",
+    "name": "Gargoyle",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 2,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 60,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 15,
+    "hit_points": 67,
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 7 (2d4 + 2) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D4",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The gargoyle makes two Claw attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_skeleton",
+    "name": "Skeleton",
+    "type": {
+      "name": "Undead",
+      "key": "undead"
+    },
+    "challenge_rating": 0.25,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 14,
+    "hit_points": 13,
+    "actions": [
+      {
+        "name": "Shortbow",
+        "desc": "Ranged Attack Roll: +5, range 80/320 ft. 6 (1d6 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Shortbow attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": null,
+            "range": 80,
+            "long_range": 320,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Shortsword",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 6 (1d6 + 3) Piercing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Shortsword attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_giant-scorpion",
+    "name": "Giant Scorpion",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "size": {
+      "name": "Large",
+      "key": "large"
+    },
+    "challenge_rating": 3,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 40,
+      "unit": "feet"
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "category": "Animals",
+    "subcategory": null,
+    "alignment": "unaligned",
+    "languages": {
+      "as_string": "",
+      "data": []
+    },
+    "armor_class": 15,
+    "armor_detail": "natural armor",
+    "hit_points": 52,
+    "hit_dice": "7d10 + 14",
+    "experience_points": 700,
+    "ability_scores": {
+      "strength": 16,
+      "dexterity": 13,
+      "constitution": 15,
+      "intelligence": 1,
+      "wisdom": 9,
+      "charisma": 3
+    },
+    "modifiers": {
+      "strength": 3,
+      "dexterity": 1,
+      "constitution": 2,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "initiative_bonus": 1,
+    "saving_throws": {
+      "strength": 3,
+      "dexterity": 1,
+      "constitution": 2,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "saving_throws_all": {
+      "strength": 3,
+      "dexterity": 1,
+      "constitution": 2,
+      "intelligence": -5,
+      "wisdom": -1,
+      "charisma": -4
+    },
+    "skill_bonuses": {},
+    "skill_bonuses_all": {
+      "acrobatics": 1,
+      "animal_handling": -1,
+      "arcana": -5,
+      "athletics": 3,
+      "deception": -4,
+      "history": -5,
+      "insight": -1,
+      "intimidation": -4,
+      "investigation": -5,
+      "medicine": -1,
+      "nature": -5,
+      "perception": -1,
+      "performance": -4,
+      "persuasion": -4,
+      "religion": -5,
+      "sleight_of_hand": 1,
+      "stealth": 1,
+      "survival": -1
+    },
+    "passive_perception": 9,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "",
+      "damage_immunities": [],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": null,
+    "blindsight_range": 60,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 13) from one of two claws.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The scorpion makes two Claw attacks and one Sting attack.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Sting",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 7 (1d8 + 3) Piercing damage plus 11 (2d10) Poison damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Sting attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D8",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_specter",
+    "name": "Specter",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Undead",
+      "key": "undead"
+    },
+    "size": {
+      "name": "Medium",
+      "key": "medium"
+    },
+    "challenge_rating": 1,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 30,
+      "unit": "feet",
+      "fly": 50,
+      "hover": true
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": true,
+      "fly": 50,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "category": "Monsters",
+    "subcategory": null,
+    "alignment": "chaotic evil",
+    "languages": {
+      "as_string": "Understands Common plus one other language but can't speak",
+      "data": [
+        {
+          "name": "Common",
+          "key": "common",
+          "desc": "Typical speakers are Humans."
+        }
+      ]
+    },
+    "armor_class": 12,
+    "armor_detail": "natural armor",
+    "hit_points": 22,
+    "hit_dice": "5d8",
+    "experience_points": 200,
+    "ability_scores": {
+      "strength": 1,
+      "dexterity": 14,
+      "constitution": 11,
+      "intelligence": 10,
+      "wisdom": 10,
+      "charisma": 11
+    },
+    "modifiers": {
+      "strength": -5,
+      "dexterity": 2,
+      "constitution": 0,
+      "intelligence": 0,
+      "wisdom": 0,
+      "charisma": 0
+    },
+    "initiative_bonus": 2,
+    "saving_throws": {
+      "strength": -5,
+      "dexterity": 2,
+      "constitution": 0,
+      "intelligence": 0,
+      "wisdom": 0,
+      "charisma": 0
+    },
+    "saving_throws_all": {
+      "strength": -5,
+      "dexterity": 2,
+      "constitution": 0,
+      "intelligence": 0,
+      "wisdom": 0,
+      "charisma": 0
+    },
+    "skill_bonuses": {},
+    "skill_bonuses_all": {
+      "acrobatics": 2,
+      "animal_handling": 0,
+      "arcana": 0,
+      "athletics": -5,
+      "deception": 0,
+      "history": 0,
+      "insight": 0,
+      "intimidation": 0,
+      "investigation": 0,
+      "medicine": 0,
+      "nature": 0,
+      "perception": 0,
+      "performance": 0,
+      "persuasion": 0,
+      "religion": 0,
+      "sleight_of_hand": 2,
+      "stealth": 2,
+      "survival": 0
+    },
+    "passive_perception": 10,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "necrotic, poison",
+      "damage_immunities": [
+        {
+          "name": "Necrotic",
+          "key": "necrotic"
+        },
+        {
+          "name": "Poison",
+          "key": "poison"
+        }
+      ],
+      "damage_resistances_display": "acid, cold, fire, lightning, thunder",
+      "damage_resistances": [
+        {
+          "name": "Acid",
+          "key": "acid"
+        },
+        {
+          "name": "Cold",
+          "key": "cold"
+        },
+        {
+          "name": "Fire",
+          "key": "fire"
+        },
+        {
+          "name": "Lightning",
+          "key": "lightning"
+        },
+        {
+          "name": "Thunder",
+          "key": "thunder"
+        }
+      ],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "charmed, exhaustion, grappled, paralyzed, petrified, poisoned, prone, restrained, unconscious",
+      "condition_immunities": [
+        {
+          "name": "Charmed",
+          "key": "charmed"
+        },
+        {
+          "name": "Exhaustion",
+          "key": "exhaustion"
+        },
+        {
+          "name": "Grappled",
+          "key": "grappled"
+        },
+        {
+          "name": "Paralyzed",
+          "key": "paralyzed"
+        },
+        {
+          "name": "Petrified",
+          "key": "petrified"
+        },
+        {
+          "name": "Poisoned",
+          "key": "poisoned"
+        },
+        {
+          "name": "Prone",
+          "key": "prone"
+        },
+        {
+          "name": "Restrained",
+          "key": "restrained"
+        },
+        {
+          "name": "Unconscious",
+          "key": "unconscious"
+        }
+      ]
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": 60,
+    "blindsight_range": null,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Life Drain",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 7 (2d6) Necrotic damage. If the target is a creature, its Hit Point maximum decreases by an amount equal to the damage taken.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Life Drain attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": null,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Necrotic",
+              "key": "necrotic"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [
+      {
+        "name": "Incorporeal Movement",
+        "desc": "The specter can move through other creatures and objects as if they were Difficult Terrain. It takes 5 (1d10) Force damage if it ends its turn inside an object."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "desc": "While in sunlight, the specter has Disadvantage on ability checks and attack rolls."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_animated-armor",
+    "name": "Animated Armor",
+    "type": {
+      "name": "Construct",
+      "key": "construct"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 25,
+      "crawl": 12,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 12,
+      "swim": 12
+    },
+    "armor_class": 18,
+    "hit_points": 33,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The armor makes two Slam attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +4, reach 5 ft. 5 (1d6 + 2) Bludgeoning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 4,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_fire-elemental",
+    "name": "Fire Elemental",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 13,
+    "hit_points": 93,
+    "actions": [
+      {
+        "name": "Burn",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 10 (2d6 + 3) Fire damage. If the target is a creature or a flammable object, it starts burning.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Burn attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Fire",
+              "key": "fire"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The elemental makes two Burn attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_fire-snake",
+    "name": "Fire Snake",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 4,
+    "armor_class": 13,
+    "hit_points": 70,
+    "speed_all": {
+      "walk": 30
+    },
+    "actions": [
+      {
+        "name": "Ataque Canónico",
+        "attacks": [
+          {
+            "name": "Ataque",
+            "attack_type": "WEAPON",
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_nightmare",
+    "name": "Nightmare",
+    "document": {
+      "name": "System Reference Document 5.2",
+      "key": "srd-2024",
+      "type": "SOURCE",
+      "display_name": "5e 2024 Rules",
+      "publisher": {
+        "name": "Wizards of the Coast",
+        "key": "wizards-of-the-coast"
+      },
+      "gamesystem": {
+        "name": "5th Edition 2024",
+        "key": "5e-2024"
+      },
+      "permalink": "https://dnd.wizards.com/resources/systems-reference-document"
+    },
+    "type": {
+      "name": "Fiend",
+      "key": "fiend"
+    },
+    "size": {
+      "name": "Large",
+      "key": "large"
+    },
+    "challenge_rating": 3,
+    "proficiency_bonus": null,
+    "speed": {
+      "walk": 60,
+      "unit": "feet",
+      "fly": 90,
+      "hover": true
+    },
+    "speed_all": {
+      "unit": "feet",
+      "walk": 60,
+      "crawl": 30,
+      "hover": true,
+      "fly": 90,
+      "burrow": 0,
+      "climb": 30,
+      "swim": 30
+    },
+    "category": "Monsters",
+    "subcategory": null,
+    "alignment": "neutral evil",
+    "languages": {
+      "as_string": "Understands Abyssal, Common, And Infernal but can't speak",
+      "data": [
+        {
+          "name": "Abyssal",
+          "key": "abyssal",
+          "desc": "Typical speakers are demons."
+        },
+        {
+          "name": "Common",
+          "key": "common",
+          "desc": "Typical speakers are Humans."
+        },
+        {
+          "name": "Infernal",
+          "key": "infernal",
+          "desc": "Typical speakers are devils."
+        }
+      ]
+    },
+    "armor_class": 13,
+    "armor_detail": "natural armor",
+    "hit_points": 68,
+    "hit_dice": "8d10 + 24",
+    "experience_points": 700,
+    "ability_scores": {
+      "strength": 18,
+      "dexterity": 15,
+      "constitution": 16,
+      "intelligence": 10,
+      "wisdom": 13,
+      "charisma": 15
+    },
+    "modifiers": {
+      "strength": 4,
+      "dexterity": 2,
+      "constitution": 3,
+      "intelligence": 0,
+      "wisdom": 1,
+      "charisma": 2
+    },
+    "initiative_bonus": 2,
+    "saving_throws": {
+      "strength": 4,
+      "dexterity": 2,
+      "constitution": 3,
+      "intelligence": 0,
+      "wisdom": 1,
+      "charisma": 2
+    },
+    "saving_throws_all": {
+      "strength": 4,
+      "dexterity": 2,
+      "constitution": 3,
+      "intelligence": 0,
+      "wisdom": 1,
+      "charisma": 2
+    },
+    "skill_bonuses": {},
+    "skill_bonuses_all": {
+      "acrobatics": 2,
+      "animal_handling": 1,
+      "arcana": 0,
+      "athletics": 4,
+      "deception": 2,
+      "history": 0,
+      "insight": 1,
+      "intimidation": 2,
+      "investigation": 0,
+      "medicine": 1,
+      "nature": 0,
+      "perception": 1,
+      "performance": 2,
+      "persuasion": 2,
+      "religion": 0,
+      "sleight_of_hand": 2,
+      "stealth": 2,
+      "survival": 1
+    },
+    "passive_perception": 11,
+    "resistances_and_immunities": {
+      "damage_immunities_display": "fire",
+      "damage_immunities": [
+        {
+          "name": "Fire",
+          "key": "fire"
+        }
+      ],
+      "damage_resistances_display": "",
+      "damage_resistances": [],
+      "damage_vulnerabilities_display": "",
+      "damage_vulnerabilities": [],
+      "condition_immunities_display": "",
+      "condition_immunities": []
+    },
+    "normal_sight_range": 10560,
+    "darkvision_range": null,
+    "blindsight_range": null,
+    "tremorsense_range": null,
+    "truesight_range": null,
+    "actions": [
+      {
+        "name": "Ethereal Stride",
+        "desc": "The nightmare and up to three willing creatures within 5 feet of it teleport to the Ethereal Plane from the Material Plane or vice versa.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Hooves",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 13 (2d8 + 4) Bludgeoning damage plus 10 (3d6) Fire damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Hooves attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ],
+    "traits": [
+      {
+        "name": "Confer Fire Resistance",
+        "desc": "The nightmare can grant Resistance to Fire damage to a rider while it is on the nightmare."
+      },
+      {
+        "name": "Illumination",
+        "desc": "The nightmare sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet."
+      }
+    ],
+    "creaturesets": [],
+    "environments": [],
+    "illustration": null,
+    "crossreferences": {
+      "to": []
+    }
+  },
+  {
+    "key": "srd-2024_chimera",
+    "name": "Chimera",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 6,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 60,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 15
+    },
+    "armor_class": 14,
+    "hit_points": 114,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 11 (2d6 + 4) Piercing damage, or 18 (4d6 + 4) Piercing damage if the chimera had Advantage on the attack roll.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Claw",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 7 (1d6 + 4) Slashing damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Claw attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Fire Breath",
+        "desc": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 4,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The chimera makes one Ram attack, one Bite attack, and one Claw attack. It can replace the Claw attack with a use of Fire Breath if available.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Ram",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 10 (1d12 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Ram attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 1,
+            "damage_die_type": "D12",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 3,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_behir",
+    "name": "Behir",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 11,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 50,
+      "swim": 25
+    },
+    "armor_class": 17,
+    "hit_points": 168,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +10, reach 10 ft. 19 (2d12 + 6) Piercing damage plus 11 (2d10) Lightning damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 10,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D12",
+            "damage_bonus": 6,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Constrict",
+        "desc": "Strength Saving Throw: DC 18, one Large or smaller creature the behir can see within 5 feet. Failure: 28 (5d8 + 6) Bludgeoning damage. The target has the Grappled condition (escape DC 16), and it has the Restrained condition until the grapple ends.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Lightning Breath",
+        "desc": "Dexterity Saving Throw: DC 16, each creature in a 90-foot-long, 5-foot-wide Line. Failure: 66 (12d10) Lightning damage. Success: Half damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 3,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      },
+      {
+        "name": "Multiattack",
+        "desc": "The behir makes one Bite attack and uses Constrict.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Swallow",
+        "desc": "Dexterity Saving Throw: DC 18, one Large or smaller creature Grappled by the behir (the behir can have only one creature swallowed at a time). Failure: The behir swallows the target, which is no longer Grappled. While swallowed, a creature has the Blinded and Restrained conditions, has Cover|XPHB|Total Cover against attacks and other effects outside the behir, and takes 21 (6d6) Acid damage at the start of each of the behir's turns. If the behir takes 30 damage or more on a single turn from the swallowed creature, the behir must succeed on a DC 14 Constitution saving throw at the end of that turn or regurgitate the creature, which falls in a space within 10 feet of the behir and has the Prone condition. If the behir dies, a swallowed creature is no longer Restrained and can escape from the corpse by using 15 feet of movement, exiting Prone.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_yeti",
+    "name": "Yeti",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "armor_class": 13,
+    "hit_points": 55,
+    "speed_all": {
+      "walk": 30
+    },
+    "actions": [
+      {
+        "name": "Ataque Canónico",
+        "attacks": [
+          {
+            "name": "Ataque",
+            "attack_type": "WEAPON",
+            "damage_die_count": 1,
+            "damage_die_type": "D6",
+            "damage_bonus": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_winter-wolf",
+    "name": "Winter Wolf",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 3,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 50,
+      "crawl": 25,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 25,
+      "swim": 25
+    },
+    "armor_class": 13,
+    "hit_points": 75,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +6, reach 5 ft. 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 6,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Cold Breath",
+        "desc": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 5
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_water-elemental",
+    "name": "Water Elemental",
+    "type": {
+      "name": "Elemental",
+      "key": "elemental"
+    },
+    "challenge_rating": 5,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 30,
+      "crawl": 15,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 15,
+      "swim": 90
+    },
+    "armor_class": 14,
+    "hit_points": 114,
+    "actions": [
+      {
+        "name": "Multiattack",
+        "desc": "The elemental makes two Slam attacks.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Slam",
+        "desc": "Melee Attack Roll: +7, reach 5 ft. 13 (2d8 + 4) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Slam attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 7,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D8",
+            "damage_bonus": 4,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Bludgeoning",
+              "key": "bludgeoning"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 1,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Whelm",
+        "desc": "Strength Saving Throw: DC 15, each creature in the elemental's space. Failure: 22 (4d8 + 4) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental's turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm. As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check. Success: Half damage only.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "ACTION",
+        "order_in_statblock": 2,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": {
+          "type": "RECHARGE_ON_ROLL",
+          "param": 4
+        }
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_tiger",
+    "name": "Tiger",
+    "type": {
+      "name": "Beast",
+      "key": "beast"
+    },
+    "challenge_rating": 1,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 0,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 13,
+    "hit_points": 30,
+    "actions": [
+      {
+        "name": "Rend",
+        "desc": "Melee Attack Roll: +5, reach 5 ft. 10 (2d6 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Rend attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 5,
+            "reach": 5,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D6",
+            "damage_bonus": 3,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Slashing",
+              "key": "slashing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Nimble Escape",
+        "desc": "The tiger takes the Disengage or Hide action.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  },
+  {
+    "key": "srd-2024_remorhaz",
+    "name": "Remorhaz",
+    "type": {
+      "name": "Monstrosity",
+      "key": "monstrosity"
+    },
+    "challenge_rating": 11,
+    "speed_all": {
+      "unit": "feet",
+      "walk": 40,
+      "crawl": 20,
+      "hover": false,
+      "fly": 0,
+      "burrow": 30,
+      "climb": 20,
+      "swim": 20
+    },
+    "armor_class": 17,
+    "hit_points": 195,
+    "actions": [
+      {
+        "name": "Bite",
+        "desc": "Melee Attack Roll: +11, reach 10 ft. 18 (2d10 + 7) Piercing damage plus 14 (4d6) Fire damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 17), and it has the Restrained condition until the grapple ends.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [
+          {
+            "name": "Bite attack",
+            "attack_type": "WEAPON",
+            "to_hit_mod": 11,
+            "reach": 10,
+            "range": null,
+            "long_range": null,
+            "target_creature_only": false,
+            "damage_die_count": 2,
+            "damage_die_type": "D10",
+            "damage_bonus": 7,
+            "damage_type": null,
+            "extra_damage_die_count": null,
+            "extra_damage_die_type": null,
+            "extra_damage_bonus": null,
+            "extra_damage_type": {
+              "name": "Piercing",
+              "key": "piercing"
+            },
+            "distance_unit": "feet"
+          }
+        ],
+        "action_type": "ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": 1,
+        "limited_to_form": null,
+        "usage_limits": null
+      },
+      {
+        "name": "Swallow",
+        "desc": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the remorhaz (it can have up to two creatures swallowed at a time). Failure: The target is swallowed by the remorhaz, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, it has Cover|XPHB|Total Cover against attacks and other effects outside the remorhaz, and it takes 10 (3d6) Acid damage plus 10 (3d6) Fire damage at the start of each of the remorhaz's turns. If the remorhaz takes 30 damage or more on a single turn from a creature inside it, the remorhaz must succeed on a DC 15 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the remorhaz and has the Prone condition. If the remorhaz dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse by using 15 feet of movement, exiting Prone.",
+        "crossreferences": {
+          "to": []
+        },
+        "attacks": [],
+        "action_type": "BONUS_ACTION",
+        "order_in_statblock": 0,
+        "legendary_action_cost": null,
+        "limited_to_form": null,
+        "usage_limits": null
+      }
+    ]
+  }
+]

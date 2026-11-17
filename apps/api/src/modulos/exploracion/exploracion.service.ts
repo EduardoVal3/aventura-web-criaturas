@@ -9,6 +9,7 @@ import { PrismaService } from '../../comun/prisma/prisma.service';
 import { HistorialService } from '../historial/historial.service';
 import { SelectorPonderado } from '../../comun/azar/selector-ponderado.util';
 import { GeneradorAleatorio, GeneradorAleatorioNativo } from '../../comun/azar/generador-aleatorio.interface';
+import { calcularXpRequerida, ProgresoService } from '../progreso/progreso.service';
 
 @Injectable()
 export class ExploracionService {
@@ -18,6 +19,7 @@ export class ExploracionService {
     private readonly prisma: PrismaService,
     private readonly historialService: HistorialService,
     @Optional() generador?: GeneradorAleatorio,
+    @Optional() private readonly progresoService?: ProgresoService,
   ) {
     this.generador = generador ?? new GeneradorAleatorioNativo();
   }
@@ -88,18 +90,70 @@ export class ExploracionService {
     );
     const tipoEventoSeleccionado = selectorEvento.seleccionar();
 
-    // 3. RESOLUCIÓN SEGÚN EL TIPO DE EVENTO SORTEADO
+    // 3. CONSULTA DE PROGRESO DE ZONA ACTUAL
+    const registroZona = await this.prisma.zonaDesbloqueada.findUnique({
+      where: {
+        personajeId_zonaId: {
+          personajeId: personaje.id,
+          zonaId: zona.id,
+        },
+      },
+    });
+
+    const progresoActual = registroZona?.progreso ?? 0;
+    let nuevoProgreso = progresoActual;
+
+    // Solo se incrementa el progreso inmediato en la exploración si NO es un encuentro con criatura
+    // (en los encuentros, el avance de la zona se gana al resolver con victoria o captura el combate).
+    let zonasRecienDesbloqueadas: string[] = [];
+    if (tipoEventoSeleccionado !== 'ENCUENTRO') {
+      nuevoProgreso = Math.min(100, progresoActual + 20);
+
+      await this.prisma.zonaDesbloqueada.upsert({
+        where: {
+          personajeId_zonaId: {
+            personajeId: personaje.id,
+            zonaId: zona.id,
+          },
+        },
+        update: { progreso: nuevoProgreso },
+        create: {
+          personajeId: personaje.id,
+          zonaId: zona.id,
+          progreso: nuevoProgreso,
+        },
+      });
+
+      if (this.progresoService && nuevoProgreso > progresoActual) {
+        zonasRecienDesbloqueadas = await this.progresoService.evaluarDesbloqueosAutomaticos(
+          this.prisma as any,
+          personaje.id,
+        );
+      }
+    }
+
+    // 4. RESOLUCIÓN SEGÚN EL TIPO DE EVENTO SORTEADO
+    let resultadoExploracion: any;
     switch (tipoEventoSeleccionado) {
       case 'ENCUENTRO':
-        return this.resolverEncuentro(personaje, zona);
+        resultadoExploracion = await this.resolverEncuentro(personaje, zona);
+        break;
 
       case 'OBJETO':
-        return this.resolverObjeto(personaje, zona);
+        resultadoExploracion = await this.resolverObjeto(personaje, zona);
+        break;
 
       case 'SIN_EVENTO':
       default:
-        return this.resolverSinEvento(personaje, zona);
+        resultadoExploracion = await this.resolverSinEvento(personaje, zona);
+        break;
     }
+
+    return {
+      ...resultadoExploracion,
+      progresoZona: nuevoProgreso,
+      ...(zonasRecienDesbloqueadas.length > 0 ? { zonasRecienDesbloqueadas } : {}),
+    };
   }
 
   /**
@@ -149,7 +203,7 @@ export class ExploracionService {
           especieId: especie.id,
           apodo: null,
           nivel: nivelSorteado,
-          experiencia: 0,
+          experiencia: calcularXpRequerida(nivelSorteado),
           hpActual: hpMaximo,
           hpMaximo,
           ataque,
@@ -174,6 +228,7 @@ export class ExploracionService {
         'ENCUENTRO',
         `Avistamiento de criatura salvaje: ${especie.nombre} (Nv. ${nivelSorteado}) en ${zona.nombre}.`,
         { encuentroId: encuentro.id, especieSlug: especie.slug, nivel: nivelSorteado },
+        tx,
       );
 
       return {
@@ -185,6 +240,7 @@ export class ExploracionService {
           especie: {
             slug: especie.slug,
             nombre: especie.nombre,
+            esLegendaria: Boolean(especie.esLegendaria),
             nivel: criaturaRival.nivel,
             hpActual: criaturaRival.hpActual,
             hpMaximo: criaturaRival.hpMaximo,
@@ -218,6 +274,7 @@ export class ExploracionService {
           'OBJETO',
           `Has encontrado un alijo oculto con ${monedasGanadas} monedas en ${zona.nombre}.`,
           { tipoRecompensa: 'MONEDAS', cantidad: monedasGanadas },
+          tx,
         );
       });
 
@@ -261,6 +318,7 @@ export class ExploracionService {
           'OBJETO',
           `Has recogido un consumible: ${objeto.nombre} en ${zona.nombre}.`,
           { tipoRecompensa: 'ITEM', itemCodigo: objeto.codigo },
+          tx,
         );
       });
 

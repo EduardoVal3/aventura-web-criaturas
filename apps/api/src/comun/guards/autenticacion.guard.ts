@@ -8,12 +8,14 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ES_PUBLICO_KEY } from '../decoradores/publico.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AutenticacionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(contexto: ExecutionContext): Promise<boolean> {
@@ -38,8 +40,25 @@ export class AutenticacionGuard implements CanActivate {
 
     try {
       const cargaUtil = await this.jwtService.verifyAsync(token);
-      (peticion as any).user = cargaUtil;
-    } catch {
+
+      // simplificacion: validación de existencia en BD para evitar tokens huérfanos tras reseteos
+      const usuario = await this.prisma.usuario.findUnique({
+        where: { id: cargaUtil.sub },
+        select: { id: true, nombreUsuario: true, correo: true },
+      });
+
+      if (!usuario) {
+        throw new UnauthorizedException({
+          codigo: 'USUARIO_NO_ENCONTRADO',
+          mensaje: 'El usuario asociado a la sesión ya no existe en el sistema.',
+        });
+      }
+
+      (peticion as any).user = { ...cargaUtil, ...usuario };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException({
         codigo: 'CREDENCIALES_INVALIDAS',
         mensaje: 'Token de autenticación inválido o expirado.',

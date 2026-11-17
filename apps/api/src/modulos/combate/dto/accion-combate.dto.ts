@@ -5,11 +5,13 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Max,
   Min,
 } from 'class-validator';
 
 export const TIPOS_ACCION_COMBATE = [
   'ATACAR',
+  'RESONANCIA',
   'USAR_OBJETO',
   'CAMBIAR_CRIATURA',
   'CAPTURAR',
@@ -27,18 +29,19 @@ export class AccionCombateDto {
   @IsNotEmpty({ message: 'El tipo de acción es requerido.' })
   @IsIn(TIPOS_ACCION_COMBATE, {
     message:
-      'El tipo de acción debe ser ATACAR, USAR_OBJETO, CAMBIAR_CRIATURA, CAPTURAR o HUIR.',
+      'El tipo de acción debe ser ATACAR, RESONANCIA, USAR_OBJETO, CAMBIAR_CRIATURA, CAPTURAR o HUIR.',
   })
   tipoAccion: TipoAccionCombate;
 
   @ApiPropertyOptional({
-    description: 'Índice del movimiento a ejecutar (si tipoAccion es ATACAR)',
+    description: 'Índice del movimiento a ejecutar (si tipoAccion es ATACAR, 0 a 3)',
     example: 0,
     default: 0,
   })
   @IsOptional()
   @IsInt({ message: 'El índice del movimiento debe ser un número entero.' })
   @Min(0, { message: 'El índice del movimiento no puede ser negativo.' })
+  @Max(3, { message: 'El índice del movimiento no puede ser mayor a 3.' })
   movimientoIndice?: number;
 
   @ApiPropertyOptional({
@@ -49,4 +52,14 @@ export class AccionCombateDto {
   @IsOptional()
   @IsString({ message: 'El código del objeto debe ser una cadena.' })
   itemCodigo?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Turno esperado por el cliente para prevenir desincronizaciones concurrentes',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt({ message: 'El turno esperado debe ser un número entero.' })
+  @Min(1, { message: 'El turno esperado debe ser mayor o igual a 1.' })
+  turnoEsperado?: number;
 }

@@ -40,6 +40,7 @@ export class CombateController {
       usuarioId,
       dto.encuentroId,
       dto.movimientoIndice ?? 0,
+      dto.turnoEsperado,
     );
   }
 
@@ -54,7 +55,11 @@ export class CombateController {
     @UsuarioActual('sub') usuarioId: string,
     @Body() dto: HuirDto,
   ) {
-    return this.combateService.huir(usuarioId, dto.encuentroId);
+    return this.combateService.huir(
+      usuarioId,
+      dto.encuentroId,
+      dto.turnoEsperado,
+    );
   }
 
   @Post('capturar')
@@ -80,6 +85,7 @@ export class CombateController {
       usuarioId,
       dto.encuentroId,
       dto.itemCodigo,
+      dto.turnoEsperado,
     );
   }
 
@@ -103,9 +109,21 @@ export class CombateController {
           usuarioId,
           encuentroId,
           dto.movimientoIndice ?? 0,
+          dto.turnoEsperado,
+        );
+      case 'RESONANCIA':
+        return this.combateService.atacar(
+          usuarioId,
+          encuentroId,
+          3,
+          dto.turnoEsperado,
         );
       case 'HUIR':
-        return this.combateService.huir(usuarioId, encuentroId);
+        return this.combateService.huir(
+          usuarioId,
+          encuentroId,
+          dto.turnoEsperado,
+        );
       case 'CAPTURAR':
         if (!dto.itemCodigo) {
           throw new BadRequestException({
@@ -117,6 +135,7 @@ export class CombateController {
           usuarioId,
           encuentroId,
           dto.itemCodigo,
+          dto.turnoEsperado,
         );
       default:
         throw new BadRequestException({

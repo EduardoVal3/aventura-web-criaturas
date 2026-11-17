@@ -81,21 +81,90 @@ export interface PersonajeActivo {
   totalCriaturasAlmacen: number;
 }
 
+export interface EspecieHabitanteUbicacion {
+  slug?: string;
+  nombre: string;
+  tipo: string;
+  elemento?: string;
+  esEspecial: boolean;
+  esLegendaria?: boolean;
+  pesoAparicion?: number;
+}
+
+export interface RequisitoCartografiaUbicacion {
+  zonaId: string;
+  nombre: string;
+  completada: boolean;
+  progresoActual: number;
+}
+
+export interface RequisitoNivelEquipoUbicacion {
+  nivelRequerido: number;
+  cantidadCriaturas: number;
+  cantidadActual?: number;
+  nivelMaximoActual: number;
+  soloEquipo?: boolean;
+  cumplido: boolean;
+}
+
+export interface PoderEquipoExplorador {
+  nivelMaximoEquipo: number;
+  nivelPromedioEquipo: number;
+  nivelMaximoColeccion: number;
+  criaturasEquipoNv5?: number;
+  rangoDomador: string;
+}
+
+export interface NodoMapaTerritorial {
+  id: string;
+  nombre: string;
+  tipo: "LOCALIDAD" | "ZONA" | "ZONA_PELIGRO";
+  esSegura: boolean;
+  faunaNivelMinimo: number | null;
+  faunaNivelMaximo: number | null;
+  desbloqueada: boolean;
+  progreso: number;
+  esActual: boolean;
+  esAdyacente?: boolean;
+  conexionesIds: string[];
+}
+
 export interface ConexionUbicacion {
   ubicacionDestinoId: string;
   nombre: string;
   nivelSugerido: string;
   estaBloqueada: boolean;
   requisito: string | null;
+  progresoActual?: number;
+  progresoObjetivo?: number;
+  cumpleRequisito?: boolean;
+  detalleProgreso?: string | null;
+  tipoDestino?: "LOCALIDAD" | "ZONA" | "ZONA_PELIGRO";
+  esSegura?: boolean;
+  faunaNivelMinimo?: number | null;
+  faunaNivelMaximo?: number | null;
+  especiesHabitantes?: EspecieHabitanteUbicacion[];
+  requisitoCartografia?: RequisitoCartografiaUbicacion | null;
+  requisitoNivelEquipo?: RequisitoNivelEquipoUbicacion | null;
 }
 
 export interface UbicacionActual {
   ubicacionId: string;
   nombre: string;
-  tipo: "LOCALIDAD" | "ZONA_PELIGRO";
+  slug?: string;
+  tipo: "LOCALIDAD" | "ZONA" | "ZONA_PELIGRO";
   esSegura: boolean;
   descripcion: string;
+  nivelMinimo?: number | null;
+  nivelMaximo?: number | null;
+  faunaNivelMinimo?: number | null;
+  faunaNivelMaximo?: number | null;
+  especiesHabitantes?: EspecieHabitanteUbicacion[];
+  nivelSugerido?: string | null;
   servicios: string[];
+  progresoZona?: number;
+  poderEquipo?: PoderEquipoExplorador;
+  nodosMapa?: NodoMapaTerritorial[];
   conexiones: ConexionUbicacion[];
 }
 
@@ -109,6 +178,30 @@ export interface RespuestaViajar {
   mensaje: string;
 }
 
+export type CodigoEstado =
+  | "QUEMADURA"
+  | "VENENO"
+  | "ESCARCHA"
+  | "PARALISIS"
+  | "PETRIFICACION"
+  | "BASTION";
+
+export type EtiquetaEfectividad = "VENTAJA" | "DESVENTAJA" | "NEUTRAL";
+
+export interface EstadoActivo {
+  codigo: CodigoEstado;
+  nombre: string;
+  turnosRestantes: number;
+  escudo?: number;
+}
+
+export interface EfectoFinDeTurno {
+  objetivo: "ALIADA" | "RIVAL";
+  codigo: CodigoEstado;
+  dano: number;
+  hpRestante: number;
+}
+
 export interface EspecieEncuentro {
   slug: string;
   nombre: string;
@@ -118,6 +211,7 @@ export interface EspecieEncuentro {
   ataque: number;
   defensa: number;
   velocidad: number;
+  esLegendaria?: boolean;
 }
 
 export interface EncuentroDetalle {
@@ -135,8 +229,10 @@ export interface RecompensaExploracion {
 export interface RespuestaExploracion {
   tipoEvento: "ENCUENTRO" | "OBJETO" | "SIN_EVENTO";
   mensaje: string;
+  progresoZona?: number;
   encuentro?: EncuentroDetalle;
   recompensa?: RecompensaExploracion | null;
+  zonasRecienDesbloqueadas?: string[];
 }
 
 export interface CriaturaCombateRival {
@@ -145,14 +241,44 @@ export interface CriaturaCombateRival {
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  ataque?: number;
+  defensa?: number;
+  velocidad?: number;
+  afinidad?: string;
+  resonancia?: number;
+  estados?: EstadoActivo[];
+  esLegendaria?: boolean;
+}
+
+export interface MovimientoCombate {
+  nombre: string;
+  poder: number;
+  tipoAccion?: string;
+  slot?: number;
+  efecto?: string | null;
+  bloqueado?: boolean;
+  estadoAplicado?: CodigoEstado | null;
 }
 
 export interface CriaturaCombateAliada {
   criaturaId: string;
   nombre: string;
+  slug?: string;
+  nombreEspecie?: string;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  ataque?: number;
+  defensa?: number;
+  velocidad?: number;
+  movimientos?: MovimientoCombate[];
+  afinidad?: string;
+  resonancia?: number;
+  estados?: EstadoActivo[];
 }
 
 export interface EncuentroActivo {
@@ -162,11 +288,17 @@ export interface EncuentroActivo {
   esTurnoJugador: boolean;
   criaturaRival: CriaturaCombateRival;
   criaturaAliada: CriaturaCombateAliada;
+  bitacora?: string[];
+  efectividadAliadaSobreRival?: {
+    multiplicador: number;
+    etiqueta: string;
+  };
 }
 
 export interface PeticionAtacar {
   encuentroId: string;
   movimientoIndice: number;
+  turnoEsperado?: number;
 }
 
 export interface AccionCombate {
@@ -174,24 +306,67 @@ export interface AccionCombate {
   danoCausado: number;
   hpRestanteRival?: number;
   hpRestanteAliado?: number;
+  efectividad?: EtiquetaEfectividad;
+  danoAbsorbido?: number;
+  estadoAplicado?: CodigoEstado | null;
+  perdioTurno?: boolean;
+  esInsignia?: boolean;
+}
+
+export interface ProgresoVictoria {
+  xpGanada: number;
+  monedasGanadas: number;
+  subioNivel: boolean;
+  nivelAnterior?: number;
+  nivelNuevo: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  saldoMonedas?: number;
 }
 
 export interface RespuestaAtacar {
   encuentroId: string;
   estado: "EN_CURSO" | "VICTORIA" | "DERROTA";
   turno: number;
-  accionJugador: AccionCombate;
+  hpRestanteAliada?: number;
+  hpRestanteRival?: number;
+  accionJugador?: AccionCombate | null;
   accionRival?: AccionCombate | null;
-  resultadoFinal?: {
+  rivalActuoPrimero?: boolean;
+  resultadoFinal?:
+    | string
+    | {
+        experienciaGanada?: number;
+        subioNivel?: boolean;
+        nivelNuevo?: number;
+        monedasGanadas?: number;
+      }
+    | null;
+  progreso?: ProgresoVictoria | null;
+  recompensas?: {
     experienciaGanada?: number;
+    monedasGanadas?: number;
     subioNivel?: boolean;
     nivelNuevo?: number;
   } | null;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
+  zonasRecienDesbloqueadas?: string[];
 }
 
 export interface PeticionCapturar {
   encuentroId: string;
   itemCodigo: string;
+  turnoEsperado?: number;
 }
 
 export interface CriaturaCapturada {
@@ -210,51 +385,94 @@ export interface RespuestaCapturar {
   destinoCaptura?: "EQUIPO" | "ALMACEN";
   criaturaCapturada?: CriaturaCapturada;
   contraataqueRival?: AccionCombate;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
+  zonasRecienDesbloqueadas?: string[];
 }
 
 export interface PeticionHuir {
   encuentroId: string;
+  turnoEsperado?: number;
 }
 
 export interface RespuestaHuir {
   exito: boolean;
   mensaje: string;
-  estado: "HUIDO";
+  estado: string;
+  contraataqueRival?: AccionCombate | null;
+  efectosFinDeTurno?: EfectoFinDeTurno[];
+  resonancia?: {
+    aliada: number;
+    rival: number;
+  };
+  estados?: {
+    aliada: EstadoActivo[];
+    rival: EstadoActivo[];
+  };
+  mensajes?: string[];
 }
 
 export interface CriaturaEquipo {
   criaturaId: string;
   slug: string;
   nombre: string;
+  apodo?: string | null;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
   ataque: number;
   defensa: number;
   velocidad: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
   orden: number;
 }
 
 export interface RespuestaEquipo {
   criaturas: CriaturaEquipo[];
+  limiteEquipo: number;
+  enLocalidadSegura: boolean;
 }
 
 export interface CriaturaAlmacen {
   criaturaId: string;
   slug: string;
   nombre: string;
+  apodo?: string | null;
   nivel: number;
   hpActual: number;
   hpMaximo: number;
+  ataque: number;
+  defensa: number;
+  velocidad: number;
+  experiencia?: number;
+  porcentajeXp?: number;
+  xpSiguienteNivel?: number;
+  xpNivelActual?: number;
+  orden?: number | null;
 }
 
 export interface RespuestaAlmacen {
   criaturas: CriaturaAlmacen[];
+  limiteEquipo: number;
+  enLocalidadSegura: boolean;
+  totalEnEquipo: number;
 }
 
 export interface PeticionTransferirCriatura {
   criaturaId: string;
   haciaEquipo: boolean;
+  intercambiarConId?: string;
 }
 
 export interface RespuestaTransferirCriatura {
@@ -263,16 +481,45 @@ export interface RespuestaTransferirCriatura {
   totalEnAlmacen: number;
 }
 
+export type CategoriaObjeto = "CURACION" | "CAPTURA" | "ESPECIAL";
+
 export interface ItemInventario {
   codigo: string;
   nombre: string;
-  tipo: "CAPTURA" | "CURACION";
+  descripcion?: string;
+  tipo: CategoriaObjeto;
+  efectoValor?: number;
+  precioCompra?: number;
   cantidad: number;
 }
 
 export interface RespuestaInventario {
   monedas: number;
+  capacidadMaxima?: number;
+  ranurasOcupadas?: number;
+  totalUnidades?: number;
   items: ItemInventario[];
+}
+
+export interface ArticuloCatalogoTienda {
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  tipo: CategoriaObjeto;
+  precioCompra: number;
+  efectoValor: number;
+  cantidadEnInventario: number;
+}
+
+export interface RespuestaCatalogoTienda {
+  saldoMonedas: number;
+  servicioDisponible: boolean;
+  ubicacionActual: {
+    id: string;
+    nombre: string;
+    esSegura: boolean;
+  };
+  items: ArticuloCatalogoTienda[];
 }
 
 export interface PeticionComprarTienda {
@@ -282,9 +529,12 @@ export interface PeticionComprarTienda {
 
 export interface RespuestaComprarTienda {
   itemCodigo: string;
+  nombre?: string;
   cantidadComprada: number;
+  precioUnitario?: number;
   costoTotal: number;
   saldoRestante: number;
+  cantidadEnInventario?: number;
 }
 
 export interface PeticionUsarItem {
@@ -294,20 +544,43 @@ export interface PeticionUsarItem {
 
 export interface RespuestaUsarItem {
   criaturaId: string;
+  criaturaNombre?: string;
   hpPrevio: number;
   hpNuevo: number;
+  hpMaximo?: number;
+  curacionAplicada?: number;
   cantidadRestante: number;
+}
+
+export interface DetalleCriaturaRestaurada {
+  criaturaId: string;
+  nombre: string;
+  hpPrevio: number;
+  hpNuevo: number;
+  hpMaximo: number;
+  hpRestaurado: number;
+  fueRevivida: boolean;
 }
 
 export interface RespuestaRestaurar {
   mensaje: string;
   criaturasRestauradas: number;
+  criaturasCuradas?: number;
+  criaturasRevividas?: number;
+  hpTotalRestaurado?: number;
+  ubicacionNombre?: string;
+  detalles?: DetalleCriaturaRestaurada[];
 }
 
 export interface ZonaProgreso {
   zonaId: string;
+  nombre?: string;
   desbloqueada: boolean;
   requisito?: string;
+  progresoActual?: number;
+  progresoObjetivo?: number;
+  cumpleRequisito?: boolean;
+  detalleProgreso?: string;
 }
 
 export interface RespuestaDesbloqueos {
@@ -324,10 +597,23 @@ export interface RespuestaVerificarZona {
   mensaje: string;
 }
 
+export type RarezaEspecie = "COMUN" | "FRECUENTE" | "RARA" | "ESPECIAL" | "LEGENDARIA";
+export type CriterioOrdenCatalogo =
+  | "ZONA_ASC"
+  | "BST_DESC"
+  | "BST_ASC"
+  | "RAREZA_DESC"
+  | "CAPTURA_ASC"
+  | "NOMBRE_ASC";
+
+export type ArquetipoEspecie = "TANQUE" | "ATACANTE" | "VELOZ" | "EQUILIBRADO";
+export type CategoriaHistorial = "COMBATE" | "CAPTURA" | "EXPLORACION" | "TIENDA" | "CURACION";
+
 export interface EspecieCatalogo {
   slug: string;
   nombre: string;
   tipo: string;
+  elemento?: string;
   challengeRating: number;
   hpBase: number;
   ataqueBase: number;
@@ -335,6 +621,15 @@ export interface EspecieCatalogo {
   velocidadBase: number;
   tasaCaptura: number;
   esEspecial: boolean;
+  esLegendaria?: boolean;
+  keyExterna?: string;
+  descripcion?: string;
+  arquetipo?: ArquetipoEspecie;
+  movimientos?: MovimientoEspecie[];
+  zona?: { id: string; nombre: string } | null;
+  presupuestoTotal?: number;
+  pesoAparicion?: number;
+  rareza?: RarezaEspecie;
 }
 
 export interface RespuestaEspecies {
@@ -345,7 +640,10 @@ export interface RespuestaEspecies {
 export interface MovimientoEspecie {
   nombre: string;
   nombreOriginal: string;
+  tipoAccion?: string;
   poder: number;
+  slot?: number;
+  efecto?: string | null;
 }
 
 export interface EspecieDetalle extends EspecieCatalogo {
@@ -356,11 +654,16 @@ export interface EspecieDetalle extends EspecieCatalogo {
 export interface EventoHistorial {
   eventoId: string;
   tipo: string;
+  categoria?: CategoriaHistorial;
   descripcion: string;
   marcaTiempo: string;
+  datosJson?: Record<string, unknown>;
 }
 
 export interface RespuestaHistorial {
+  total?: number;
+  pagina?: number;
+  limite?: number;
   eventos: EventoHistorial[];
 }
 
@@ -383,6 +686,7 @@ export interface ApiJuego {
   obtenerAlmacen(): Promise<RespuestaAlmacen>;
   transferirCriatura(peticion: PeticionTransferirCriatura): Promise<RespuestaTransferirCriatura>;
   obtenerInventario(): Promise<RespuestaInventario>;
+  obtenerCatalogoTienda(): Promise<RespuestaCatalogoTienda>;
   comprarEnTienda(peticion: PeticionComprarTienda): Promise<RespuestaComprarTienda>;
   usarItem(peticion: PeticionUsarItem): Promise<RespuestaUsarItem>;
   restaurarEquipo(): Promise<RespuestaRestaurar>;
@@ -390,5 +694,9 @@ export interface ApiJuego {
   verificarZona(peticion: PeticionVerificarZona): Promise<RespuestaVerificarZona>;
   obtenerEspecies(tipo?: string): Promise<RespuestaEspecies>;
   obtenerEspecie(slug: string): Promise<EspecieDetalle>;
-  obtenerHistorial(): Promise<RespuestaHistorial>;
+  obtenerHistorial(categoria?: string): Promise<RespuestaHistorial>;
+  actualizarOrdenEquipo(peticion: {
+    criaturaIds?: string[];
+    orden?: { criaturaId: string; orden: number }[];
+  }): Promise<RespuestaEquipo>;
 }

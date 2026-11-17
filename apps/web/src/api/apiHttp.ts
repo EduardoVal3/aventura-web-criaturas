@@ -18,6 +18,7 @@ import {
   type RespuestaAlmacen,
   type RespuestaAtacar,
   type RespuestaCapturar,
+  type RespuestaCatalogoTienda,
   type RespuestaComprarTienda,
   type RespuestaCrearPersonaje,
   type RespuestaDesbloqueos,
@@ -39,10 +40,12 @@ import {
   type UbicacionActual,
 } from "./ApiJuego";
 
+export type { DetalleCriaturaRestaurada } from "./ApiJuego";
+
 let tokenActual: string | null = null;
 
 async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
-  const urlBase = import.meta.env.VITE_URL_API ?? "";
+  const urlBase = (import.meta.env.VITE_URL_API ?? "").trim().replace(/\/+$/, "");
   const url = `${urlBase}/api${ruta}`;
 
   const encabezados: Record<string, string> = {
@@ -161,6 +164,10 @@ export const apiHttp = {
     return solicitar<RespuestaInventario>("GET", "/inventario");
   },
 
+  obtenerCatalogoTienda(): Promise<RespuestaCatalogoTienda> {
+    return solicitar<RespuestaCatalogoTienda>("GET", "/tienda");
+  },
+
   comprarEnTienda(peticion: PeticionComprarTienda): Promise<RespuestaComprarTienda> {
     return solicitar<RespuestaComprarTienda>("POST", "/tienda/comprar", peticion);
   },
@@ -190,7 +197,14 @@ export const apiHttp = {
     return solicitar<EspecieDetalle>("GET", `/especies/${encodeURIComponent(slug)}`);
   },
 
-  obtenerHistorial(): Promise<RespuestaHistorial> {
-    return solicitar<RespuestaHistorial>("GET", "/historial");
+  obtenerHistorial(categoria?: string): Promise<RespuestaHistorial> {
+    const sufijo = categoria ? `?categoria=${encodeURIComponent(categoria)}` : "";
+    return solicitar<RespuestaHistorial>("GET", `/historial${sufijo}`);
+  },
+  actualizarOrdenEquipo(peticion: {
+    criaturaIds?: string[];
+    orden?: { criaturaId: string; orden: number }[];
+  }): Promise<RespuestaEquipo> {
+    return solicitar<RespuestaEquipo>("PATCH", "/equipo/orden", peticion);
   },
 } satisfies ApiJuego;

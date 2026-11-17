@@ -1,18 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/8bit/card";
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
 import { Spinner } from "@/components/ui/8bit/spinner";
-import EnemyHealthDisplay from "@/components/ui/8bit/enemy-health-display";
 import HealthBar from "@/components/ui/8bit/health-bar";
 import XpBar from "@/components/ui/8bit/xp-bar";
 import {
@@ -24,13 +16,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/8bit/alert-dialog";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/8bit/dialog";
@@ -40,72 +30,226 @@ import {
   type CriaturaCombateRival,
   type CriaturaCombateAliada,
   type ItemInventario,
+  type CriaturaEquipo,
+  type CriaturaCapturada,
+  type AccionCombate,
+  type EfectoFinDeTurno,
   ErrorApi,
 } from "@/api";
+import {
+  detenerMusicaAmbiente,
+  iniciarMusicaAmbiente,
+  obtenerImagenCriatura,
+  obtenerImagenObjeto,
+  obtenerSlugZonaPorCriatura,
+  manejarErrorImagen,
+  reproducirSonido,
+} from "@/lib/assets";
+import { obtenerCalibracionArena } from "@/lib/battlegrounds";
+import {
+  Lock,
+  Crown,
+  ChevronsUp,
+  ChevronsDown,
+  Sparkles,
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Swords,
+  HeartPulse,
+  Trophy,
+  LogOut,
+  ArrowLeftRight,
+  Scroll,
+  Pause,
+  ChevronUp,
+  X,
+  RotateCcw,
+  BookOpen,
+  Award,
+} from "lucide-react";
+import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
+import {
+  construirSlotsTacticos,
+  ETIQUETA_EFECTIVIDAD,
+  sonidoDeGolpe,
+  resolverBadgeEfectoMovimiento,
+  describirEstado,
+  type TipoIconoEfecto,
+} from "@/lib/combate-tactico";
+import { BattlefieldBackground } from "@/components/combate/BattlefieldBackground";
+
+const ICONOS_EFECTO_LUCIDE: Record<
+  TipoIconoEfecto,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+> = {
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Sparkles,
+  Swords,
+  HeartPulse,
+  ChevronsUp,
+  ChevronsDown,
+};
+
+const ICONOS_ESTADO: Record<
+  string,
+  React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>
+> = {
+  Flame,
+  Skull,
+  Snowflake,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Sparkles,
+};
+
+interface RecompensasVictoria {
+  xpGanada: number;
+  monedasGanadas: number;
+  subioNivel: boolean;
+  nivelNuevo?: number;
+}
+
+type EstadoMenuConsola = "ROOT" | "ATTACK" | "ITEMS" | "SWAP" | "CAPTURE";
 
 export function PantallaCombate() {
   const navigate = useNavigate();
+
+  // Estados nucleares del encuentro
   const [encuentro, setEncuentro] = useState<EncuentroActivo | null>(null);
   const [rival, setRival] = useState<CriaturaCombateRival | null>(null);
   const [aliado, setAliado] = useState<CriaturaCombateAliada | null>(null);
   const [cargando, setCargando] = useState(true);
   const [procesandoAccion, setProcesandoAccion] = useState(false);
-  const [porcentajeXp, setPorcentajeXp] = useState(0);
-  const [subioNivel, setSubioNivel] = useState(false);
   const [bitacoraCombate, setBitacoraCombate] = useState<string[]>([]);
   const [combateFinalizado, setCombateFinalizado] = useState(false);
   const [estadoFinal, setEstadoFinal] = useState<"VICTORIA" | "DERROTA" | "CAPTURADO" | null>(null);
+
+  // Estados visuales y micro-interacciones (Fase 10 - docs/DESIGN.md)
+  const [animacionRival, setAnimacionRival] = useState("");
+  const [animacionAliado, setAnimacionAliado] = useState("");
+  const [danoFlotanteRival, setDanoFlotanteRival] = useState<number | null>(null);
+  const [danoFlotanteAliado, setDanoFlotanteAliado] = useState<number | null>(null);
+  const [etiquetaFlotanteRival, setEtiquetaFlotanteRival] = useState<string | null>(null);
+  const [etiquetaFlotanteAliado, setEtiquetaFlotanteAliado] = useState<string | null>(null);
+  const [sacudidaArena, setSacudidaArena] = useState(false);
+  const [zoomArena, setZoomArena] = useState(false);
+  const [climaxInsignia, setClimaxInsignia] = useState(false);
+  const [proyectilActivo, setProyectilActivo] = useState<{
+    direccion: "aliado-a-rival" | "rival-a-aliado";
+    claseColor: string;
+  } | null>(null);
+  const [impactoVisual, setImpactoVisual] = useState<{
+    objetivo: "rival" | "aliado";
+    claseColor: string;
+  } | null>(null);
+  const [auraAliado, setAuraAliado] = useState(false);
+  const [avisoAtaqueRival, setAvisoAtaqueRival] = useState<string | null>(null);
+  const [curacionFlotanteAliado, setCuracionFlotanteAliado] = useState<number | null>(null);
+  const [secuenciaCaptura, setSecuenciaCaptura] = useState(false);
+  const [esPlaceholderAliado, setEsPlaceholderAliado] = useState(false);
+
+  // Recompensas y resolución
+  const [porcentajeXp, setPorcentajeXp] = useState(0);
+  const [subioNivel, setSubioNivel] = useState(false);
+  const [recompensasVictoria, setRecompensasVictoria] = useState<RecompensasVictoria | null>(null);
+  const [criaturaCapturada, setCriaturaCapturada] = useState<CriaturaCapturada | null>(null);
+  const [destinoCaptura, setDestinoCaptura] = useState<"EQUIPO" | "ALMACEN" | null>(null);
+
+  // Consola de acciones contextual in-place (Thumb-zone state machine)
+  const [menuState, setMenuState] = useState<EstadoMenuConsola>("ROOT");
+
+  // Ticker y drawer expandible de bitácora
+  const [bitacoraAbierta, setBitacoraAbierta] = useState(false);
+
+  // Modales secundarios de combate
+  const [modalPausaAbierto, setModalPausaAbierto] = useState(false);
+  const [dialogoHuirAbierto, setDialogoHuirAbierto] = useState(false);
+
+  // Inventario y equipo
   const [talismanes, setTalismanes] = useState<ItemInventario[]>([]);
-  const [modalCapturaAbierto, setModalCapturaAbierto] = useState(false);
+  const [itemsCuracion, setItemsCuracion] = useState<ItemInventario[]>([]);
+  const [equipoCriaturas, setEquipoCriaturas] = useState<CriaturaEquipo[]>([]);
   const [talismanSeleccionado, setTalismanSeleccionado] = useState<string>("talisman-basico");
+
+  useEffect(() => {
+    iniciarMusicaAmbiente("combate");
+    return () => detenerMusicaAmbiente();
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
 
-    async function inicializarCombate() {
+    async function sincronizar() {
       try {
         const datos = await api.obtenerEncuentroActivo();
-        if (!cancelado) {
-          setEncuentro(datos);
-          setRival(datos.criaturaRival);
-          setAliado(datos.criaturaAliada);
+        if (cancelado) return;
+        setEncuentro(datos);
+        setRival(datos.criaturaRival);
+        setAliado(datos.criaturaAliada);
+
+        // Reanudación fiel de bitácora
+        if (datos.bitacora && datos.bitacora.length > 0) {
+          setBitacoraCombate(datos.bitacora);
+        } else {
           setBitacoraCombate([
+            `¡Tu criatura aliada es ${datos.criaturaAliada?.nombre ?? "Compañero"} (Nv. ${datos.criaturaAliada?.nivel ?? 1})!`,
             `Turno ${datos.turno}: ¡Un ${datos.criaturaRival.nombre} salvaje (Nv. ${datos.criaturaRival.nivel}) está frente a ti!`,
-            `¡Tu aliada es ${datos.criaturaAliada.nombre} (Nv. ${datos.criaturaAliada.nivel})!`,
           ]);
         }
 
-        // Cargar talismanes para captura
+        // Sincronización fiel del progreso de XP calculado por el servidor (§2.4)
+        if (datos.criaturaAliada) {
+          setPorcentajeXp(datos.criaturaAliada.porcentajeXp ?? 0);
+        }
+
         try {
           const inv = await api.obtenerInventario();
-          if (!cancelado) {
-            const itemsTalisman = inv.items.filter((i) => i.tipo === "CAPTURA" && i.cantidad > 0);
-            setTalismanes(itemsTalisman);
-            if (itemsTalisman.length > 0) {
-              setTalismanSeleccionado(itemsTalisman[0].codigo);
-            }
+          if (cancelado) return;
+          const listaTalismanes = inv.items.filter((i) => i.tipo === "CAPTURA" && i.cantidad > 0);
+          const listaCuracion = inv.items.filter((i) => i.tipo === "CURACION" && i.cantidad > 0);
+          setTalismanes(listaTalismanes);
+          setItemsCuracion(listaCuracion);
+          if (listaTalismanes.length > 0) {
+            setTalismanSeleccionado(listaTalismanes[0].codigo);
           }
         } catch {
-          // ignora fallo no crítico de inventario
+          // simplificacion: tolerancia a fallo en lectura de inventario secundario
+        }
+
+        try {
+          const respEquipo = await api.obtenerEquipo();
+          if (cancelado) return;
+          setEquipoCriaturas(respEquipo.criaturas);
+        } catch {
+          // simplificacion: tolerancia a fallo en lectura de equipo secundario
         }
       } catch (error) {
-        if (!cancelado) {
-          if (error instanceof ErrorApi) {
-            if (error.codigo === "ENCUENTRO_NO_ENCONTRADO" || error.estado === 404) {
-              toast.info("No tienes ningún combate pendiente.");
-              navigate("/exploracion");
-              return;
-            }
-            if (error.estado === 401) {
-              navigate("/ingreso");
-              return;
-            }
-            toast.error(error.message);
-          } else {
-            toast.error("Error al cargar los datos del combate activo.");
+        if (cancelado) return;
+        if (error instanceof ErrorApi) {
+          if (error.codigo === "ENCUENTRO_NO_ENCONTRADO" || error.estado === 404) {
+            toast.info("No tienes ningún combate pendiente.");
+            navigate("/exploracion");
+            return;
           }
-          navigate("/exploracion");
+          if (error.estado === 401) {
+            navigate("/ingreso");
+            return;
+          }
+          toast.error(error.message);
+        } else {
+          toast.error("Error al cargar los datos del combate activo.");
         }
+        navigate("/exploracion");
       } finally {
         if (!cancelado) {
           setCargando(false);
@@ -113,401 +257,1924 @@ export function PantallaCombate() {
       }
     }
 
-    inicializarCombate();
+    sincronizar();
     return () => {
       cancelado = true;
     };
   }, [navigate]);
 
-  const handleAtacar = async (movimientoIndice = 0) => {
-    if (!encuentro) return;
+  // Cerrojo síncrono para hardening estricto contra doble clic rápido
+  const cerrojoAccion = useRef(false);
+
+  // Recarga fiel tras relevo de criatura aliada
+  const refrescarCombate = useCallback(async () => {
     try {
-      setProcesandoAccion(true);
+      const [datos, respEquipo] = await Promise.all([
+        api.obtenerEncuentroActivo(),
+        api.obtenerEquipo(),
+      ]);
+      setEncuentro(datos);
+      setRival(datos.criaturaRival);
+      setAliado(datos.criaturaAliada);
+
+      if (datos.criaturaAliada) {
+        setPorcentajeXp(datos.criaturaAliada.porcentajeXp ?? 0);
+      }
+
+      if (datos.bitacora && datos.bitacora.length > 0) {
+        setBitacoraCombate(datos.bitacora);
+      }
+      setEquipoCriaturas(respEquipo.criaturas);
+    } catch {
+      // simplificacion: tolerancia a fallo en refresco secundario
+    }
+  }, []);
+
+  const resolverEtiquetaImpacto = (accion?: AccionCombate | null): string | null => {
+    if (!accion) return null;
+    if (accion.esInsignia) return "¡INSIGNIA!";
+    if (accion.efectividad === "VENTAJA") return "¡MUY EFICAZ x1.5!";
+    if (accion.efectividad === "DESVENTAJA") return "RESISTIDO x0.75";
+    return null;
+  };
+
+  type CoreografiaCarta = "INSIGNIA" | "DEFENSIVO" | "ELEMENTAL" | "FISICO";
+
+  const clasificarCoreografiaMovimiento = (
+    mov?: { tipoAccion?: string; efecto?: string | null; estadoAplicado?: string | null; slot?: number } | null,
+    esInsignia?: boolean,
+  ): CoreografiaCarta => {
+    if (esInsignia || mov?.slot === 4) return "INSIGNIA";
+    if (
+      mov?.tipoAccion === "ESTADO" ||
+      mov?.efecto === "BASTION" ||
+      mov?.efecto === "CURACION" ||
+      mov?.efecto === "DEF_UP"
+    ) {
+      return "DEFENSIVO";
+    }
+    if (mov?.efecto || mov?.estadoAplicado || (mov?.slot ?? 1) >= 2) {
+      return "ELEMENTAL";
+    }
+    return "FISICO";
+  };
+
+  const colorProyectilPorAfinidad = (afinidad?: string | null): string => {
+    switch (afinidad) {
+      case "fuego":
+        return "bg-orange-400 border-red-700 shadow-[0_0_12px_#fb923c]";
+      case "agua":
+        return "bg-cyan-300 border-blue-700 shadow-[0_0_12px_#22d3ee]";
+      case "natura":
+        return "bg-emerald-400 border-green-800 shadow-[0_0_12px_#34d399]";
+      case "sombra":
+        return "bg-purple-400 border-purple-900 shadow-[0_0_12px_#c084fc]";
+      case "luz":
+        return "bg-amber-300 border-yellow-700 shadow-[0_0_12px_#fcd34d]";
+      default:
+        return "bg-slate-200 border-slate-700 shadow-[0_0_10px_#e2e8f0]";
+    }
+  };
+
+  // Auxiliar unificado para animar contraataque rival y efectos fin de turno (DoT)
+  const reproducirContraataqueYDoT = async (
+    contraataque: AccionCombate | null | undefined,
+    efectosFinDeTurno: EfectoFinDeTurno[] = [],
+  ) => {
+    if (contraataque && aliado) {
+      await new Promise((resolver) => setTimeout(resolver, 600));
+
+      if (contraataque.perdioTurno) {
+        setAvisoAtaqueRival(`${rival?.nombre ?? "El rival"} perdió su turno`);
+        reproducirSonido("error");
+        await new Promise((resolver) => setTimeout(resolver, 480));
+        setAvisoAtaqueRival(null);
+      } else {
+        setAvisoAtaqueRival(`${rival?.nombre ?? "Rival"} usa ${contraataque.movimiento}`);
+        setAnimacionRival("scale-110 brightness-125");
+        await new Promise((resolver) => setTimeout(resolver, 420));
+
+        setAnimacionRival("anim-embestida-rival");
+        setProyectilActivo({
+          direccion: "rival-a-aliado",
+          claseColor: colorProyectilPorAfinidad(rival?.afinidad),
+        });
+        await new Promise((resolver) => setTimeout(resolver, 360));
+        setProyectilActivo(null);
+        setAnimacionRival("");
+        setAvisoAtaqueRival(null);
+
+        reproducirSonido(sonidoDeGolpe(contraataque));
+        setImpactoVisual({
+          objetivo: "aliado",
+          claseColor: colorProyectilPorAfinidad(rival?.afinidad),
+        });
+        setTimeout(() => setImpactoVisual(null), 320);
+        setAnimacionAliado("anim-sacudida anim-parpadeo-dano");
+        setDanoFlotanteAliado(contraataque.danoCausado);
+        setEtiquetaFlotanteAliado(resolverEtiquetaImpacto(contraataque));
+
+        if (contraataque.efectividad === "VENTAJA" || contraataque.esInsignia) {
+          setSacudidaArena(true);
+          setZoomArena(true);
+          setTimeout(() => {
+            setSacudidaArena(false);
+            setZoomArena(false);
+          }, 340);
+        }
+
+        if (typeof contraataque.hpRestanteAliado === "number") {
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, contraataque.hpRestanteAliado!) } : null,
+          );
+        }
+
+        setTimeout(() => {
+          setAnimacionAliado("");
+          setDanoFlotanteAliado(null);
+          setEtiquetaFlotanteAliado(null);
+        }, 550);
+      }
+    }
+
+    if (efectosFinDeTurno && efectosFinDeTurno.length > 0) {
+      for (const efecto of efectosFinDeTurno) {
+        await new Promise((resolver) => setTimeout(resolver, 400));
+        reproducirSonido("dot");
+
+        if (efecto.objetivo === "ALIADA") {
+          setAnimacionAliado("anim-parpadeo-dano");
+          setDanoFlotanteAliado(efecto.dano);
+          setAliado((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionAliado("");
+            setDanoFlotanteAliado(null);
+          }, 450);
+        } else {
+          setAnimacionRival("anim-parpadeo-dano");
+          setDanoFlotanteRival(efecto.dano);
+          setRival((prev) =>
+            prev ? { ...prev, hpActual: Math.max(0, efecto.hpRestante) } : null,
+          );
+          setTimeout(() => {
+            setAnimacionRival("");
+            setDanoFlotanteRival(null);
+          }, 450);
+        }
+      }
+    }
+  };
+
+  // Manejador de Ataque con selector de movimientos tácticos
+  const handleAtacar = async (movimientoIndice = 0) => {
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
+
+    cerrojoAccion.current = true;
+    setMenuState("ROOT");
+    setProcesandoAccion(true);
+    reproducirSonido("click");
+
+    try {
       const resultado = await api.atacar({
         encuentroId: encuentro.encuentroId,
         movimientoIndice,
+        turnoEsperado: encuentro.turno,
       });
 
-      const nuevosMensajes: string[] = [];
+      // Bitácora fiel: anteponer mensajes invertidos si el servidor los envió
+      if (resultado.mensajes && resultado.mensajes.length > 0) {
+        setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+      } else if (resultado.accionJugador) {
+        const mensajeJugador = `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`;
+        setBitacoraCombate((prev) => [mensajeJugador, ...prev]);
+      }
 
-      // Registro de acción del jugador
-      nuevosMensajes.push(
-        `Tu criatura usó ${resultado.accionJugador.movimiento} causando ${resultado.accionJugador.danoCausado} de daño.`,
+      // Animación de impacto del jugador sobre el rival diferenciada por carta
+      const movSeleccionado = aliado?.movimientos?.[movimientoIndice];
+      const coreografia = clasificarCoreografiaMovimiento(
+        movSeleccionado,
+        Boolean(resultado.accionJugador?.esInsignia || movimientoIndice === 3),
       );
 
-      // Actualizar salud del rival gobernada por el servidor
-      if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
-        setRival({
-          ...rival,
-          hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
-        });
-      }
+      const animarImpactoJugador = async () => {
+        if (!resultado.accionJugador) return;
+        if (resultado.accionJugador.perdioTurno) {
+          reproducirSonido("error");
+        } else {
+          if (coreografia === "INSIGNIA") {
+            setClimaxInsignia(true);
+            setZoomArena(true);
+            setProyectilActivo({
+              direccion: "aliado-a-rival",
+              claseColor: "bg-amber-300 border-amber-600 shadow-[0_0_16px_#fbbf24]",
+            });
+            await new Promise((resolver) => setTimeout(resolver, 280));
+            setProyectilActivo(null);
+            setClimaxInsignia(false);
+          } else if (coreografia === "DEFENSIVO") {
+            setAuraAliado(true);
+            await new Promise((resolver) => setTimeout(resolver, 260));
+            setAuraAliado(false);
+          } else if (coreografia === "ELEMENTAL") {
+            setProyectilActivo({
+              direccion: "aliado-a-rival",
+              claseColor: colorProyectilPorAfinidad(aliado?.afinidad),
+            });
+            await new Promise((resolver) => setTimeout(resolver, 240));
+            setProyectilActivo(null);
+          } else {
+            setAnimacionAliado("anim-embestida-aliado");
+            await new Promise((resolver) => setTimeout(resolver, 220));
+            setAnimacionAliado("");
+          }
 
-      // Registro de acción del rival si contraatacó
-      if (resultado.accionRival && aliado) {
-        nuevosMensajes.push(
-          `El rival respondió con ${resultado.accionRival.movimiento} causando ${resultado.accionRival.danoCausado} de daño.`,
-        );
-        if (typeof resultado.accionRival.hpRestanteAliado === "number") {
-          setAliado({
-            ...aliado,
-            hpActual: Math.max(0, resultado.accionRival.hpRestanteAliado),
+          reproducirSonido(sonidoDeGolpe(resultado.accionJugador));
+          setImpactoVisual({
+            objetivo: "rival",
+            claseColor:
+              coreografia === "INSIGNIA"
+                ? "bg-amber-300 border-amber-500 shadow-[0_0_20px_#fbbf24]"
+                : colorProyectilPorAfinidad(aliado?.afinidad),
           });
-        }
-      }
+          setTimeout(() => setImpactoVisual(null), 320);
+          setAnimacionRival("anim-sacudida anim-parpadeo-dano");
+          setDanoFlotanteRival(resultado.accionJugador.danoCausado);
+          setEtiquetaFlotanteRival(resolverEtiquetaImpacto(resultado.accionJugador));
 
-      // Evaluación del estado devuelto por el servidor
-      if (resultado.estado === "VICTORIA") {
-        nuevosMensajes.push("¡Victoria! La criatura enemiga ha caído debilitada.");
+          if (
+            resultado.accionJugador.efectividad === "VENTAJA" ||
+            resultado.accionJugador.esInsignia
+          ) {
+            setSacudidaArena(true);
+            setZoomArena(true);
+            setTimeout(() => {
+              setSacudidaArena(false);
+              setZoomArena(false);
+            }, 340);
+          } else {
+            setZoomArena(false);
+          }
+
+          if (typeof resultado.accionJugador.hpRestanteRival === "number" && rival) {
+            setRival({
+              ...rival,
+              hpActual: Math.max(0, resultado.accionJugador.hpRestanteRival),
+              estados: resultado.estados?.rival ?? rival.estados,
+            });
+          }
+
+          // Si el ataque del jugador curó vitalidad, reflejar en pantalla
+          if (
+            typeof resultado.hpRestanteAliada === "number" &&
+            aliado &&
+            resultado.hpRestanteAliada > aliado.hpActual
+          ) {
+            setAliado({
+              ...aliado,
+              hpActual: Math.min(aliado.hpMaximo, resultado.hpRestanteAliada),
+              resonancia: resultado.resonancia?.aliada ?? aliado.resonancia,
+              estados: resultado.estados?.aliada ?? aliado.estados,
+            });
+          } else if (resultado.resonancia?.aliada !== undefined && aliado) {
+            setAliado({
+              ...aliado,
+              resonancia: resultado.resonancia.aliada,
+              estados: resultado.estados?.aliada ?? aliado.estados,
+            });
+          }
+
+          await new Promise((resolver) => setTimeout(resolver, 550));
+          setAnimacionRival("");
+          setDanoFlotanteRival(null);
+          setEtiquetaFlotanteRival(null);
+        }
+      };
+
+      // Animación de contraataque rival
+      const animarContraataqueRival = async () => {
+        if (!resultado.accionRival) return;
+        await reproducirContraataqueYDoT(resultado.accionRival, []);
+      };
+
+      // Procesar recompensas de victoria
+      const procesarVictoria = () => {
+        reproducirSonido("victoria");
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
-        if (resultado.resultadoFinal?.subioNivel) {
-          setSubioNivel(true);
-          setPorcentajeXp(100);
-          toast.success(
-            `¡Tu criatura subió al nivel ${resultado.resultadoFinal.nivelNuevo ?? "superior"}!`,
-          );
-        } else if (resultado.resultadoFinal?.experienciaGanada) {
-          toast.success(`¡Ganaste ${resultado.resultadoFinal.experienciaGanada} XP!`);
+
+        const recompensa = resultado.progreso || resultado.recompensas || (
+          typeof resultado.resultadoFinal === "object" ? resultado.resultadoFinal : null
+        );
+
+        if (recompensa) {
+          const subio = Boolean(recompensa.subioNivel);
+          const xp =
+            "xpGanada" in recompensa
+              ? recompensa.xpGanada
+              : ("experienciaGanada" in recompensa
+                ? (recompensa.experienciaGanada ?? 0)
+                : 0);
+          const monedas =
+            "monedasGanadas" in recompensa ? (recompensa.monedasGanadas ?? 0) : 0;
+          const nivelNuevo = recompensa.nivelNuevo;
+
+          setRecompensasVictoria({
+            xpGanada: xp,
+            monedasGanadas: monedas,
+            subioNivel: subio,
+            nivelNuevo,
+          });
+
+          if (subio) {
+            setSubioNivel(true);
+            setPorcentajeXp(100);
+            toast.success(`¡Tu criatura subió al nivel ${nivelNuevo ?? "superior"}!`);
+          } else if (xp > 0 && aliado) {
+            const nuevaXp = (aliado.experiencia ?? 0) + xp;
+            const nuevoPorcentaje =
+              "porcentajeXp" in recompensa && typeof recompensa.porcentajeXp === "number"
+                ? recompensa.porcentajeXp
+                : porcentajeXp;
+            setAliado({ ...aliado, experiencia: nuevaXp, porcentajeXp: nuevoPorcentaje });
+            setPorcentajeXp(nuevoPorcentaje);
+            toast.success(`¡Ganaste ${xp} XP y ${monedas} monedas!`);
+          }
         }
-      } else if (resultado.estado === "DERROTA") {
-        nuevosMensajes.push("Tu criatura ha quedado fuera de combate.");
-        setCombateFinalizado(true);
-        setEstadoFinal("DERROTA");
-        toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+      };
+
+      // Secuencia cronológica estricta según prioridad de velocidad
+      if (resultado.rivalActuoPrimero) {
+        await animarContraataqueRival();
+
+        if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
+          if (resultado.estado === "DERROTA") {
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            return;
+          }
+
+          toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          await refrescarCombate();
+          return;
+        }
+
+        if (resultado.accionJugador) {
+          await animarImpactoJugador();
+        }
+      } else {
+        if (resultado.accionJugador) {
+          await animarImpactoJugador();
+        }
+
+        if (resultado.estado === "VICTORIA") {
+          procesarVictoria();
+          return;
+        }
+
+        if (resultado.accionRival) {
+          await animarContraataqueRival();
+        }
+
+        if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
+          if (resultado.estado === "DERROTA") {
+            reproducirSonido("error");
+            setCombateFinalizado(true);
+            setEstadoFinal("DERROTA");
+            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            return;
+          }
+
+          toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          await refrescarCombate();
+          return;
+        }
       }
 
-      setBitacoraCombate((prev) => [...nuevosMensajes, ...prev]);
+      if (resultado.estado === "VICTORIA") {
+        procesarVictoria();
+        return;
+      }
+
+      if (resultado.efectosFinDeTurno && resultado.efectosFinDeTurno.length > 0) {
+        await reproducirContraataqueYDoT(null, resultado.efectosFinDeTurno);
+      }
+
+      if (resultado.estado === "EN_CURSO") {
+        await refrescarCombate();
+      }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al ejecutar el ataque.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
 
-  const abrirSelectorCaptura = () => {
-    if (talismanes.length === 0) {
-      toast.error("No tienes talismanes de captura en tu inventario. Visita la tienda.");
-      return;
+  // Manejador de Uso de Objeto de Curación en combate
+  const handleUsarObjetoCuracion = async (itemCodigo: string) => {
+    if (!aliado || procesandoAccion || combateFinalizado) return;
+
+    setMenuState("ROOT");
+    setProcesandoAccion(true);
+    reproducirSonido("click");
+
+    try {
+      const resultado = await api.usarItem({
+        itemCodigo,
+        criaturaId: aliado.criaturaId,
+      });
+
+      const curacionEfectiva = resultado.hpNuevo - resultado.hpPrevio;
+      reproducirSonido("exito");
+      setAnimacionAliado("anim-restauracion-salud");
+      setCuracionFlotanteAliado(curacionEfectiva);
+
+      setAliado({
+        ...aliado,
+        hpActual: resultado.hpNuevo,
+      });
+
+      setBitacoraCombate((prev) => [
+        `Usaste un objeto curativo restaurando +${curacionEfectiva} HP a tu criatura.`,
+        ...prev,
+      ]);
+      toast.success(`+${curacionEfectiva} HP restaurados.`);
+
+      setTimeout(() => {
+        setAnimacionAliado("");
+        setCuracionFlotanteAliado(null);
+      }, 700);
+
+      // Refrescar inventario
+      const inv = await api.obtenerInventario();
+      setItemsCuracion(inv.items.filter((i) => i.tipo === "CURACION" && i.cantidad > 0));
+    } catch (error) {
+      if (error instanceof ErrorApi) {
+        toast.error(error.message);
+      } else {
+        toast.error("No se pudo usar el objeto curativo.");
+      }
+    } finally {
+      setProcesandoAccion(false);
     }
-    setModalCapturaAbierto(true);
   };
 
-  const ejecutarCaptura = async () => {
-    if (!encuentro) return;
-    setModalCapturaAbierto(false);
+  // Manejador de Cambio de Criatura Activa
+  const handleCambiarCriatura = async (nuevaCriaturaId: string) => {
+    if (procesandoAccion || combateFinalizado) return;
+
+    setMenuState("ROOT");
+    setProcesandoAccion(true);
+    reproducirSonido("click");
+
     try {
-      setProcesandoAccion(true);
+      const criaturasIdsOrdenadas = [
+        nuevaCriaturaId,
+        ...equipoCriaturas
+          .map((c) => c.criaturaId)
+          .filter((id) => id !== nuevaCriaturaId),
+      ];
+
+      await api.actualizarOrdenEquipo({
+        criaturaIds: criaturasIdsOrdenadas,
+      });
+
+      reproducirSonido("confirmar");
+      toast.success("¡Criatura al frente cambiada con éxito!");
+
+      await refrescarCombate();
+
+      const criaturaNueva = equipoCriaturas.find((c) => c.criaturaId === nuevaCriaturaId);
+      setBitacoraCombate((prev) => [
+        `¡Cambiaste al frente de combate a ${criaturaNueva?.nombre ?? "tu compañera"}!`,
+        ...prev,
+      ]);
+    } catch (error) {
+      if (error instanceof ErrorApi) {
+        toast.error(error.message);
+      } else {
+        toast.error("No se pudo cambiar de criatura.");
+      }
+    } finally {
+      setProcesandoAccion(false);
+    }
+  };
+
+  // Secuencia de Captura con Suspenso Visual e Incertidumbre
+  const ejecutarCaptura = async () => {
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
+
+    cerrojoAccion.current = true;
+    setMenuState("ROOT");
+    setProcesandoAccion(true);
+    setSecuenciaCaptura(true);
+    reproducirSonido("seleccionar");
+
+    await new Promise((resolver) => setTimeout(resolver, 1200));
+
+    try {
       const resultado = await api.capturar({
         encuentroId: encuentro.encuentroId,
         itemCodigo: talismanSeleccionado,
+        turnoEsperado: encuentro.turno,
       });
 
+      setSecuenciaCaptura(false);
+
       if (resultado.exito) {
+        reproducirSonido("captura");
         const destino = resultado.destinoCaptura === "EQUIPO" ? "tu equipo activo" : "el almacén";
-        toast.success(`¡Captura exitosa! ${resultado.criaturaCapturada?.nombre ?? "La criatura"} fue enviada a ${destino}.`);
+        toast.success(`¡Captura exitosa! Criatura enviada a ${destino}.`);
+
         setBitacoraCombate((prev) => [resultado.mensaje, ...prev]);
         setCombateFinalizado(true);
         setEstadoFinal("CAPTURADO");
-      } else {
-        toast.error(resultado.mensaje || "El talismán falló y la criatura se resistió.");
-        const mensajesFallo = [resultado.mensaje || "La criatura se resistió a la captura."];
-        if (resultado.contraataqueRival && aliado) {
-          mensajesFallo.push(
-            `El rival contraatacó con ${resultado.contraataqueRival.movimiento} causando ${resultado.contraataqueRival.danoCausado} de daño.`,
-          );
-          if (typeof resultado.contraataqueRival.hpRestanteAliado === "number") {
-            setAliado({
-              ...aliado,
-              hpActual: Math.max(0, resultado.contraataqueRival.hpRestanteAliado),
-            });
-          }
+        setDestinoCaptura(resultado.destinoCaptura || "EQUIPO");
+        if (resultado.criaturaCapturada) {
+          setCriaturaCapturada(resultado.criaturaCapturada);
         }
-        setBitacoraCombate((prev) => [...mensajesFallo, ...prev]);
+      } else {
+        reproducirSonido("error");
+        toast.error(resultado.mensaje || "El talismán falló y la criatura se resistió.");
+
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "La criatura se resistió a la captura.",
+            ...prev,
+          ]);
+        }
+
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          (resultado.estado as string) === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
+
+        const inv = await api.obtenerInventario();
+        setTalismanes(inv.items.filter((i) => i.tipo === "CAPTURA" && i.cantidad > 0));
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      setSecuenciaCaptura(false);
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("Error al intentar la captura.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
 
+  // Manejador de Huida del Combate
   const handleHuir = async () => {
-    if (!encuentro) return;
+    if (!encuentro || cerrojoAccion.current || procesandoAccion || combateFinalizado) return;
+
+    cerrojoAccion.current = true;
+    setDialogoHuirAbierto(false);
+    setModalPausaAbierto(false);
+    setProcesandoAccion(true);
+    reproducirSonido("click");
+
     try {
-      setProcesandoAccion(true);
       const resultado = await api.huir({
         encuentroId: encuentro.encuentroId,
+        turnoEsperado: encuentro.turno,
       });
 
       if (resultado.exito) {
+        reproducirSonido("paso");
         toast.info(resultado.mensaje || "Has escapado exitosamente del combate.");
         navigate("/exploracion");
       } else {
-        toast.error("No lograste escapar. El combate continúa.");
+        reproducirSonido("error");
+        toast.error(resultado.mensaje || "No lograste escapar. El combate continúa.");
+
+        if (resultado.mensajes && resultado.mensajes.length > 0) {
+          setBitacoraCombate((prev) => [...[...resultado.mensajes!].reverse(), ...prev]);
+        } else {
+          setBitacoraCombate((prev) => [
+            resultado.mensaje || "Intentaste huir pero el rival te bloqueó el paso.",
+            ...prev,
+          ]);
+        }
+
+        await reproducirContraataqueYDoT(
+          resultado.contraataqueRival,
+          resultado.efectosFinDeTurno,
+        );
+
+        if (
+          resultado.estado === "DERROTA" ||
+          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0)
+        ) {
+          reproducirSonido("error");
+          setCombateFinalizado(true);
+          setEstadoFinal("DERROTA");
+          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+        } else if (resultado.estado === "EN_CURSO") {
+          await refrescarCombate();
+        }
       }
     } catch (error) {
-      if (error instanceof ErrorApi) {
+      if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
+        toast.info("El combate avanzó en otra pestaña. Sincronizando...");
+        await refrescarCombate();
+      } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
         toast.error("No lograste huir del combate.");
       }
     } finally {
+      cerrojoAccion.current = false;
       setProcesandoAccion(false);
     }
   };
 
   if (cargando || !rival || !aliado) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-        <Spinner className="size-8 text-primary" />
-        <p className="text-sm font-semibold text-muted-foreground animate-pulse">
-          Sincronizando estado del combate con el servidor...
-        </p>
+      <div className="flex flex-col items-center justify-center h-full h-[100dvh] w-full bg-[#070a13] gap-3 overflow-hidden">
+        <div className="bg-card border-4 border-black p-6 shadow-[6px_6px_0_0_#000] flex flex-col items-center gap-3">
+          <Spinner className="size-8 text-[#14d1e8]" />
+          <p className="text-[9px] sm:text-xs font-bold text-muted-foreground animate-pulse retro text-center">
+            Sincronizando estado del combate con el servidor...
+          </p>
+        </div>
       </div>
     );
   }
 
-  const porcentajeHpAliado = Math.round((aliado.hpActual / aliado.hpMaximo) * 100);
+  const porcentajeHpAliado = Math.max(0, Math.min(100, Math.round((aliado.hpActual / aliado.hpMaximo) * 100)));
+  const porcentajeHpRival = Math.max(0, Math.min(100, Math.round((rival.hpActual / rival.hpMaximo) * 100)));
   const esTurnoJugador = encuentro?.esTurnoJugador ?? true;
+  const movimientosAliados = aliado.movimientos && aliado.movimientos.length > 0
+    ? aliado.movimientos
+    : [{ nombre: "Golpe Firme", poder: 12, tipoAccion: "ATAQUE", slot: 1 }];
+  const slotsTacticos = construirSlotsTacticos(movimientosAliados, aliado.resonancia ?? 0);
+
+  const zonaCombateId = obtenerSlugZonaPorCriatura(rival.slug);
+  const calibracionArena = obtenerCalibracionArena(zonaCombateId);
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto py-2 sm:py-4">
-      {/* Campo de Batalla */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Panel Rival */}
-        <Card className="border-2 border-destructive/60 bg-card">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <Badge variant="destructive">Rival Silvestre</Badge>
-              <span className="text-xs font-mono text-muted-foreground">
-                Turno {encuentro?.turno ?? 1}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-3">
-            <EnemyHealthDisplay
-              enemyName={rival.nombre}
-              level={rival.nivel}
-              currentHealth={rival.hpActual}
-              maxHealth={rival.hpMaximo}
-              variant="retro"
-              textColor="red"
-            />
-            <div className="p-3 bg-muted/40 rounded text-center text-xs text-muted-foreground font-mono">
-              Salud Rival: {rival.hpActual} / {rival.hpMaximo} HP
-            </div>
-          </CardContent>
-        </Card>
+    <div className="relative h-full h-[100dvh] w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
+      {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
+      <BattlefieldBackground
+        zoneId={zonaCombateId}
+        className="flex-1 w-full relative min-h-0"
+      >
+        {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
+        <div className="flex items-center justify-between px-3 pt-2.5 pb-1 z-20">
+          <div className="w-8" />
+          {/* Pastilla Central Ornada de Turno Retro */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#0b1424]/95 border-2 border-[#d4af37] shadow-[2px_2px_0_0_#000]">
+            <span className="text-[#ffd700] text-[9px] retro">◆</span>
+            <span className="text-[9px] sm:text-[11px] font-bold text-[#ffd700] retro uppercase tracking-wider">
+              TURNO {encuentro?.turno ?? 1}: {procesandoAccion ? "ACCION..." : esTurnoJugador && !combateFinalizado ? "TU TURNO" : "TURNO ENEMIGO"}
+            </span>
+            <span className="text-[#ffd700] text-[9px] retro">◆</span>
+          </div>
 
-        {/* Panel Aliado */}
-        <Card className="border-2 border-primary/60 bg-card">
-          <CardHeader className="p-4 pb-2">
-            <div className="flex items-center justify-between">
-              <Badge variant="default">Tu Criatura</Badge>
-              <span className="text-xs font-bold text-foreground font-mono">
-                Nv. {aliado.nivel}
-              </span>
+          {/* Botón de Pausa Retro en la Esquina Superior Derecha */}
+          <button
+            type="button"
+            aria-label="Pausa y opciones secundarias de combate"
+            onClick={() => {
+              reproducirSonido("click", 0.4);
+              setModalPausaAbierto(true);
+            }}
+            className="size-8 border-2 border-black bg-[#121927] hover:bg-[#1c273c] text-foreground shadow-[2px_2px_0_0_#000] active:translate-y-0.5 flex items-center justify-center transition-colors"
+          >
+            <Pause className="size-4 text-[#14d1e8]" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Capa de Incertidumbre de Captura */}
+        {secuenciaCaptura && (
+          <div className="absolute inset-0 z-30 bg-black/85 flex flex-col items-center justify-center gap-4 anim-revelacion-evento">
+            <div className="size-20 sm:size-24 border-4 border-black bg-bastion flex items-center justify-center anim-captura-incertidumbre shadow-[4px_4px_0_0_#000]">
+              <img
+                src={obtenerImagenObjeto(talismanSeleccionado)}
+                alt="Talismán lanzado"
+                onError={(e) => manejarErrorImagen(e, "objeto")}
+                className="size-12 sm:size-16 pixelated object-contain"
+              />
             </div>
-          </CardHeader>
-          <CardContent className="p-4 pt-2 space-y-3">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-primary">{aliado.nombre}</span>
-                <span className="font-mono text-muted-foreground">
-                  {aliado.hpActual} / {aliado.hpMaximo} HP
+            <div className="text-center space-y-1">
+              <p className="retro text-xs sm:text-sm text-amber-300 tracking-wider">
+                Sintonizando talismán...
+              </p>
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground retro">
+                Pulsos de resonancia con {rival.nombre}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Clímax oscuro al desatar Movimiento Insignia */}
+        {climaxInsignia && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 z-10 bg-black/65 pointer-events-none transition-opacity"
+          />
+        )}
+
+        {/* Aviso Central Inconfundible del Ataque Enemigo */}
+        {avisoAtaqueRival && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute left-1/2 top-14 -translate-x-1/2 z-30 px-3 py-1.5 bg-red-950/95 border-2 border-red-400 shadow-[4px_4px_0_0_#000] pointer-events-none anim-revelacion-evento"
+          >
+            <span className="retro text-[8px] sm:text-[10px] text-amber-200 whitespace-nowrap">
+              {avisoAtaqueRival}
+            </span>
+          </div>
+        )}
+
+        {/* ARENA DE COMBATE: Posicionamiento milimétrico calibrado por escenario */}
+        <div
+          className={`flex-1 w-full relative z-10 overflow-hidden transition-transform duration-300 ${sacudidaArena ? "anim-sacudida" : ""} ${zoomArena ? "scale-[1.04]" : "scale-100"}`}
+        >
+          {/* Proyectil Pixel-Art en vuelo exacto entre plataformas (por encima de cartas HUD) */}
+          {proyectilActivo && (
+            <div
+              aria-hidden="true"
+              style={
+                {
+                  "--origen-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.aliado.x
+                      : calibracionArena.rival.x
+                  }%`,
+                  "--origen-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(20, calibracionArena.aliado.y - 14)
+                      : Math.max(16, calibracionArena.rival.y - 12)
+                  }%`,
+                  "--destino-x": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? calibracionArena.rival.x
+                      : calibracionArena.aliado.x
+                  }%`,
+                  "--destino-y": `${
+                    proyectilActivo.direccion === "aliado-a-rival"
+                      ? Math.max(16, calibracionArena.rival.y - 12)
+                      : Math.max(20, calibracionArena.aliado.y - 14)
+                  }%`,
+                } as React.CSSProperties
+              }
+              className={`absolute z-40 size-6 sm:size-7 border-2 pointer-events-none ${proyectilActivo.claseColor} ${
+                proyectilActivo.direccion === "aliado-a-rival"
+                  ? "anim-proyectil-aliado"
+                  : "anim-proyectil-rival"
+              }`}
+            />
+          )}
+
+          {/* Destello de impacto pixel-art sobre la criatura objetivo */}
+          {impactoVisual && (
+            <div
+              aria-hidden="true"
+              style={{
+                left: `${
+                  impactoVisual.objetivo === "rival"
+                    ? calibracionArena.rival.x
+                    : calibracionArena.aliado.x
+                }%`,
+                top: `${
+                  impactoVisual.objetivo === "rival"
+                    ? Math.max(16, calibracionArena.rival.y - 12)
+                    : Math.max(20, calibracionArena.aliado.y - 14)
+                }%`,
+              }}
+              className={`absolute z-40 size-12 sm:size-16 border-2 pointer-events-none anim-impacto-golpe ${impactoVisual.claseColor}`}
+            />
+          )}
+          {/* Placa HUD Flotante Compacta del Rival (anclada sin cubrir plataformas) */}
+          <div
+            style={{
+              top: `${calibracionArena.cartaRival.top}%`,
+              left: `${calibracionArena.cartaRival.left}%`,
+            }}
+            className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+          >
+              <div className="flex items-start justify-between gap-1.5">
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  {rival.esLegendaria && (
+                    <Crown className="size-3 text-amber-400 shrink-0" aria-hidden="true" />
+                  )}
+                  <span className="font-bold text-[8px] sm:text-[9px] leading-tight break-words text-foreground retro">
+                    {rival.nombre}
+                  </span>
+                </div>
+                <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground shrink-0 retro">
+                  NV.{rival.nivel}
                 </span>
               </div>
-              <HealthBar
-                value={porcentajeHpAliado}
-                variant="retro"
-                className="h-4"
-              />
+
+              {rival.afinidad && TRADUCCION_ELEMENTOS[rival.afinidad] && (
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[rival.afinidad].clase}`}
+                  >
+                    [{TRADUCCION_ELEMENTOS[rival.afinidad].nombre}]
+                  </span>
+                </div>
+              )}
+
+              {/* Barra de Salud del Rival con Valores Numéricos y Porcentaje */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[8px] sm:text-[9px] font-bold text-red-400 retro">HP</span>
+                <div className="flex-1">
+                  <HealthBar
+                    value={porcentajeHpRival}
+                    variant="retro"
+                    className="h-2 border-black shadow-[1px_1px_0_0_#000]"
+                  />
+                </div>
+                <span className="text-[7.5px] sm:text-[8.5px] text-muted-foreground shrink-0 font-bold retro">
+                  {rival.hpActual}/{rival.hpMaximo} ({porcentajeHpRival}%)
+                </span>
+              </div>
+
+              {/* Insignias de Estado del Rival (Tocar para ver descripción) */}
+              {rival.estados && rival.estados.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap pt-0.5" role="list">
+                  {rival.estados.map((st, idx) => {
+                    const desc = describirEstado(st);
+                    const IconoComp = ICONOS_ESTADO[desc.icono] ?? Shield;
+                    return (
+                      <button
+                        key={`${st.codigo}-${idx}`}
+                        type="button"
+                        onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
+                        className={`flex items-center gap-0.5 px-1 py-0.5 border text-[7px] sm:text-[8px] retro shadow-[1px_1px_0_0_#000] active:scale-95 transition-transform ${desc.claseEstilo}`}
+                        title={`${desc.nombre}: ${desc.descripcion}`}
+                      >
+                        <IconoComp className="size-2.5" aria-hidden="true" />
+                        <span>[{desc.nombre}]</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-1 pt-1">
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>Experiencia (XP)</span>
-                <span className="font-mono">{porcentajeXp} %</span>
+            {/* Sprite del Rival apoyado exactamente en la plataforma elevada de la zona */}
+            <div
+              style={{
+                left: `clamp(56px, ${calibracionArena.rival.x}%, calc(100% - 56px))`,
+                top: `clamp(88px, ${calibracionArena.rival.y}%, calc(100% - 24px))`,
+              }}
+              className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+            >
+              {danoFlotanteRival !== null && (
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteRival && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteRival}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteRival}
+                  </span>
+                </div>
+              )}
+              <div
+                className={`relative z-10 size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival || "anim-respiracion-combate"}`}
+              >
+                <img
+                  src={obtenerImagenCriatura(rival.slug)}
+                  alt={rival.nombre}
+                  decoding="async"
+                  onError={(e) => manejarErrorImagen(e, "criatura")}
+                  className="max-h-full max-w-full object-contain pixelated drop-shadow-[0_10px_10px_rgba(0,0,0,0.85)]"
+                />
               </div>
-              <XpBar
-                value={porcentajeXp}
-                variant="retro"
-                className="h-3"
-                levelUpMessage={subioNivel ? "¡SUBIÓ DE NIVEL!" : undefined}
-              />
+              {/* Sombra de contacto sutil sobre la plataforma elevada del escenario */}
+              <div className="w-20 sm:w-28 h-2.5 bg-black/55 rounded-full blur-[2px] -mt-2 z-0" />
             </div>
-          </CardContent>
-        </Card>
+
+          {/* Sprite del Aliado apoyado exactamente en la plataforma en primer plano */}
+          <div
+            style={{
+              left: `clamp(56px, ${calibracionArena.aliado.x}%, calc(100% - 56px))`,
+              top: `clamp(110px, ${calibracionArena.aliado.y}%, calc(100% - 6px))`,
+            }}
+            className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
+          >
+              {danoFlotanteAliado !== null && (
+                <div className="absolute -top-8 flex flex-col items-center anim-dano-flotante z-20 pointer-events-none">
+                  {etiquetaFlotanteAliado && (
+                    <span className="retro text-[7px] sm:text-[8px] px-1 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0_0_#000] whitespace-nowrap mb-0.5">
+                      {etiquetaFlotanteAliado}
+                    </span>
+                  )}
+                  <span className="text-xs sm:text-sm font-bold text-red-400 drop-shadow-[2px_2px_0_#000] retro">
+                    -{danoFlotanteAliado}
+                  </span>
+                </div>
+              )}
+              {curacionFlotanteAliado !== null && (
+                <span className="absolute -top-5 text-xs sm:text-sm font-bold text-emerald-400 drop-shadow-[2px_2px_0_#000] anim-curacion-flotante z-20 retro">
+                  +{curacionFlotanteAliado} HP
+                </span>
+              )}
+              <div
+                className={`relative z-10 size-28 sm:size-36 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
+              >
+                {auraAliado && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-1 border-4 border-cyan-300 bg-cyan-400/20 animate-ping pointer-events-none"
+                  />
+                )}
+                <img
+                  src={obtenerImagenCriatura(aliado.slug)}
+                  alt={aliado.nombre}
+                  decoding="async"
+                  onError={(e) => {
+                    setEsPlaceholderAliado(true);
+                    manejarErrorImagen(e, "criatura");
+                  }}
+                  className={`max-h-full max-w-full object-contain pixelated drop-shadow-[0_8px_8px_rgba(0,0,0,0.8)] ${esPlaceholderAliado || !aliado.slug ? "" : "scale-x-[-1]"}`}
+                />
+              </div>
+              {/* Sombra de contacto sutil sobre la plataforma en primer plano del escenario */}
+              <div className="w-24 sm:w-32 h-3 bg-black/60 rounded-full blur-[2px] -mt-2 z-0" />
+            </div>
+
+            {/* Placa HUD Flotante Compacta del Aliado (anclada sin cubrir plataformas) */}
+            <div
+              style={{
+                bottom: `${calibracionArena.cartaAliado.bottom}%`,
+                right: `${calibracionArena.cartaAliado.right}%`,
+              }}
+              className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+            >
+              <div className="flex items-start justify-between gap-1.5">
+                <span className="font-bold text-[8px] sm:text-[9px] leading-tight break-words text-foreground retro flex-1 min-w-0">
+                  {aliado.nombre}
+                </span>
+                <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground shrink-0 retro">
+                  NV.{aliado.nivel}
+                </span>
+              </div>
+
+              {aliado.afinidad && TRADUCCION_ELEMENTOS[aliado.afinidad] && (
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black shadow-[1px_1px_0_0_#000] ${TRADUCCION_ELEMENTOS[aliado.afinidad].clase}`}
+                  >
+                    [{TRADUCCION_ELEMENTOS[aliado.afinidad].nombre}]
+                  </span>
+                </div>
+              )}
+
+              {/* Barra de Salud del Aliado con Valores Numéricos */}
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[8px] sm:text-[9px] font-bold text-red-400 retro">HP</span>
+                <div className="flex-1">
+                  <HealthBar
+                    value={porcentajeHpAliado}
+                    variant="retro"
+                    className="h-2 border-black shadow-[1px_1px_0_0_#000]"
+                  />
+                </div>
+                <span className="text-[8px] sm:text-[9px] text-muted-foreground shrink-0 font-bold retro">
+                  {aliado.hpActual}/{aliado.hpMaximo}
+                </span>
+              </div>
+
+              {/* Medidor de Resonancia */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[7px] sm:text-[8px] font-bold text-cyan-400 retro uppercase">RES.</span>
+                <div className="flex-1 bg-[#121927] border border-black h-2 overflow-hidden shadow-[inset_1px_1px_0_0_#000]">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      aliado.resonancia && aliado.resonancia >= 100
+                        ? "bg-amber-300 anim-pulso-resonancia"
+                        : "bg-cyan-400"
+                    }`}
+                    style={{ width: `${Math.min(100, aliado.resonancia ?? 0)}%` }}
+                  />
+                </div>
+                <span className="text-[7px] sm:text-[8px] font-bold text-cyan-300 retro">
+                  {aliado.resonancia ?? 0}%
+                </span>
+              </div>
+
+              {/* Barra de Experiencia (EXP) */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[7px] sm:text-[8px] font-bold text-amber-400 retro uppercase">EXP</span>
+                <div className="flex-1">
+                  <XpBar
+                    value={porcentajeXp}
+                    variant="retro"
+                    className="h-1.5 border-black shadow-[1px_1px_0_0_#000]"
+                    levelUpMessage={subioNivel ? "¡SUBIÓ DE NIVEL!" : undefined}
+                  />
+                </div>
+                <span className="text-[7px] sm:text-[8px] text-muted-foreground shrink-0 font-bold retro">
+                  {porcentajeXp}%
+                </span>
+              </div>
+
+              {/* Estados Activos Aliados */}
+              {aliado.estados && aliado.estados.length > 0 && (
+                <div className="flex items-center gap-1 flex-wrap pt-0.5" role="list">
+                  {aliado.estados.map((st, idx) => {
+                    const desc = describirEstado(st);
+                    const IconoComp = ICONOS_ESTADO[desc.icono] ?? Shield;
+                    return (
+                      <button
+                        key={`${st.codigo}-${idx}`}
+                        type="button"
+                        onClick={() => toast.info(`${desc.nombre}: ${desc.descripcion} (${desc.turnos})`)}
+                        className={`flex items-center gap-0.5 px-1 py-0.5 border text-[7px] sm:text-[8px] retro shadow-[1px_1px_0_0_#000] active:scale-95 transition-transform ${desc.claseEstilo}`}
+                        title={`${desc.nombre}: ${desc.descripcion}`}
+                      >
+                        <IconoComp className="size-2.5" aria-hidden="true" />
+                        <span>[{desc.nombre}]</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+        </div>
+      </BattlefieldBackground>
+
+      {/* 2. BITÁCORA DE ENCUENTRO: Ticker Colapsado de 1 Sola Línea */}
+      <div className="px-2 py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black">
+        <button
+          type="button"
+          onClick={() => {
+            reproducirSonido("click", 0.35);
+            setBitacoraAbierta((prev) => !prev);
+          }}
+          className="w-full bg-[#0c1424] border-2 border-black px-2.5 py-1.5 shadow-[2px_2px_0_0_#000] flex items-center justify-between text-left active:translate-y-0.5 transition-all group"
+          aria-expanded={bitacoraAbierta}
+          aria-label="Abrir bitácora de eventos de combate"
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+            <Scroll className="size-3.5 text-[#14d1e8] shrink-0" aria-hidden="true" />
+            <p className="text-[8px] sm:text-[9px] retro text-amber-100 truncate font-semibold">
+              {bitacoraCombate[0] ?? "El combate ha comenzado."}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[7px] sm:text-[8px] retro text-muted-foreground bg-black/60 px-1.5 py-0.5 border border-black shadow-[1px_1px_0_0_#000]">
+              {bitacoraCombate.length} ev.
+            </span>
+            <ChevronUp
+              className={`size-3.5 text-amber-300 transition-transform ${bitacoraAbierta ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
+          </div>
+        </button>
       </div>
 
-      {/* Bitácora Visual de Combate */}
-      <Card>
-        <CardHeader className="p-3 sm:p-4 pb-2">
-          <CardTitle className="text-xs sm:text-sm font-bold uppercase tracking-wider text-muted-foreground">
-            Bitácora de Combate
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-4 pt-0">
-          <div className="bg-muted/30 p-3 rounded border border-border/60 max-h-36 overflow-y-auto space-y-1 text-xs font-mono">
-            {bitacoraCombate.map((linea, index) => (
-              <p key={index} className="leading-relaxed">
-                <span className="text-primary font-bold">›</span> {linea}
-              </p>
-            ))}
-          </div>
-        </CardContent>
-
-        {/* Acciones de Combate */}
-        <CardFooter className="p-3 sm:p-4 border-t border-border/60">
-          {combateFinalizado ? (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-primary">
-                {estadoFinal === "VICTORIA"
-                  ? "¡Has ganado el combate! Victoria registrada."
-                  : estadoFinal === "CAPTURADO"
-                  ? "¡Criatura capturada con éxito!"
-                  : "El combate ha finalizado por derrota."}
+      {/* 3. DRAWER EXPANDIBLE: Bottom Sheet de Historial Completo */}
+      {bitacoraAbierta && (
+        <div className="absolute inset-x-0 bottom-0 top-[38%] z-30 bg-[#090d16]/98 border-t-4 border-black p-3 flex flex-col shadow-[0_-6px_12px_rgba(0,0,0,0.85)] anim-revelacion-evento backdrop-blur-md">
+          <div className="flex items-center justify-between pb-2 border-b-2 border-black mb-2">
+            <div className="flex items-center gap-2">
+              <Scroll className="size-4 text-[#14d1e8]" aria-hidden="true" />
+              <span className="text-xs font-bold text-foreground retro uppercase tracking-wider">
+                Bitácora de Encuentro
               </span>
-              <div className="flex gap-2">
-                {estadoFinal === "DERROTA" ? (
-                  <Button
-                    onClick={() => navigate("/curacion")}
-                    variant="destructive"
-                    className="w-full sm:w-auto"
+              <Badge variant="outline" font="retro" className="text-[9px] border-black shadow-[1px_1px_0_0_#000]">
+                {bitacoraCombate.length} eventos
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setBitacoraAbierta(false);
+              }}
+              className="h-6 px-2 text-[10px] retro hover:bg-black/40"
+            >
+              <X className="size-3.5 mr-1" aria-hidden="true" />
+              Cerrar
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-1.5 text-[9px] sm:text-[10px] retro p-1">
+            {bitacoraCombate.map((linea, index) => {
+              const esAliado = linea.includes("Tu criatura") || linea.includes("Usaste") || linea.includes("Tu aliada");
+              const esRival = linea.includes("El rival") || linea.includes("salvaje") || linea.includes("debilitada");
+              const esCaptura = linea.includes("Captura") || linea.includes("talismán") || linea.includes("sintonizada");
+              return (
+                <div key={index} className="flex items-start gap-1.5 leading-relaxed">
+                  <span
+                    className={`font-bold shrink-0 ${
+                      esAliado
+                        ? "text-[#14d1e8]"
+                        : esRival
+                        ? "text-destructive"
+                        : esCaptura
+                        ? "text-amber-400"
+                        : "text-muted-foreground"
+                    }`}
                   >
-                    Ir a Centro de Curación
+                    ›
+                  </span>
+                  <span className={index === 0 ? "text-foreground font-semibold" : "text-muted-foreground"}>
+                    {linea}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 4. CONSOLA DE ACCIONES EN LA ZONA DEL PULGAR (In-Place Contextual Deck) */}
+      <div className="px-2.5 pb-3 pt-1.5 bg-[#090d16] z-20">
+        {combateFinalizado ? (
+          /* Estado de Resolución Posterior al Combate */
+          <div className="space-y-2.5 py-1">
+            <div
+              className={`p-2.5 border-2 border-black text-center retro text-[10px] sm:text-xs font-bold shadow-[2px_2px_0_0_#000] ${
+                estadoFinal === "VICTORIA"
+                  ? "bg-emerald-950/60 text-emerald-400 border-emerald-500/60"
+                  : estadoFinal === "CAPTURADO"
+                  ? "bg-cyan-950/60 text-[#14d1e8] border-cyan-500/60"
+                  : "bg-red-950/60 text-destructive border-destructive/60"
+              }`}
+            >
+              {estadoFinal === "VICTORIA"
+                ? "¡Victoria consumada! El camino está despejado."
+                : estadoFinal === "CAPTURADO"
+                ? "¡Criatura capturada con éxito!"
+                : "Tu equipo ha quedado debilitado en combate."}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {estadoFinal === "DERROTA" ? (
+                <Button
+                  onClick={() => {
+                    reproducirSonido("click", 0.4);
+                    navigate("/curacion");
+                  }}
+                  variant="destructive"
+                  className="col-span-2 text-[10px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+                >
+                  <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
+                  <span>Ir a Curación</span>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/exploracion");
+                    }}
+                    className="text-[10px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+                  >
+                    <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+                    <span>Continuar</span>
                   </Button>
+                  <Button
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/hub");
+                    }}
+                    variant="outline"
+                    className="text-[10px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+                  >
+                    <span>Volver al Hub</span>
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ) : menuState === "ROOT" ? (
+          /* Estado Raíz: Botonera Clásica Retro + Asistente Táctico Contextual */
+          <div className="space-y-2">
+            {!combateFinalizado && (
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1 bg-[#090d16]/90 border border-slate-700 text-[9px] sm:text-[10px] text-slate-200">
+                <span className="retro text-[7px] sm:text-[8px] text-[#14d1e8] shrink-0">
+                  TÁCTICA:
+                </span>
+                <span className="truncate text-right">
+                  {(aliado.resonancia ?? 0) >= 100
+                    ? "Resonancia al 100%: Carta Insignia lista en ATACAR."
+                    : rival.estados?.some((s) => s.codigo === "BASTION")
+                      ? "Rival con Bastión: prioriza estado o técnica elemental."
+                      : rival.estados && rival.estados.length > 0
+                        ? "Rival con estado alterado: captura bonificada x1.25."
+                        : encuentro?.efectividadAliadaSobreRival?.etiqueta === "VENTAJA"
+                          ? "Tienes ventaja elemental en este cruce."
+                          : "Elige carta de ataque, objeto, relevo o captura."}
+                </span>
+              </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+              {/* 1. Atacar (Rojo Fuego Arcade con Bisel 3D) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("ATTACK");
+                }}
+                className="h-14 sm:h-16 bg-gradient-to-b from-[#dc2626] to-[#b91c1c] hover:from-[#ef4444] hover:to-[#dc2626] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {procesandoAccion ? (
+                  <Spinner className="size-4" />
                 ) : (
                   <>
-                    <Button
-                      onClick={() => navigate("/exploracion")}
-                      className="w-full sm:w-auto"
-                    >
-                      Continuar Explorando
-                    </Button>
-                    <Button
-                      onClick={() => navigate("/hub")}
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                    >
-                      Volver al Hub
-                    </Button>
+                    <Swords className="size-4 text-amber-300 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
+                    <span>ATACAR</span>
                   </>
                 )}
-              </div>
+              </button>
+
+              {/* 2. Usar Objeto (Verde Esmeralda Vital con Bisel 3D) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("ITEMS");
+                }}
+                className="h-14 sm:h-16 bg-gradient-to-b from-[#059669] to-[#047857] hover:from-[#10b981] hover:to-[#059669] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[9px] sm:text-xs flex items-center justify-center gap-1.5 sm:gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <HeartPulse className="size-4 text-emerald-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
+                <span>USAR OBJETO</span>
+              </button>
+
+              {/* 3. Cambiar Criatura (Azul Zafiro Táctico con Bisel 3D) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("SWAP");
+                }}
+                className="h-14 sm:h-16 bg-gradient-to-b from-[#2563eb] to-[#1d4ed8] hover:from-[#3b82f6] hover:to-[#2563eb] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <ArrowLeftRight className="size-4 text-cyan-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
+                <span>CAMBIAR</span>
+              </button>
+
+              {/* 4. Capturar (Púrpura Místico Talismán con Bisel 3D) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setMenuState("CAPTURE");
+                }}
+                className="h-14 sm:h-16 bg-gradient-to-b from-[#7c3aed] to-[#6d28d9] hover:from-[#8b5cf6] hover:to-[#7c3aed] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <Sparkles className="size-4 text-amber-300 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
+                <span>CAPTURAR</span>
+              </button>
+
+              {/* 5. Huir (Carmesí Oscuro Alerta con Bisel 3D) */}
+              <button
+                type="button"
+                disabled={procesandoAccion || !esTurnoJugador}
+                aria-busy={procesandoAccion}
+                onClick={() => {
+                  reproducirSonido("click", 0.4);
+                  setDialogoHuirAbierto(true);
+                }}
+                className="h-12 sm:h-16 col-span-2 sm:col-span-1 bg-gradient-to-b from-[#991b1b] to-[#7f1d1d] hover:from-[#b91c1c] hover:to-[#991b1b] text-white border-4 border-black shadow-[inset_2px_2px_0_rgba(255,255,255,0.35),inset_-2px_-2px_0_rgba(0,0,0,0.5),4px_4px_0_0_#000] retro text-[10px] sm:text-xs flex items-center justify-center gap-2 active:translate-y-0.5 active:shadow-[inset_2px_2px_0_rgba(0,0,0,0.6),2px_2px_0_0_#000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <LogOut className="size-3.5 text-red-200 drop-shadow-[1px_1px_0_#000]" aria-hidden="true" />
+                <span>HUIR</span>
+              </button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+          </div>
+        ) : menuState === "ATTACK" ? (
+          /* Submenú Contextual In-Place: Selección de 4 Movimientos */
+          <div className="space-y-2 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1.5 border-b-2 border-black mb-1">
+              <span className="text-[10px] sm:text-xs font-bold text-amber-300 retro">
+                Elige un Movimiento:
+              </span>
               <Button
-                disabled={procesandoAccion || !esTurnoJugador}
-                onClick={() => handleAtacar(0)}
-                className="flex items-center justify-center gap-2"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-7 px-2.5 text-[9px] sm:text-[10px] retro border-2 border-black bg-[#121927] hover:bg-[#1c273c] shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
               >
-                {procesandoAccion ? <Spinner className="size-4" /> : "Atacar"}
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
               </Button>
+            </div>
 
-              <Button
-                variant="secondary"
-                disabled={procesandoAccion || !esTurnoJugador}
-                onClick={abrirSelectorCaptura}
-                className="flex items-center justify-center gap-2"
-              >
-                {procesandoAccion ? <Spinner className="size-4" /> : "Capturar (Talismán)"}
-              </Button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {slotsTacticos.map((slotItem) => {
+                const { slot, movimiento: mov, bloqueado, esInsignia } = slotItem;
+                const esFuriaSlot4 = esInsignia;
+                const estaBloqueado = bloqueado;
+                const nombreMov = mov?.nombre ?? (esInsignia ? "Movimiento Insignia" : `Movimiento ${slot}`);
+                const poder = mov?.poder ?? 10;
+                const etiquetaEfectividad = (encuentro?.efectividadAliadaSobreRival?.etiqueta as keyof typeof ETIQUETA_EFECTIVIDAD) || "NEUTRAL";
+                const textoChip = ETIQUETA_EFECTIVIDAD[etiquetaEfectividad];
+                const badgeEfecto = resolverBadgeEfectoMovimiento(mov?.efecto, mov?.estadoAplicado);
+                const coreografiaCarta = clasificarCoreografiaMovimiento(mov, esInsignia);
+                const etiquetaCoreografia =
+                  coreografiaCarta === "INSIGNIA"
+                    ? "Insignia"
+                    : coreografiaCarta === "DEFENSIVO"
+                      ? "Escudo"
+                      : coreografiaCarta === "ELEMENTAL"
+                        ? "Proyectil"
+                        : "Embestida";
 
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={procesandoAccion || !esTurnoJugador}
-                    className="flex items-center justify-center gap-2"
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    disabled={procesandoAccion || estaBloqueado}
+                    aria-disabled={estaBloqueado}
+                    aria-busy={procesandoAccion}
+                    onClick={() => !estaBloqueado && handleAtacar(slot - 1)}
+                    className={`flex flex-col items-start justify-between min-h-[68px] sm:min-h-[76px] p-2 border-2 border-black shadow-[2px_3px_0_0_#000] text-left transition-all duration-150 ${
+                      estaBloqueado
+                        ? "opacity-60 cursor-not-allowed bg-muted/20 border-dashed text-muted-foreground"
+                        : esInsignia
+                        ? "border-amber-400 bg-amber-500/20 hover:bg-amber-500/30 hover:-translate-y-1.5 hover:shadow-[4px_6px_0_0_#000] anim-pulso-resonancia text-amber-200 cursor-pointer"
+                        : "bg-gradient-to-b from-[#172133] to-[#0f1624] hover:border-[#14d1e8] hover:-translate-y-1.5 hover:shadow-[4px_6px_0_0_#000] text-foreground active:translate-y-0.5 cursor-pointer"
+                    }`}
                   >
-                    Huir
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Deseas retirarte del combate?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Intentarás escapar hacia una posición segura en la ruta silvestre.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Permanecer</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleHuir}>
-                      Confirmar huida
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          )}
-        </CardFooter>
-      </Card>
+                    <div className="flex items-center justify-between w-full gap-1 min-w-0 border-b border-black/50 pb-1">
+                      <div className="flex items-center gap-1 min-w-0 truncate">
+                        <span className="text-[7px] sm:text-[8px] retro px-1 py-0.5 border border-black bg-black/50 text-[#14d1e8] shrink-0">
+                          C{slot}
+                        </span>
+                        <span className="font-semibold truncate text-[8px] sm:text-[9px] retro">
+                          {nombreMov}
+                        </span>
+                      </div>
+                      {estaBloqueado ? (
+                        <Lock className="size-3 text-amber-400/80 shrink-0" aria-hidden="true" />
+                      ) : esInsignia ? (
+                        <Sparkles className="size-3 text-amber-300 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <span className="text-[6.5px] retro text-slate-400 shrink-0">
+                          {etiquetaCoreografia}
+                        </span>
+                      )}
+                    </div>
 
-      {/* Modal de Selección de Talismán de Captura */}
-      <Dialog open={modalCapturaAbierto} onOpenChange={setModalCapturaAbierto}>
-        <DialogContent className="max-w-md">
+                    <div className="flex items-center justify-between w-full mt-1.5 min-w-0 gap-1">
+                      {estaBloqueado ? (
+                        <span className="text-[7px] sm:text-[8px] retro text-amber-300/90 leading-tight">
+                          Requiere Resonancia 100 %
+                          {esFuriaSlot4 && <span className="sr-only">Furia (Bloqueado)</span>}
+                        </span>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1 min-w-0 flex-wrap">
+                            {textoChip === "¡EFICAZ!" && (
+                              <span className="text-[6px] sm:text-[7px] retro px-1 py-0.5 border border-emerald-500 text-emerald-300 bg-emerald-500/10 flex items-center gap-0.5 shadow-[1px_1px_0_0_#000]">
+                                <ChevronsUp className="size-2 shrink-0" aria-hidden="true" />
+                                {textoChip}
+                              </span>
+                            )}
+                            {textoChip === "RESISTIDO" && (
+                              <span className="text-[6px] sm:text-[7px] retro px-1 py-0.5 border border-stone-500 text-stone-300 bg-stone-500/10 flex items-center gap-0.5 shadow-[1px_1px_0_0_#000]">
+                                <ChevronsDown className="size-2 shrink-0" aria-hidden="true" />
+                                {textoChip}
+                              </span>
+                            )}
+                            {badgeEfecto && (
+                              <span
+                                className={`text-[6px] sm:text-[7px] retro px-1 py-0.5 border truncate max-w-[85px] sm:max-w-[100px] flex items-center gap-0.5 shadow-[1px_1px_0_0_#000] ${badgeEfecto.claseEstilo}`}
+                              >
+                                {(() => {
+                                  const IconoComp = ICONOS_EFECTO_LUCIDE[badgeEfecto.icono] ?? Sparkles;
+                                  return <IconoComp className="size-2 shrink-0" aria-hidden="true" />;
+                                })()}
+                                <span className="truncate">{badgeEfecto.nombre}</span>
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[7px] sm:text-[8px] retro text-muted-foreground ml-auto shrink-0 font-bold">
+                            Pot. {poder}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : menuState === "ITEMS" ? (
+          /* Submenú Contextual In-Place: Objetos Curativos */
+          <div className="space-y-2 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1.5 border-b-2 border-black mb-1">
+              <span className="text-[10px] sm:text-xs font-bold text-emerald-400 retro">
+                Bolsa de Pociones y Curación:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-7 px-2.5 text-[9px] sm:text-[10px] retro border-2 border-black bg-[#121927] hover:bg-[#1c273c] shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {itemsCuracion.length === 0 ? (
+                <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground retro">
+                    No posees consumibles de curación en tu inventario.
+                  </p>
+                </div>
+              ) : (
+                itemsCuracion.map((item) => (
+                  <div
+                    key={item.codigo}
+                    className="flex items-center justify-between p-1.5 border-2 border-black bg-[#121927] shadow-[2px_2px_0_0_#000]"
+                  >
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={obtenerImagenObjeto(item.codigo)}
+                        alt={item.nombre}
+                        onError={(e) => manejarErrorImagen(e, "objeto")}
+                        className="size-6 pixelated object-contain"
+                      />
+                      <div>
+                        <p className="font-semibold text-[8px] sm:text-[9px] text-foreground retro">
+                          {item.nombre}
+                        </p>
+                        <span className="text-[7px] sm:text-[8px] text-muted-foreground retro">
+                          Disponibles: x{item.cantidad}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={procesandoAccion || aliado.hpActual >= aliado.hpMaximo}
+                      onClick={() => handleUsarObjetoCuracion(item.codigo)}
+                      className="text-[8px] sm:text-[9px] h-7 px-2 border-2 border-black shadow-[1px_1px_0_0_#000] active:translate-y-0.5 retro"
+                    >
+                      Usar (+HP)
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : menuState === "SWAP" ? (
+          /* Submenú Contextual In-Place: Relevo de Criatura */
+          <div className="space-y-2 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1.5 border-b-2 border-black mb-1">
+              <span className="text-[10px] sm:text-xs font-bold text-[#14d1e8] retro">
+                Relevar Criatura al Frente:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-7 px-2.5 text-[9px] sm:text-[10px] retro border-2 border-black bg-[#121927] hover:bg-[#1c273c] shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {equipoCriaturas.filter((c) => c.criaturaId !== aliado.criaturaId).length === 0 ? (
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center py-2 retro">
+                  No tienes otras criaturas en tu equipo activo.
+                </p>
+              ) : (
+                equipoCriaturas
+                  .filter((c) => c.criaturaId !== aliado.criaturaId)
+                  .map((comp) => {
+                    const debilitada = comp.hpActual <= 0;
+                    return (
+                      <div
+                        key={comp.criaturaId}
+                        className={`flex items-center justify-between p-1.5 border-2 border-black shadow-[2px_2px_0_0_#000] ${
+                          debilitada ? "opacity-50 bg-destructive/5" : "bg-[#121927]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={obtenerImagenCriatura(comp.slug)}
+                            alt={comp.nombre}
+                            onError={(e) => manejarErrorImagen(e, "criatura")}
+                            className="size-7 pixelated object-contain"
+                          />
+                          <div>
+                            <p className="font-semibold text-[8px] sm:text-[9px] text-foreground retro">
+                              {comp.nombre}
+                            </p>
+                            <span className="text-[7px] sm:text-[8px] retro text-muted-foreground">
+                              Nv. {comp.nivel} · {comp.hpActual}/{comp.hpMaximo} HP
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          disabled={debilitada || procesandoAccion}
+                          onClick={() => handleCambiarCriatura(comp.criaturaId)}
+                          className="text-[8px] sm:text-[9px] h-7 px-2 border-2 border-black shadow-[1px_1px_0_0_#000] active:translate-y-0.5 retro"
+                        >
+                          {debilitada ? "Caída" : "Relevar"}
+                        </Button>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Submenú Contextual In-Place: Talismán de Captura */
+          <div className="space-y-2 anim-revelacion-evento">
+            <div className="flex items-center justify-between pb-1.5 border-b-2 border-black mb-1">
+              <span className="text-[10px] sm:text-xs font-bold text-amber-300 retro">
+                Lanzar Talismán de Captura:
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  setMenuState("ROOT");
+                }}
+                className="h-7 px-2.5 text-[9px] sm:text-[10px] retro border-2 border-black bg-[#121927] hover:bg-[#1c273c] shadow-[2px_2px_0_0_#000] active:translate-y-0.5"
+              >
+                <RotateCcw className="size-3 mr-1" aria-hidden="true" />
+                Volver
+              </Button>
+            </div>
+
+            <div className="max-h-28 overflow-y-auto space-y-1.5 p-0.5">
+              {talismanes.length === 0 ? (
+                <div className="p-3 bg-muted/20 border-2 border-black text-center space-y-1">
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground retro">
+                    No tienes talismanes de captura en tu inventario.
+                  </p>
+                </div>
+              ) : (
+                talismanes.map((item) => (
+                  <label
+                    key={item.codigo}
+                    className={`flex items-center justify-between p-2 border-2 border-black cursor-pointer shadow-[2px_2px_0_0_#000] ${
+                      talismanSeleccionado === item.codigo
+                        ? "border-primary bg-primary/10 shadow-[2px_2px_0_0_#000]"
+                        : "bg-[#121927] hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="talisman"
+                        value={item.codigo}
+                        checked={talismanSeleccionado === item.codigo}
+                        onChange={() => {
+                          reproducirSonido("seleccionar", 0.35);
+                          setTalismanSeleccionado(item.codigo);
+                        }}
+                        className="accent-primary"
+                      />
+                      <img
+                        src={obtenerImagenObjeto(item.codigo)}
+                        alt={item.nombre}
+                        onError={(e) => manejarErrorImagen(e, "objeto")}
+                        className="size-6 pixelated object-contain"
+                      />
+                      <span className="font-semibold text-[8px] sm:text-[9px] text-foreground retro">
+                        {item.nombre}
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="text-[8px] font-mono border-black shadow-[1px_1px_0_0_#000]">
+                      x{item.cantidad}
+                    </Badge>
+                  </label>
+                ))
+              )}
+            </div>
+
+            <Button
+              className="w-full h-10 text-[9px] sm:text-xs border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-amber-600 hover:bg-amber-500 text-white retro"
+              disabled={talismanes.length === 0 || procesandoAccion}
+              onClick={ejecutarCaptura}
+            >
+              <Sparkles className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Lanzar Talismán</span>
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* MODAL DISCRETO DE PAUSA (Opciones Secundarias Retro) */}
+      <Dialog open={modalPausaAbierto} onOpenChange={setModalPausaAbierto}>
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg font-bold text-primary">
-              Seleccionar Talismán de Captura
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Elige el talismán que usarás para intentar sintonizar y capturar al rival.
+            <div className="flex items-center gap-2">
+              <Pause className="size-4 text-[#14d1e8]" aria-hidden="true" />
+              <DialogTitle className="text-xs sm:text-sm font-bold text-foreground retro">
+                Menú de Pausa
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground retro leading-relaxed">
+              Opciones secundarias y navegación del encuentro activo en Aethelgard.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2 py-2">
-            {talismanes.map((item) => (
-              <label
-                key={item.codigo}
-                className={`flex items-center justify-between p-3 border-2 rounded cursor-pointer transition-colors ${
-                  talismanSeleccionado === item.codigo
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                }`}
+          <div className="space-y-3 py-1">
+            <Button
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalPausaAbierto(false);
+              }}
+              className="w-full text-[9px] sm:text-[10px] h-10 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+            >
+              Continuar Combate
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setModalPausaAbierto(false);
+                setDialogoHuirAbierto(true);
+              }}
+              className="w-full text-[9px] sm:text-[10px] h-10 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 text-destructive hover:bg-destructive/10 retro"
+            >
+              <LogOut className="size-3.5 mr-1.5" aria-hidden="true" />
+              Huir / Rendirse
+            </Button>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/40">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  navigate("/kit-ui");
+                }}
+                className="text-[8px] sm:text-[9px] h-9 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
               >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="talisman"
-                    value={item.codigo}
-                    checked={talismanSeleccionado === item.codigo}
-                    onChange={() => setTalismanSeleccionado(item.codigo)}
-                    className="accent-primary"
-                  />
-                  <span className="font-semibold text-xs text-foreground">
-                    {item.nombre}
+                <BookOpen className="size-3.5 mr-1" aria-hidden="true" />
+                Kit de Interfaz
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  reproducirSonido("click", 0.35);
+                  navigate("/creditos");
+                }}
+                className="text-[8px] sm:text-[9px] h-9 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              >
+                <Award className="size-3.5 mr-1" aria-hidden="true" />
+                Créditos
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL RETRO: CONFIRMACIÓN DE HUIDA */}
+      <AlertDialog open={dialogoHuirAbierto} onOpenChange={setDialogoHuirAbierto}>
+        <AlertDialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-3 overflow-hidden">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2">
+              <LogOut className="size-4 text-destructive" aria-hidden="true" />
+              <AlertDialogTitle className="text-xs sm:text-sm font-bold retro text-destructive">
+                ¿Intentar escapar del combate?
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground leading-relaxed retro">
+              La probabilidad de éxito depende de la velocidad relativa de tu criatura frente al rival. Si fallas, el rival contraatacará de inmediato.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2">
+            <AlertDialogCancel
+              onClick={() => {
+                reproducirSonido("click", 0.35);
+                setDialogoHuirAbierto(false);
+              }}
+              className="text-[9px] sm:text-[10px] h-10 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+            >
+              Permanecer
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleHuir}
+              className="text-[9px] sm:text-[10px] h-10 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 bg-destructive hover:bg-destructive/90 text-white retro"
+            >
+              Confirmar Huida
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DIÁLOGO CINEMÁTICO DE VICTORIA RETRO */}
+      <Dialog open={estadoFinal === "VICTORIA"} onOpenChange={() => {}}>
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento overflow-hidden">
+          <DialogHeader className="text-center space-y-2">
+            <div className="mx-auto size-14 bg-amber-500/20 border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-pulso-turno">
+              <Trophy className="size-7 text-amber-400" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-xs sm:text-sm font-bold text-amber-400 retro tracking-wider">
+              ¡VICTORIA EN COMBATE!
+            </DialogTitle>
+            <DialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground retro leading-relaxed">
+              Has derrotado a {rival.nombre} silvestre con valentía táctica.
+            </DialogDescription>
+          </DialogHeader>
+
+          {recompensasVictoria && (
+            <div className="p-3.5 bg-[#090d16] border-2 border-black shadow-[inset_2px_2px_0_0_#000] space-y-2.5">
+              <div className="flex items-center justify-between text-[8px] sm:text-[9px] retro">
+                <span className="text-muted-foreground">Experiencia Ganada:</span>
+                <span className="font-bold text-purple-400">
+                  +{recompensasVictoria.xpGanada} XP
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[8px] sm:text-[9px] retro">
+                <span className="text-muted-foreground">Monedas Obtenidas:</span>
+                <span className="font-bold text-amber-300">
+                  +{recompensasVictoria.monedasGanadas} Monedas
+                </span>
+              </div>
+              <div className="pt-1 space-y-1">
+                <div className="flex items-center justify-between text-[8px] sm:text-[9px] retro">
+                  <span className="text-muted-foreground">Progreso de Nivel:</span>
+                  <span className="text-accent font-bold">
+                    Nv. {recompensasVictoria.nivelNuevo ?? aliado?.nivel} ({porcentajeXp}%)
                   </span>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">
-                  x{item.cantidad} disponibles
-                </Badge>
-              </label>
-            ))}
-          </div>
+                <XpBar value={porcentajeXp} variant="retro" className="h-2.5 border-black shadow-[1px_1px_0_0_#000]" />
+              </div>
+              {recompensasVictoria.subioNivel && (
+                <div className="p-2 bg-amber-500/20 border-2 border-black shadow-[2px_2px_0_0_#000] text-center anim-pulso-turno">
+                  <p className="retro text-[9px] sm:text-[10px] text-amber-300">
+                    ¡SUBIDA DE NIVEL! Nv. {recompensasVictoria.nivelNuevo ?? ((aliado?.nivel ?? 1) + 1)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
-          <DialogFooter className="flex gap-2">
-            <Button className="flex-1" onClick={ejecutarCaptura}>
-              Lanzar Talismán
+          <div className="flex flex-col gap-3 sm:gap-4 pt-2 w-full">
+            <Button
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/exploracion");
+              }}
+            >
+              <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Continuar Explorando</span>
             </Button>
             <Button
               variant="outline"
-              className="flex-1"
-              onClick={() => setModalCapturaAbierto(false)}
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/hub");
+              }}
             >
-              Cancelar
+              <span>Volver al Hub</span>
             </Button>
-          </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO CINEMÁTICO DE CAPTURA RETRO */}
+      <Dialog open={estadoFinal === "CAPTURADO"} onOpenChange={() => {}}>
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento overflow-hidden">
+          <DialogHeader className="text-center space-y-2">
+            <div className="mx-auto size-20 border-2 border-black bg-[#090d16] shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-captura-exito">
+              <img
+                src={obtenerImagenCriatura(rival.slug)}
+                alt={rival.nombre}
+                onError={(e) => manejarErrorImagen(e, "criatura")}
+                className="size-16 pixelated object-contain"
+              />
+            </div>
+            <DialogTitle className="text-xs sm:text-sm font-bold text-[#14d1e8] retro">
+              ¡CRIATURA CAPTURADA!
+            </DialogTitle>
+            <DialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground retro leading-relaxed">
+              {criaturaCapturada?.nombre ?? rival.nombre} ha sido sintonizada y enviada a{" "}
+              {destinoCaptura === "EQUIPO" ? "tu equipo activo" : "el almacén de reserva"}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 sm:gap-4 pt-2 w-full">
+            <Button
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/exploracion");
+              }}
+            >
+              <Swords className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Continuar Explorando</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/equipo");
+              }}
+            >
+              <span>Ver en Equipo</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIÁLOGO CINEMÁTICO DE DERROTA RETRO */}
+      <Dialog open={estadoFinal === "DERROTA"} onOpenChange={() => {}}>
+        <DialogContent className="border-4 border-black bg-card shadow-[6px_6px_0_0_#000] w-[calc(100vw-2rem)] sm:max-w-md p-4 sm:p-6 space-y-4 anim-revelacion-evento overflow-hidden">
+          <DialogHeader className="text-center space-y-2">
+            <div className="mx-auto size-14 bg-destructive/20 border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center anim-sacudida">
+              <Swords className="size-7 text-destructive" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-xs sm:text-sm font-bold text-destructive retro">
+              EQUIPO DEBILITADO
+            </DialogTitle>
+            <DialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground retro leading-relaxed">
+              Tu criatura aliada ha quedado fuera de combate. Debes acudir al santuario para sanar a tu equipo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 sm:gap-4 pt-2 w-full">
+            <Button
+              variant="destructive"
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/curacion");
+              }}
+            >
+              <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Ir a Centro de Curación</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+              onClick={() => {
+                reproducirSonido("click", 0.4);
+                navigate("/hub");
+              }}
+            >
+              <span>Volver al Hub</span>
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

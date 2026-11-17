@@ -11,7 +11,9 @@ import {
   calcularXpRequerida,
   calcularMonedasVictoria,
   calcularNivelDesdeXp,
+  calcularProgresoXp,
   ProgresoService,
+  REGLAS_DESBLOQUEO_TERRITORIAL,
 } from '../src/modulos/progreso/progreso.service';
 import { CuracionService } from '../src/modulos/curacion/curacion.service';
 import { InventarioService } from '../src/modulos/inventario/inventario.service';
@@ -57,6 +59,27 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       assert.strictEqual(calcularNivelDesdeXp(1, 149), 1);
       assert.strictEqual(calcularNivelDesdeXp(1, 150), 2);
       assert.strictEqual(calcularNivelDesdeXp(1, 400), 3);
+    });
+
+    it('debe calcular el porcentaje de progreso de XP exactamente en el servidor (§2.4)', () => {
+      // Nivel 1 (0 a 150 XP)
+      const inicio = calcularProgresoXp(1, 0);
+      assert.strictEqual(inicio.porcentajeXp, 0);
+      assert.strictEqual(inicio.xpNivelActual, 0);
+      assert.strictEqual(inicio.xpSiguienteNivel, 150);
+
+      const medio = calcularProgresoXp(1, 75);
+      assert.strictEqual(medio.porcentajeXp, 50);
+
+      // Nivel 2 (150 a 374 XP, rango 224 XP)
+      const justoSubido = calcularProgresoXp(2, 150);
+      assert.strictEqual(justoSubido.porcentajeXp, 0);
+      assert.strictEqual(justoSubido.xpNivelActual, 150);
+      assert.strictEqual(justoSubido.xpSiguienteNivel, 374);
+
+      // Nivel 50 (máximo nivel del juego)
+      const nivelMaximo = calcularProgresoXp(50, 999999);
+      assert.strictEqual(nivelMaximo.porcentajeXp, 100);
     });
   });
 
@@ -114,6 +137,92 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
       assert.strictEqual(resultado.cantidadRestante, 1);
     });
 
+    it('debe rechazar usarObjeto si el objeto no es de tipo CURACION (OBJETO_NO_CONSUMIBLE)', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-1',
+            personajeId: 'pj-1',
+            hpActual: 10,
+            hpMaximo: 30,
+            especie: { nombre: 'Lobo' },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-talisman',
+            codigo: 'talisman-basico',
+            nombre: 'Talismán Básico',
+            tipo: 'CAPTURA',
+            efectoValor: 1,
+          }),
+        },
+      };
+
+      const servicio = new InventarioService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.usarObjeto('usr-1', 'talisman-basico', 'cri-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'OBJETO_NO_CONSUMIBLE');
+          return true;
+        },
+      );
+    });
+
+    it('debe rechazar curación si la criatura ya tiene la salud al máximo (SALUD_COMPLETA)', async () => {
+      const prismaMock: any = {
+        personaje: { findUnique: async () => ({ id: 'pj-1' }) },
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-1',
+            personajeId: 'pj-1',
+            hpActual: 30,
+            hpMaximo: 30,
+            especie: { nombre: 'Lobo' },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-pocion',
+            codigo: 'pocion-menor',
+            nombre: 'Poción Menor',
+            tipo: 'CURACION',
+            efectoValor: 20,
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            criatura: {
+              findUnique: async () => ({
+                id: 'cri-1',
+                personajeId: 'pj-1',
+                hpActual: 30,
+                hpMaximo: 30,
+                especie: { nombre: 'Lobo' },
+              }),
+            },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new InventarioService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.usarObjeto('usr-1', 'pocion-menor', 'cri-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'SALUD_COMPLETA');
+          return true;
+        },
+      );
+    });
+
     it('debe rechazar curación en zona no autorizada con SERVICIO_NO_DISPONIBLE', async () => {
       const prismaMock: any = {
         personaje: {
@@ -139,6 +248,152 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
           return true;
         },
       );
+    });
+
+    it('debe rechazar curación si la ubicación tiene el servicio pero no es una localidad segura (esSegura: false)', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            ubicacionActual: {
+              id: 'ZON-02',
+              esSegura: false,
+              servicios: ['CURACION'],
+            },
+          }),
+        },
+      };
+
+      const servicio = new CuracionService(prismaMock);
+      await assert.rejects(
+        async () => {
+          await servicio.restaurarEquipo('usr-1');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof ForbiddenException, true);
+          assert.strictEqual(error.getResponse().codigo, 'SERVICIO_NO_DISPONIBLE');
+          return true;
+        },
+      );
+    });
+
+    it('debe restaurar atómicamente criaturas heridas y revivir criaturas caídas (HP=0) al 100% sin exceder hpMaximo (INV-03)', async () => {
+      const criaturasActualizadas: any[] = [];
+      let historialCreado: any = null;
+
+      const criaturasMock = [
+        {
+          id: 'cri-sana',
+          hpActual: 30,
+          hpMaximo: 30,
+          apodo: 'Lobo Alfa',
+          ordenEquipo: 1,
+          especie: { nombre: 'Lobo' },
+        },
+        {
+          id: 'cri-herida',
+          hpActual: 12,
+          hpMaximo: 30,
+          apodo: 'Águila Veloz',
+          ordenEquipo: 2,
+          especie: { nombre: 'Águila' },
+        },
+        {
+          id: 'cri-debilitada',
+          hpActual: 0,
+          hpMaximo: 35,
+          apodo: 'Oso Pardo',
+          ordenEquipo: 3,
+          especie: { nombre: 'Oso' },
+        },
+      ];
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-serena',
+            ubicacionActual: {
+              id: 'LOC-01',
+              nombre: 'Villa Serena',
+              esSegura: true,
+              servicios: ['CURACION'],
+            },
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            $queryRaw: async () => [{ id: 'pj-serena' }],
+            criatura: {
+              findMany: async () => criaturasMock,
+              update: async ({ where, data }: any) => {
+                criaturasActualizadas.push({ id: where.id, ...data });
+                return { id: where.id, ...data };
+              },
+            },
+            historial: {
+              create: async ({ data }: any) => {
+                historialCreado = data;
+                return { id: 'hist-1', ...data };
+              },
+            },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new CuracionService(prismaMock);
+      const resultado = await servicio.restaurarEquipo('usr-1');
+
+      // Validaciones cuantitativas globales
+      assert.strictEqual(resultado.criaturasRestauradas, 3);
+      assert.strictEqual(resultado.criaturasCuradas, 2);
+      assert.strictEqual(resultado.criaturasRevividas, 1);
+      assert.strictEqual(resultado.hpTotalRestaurado, 53); // (30 - 12) + (35 - 0) = 18 + 35 = 53
+      assert.strictEqual(resultado.ubicacionNombre, 'Villa Serena');
+
+      // Solo se actualizan cri-herida y cri-debilitada en base de datos
+      assert.strictEqual(criaturasActualizadas.length, 2);
+      assert.deepStrictEqual(criaturasActualizadas[0], { id: 'cri-herida', hpActual: 30 });
+      assert.deepStrictEqual(criaturasActualizadas[1], { id: 'cri-debilitada', hpActual: 35 });
+
+      // Verificación de detalles tácticos individuales acotados por INV-03
+      assert.strictEqual(resultado.detalles.length, 3);
+
+      assert.deepStrictEqual(resultado.detalles[0], {
+        criaturaId: 'cri-sana',
+        nombre: 'Lobo Alfa',
+        hpPrevio: 30,
+        hpNuevo: 30,
+        hpMaximo: 30,
+        hpRestaurado: 0,
+        fueRevivida: false,
+      });
+
+      assert.deepStrictEqual(resultado.detalles[1], {
+        criaturaId: 'cri-herida',
+        nombre: 'Águila Veloz',
+        hpPrevio: 12,
+        hpNuevo: 30,
+        hpMaximo: 30,
+        hpRestaurado: 18,
+        fueRevivida: false,
+      });
+
+      assert.deepStrictEqual(resultado.detalles[2], {
+        criaturaId: 'cri-debilitada',
+        nombre: 'Oso Pardo',
+        hpPrevio: 0,
+        hpNuevo: 35,
+        hpMaximo: 35,
+        hpRestaurado: 35,
+        fueRevivida: true,
+      });
+
+      // Verificación del historial transaccional
+      assert.strictEqual(historialCreado.tipo, 'CURACION');
+      assert.strictEqual(historialCreado.datosJson.criaturasCuradas, 2);
+      assert.strictEqual(historialCreado.datosJson.criaturasRevividas, 1);
+      assert.strictEqual(historialCreado.datosJson.hpTotalRestaurado, 53);
     });
   });
 
@@ -185,12 +440,138 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
         },
       );
     });
+
+    it('debe calcular compra por lotes (x5 y x10) en el servidor y actualizar saldo e inventario', async () => {
+      let saldoPersistido = 500;
+      let cantidadInventarioPersistida = 0;
+
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            monedas: saldoPersistido,
+            ubicacionActual: { id: 'LOC-02', servicios: ['TIENDA'] },
+          }),
+        },
+        objeto: {
+          findUnique: async () => ({
+            id: 'obj-pocion',
+            codigo: 'pocion-menor',
+            nombre: 'Poción Menor',
+            precioCompra: 30,
+          }),
+        },
+        $transaction: async (cb: any) => {
+          const txMock: any = {
+            personaje: {
+              findUnique: async () => ({ id: 'pj-1', monedas: saldoPersistido }),
+              update: async ({ data }: any) => {
+                saldoPersistido -= data.monedas.decrement;
+                return { id: 'pj-1', monedas: saldoPersistido };
+              },
+            },
+            inventarioPersonaje: {
+              upsert: async ({ update }: any) => {
+                cantidadInventarioPersistida += update.cantidad.increment;
+                return { id: 'inv-1', cantidad: cantidadInventarioPersistida };
+              },
+            },
+            historial: { create: async () => ({ id: 'h-1' }) },
+          };
+          return cb(txMock);
+        },
+      };
+
+      const servicio = new TiendaService(prismaMock);
+
+      // Compra lote x5: 5 * 30 = 150 monedas
+      const res5 = await servicio.comprar('usr-1', 'pocion-menor', 5);
+      assert.strictEqual(res5.cantidadComprada, 5);
+      assert.strictEqual(res5.precioUnitario, 30);
+      assert.strictEqual(res5.costoTotal, 150);
+      assert.strictEqual(res5.saldoRestante, 350);
+      assert.strictEqual(res5.cantidadEnInventario, 5);
+
+      // Compra lote x10: 10 * 30 = 300 monedas
+      const res10 = await servicio.comprar('usr-1', 'pocion-menor', 10);
+      assert.strictEqual(res10.cantidadComprada, 10);
+      assert.strictEqual(res10.precioUnitario, 30);
+      assert.strictEqual(res10.costoTotal, 300);
+      assert.strictEqual(res10.saldoRestante, 50);
+      assert.strictEqual(res10.cantidadEnInventario, 15);
+    });
+
+    it('debe exponer catálogo oficial con servicioDisponible y existencias en bolsa', async () => {
+      const prismaMock: any = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-1',
+            monedas: 250,
+            ubicacionActual: { id: 'LOC-01', nombre: 'Villa Serena', esSegura: true, servicios: ['POSADA'] },
+          }),
+        },
+        objeto: {
+          findMany: async () => [
+            { id: 'o-1', codigo: 'pocion-menor', nombre: 'Poción Menor', descripcion: 'Cura 20 HP', tipo: 'CURACION', precioCompra: 30, efectoValor: 20 },
+          ],
+        },
+        inventarioPersonaje: {
+          findMany: async () => [
+            { objetoId: 'o-1', cantidad: 3 },
+          ],
+        },
+      };
+
+      const servicio = new TiendaService(prismaMock);
+      const catalogo = await servicio.obtenerCatalogo('usr-1');
+
+      assert.strictEqual(catalogo.saldoMonedas, 250);
+      assert.strictEqual(catalogo.servicioDisponible, false); // Villa Serena no tiene TIENDA
+      assert.strictEqual(catalogo.ubicacionActual.nombre, 'Villa Serena');
+      assert.strictEqual(catalogo.items.length, 1);
+      assert.strictEqual(catalogo.items[0].cantidadEnInventario, 3);
+      assert.strictEqual(catalogo.items[0].efectoValor, 20);
+    });
   });
 
   describe('Seguridad S-6: Integridad de datos y rechazo de campos inyectados', () => {
     const pipe = new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+    });
+
+    it('debe rechazar cantidad fuera de rango en ComprarDto (cantidad: 100 y cantidad: 0)', async () => {
+      // Intento con cantidad > 99
+      await assert.rejects(
+        async () => {
+          await pipe.transform(
+            { itemCodigo: 'pocion-menor', cantidad: 100 },
+            { type: 'body', metatype: ComprarDto },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          const msg = JSON.stringify(error.getResponse());
+          assert.strictEqual(msg.includes('cantidad'), true);
+          return true;
+        },
+      );
+
+      // Intento con cantidad < 1
+      await assert.rejects(
+        async () => {
+          await pipe.transform(
+            { itemCodigo: 'pocion-menor', cantidad: 0 },
+            { type: 'body', metatype: ComprarDto },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          const msg = JSON.stringify(error.getResponse());
+          assert.strictEqual(msg.includes('cantidad'), true);
+          return true;
+        },
+      );
     });
 
     it('debe rechazar campos manipulados en ComprarDto (ej. costoTotal o precio)', async () => {
@@ -259,6 +640,381 @@ describe('Progreso, Curación y Tienda (Fase 7c)', () => {
           return true;
         },
       );
+    });
+  });
+
+  describe('Aislamiento por Personaje y entrega de recompensas (§2.4)', () => {
+    it('debe rechazar otorgar XP a una criatura que pertenece a otro personaje con ForbiddenException', async () => {
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'cri-otra',
+            personajeId: 'personaje-ajeno', // Pertenencia ajena
+            nivel: 2,
+            experiencia: 150,
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40 },
+          }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      await assert.rejects(
+        async () => {
+          await servicio.aplicarRecompensaVictoria(
+            mockPrisma,
+            'mi-personaje-autenticado',
+            'cri-otra',
+            {
+              nivel: 2,
+              especie: {
+                challengeRating: 0.5,
+                nombre: 'Lobo',
+                hpBase: 30,
+                ataqueBase: 40,
+                defensaBase: 40,
+                velocidadBase: 40,
+              },
+            },
+          );
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof ForbiddenException, true);
+          return true;
+        },
+      );
+    });
+
+    it('debe otorgar XP y acumular sobre la base canónica del nivel a la criatura propia', async () => {
+      let datosActualizados: any = null;
+      let monedasActualizadas: any = null;
+
+      const mockPrisma = {
+        criatura: {
+          findUnique: async () => ({
+            id: 'mi-criatura',
+            personajeId: 'mi-personaje',
+            nivel: 3,
+            experiencia: 10, // Desfasada previamente, base de nivel 3 es 374
+            especie: { hpBase: 30, ataqueBase: 40, defensaBase: 40, velocidadBase: 40, nombre: 'Lobo' },
+          }),
+          update: async ({ data }: any) => {
+            datosActualizados = data;
+            return { id: 'mi-criatura', ...data };
+          },
+        },
+        personaje: {
+          update: async ({ data }: any) => {
+            monedasActualizadas = data;
+            return { id: 'mi-personaje', monedas: 150 };
+          },
+        },
+        historial: {
+          create: async () => ({ id: 'his-1' }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      const resultado = await servicio.aplicarRecompensaVictoria(
+        mockPrisma,
+        'mi-personaje',
+        'mi-criatura',
+        {
+          nivel: 2,
+          especie: {
+            challengeRating: 0.5,
+            nombre: 'Lobo',
+            hpBase: 30,
+            ataqueBase: 40,
+            defensaBase: 40,
+            velocidadBase: 40,
+          },
+        },
+      );
+
+      // 374 (base nivel 3) + 10 (previa) + 46 (xpGanada para rival nv 2 con cr 0.5) = 430
+      assert.strictEqual(datosActualizados.experiencia >= 374, true);
+      assert.strictEqual(resultado.porcentajeXp > 0, true);
+    });
+  });
+  describe('Grafo de Desbloqueo Territorial (LOC-02, LOC-03, ZON-03..ZON-06)', () => {
+    it('LOC-02 rechaza con REQUISITOS_NO_CUMPLIDOS si ZON-01 tiene progreso: 80 y desbloquea con progreso: 100', async () => {
+      let progresoZon01 = 80;
+      let upsertEjecutado = false;
+
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-01') return { zonaId: 'ZON-01', progreso: progresoZon01 };
+            if (zonaId === 'LOC-02') return null;
+            return null;
+          },
+          upsert: async () => {
+            upsertEjecutado = true;
+            return { zonaId: 'LOC-02', progreso: 0 };
+          },
+        },
+        historial: {
+          create: async () => ({ id: 'his-1' }),
+        },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+
+      // Con 80% debe rechazar
+      await assert.rejects(
+        async () => {
+          await servicio.verificarYDesbloquearZona('usr-1', 'LOC-02');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'REQUISITOS_NO_CUMPLIDOS');
+          return true;
+        },
+      );
+
+      // Con 100% debe desbloquear
+      progresoZon01 = 100;
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'LOC-02');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'LOC-02');
+      assert.strictEqual(upsertEjecutado, true);
+      assert.ok(res.mensaje.includes('Puesto Fronterizo del Río'));
+    });
+
+    it('ZON-03 se desbloquea al tener ZON-02 con progreso: 100', async () => {
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-02') return { zonaId: 'ZON-02', progreso: 100 };
+            return null;
+          },
+          upsert: async () => ({ zonaId: 'ZON-03', progreso: 0 }),
+        },
+        historial: { create: async () => ({ id: 'h-1' }) },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'ZON-03');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'ZON-03');
+      assert.ok(res.mensaje.includes('Bosque Susurrante'));
+    });
+
+    it('ZON-04 exige ZON-03 al 100% y al menos 1 criatura con nivel >= 5', async () => {
+      let cuentaCriaturasNv5 = 0;
+
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-03') return { zonaId: 'ZON-03', progreso: 100 };
+            return null;
+          },
+          upsert: async () => ({ zonaId: 'ZON-04', progreso: 0 }),
+        },
+        criatura: {
+          count: async () => cuentaCriaturasNv5,
+        },
+        historial: { create: async () => ({ id: 'h-1' }) },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+
+      // Falla si no tiene criaturas nivel 5+
+      await assert.rejects(
+        async () => {
+          await servicio.verificarYDesbloquearZona('usr-1', 'ZON-04');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'REQUISITOS_NO_CUMPLIDOS');
+          return true;
+        },
+      );
+
+      // Pasa cuando tiene al menos 1 criatura nivel 5+
+      cuentaCriaturasNv5 = 1;
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'ZON-04');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'ZON-04');
+      assert.ok(res.mensaje.includes('Paso de los Riscos'));
+    });
+
+    it('LOC-03 se desbloquea al tener ZON-04 con progreso: 100', async () => {
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-04') return { zonaId: 'ZON-04', progreso: 100 };
+            return null;
+          },
+          upsert: async () => ({ zonaId: 'LOC-03', progreso: 0 }),
+        },
+        historial: { create: async () => ({ id: 'h-1' }) },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'LOC-03');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'LOC-03');
+      assert.ok(res.mensaje.includes('Bastión del Norte'));
+    });
+
+    it('ZON-05 exige ZON-04 al 100% y 3 criaturas en equipo de nivel >= 5', async () => {
+      let cuentaEquipoNv5 = 2; // Menos de 3
+
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-04') return { zonaId: 'ZON-04', progreso: 100 };
+            return null;
+          },
+          upsert: async () => ({ zonaId: 'ZON-05', progreso: 0 }),
+        },
+        criatura: {
+          count: async () => cuentaEquipoNv5,
+        },
+        historial: { create: async () => ({ id: 'h-1' }) },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+
+      await assert.rejects(
+        async () => {
+          await servicio.verificarYDesbloquearZona('usr-1', 'ZON-05');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'REQUISITOS_NO_CUMPLIDOS');
+          return true;
+        },
+      );
+
+      cuentaEquipoNv5 = 3;
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'ZON-05');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'ZON-05');
+      assert.ok(res.mensaje.includes('Cueva Umbría'));
+    });
+
+    it('ZON-06 exige ZON-05 al 100% y 1 criatura de nivel >= 10', async () => {
+      let cuentaNv10 = 0;
+
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({ id: 'pj-1', usuarioId: 'usr-1' }),
+        },
+        zonaDesbloqueada: {
+          findUnique: async ({ where }: any) => {
+            const zonaId = where.personajeId_zonaId?.zonaId;
+            if (zonaId === 'ZON-05') return { zonaId: 'ZON-05', progreso: 100 };
+            return null;
+          },
+          upsert: async () => ({ zonaId: 'ZON-06', progreso: 0 }),
+        },
+        criatura: {
+          count: async () => cuentaNv10,
+        },
+        historial: { create: async () => ({ id: 'h-1' }) },
+      } as any;
+
+      const servicio = new ProgresoService(mockPrisma);
+
+      await assert.rejects(
+        async () => {
+          await servicio.verificarYDesbloquearZona('usr-1', 'ZON-06');
+        },
+        (error: any) => {
+          assert.strictEqual(error instanceof BadRequestException, true);
+          assert.strictEqual(error.getResponse().codigo, 'REQUISITOS_NO_CUMPLIDOS');
+          return true;
+        },
+      );
+
+      cuentaNv10 = 1;
+      const res = await servicio.verificarYDesbloquearZona('usr-1', 'ZON-06');
+      assert.strictEqual(res.desbloqueada, true);
+      assert.strictEqual(res.zonaId, 'ZON-06');
+      assert.ok(res.mensaje.includes('Pico de la Cumbre'));
+    });
+
+    it('evaluarDesbloqueosAutomaticos desbloquea automáticamente LOC-02 en cuanto ZON-01 llega a 100%', async () => {
+      const zonasDesbloqueadas = [
+        { zonaId: 'LOC-01', progreso: 100 },
+        { zonaId: 'ZON-01', progreso: 100 },
+        { zonaId: 'ZON-02', progreso: 0 },
+      ];
+
+      const txMock: any = {
+        zonaDesbloqueada: {
+          findMany: async () => zonasDesbloqueadas,
+          findUnique: async ({ where }: any) => {
+            const zId = where.personajeId_zonaId?.zonaId;
+            return zonasDesbloqueadas.find((z) => z.zonaId === zId) ?? null;
+          },
+          upsert: async ({ create }: any) => {
+            zonasDesbloqueadas.push(create);
+            return create;
+          },
+        },
+        criatura: {
+          count: async () => 0,
+        },
+        historial: {
+          create: async () => ({ id: 'h-auto' }),
+        },
+      };
+
+      const servicio = new ProgresoService(txMock);
+      const recien = await servicio.evaluarDesbloqueosAutomaticos(txMock, 'pj-1');
+
+      assert.ok(recien.includes('LOC-02'), 'LOC-02 debe desbloquearse automáticamente al tener ZON-01 al 100%');
+      assert.strictEqual(zonasDesbloqueadas.some((z) => z.zonaId === 'LOC-02'), true);
+    });
+
+    it('los textos de requisito y detalleProgreso no exponen IDs internos de zona (ZON-XX / LOC-XX)', async () => {
+      const patronIdInterno = /\b(?:ZON|LOC)-\d{2}\b/;
+      for (const regla of Object.values(REGLAS_DESBLOQUEO_TERRITORIAL)) {
+        if (regla.requisito) {
+          assert.strictEqual(
+            patronIdInterno.test(regla.requisito),
+            false,
+            `El requisito de ${regla.zonaId} no debe incluir IDs internos: "${regla.requisito}"`,
+          );
+        }
+      }
+
+      const prismaMock: any = {
+        zonaDesbloqueada: { findUnique: async () => null },
+        criatura: { findMany: async () => [], count: async () => 0 },
+      };
+      const servicio = new ProgresoService(prismaMock);
+      for (const zonaId of ['LOC-02', 'ZON-03', 'ZON-04', 'LOC-03', 'ZON-05', 'ZON-06']) {
+        const evalReq = await servicio.evaluarEstadoRequisitoZona(prismaMock, 'pj-1', zonaId);
+        assert.strictEqual(
+          patronIdInterno.test(evalReq.detalleProgreso),
+          false,
+          `detalleProgreso de ${zonaId} no debe incluir IDs internos: "${evalReq.detalleProgreso}"`,
+        );
+      }
     });
   });
 });

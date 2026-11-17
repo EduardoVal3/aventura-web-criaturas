@@ -83,7 +83,7 @@ fi
 # .githooks/commit-msg: exige el formato tipo(alcance): descripción
 mensaje=$(head -n 1 "$1")
 case "$mensaje" in Merge*) exit 0 ;; esac
-if ! echo "$mensaje" | grep -Eq '^(funcionalidad|correccion|documentacion|configuracion|pruebas|refactorizacion)(\([a-z0-9-]+\))?: .{10,}'; then
+if ! echo "$mensaje" | grep -Eq '^(funcionalidad|correccion|documentacion|configuracion|pruebas|refactorizacion|diseno)(\([a-z0-9-]+\))?: .{10,}'; then
   echo "Mensaje inválido. Formato: tipo(alcance): descripción en español (mínimo 10 caracteres)"
   exit 1
 fi

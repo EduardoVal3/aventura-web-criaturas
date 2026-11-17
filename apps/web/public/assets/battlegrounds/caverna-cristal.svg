@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Gradiente de fondo del abismo -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#060913" />
+      <stop offset="35%" stop-color="#0a1224" />
+      <stop offset="70%" stop-color="#0c1730" />
+      <stop offset="100%" stop-color="#050811" />
+    </linearGradient>
+
+    <!-- Resplandor cian para cristales y runas -->
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Gradiente de cristales cian -->
+    <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a5f3fc" />
+      <stop offset="40%" stop-color="#22d3ee" />
+      <stop offset="80%" stop-color="#0891b2" />
+      <stop offset="100%" stop-color="#0e3f57" />
+    </linearGradient>
+
+    <!-- Gradiente de pilares oscuros -->
+    <linearGradient id="pillarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#111827" />
+      <stop offset="50%" stop-color="#1f2937" />
+      <stop offset="100%" stop-color="#0d131f" />
+    </linearGradient>
+
+    <!-- Gradiente de la calzada de combate en perspectiva -->
+    <linearGradient id="pathGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#162035" />
+      <stop offset="40%" stop-color="#1a2742" />
+      <stop offset="70%" stop-color="#18233c" />
+      <stop offset="100%" stop-color="#111a2d" />
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo base -->
+  <rect width="1080" height="1920" fill="url(#bgGrad)" />
+
+  <!-- Estructura de la caverna / Arcos lejanos -->
+  <path d="M0,0 L1080,0 L1080,800 Q540,650 0,800 Z" fill="#090e1b" opacity="0.8" />
+  <path d="M0,0 L1080,0 L1080,600 Q540,480 0,600 Z" fill="#050811" opacity="0.9" />
+
+  <!-- Portal / Santuario del fondo al final del corredor -->
+  <g transform="translate(180, 420)">
+    <!-- Marco de portal -->
+    <polygon points="40,260 40,80 180,0 320,0 460,80 460,260 380,260 380,100 300,40 200,40 120,100 120,260" fill="#151e30" stroke="#0e1726" stroke-width="6" />
+    <!-- Luz interior del portal -->
+    <rect x="120" y="40" width="260" height="220" fill="#0b172a" />
+    <!-- Runas centrales de la puerta -->
+    <g filter="url(#glowCyan)" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" fill="none">
+      <path d="M220,90 L200,140 L220,190" />
+      <path d="M280,90 L300,140 L280,190" />
+      <circle cx="250" cy="140" r="12" fill="#38bdf8" />
+      <line x1="250" y1="80" x2="250" y2="105" />
+      <line x1="250" y1="175" x2="250" y2="200" />
+    </g>
+  </g>
+
+  <!-- Pasarela / Calzada diagonal de combate en perspectiva (estilo JRPG) -->
+  <!-- Borde inferior izquierdo hacia arriba a la derecha -->
+  <polygon points="-100,1500 480,720 1150,720 1200,1200 600,1950 -100,1950" fill="url(#pathGrad)" stroke="#22d3ee" stroke-width="4" stroke-opacity="0.5" />
+
+  <!-- Borde iluminado de la pasarela (neón cian) -->
+  <line x1="-100" y1="1500" x2="480" y2="720" stroke="#38bdf8" stroke-width="6" filter="url(#glowCyan)" />
+  <line x1="480" y1="720" x2="1150" y2="720" stroke="#38bdf8" stroke-width="6" filter="url(#glowCyan)" />
+
+  <!-- Barandilla / Borde biselado con gemas cian -->
+  <g fill="#22d3ee" filter="url(#glowCyan)">
+    <polygon points="520,740 535,740 530,760 515,760" />
+    <polygon points="680,740 695,740 690,760 675,760" />
+    <polygon points="840,740 855,740 850,760 835,760" />
+    <polygon points="1000,740 1015,740 1010,760 995,760" />
+  </g>
+
+  <!-- Líneas de rejilla y baldosas retro en perspectiva sobre la pasarela -->
+  <g stroke="#22d3ee" stroke-opacity="0.12" stroke-width="3">
+    <line x1="60" y1="1350" x2="620" y2="720" />
+    <line x1="200" y1="1450" x2="760" y2="720" />
+    <line x1="380" y1="1600" x2="900" y2="720" />
+    <line x1="120" y1="1100" x2="900" y2="1050" />
+    <line x1="240" y1="950" x2="1020" y2="880" />
+    <line x1="360" y1="840" x2="1100" y2="790" />
+  </g>
+
+  <!-- Pilares monolíticos del lado izquierdo con runas cian -->
+  <!-- Pilar 1 (lejano) -->
+  <polygon points="260,380 340,340 370,680 290,720" fill="url(#pillarGrad)" stroke="#0e1726" stroke-width="4" />
+  <g filter="url(#glowCyan)" fill="#38bdf8" font-family="monospace" font-size="20" font-weight="bold" opacity="0.85">
+    <text x="310" y="460">᚛</text>
+    <text x="312" y="510">ᚠ</text>
+    <text x="310" y="560">ᚱ</text>
+    <text x="314" y="610">ᚲ</text>
+  </g>
+
+  <!-- Pilar 2 (medio) -->
+  <polygon points="120,440 220,390 260,940 160,1000" fill="url(#pillarGrad)" stroke="#0e1726" stroke-width="5" />
+  <g filter="url(#glowCyan)" fill="#38bdf8" font-family="monospace" font-size="28" font-weight="bold" opacity="0.9">
+    <text x="175" y="560">ᚦ</text>
+    <text x="178" y="640">ᚺ</text>
+    <text x="175" y="720">ᚲ</text>
+    <text x="178" y="800">ᛋ</text>
+  </g>
+
+  <!-- Pilar 3 (cercano) -->
+  <polygon points="-80,560 60,500 120,1350" fill="url(#pillarGrad)" stroke="#0e1726" stroke-width="6" />
+
+  <!-- Cristales de resonancia gigantes (Agrupación izquierda en primer plano) -->
+  <g filter="url(#glowCyan)">
+    <!-- Cristal 1 grande -->
+    <polygon points="0,1180 80,1050 120,1190 70,1320" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="3" />
+    <!-- Cristal 2 afilado -->
+    <polygon points="60,1120 120,950 160,1100 110,1220" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="3" />
+    <!-- Cristal 3 medio -->
+    <polygon points="-20,1260 40,1180 70,1320 0,1380" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="2" />
+  </g>
+
+  <!-- Cristales de resonancia gigantes (Agrupación derecha en primer plano) -->
+  <g filter="url(#glowCyan)">
+    <!-- Cristal derecho 1 -->
+    <polygon points="860,1350 940,1160 1020,1300 940,1480" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="4" />
+    <!-- Cristal derecho 2 alto -->
+    <polygon points="920,1220 980,1040 1060,1200 980,1380" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="4" />
+    <!-- Cristal derecho 3 lateral -->
+    <polygon points="1000,1280 1080,1150 1120,1300 1040,1420" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="3" />
+  </g>
+
+  <!-- Cristales de fondo (lejanos a la derecha) -->
+  <g filter="url(#glowCyan)" opacity="0.6">
+    <polygon points="840,680 880,580 910,670 870,740" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="2" />
+    <polygon points="900,660 930,550 960,650 930,720" fill="url(#crystalGrad)" stroke="#e0f2fe" stroke-width="2" />
+  </g>
+
+  <!-- Partículas y motas de polvo mágico flotante -->
+  <g fill="#a5f3fc" opacity="0.7">
+    <circle cx="280" cy="850" r="3" />
+    <circle cx="340" cy="980" r="2" />
+    <circle cx="520" cy="780" r="4" filter="url(#glowCyan)" />
+    <circle cx="700" cy="680" r="2.5" />
+    <circle cx="820" cy="860" r="3" />
+    <circle cx="650" cy="1150" r="3.5" filter="url(#glowCyan)" />
+    <circle cx="450" cy="1300" r="2.5" />
+    <circle cx="780" cy="1400" r="4" filter="url(#glowCyan)" />
+  </g>
+
+  <!-- Viñeta radial oscura perimetral -->
+  <radialGradient id="vignette" cx="50%" cy="50%" r="65%">
+    <stop offset="50%" stop-color="#000000" stop-opacity="0" />
+    <stop offset="85%" stop-color="#020408" stop-opacity="0.4" />
+    <stop offset="100%" stop-color="#010204" stop-opacity="0.85" />
+  </radialGradient>
+  <rect width="1080" height="1920" fill="url(#vignette)" pointer-events="none" />
+</svg>

@@ -154,8 +154,8 @@ Todas las zonas silvestres (`ZON-01` a `ZON-06`) cuentan con sus tablas sembrada
 | Zona | Nombre de la Zona | ENCUENTRO (%) | OBJETO (%) | SIN_EVENTO (%) | Total Suma |
 | :--- | :--- | :---: | :---: | :---: | :---: |
 | **ZON-01** | Praderas del Amanecer | 60 % | 25 % | 15 % | 100 (INV-01) |
-| **ZON-02** | Bosque Susurrante | 65 % | 20 % | 15 % | 100 (INV-01) |
-| **ZON-03** | Riberas del Lago Espejo | 65 % | 20 % | 15 % | 100 (INV-01) |
+| **ZON-02** | Riberas del Lago Espejo | 65 % | 20 % | 15 % | 100 (INV-01) |
+| **ZON-03** | Bosque Susurrante | 65 % | 20 % | 15 % | 100 (INV-01) |
 | **ZON-04** | Paso de los Riscos | 70 % | 15 % | 15 % | 100 (INV-01) |
 | **ZON-05** | Cueva Umbría | 75 % | 15 % | 10 % | 100 (INV-01) |
 | **ZON-06** | Pico de la Cumbre | 80 % | 10 % | 10 % | 100 (INV-01) |

@@ -24,7 +24,7 @@ export function LayoutPrincipal() {
 
   if (esCombate || esHub) {
     return (
-      <div className="h-screen h-[100dvh] w-full overflow-hidden bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full">
+      <div className="h-dvh w-full overflow-hidden bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full">
         <Outlet />
         <Toaster />
       </div>
@@ -33,7 +33,7 @@ export function LayoutPrincipal() {
 
   // simplificacion: retroalimentación sonora centralizada a volumen 0.3 para preservar ergonomía auditiva sin saturar
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full overflow-x-hidden">
+    <div className="min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary selection:text-primary-foreground max-w-full overflow-x-hidden">
       <header className="border-b-4 border-black bg-card/95 shadow-[0_4px_0_0_#000] sticky top-0 z-40 px-2.5 py-1.5 sm:px-6 sm:py-2.5 backdrop-blur-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
           <Link
@@ -92,7 +92,7 @@ export function LayoutPrincipal() {
         <Outlet />
       </main>
 
-      <footer className="border-t-4 border-black bg-card/95 shadow-[0_-4px_0_0_#000] px-3 py-4 sm:px-6 sm:py-5 mt-auto">
+      <footer className="border-t-4 border-black bg-card/95 shadow-[0_-4px_0_0_#000] px-3 pt-4 pb-zona-segura sm:px-6 sm:pt-5 mt-auto">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row items-center sm:items-baseline gap-1 sm:gap-2">
             <span className="retro text-[8px] sm:text-[9px] text-foreground/90 font-bold tracking-tight">
@@ -100,7 +100,7 @@ export function LayoutPrincipal() {
             </span>
             <span className="hidden sm:inline text-muted-foreground/60 text-[8px]">·</span>
             <span className="retro text-[7px] sm:text-[8px] text-muted-foreground/80 tracking-tight break-words">
-              Proyecto Integrador ISC-305
+              Aventura RPG Táctica · ISC-305 Programación Web
             </span>
           </div>
           <nav className="flex items-center justify-center gap-4 sm:gap-6" aria-label="Enlaces al pie">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { RUTAS_PLACEHOLDERS, sanitizarSlugZona } from "@/lib/assets";
+import { cn } from "@/lib/utils";
 
 export interface BattlefieldBackgroundProps {
   /**
@@ -123,7 +124,11 @@ export function BattlefieldBackground({
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden select-none bg-[#090d16] ${className}`}
+      className={cn(
+        "relative w-full overflow-hidden select-none bg-[#090d16]",
+        !className.includes("flex-1") && "h-full",
+        className,
+      )}
       data-testid="battlefield-background"
     >
       {/* 1. Capa de Video o Imagen Base (si existe WebP real de zona) */}

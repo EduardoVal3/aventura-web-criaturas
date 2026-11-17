@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: aethelgard-api
+    runtime: node
+    plan: free
+    region: oregon
+    healthCheckPath: /api/salud
+    buildCommand: corepack enable && corepack prepare pnpm@10.28.1 --activate && pnpm install --frozen-lockfile --prod=false && pnpm --filter api build
+    startCommand: pnpm --filter api run arranque:nube
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRETO
+        generateValue: true
+      - key: CORS_ORIGEN
+        sync: false

@@ -78,22 +78,22 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
     origenId: "ZON-01",
     destinoId: "LOC-02",
     inicio: { x: 336, y: 466 },
-    control: { x: 408, y: 439 },
+    control: { x: 408, y: 444 },
     fin: { x: 474, y: 468 },
   },
   {
     origenId: "ZON-02",
     destinoId: "ZON-03",
     inicio: { x: 1018, y: 725 },
-    control: { x: 1076, y: 704 },
+    control: { x: 1078, y: 711 },
     fin: { x: 1138, y: 725 },
   },
   {
     origenId: "LOC-02",
     destinoId: "ZON-03",
     inicio: { x: 794, y: 503 },
-    control: { x: 956, y: 422 },
-    fin: { x: 1134, y: 594 },
+    control: { x: 964, y: 416 },
+    fin: { x: 1142, y: 588 },
   },
   {
     origenId: "LOC-02",
@@ -105,9 +105,9 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
   {
     origenId: "ZON-04",
     destinoId: "LOC-03",
-    inicio: { x: 738, y: 288 },
-    control: { x: 682, y: 256 },
-    fin: { x: 614, y: 250 },
+    inicio: { x: 750, y: 294 },
+    control: { x: 698, y: 261 },
+    fin: { x: 636, y: 254 },
   },
   {
     origenId: "ZON-04",
@@ -121,14 +121,14 @@ export const TRAYECTOS_PUENTES_AETHELGARD: readonly TrayectoPuenteMapa[] = [
     destinoId: "ZON-06",
     inicio: { x: 626, y: 168 },
     control: { x: 696, y: 122 },
-    fin: { x: 780, y: 122 },
+    fin: { x: 774, y: 123 },
   },
   {
     origenId: "ZON-05",
     destinoId: "ZON-06",
-    inicio: { x: 1328, y: 246 },
-    control: { x: 1270, y: 192 },
-    fin: { x: 1214, y: 178 },
+    inicio: { x: 1378, y: 274 },
+    control: { x: 1320, y: 206 },
+    fin: { x: 1238, y: 186 },
   },
 ];
 
@@ -287,7 +287,12 @@ export function dibujarFondoOceanoContinuo(
 
   let cache = cacheGradientesRespaldo.get(ctx);
   if (!cache) {
-    const gradMar = ctx.createLinearGradient(0, -140, 0, DIMENSIONES_MAPA_MUNDO.alto + 160);
+    const gradMar = ctx.createLinearGradient(
+      0,
+      -140,
+      0,
+      DIMENSIONES_MAPA_MUNDO.alto + 160,
+    );
     gradMar.addColorStop(0, "#021327");
     gradMar.addColorStop(0.28, "#042342");
     gradMar.addColorStop(0.55, "#052a4e");
@@ -574,6 +579,23 @@ function dibujarPuentesYRutasVivas(
       nOrig?.desbloqueada && nDest?.desbloqueada,
     );
 
+    if (!rutaDesbloqueada) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(4, 9, 22, 0.52)";
+      ctx.lineWidth = 14;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(ruta.inicio.x, ruta.inicio.y);
+      ctx.quadraticCurveTo(
+        ruta.control.x,
+        ruta.control.y,
+        ruta.fin.x,
+        ruta.fin.y,
+      );
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
     if (!rutaDesbloqueada) continue;
 
     const otroId =
@@ -639,17 +661,32 @@ export function dibujarFondoCieloMapa(
 ): void {
   const riscos = nodos.find((n) => n.id === "ZON-04");
   if (riscos) {
-    dibujarFondoRiscos(ctx, Boolean(riscos.desbloqueada), tiempo, reducirMovimiento);
+    dibujarFondoRiscos(
+      ctx,
+      Boolean(riscos.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
   }
 
   const cueva = nodos.find((n) => n.id === "ZON-05");
   if (cueva) {
-    dibujarFondoCuevaUmbria(ctx, Boolean(cueva.desbloqueada), tiempo, reducirMovimiento);
+    dibujarFondoCuevaUmbria(
+      ctx,
+      Boolean(cueva.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
   }
 
   const cumbre = nodos.find((n) => n.id === "ZON-06");
   if (cumbre) {
-    dibujarCieloAuroraCumbre(ctx, Boolean(cumbre.desbloqueada), tiempo, reducirMovimiento);
+    dibujarCieloAuroraCumbre(
+      ctx,
+      Boolean(cumbre.desbloqueada),
+      tiempo,
+      reducirMovimiento,
+    );
   }
 }
 
@@ -666,54 +703,57 @@ const SILUETAS_CALIBRADAS_POR_ID: Record<string, readonly Punto2D[]> = {
   "ZON-06": SILUETA_ENVOLVENTE_CUMBRE,
 };
 
-const MUESTRAS_EXCLUSION_PUENTES: readonly { x: number; y: number; r: number }[] = (() => {
-  const muestras: { x: number; y: number; r: number }[] = [];
+const MUESTRAS_EXCLUSION_PUENTES: readonly {
+  x: number;
+  y: number;
+  r2: number;
+}[] = (() => {
+  const muestras: { x: number; y: number; r2: number }[] = [];
   for (const ruta of TRAYECTOS_PUENTES_AETHELGARD) {
     const pasos = 28;
     const esGranPuenteCentral =
       (ruta.origenId === "LOC-02" && ruta.destinoId === "ZON-03") ||
       (ruta.origenId === "ZON-03" && ruta.destinoId === "LOC-02");
-    const iMin = esGranPuenteCentral ? 4 : 7;
-    const iMax = pasos - iMin;
-    for (let i = iMin; i <= iMax; i++) {
+    for (let i = 4; i <= pasos - 4; i++) {
       const u = i / pasos;
-      const cercaBorde = u < 0.3 || u > 0.7;
-      const radio = esGranPuenteCentral ? (cercaBorde ? 12 : 17) : cercaBorde ? 9 : 13;
+      const cercaBorde = u < 0.2 || u > 0.8;
+      const radio = esGranPuenteCentral
+        ? cercaBorde
+          ? 12
+          : 18
+        : cercaBorde
+          ? 9
+          : 13;
       const inv = 1 - u;
       muestras.push({
-        x: inv * inv * ruta.inicio.x + 2 * inv * u * ruta.control.x + u * u * ruta.fin.x,
-        y: inv * inv * ruta.inicio.y + 2 * inv * u * ruta.control.y + u * u * ruta.fin.y,
-        r: radio,
+        x:
+          inv * inv * ruta.inicio.x +
+          2 * inv * u * ruta.control.x +
+          u * u * ruta.fin.x,
+        y:
+          inv * inv * ruta.inicio.y +
+          2 * inv * u * ruta.control.y +
+          u * u * ruta.fin.y,
+        r2: radio * radio,
       });
     }
   }
   return muestras;
 })();
 
-function factorVisibilidadIslaCercaPuente(lx: number, ly: number): number {
-  let factorMin = 1;
-  for (let i = 0; i < MUESTRAS_EXCLUSION_PUENTES.length; i++) {
-    const m = MUESTRAS_EXCLUSION_PUENTES[i];
-    const dx = lx - m.x;
-    const dy = ly - m.y;
-    const d2 = dx * dx + dy * dy;
-    const rExt = m.r + 5;
-    if (d2 >= rExt * rExt) continue;
-    if (d2 <= m.r * m.r) return 0;
-    const f = (Math.sqrt(d2) - m.r) / 5;
-    if (f < factorMin) factorMin = f;
-  }
-  return factorMin;
-}
-
-function estaDentroPoligono(x: number, y: number, poligono: readonly Punto2D[]): boolean {
+function estaDentroPoligono(
+  x: number,
+  y: number,
+  poligono: readonly Punto2D[],
+): boolean {
   let dentro = false;
   for (let i = 0, j = poligono.length - 1; i < poligono.length; j = i++) {
     const xi = poligono[i].x;
     const yi = poligono[i].y;
     const xj = poligono[j].x;
     const yj = poligono[j].y;
-    const intersecta = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-9) + xi;
+    const intersecta =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-9) + xi;
     if (intersecta) dentro = !dentro;
   }
   return dentro;
@@ -728,7 +768,7 @@ export function esPuntoSobrePuenteMapa(lx: number, ly: number): boolean {
     const m = MUESTRAS_EXCLUSION_PUENTES[i];
     const dx = lx - m.x;
     const dy = ly - m.y;
-    if (dx * dx + dy * dy <= m.r * m.r) return true;
+    if (dx * dx + dy * dy <= m.r2) return true;
   }
   return false;
 }
@@ -769,7 +809,9 @@ interface CacheVeloBloqueadas {
 
 const cacheVeloPorMascara = new WeakMap<MascaraOceano, CacheVeloBloqueadas>();
 
-function obtenerCacheVeloBloqueadas(mascara: MascaraOceano): CacheVeloBloqueadas | null {
+function obtenerCacheVeloBloqueadas(
+  mascara: MascaraOceano,
+): CacheVeloBloqueadas | null {
   if (typeof document === "undefined") return null;
   const existente = cacheVeloPorMascara.get(mascara);
   if (existente) return existente;
@@ -786,7 +828,7 @@ function obtenerCacheVeloBloqueadas(mascara: MascaraOceano): CacheVeloBloqueadas
       const idx = fila + x;
       if (tierra[idx] !== 1) continue;
       const lx = x / escala;
-      if ((mascara.distanciaMar[idx] ?? 20) <= 8 && esPuntoSobrePuenteMapa(lx, ly)) continue;
+      if (esPuntoSobrePuenteMapa(lx, ly)) continue;
       islaPorCelda[idx] = resolverIndiceIslaEnMapa(lx, ly);
     }
   }
@@ -852,20 +894,23 @@ function reconstruirSiluetaBloqueadas(
         islaPorCelda[idx + ancho] !== islaIdx;
 
       const factorCentro = Math.max(0, 1 - distNorm * 0.42);
-      const alturaRel = Math.max(0, Math.min(1, (ly - (isla.y - isla.radioY)) / Math.max(1, isla.radioY * 2)));
-      const factorPuenteCrudo = factorVisibilidadIslaCercaPuente(lx, ly);
-      // Solo los tramos estrechos sobre agua abierta (distanciaMar baja) pertenecen al puente; evita calvas en costas nevadas
-      const distMar = mascara.distanciaMar[idx] ?? 20;
-      const factorCostaProfunda = Math.max(0, Math.min(1, (distMar - 7) / 5));
-      const factorPuente = Math.max(factorPuenteCrudo, factorCostaProfunda);
+      const alturaRel = Math.max(
+        0,
+        Math.min(
+          1,
+          (ly - (isla.y - isla.radioY)) / Math.max(1, isla.radioY * 2),
+        ),
+      );
       const alfaBase = 138 + factorCentro * 36 + alturaRel * 14;
-      const alfaFinal = Math.round((esBorde ? alfaBase * 0.72 : alfaBase) * factorPuente);
+      const alfaFinal = esBorde
+        ? Math.round(alfaBase * 0.72)
+        : Math.round(alfaBase);
 
       // Tinte azul crepuscular profundo para unificar biomas bloqueados bajo penumbra mística
       data[p] = 8;
       data[p + 1] = 15;
       data[p + 2] = 36;
-      data[p + 3] = Math.min(198, Math.max(0, alfaFinal));
+      data[p + 3] = Math.min(198, Math.max(96, alfaFinal));
     }
   }
 
@@ -888,7 +933,9 @@ function dibujarVeloIslasBloqueadas(
   }
   if (bitmaskBloq === 0) return;
 
-  const cache = mascaraOceano ? obtenerCacheVeloBloqueadas(mascaraOceano) : null;
+  const cache = mascaraOceano
+    ? obtenerCacheVeloBloqueadas(mascaraOceano)
+    : null;
   if (cache && mascaraOceano) {
     if (cache.bitmaskActual !== bitmaskBloq) {
       reconstruirSiluetaBloqueadas(cache, mascaraOceano, bitmaskBloq);
@@ -908,11 +955,29 @@ function dibujarVeloIslasBloqueadas(
       const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[i]];
       for (let b = 0; b < 2; b++) {
         const fase = i * 1.7 + b * 2.6;
-        const bx = (isla.x + Math.sin(anim * 0.00045 + fase) * isla.radioX * 0.28 + (b === 0 ? -24 : 26)) * escala;
-        const by = (isla.y + Math.cos(anim * 0.00038 + fase) * isla.radioY * 0.16 + (b === 0 ? -12 : 16)) * escala;
+        const bx =
+          (isla.x +
+            Math.sin(anim * 0.00045 + fase) * isla.radioX * 0.28 +
+            (b === 0 ? -24 : 26)) *
+          escala;
+        const by =
+          (isla.y +
+            Math.cos(anim * 0.00038 + fase) * isla.radioY * 0.16 +
+            (b === 0 ? -12 : 16)) *
+          escala;
         const rx = isla.radioX * (0.62 + b * 0.14) * escala;
-        const grad = ctxComp.createRadialGradient(bx, by, rx * 0.08, bx, by, rx);
-        grad.addColorStop(0, b === 0 ? "rgba(148, 178, 224, 0.24)" : "rgba(129, 140, 248, 0.16)");
+        const grad = ctxComp.createRadialGradient(
+          bx,
+          by,
+          rx * 0.08,
+          bx,
+          by,
+          rx,
+        );
+        grad.addColorStop(
+          0,
+          b === 0 ? "rgba(148, 178, 224, 0.24)" : "rgba(129, 140, 248, 0.16)",
+        );
         grad.addColorStop(1, "rgba(148, 178, 224, 0)");
         ctxComp.fillStyle = grad;
         ctxComp.beginPath();
@@ -953,6 +1018,8 @@ function dibujarVeloIslasBloqueadas(
 
 /**
  * Superpone toda la capa viva 60 FPS recalibrada píxel a píxel sobre la lámina transparente (1616x897):
+ * velos de niebla ceñidos a zonas bloqueadas, orbes guiados sobre los 10 puentes reales
+ * y efectos ambientales sincronizados con cada monumento, cascada, cráter, antorcha y cristal.
  * velos crepusculares ceñidos únicamente a las islas bloqueadas (sin cubrir puentes),
  * orbes guiados sobre puentes alcanzables y efectos ambientales sincronizados por bioma.
  */
@@ -969,14 +1036,33 @@ export function dibujarCapaVivaMapa(
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
 
-  // 1. Velo crepuscular pixel-perfect ceñido únicamente a islas bloqueadas (cero cobertura sobre puentes)
-  dibujarVeloIslasBloqueadas(
-    ctx,
-    nodos,
-    t,
-    reducirMovimiento,
-    mascaraOceano,
-  );
+  // 1. Velo oscuro ceñido a islas aún bloqueadas
+  for (const nodo of nodos) {
+    const isla = CONFIGURACION_ISLAS_MAPA[nodo.id];
+    if (!isla) continue;
+    // 1. Velo crepuscular pixel-perfect ceñido únicamente a islas bloqueadas (cero cobertura sobre puentes)
+    dibujarVeloIslasBloqueadas(ctx, nodos, t, reducirMovimiento, mascaraOceano);
+
+    if (!nodo.desbloqueada) {
+      ctx.save();
+      const gradNiebla = ctx.createRadialGradient(
+        isla.x,
+        isla.y,
+        isla.radioX * 0.18,
+        isla.x,
+        isla.y,
+        isla.radioX * 1.05,
+      );
+      gradNiebla.addColorStop(0, "rgba(3, 9, 22, 0.56)");
+      gradNiebla.addColorStop(0.7, "rgba(3, 9, 22, 0.4)");
+      gradNiebla.addColorStop(1, "rgba(3, 9, 22, 0)");
+      ctx.fillStyle = gradNiebla;
+      const geomBloq = generarGeometriaDiorama(isla);
+      trazarPoligonoLocal(ctx, geomBloq.contornoLocal, isla.x, isla.y, 1.02);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
 
   // 2. Puentes activos y flujo guiado sobre las pasarelas reales
   dibujarPuentesYRutasVivas(

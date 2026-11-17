@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { ExcepcionesFilter } from './comun/filtros/excepciones.filter';
+import { resolverOrigenesCors } from './comun/util/cors.util';
 
 async function iniciarServidor() {
   const app = await NestFactory.create(AppModule);
@@ -13,7 +14,7 @@ async function iniciarServidor() {
 
   // Auditoría S-7: CORS restringido al origen web autorizado sin comodín universal
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGEN', 'http://localhost:5173'),
+    origin: resolverOrigenesCors(configService.get<string>('CORS_ORIGEN')),
     credentials: true,
   });
 
@@ -38,8 +39,12 @@ async function iniciarServidor() {
   const documento = SwaggerModule.createDocument(app, configuracionSwagger);
   SwaggerModule.setup('docs', app, documento);
 
-  const puerto = configService.get<number>('PUERTO_API', 3000);
-  await app.listen(puerto);
+  const puerto = Number(
+    configService.get<string>('PORT') ??
+      configService.get<string>('PUERTO_API') ??
+      3000,
+  );
+  await app.listen(puerto, '0.0.0.0');
 }
 
 iniciarServidor();

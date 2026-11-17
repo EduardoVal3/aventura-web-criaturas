@@ -579,23 +579,6 @@ function dibujarPuentesYRutasVivas(
       nOrig?.desbloqueada && nDest?.desbloqueada,
     );
 
-    if (!rutaDesbloqueada) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(4, 9, 22, 0.52)";
-      ctx.lineWidth = 14;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(ruta.inicio.x, ruta.inicio.y);
-      ctx.quadraticCurveTo(
-        ruta.control.x,
-        ruta.control.y,
-        ruta.fin.x,
-        ruta.fin.y,
-      );
-      ctx.stroke();
-      ctx.restore();
-      continue;
-    }
     if (!rutaDesbloqueada) continue;
 
     const otroId =

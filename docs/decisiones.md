@@ -258,5 +258,26 @@
   - **Corrección de punto de entrada compilado y arranque idempotente sin SSH:** Al compilar el paquete con `tsconfig.json` incluyendo `src/`, `prisma/` y `test/`, `nest build` emite el binario de servidor en `dist/src/main.js` (corrigiendo el script `start:prod` histórico que apuntaba a `dist/main`). Además, como el plan gratuito de Render no incluye consola SSH ni *Pre-Deploy Command*, se añade el script compilado `apps/api/prisma/inicializar-nube.ts` ejecutado por `arranque:nube`, el cual aplica `prisma migrate deploy` y solo siembra `seed.js` + `importar-especies.js` cuando la base de datos aún está vacía (evitando latencias en arranques posteriores).
   - **Hardening de puerto, `VITE_URL_API` y CORS `S-7`:** `apps/api/src/main.ts` prioriza `PORT` inyectado por el PaaS sobre `PUERTO_API` y enlaza en `0.0.0.0`, mientras `resolverOrigenesCors` normaliza barras finales y listas separadas por coma rechazando el comodín `*`. En cliente, `apiHttp.ts` sanea barras finales accidentales en `VITE_URL_API`.
 
+---
+
+## 17. API Gateway en modo DB-less con Kong Gateway OSS (Subfase 11a — X-API)
+
+- **Fuentes oficiales verificadas vía Context7 (25 de noviembre de 2026):**
+  - Modo DB-less y configuración declarativa (`_format_version: "3.0"`): `https://developer.konghq.com/gateway/db-less-mode/` y `https://developer.konghq.com/gateway/deployment-topologies/`
+  - Plugin `rate-limiting` (política `local`, respuesta `429` y cabeceras `X-RateLimit-*` / `RateLimit-*` / `Retry-After`): `https://developer.konghq.com/plugins/rate-limiting/` y `https://github.com/kong/kong/blob/master/kong/plugins/rate-limiting/schema.lua`
+  - Plugin `cors` (restricción por origen exacto con `credentials: true` y preflight `OPTIONS`): `https://developer.konghq.com/plugins/cors/` y `https://github.com/kong/kong/blob/master/kong/plugins/cors/handler.lua`
+  - Plugin `key-auth` (`key_names: [apikey]`, `hide_credentials: true`, `run_on_preflight: false`): `https://developer.konghq.com/how-to/authenticate-consumers-with-session-and-key-auth/`
+  - Imagen oficial OSS en Docker Hub: `kong:3.9` (verificada en ejecución como **Kong Gateway `3.9.5`**, `database: "off"`, licencia Apache 2.0, sin licencia Enterprise requerida).
+- **Decisiones arquitectónicas y operativas (`D-23`):**
+  - **Modo DB-less (`KONG_DATABASE=off`) con plantilla declarativa sin secretos (`kong/kong.yml.plantilla`):** Se opta por Kong 3.9 en modo DB-less en `docker-compose.yml` para evitar levantar una segunda base de datos dedicada al gateway y mantener la configuración como fuente única de verdad en Git. En observancia de `S-7` y `R1`, `kong/kong.yml.plantilla` no contiene claves reales: al arrancar el contenedor `aventura-kong`, el `entrypoint` valida `KONG_CLAVE_API` desde `.env`, sanea `CORS_ORIGEN` rechazando `*`, renderiza `/tmp/kong.yml` efímero dentro del contenedor y ejecuta `kong config parse /tmp/kong.yml` antes de `kong docker-start`.
+  - **Cero impacto sobre `pnpm dev` / `pnpm dev:local` y despliegue en nube:** En `docker-compose.yml`, `KONG_CLAVE_API` usa `${KONG_CLAVE_API:-}` (validándose dentro del contenedor de `kong`) en lugar de interpolación obligatoria `:?` de Compose, evitando bloquear `docker compose up -d postgres` en entornos donde aún no se utiliza el gateway. En el Front-End (`apps/web/src/api/apiHttp.ts`), la cabecera `apikey` solo se adjunta cuando `VITE_CLAVE_GATEWAY` está definida, preservando al 100 % el arranque directo contra `:3000` y el despliegue Cloudflare Pages + Render Free.
+  - **Separación de responsabilidades `key-auth` + `rate-limiting` + `cors`:**
+    1. `cors` (en servicio `aethelgard-api`): habilita peticiones cross-origin desde Vite (`http://localhost:5173`), responde preflight `OPTIONS` directamente (`preflight_continue: false`) sin consumir cuota de exploración y expone las cabeceras `X-RateLimit-*`, `RateLimit-*` y `Retry-After`.
+    2. `key-auth` (en servicio `aethelgard-api`): exige `apikey` únicamente en cabecera (`key_in_header: true`, `key_in_query: false`, `key_in_body: false`), omite preflight (`run_on_preflight: false`) y oculta la credencial antes de reenviar a NestJS (`hide_credentials: true`).
+    3. `rate-limiting` (en `ruta-exploracion`, `/api/exploracion` con `strip_path: false`): impone `KONG_EXPLORACION_LIMITE_MINUTO` (por defecto `5` req/min) con `policy: local` (obligatoria en modo DB-less), `limit_by: consumer` y `hide_client_headers: false`, devolviendo `HTTP 429 Too Many Requests` al exceder la cuota.
+    4. **Observabilidad:** logs de acceso y error emitidos a `/dev/stdout` y `/dev/stderr`, Admin API de solo lectura acotada exclusivamente a `127.0.0.1:8001` y chequeo de salud `kong health`.
+  - **Nota académica (`X-API`):** Confirmar con el ingeniero Claudio que el API Gateway declarativo (Kong DB-less con autenticación por API key, control de tasa, CORS y trazabilidad en logs) satisface el criterio de «API Manager» del extra `X-API (+2)`.
+
+
 
 

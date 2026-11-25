@@ -38,23 +38,67 @@ import {
   type RespuestaVerificarZona,
   type RespuestaViajar,
   type UbicacionActual,
-} from "./ApiJuego";
+} from "./ApiJuego.ts";
 
-export type { DetalleCriaturaRestaurada } from "./ApiJuego";
+export type { DetalleCriaturaRestaurada } from "./ApiJuego.ts";
 
 let tokenActual: string | null = null;
 
-async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
-  const urlBase = (import.meta.env.VITE_URL_API ?? "").trim().replace(/\/+$/, "");
-  const url = `${urlBase}/api${ruta}`;
+export function normalizarUrlBaseApi(urlApi?: string): string {
+  return (urlApi ?? "").trim().replace(/\/+$/, "");
+}
 
+export function construirEncabezadosApi(
+  token: string | null,
+  claveGateway?: string,
+): Record<string, string> {
   const encabezados: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (tokenActual) {
-    encabezados.Authorization = `Bearer ${tokenActual}`;
+  const clave = (claveGateway ?? "").trim();
+  if (clave) {
+    encabezados.apikey = clave;
   }
+
+  if (token) {
+    encabezados.Authorization = `Bearer ${token}`;
+  }
+
+  return encabezados;
+}
+
+export function resolverErrorRespuestaHttp(
+  estadoHttp: number,
+  datosError: unknown,
+): { codigo: string; mensaje: string } {
+  const errorApi = (datosError as { error?: { codigo?: string; mensaje?: string } } | null)?.error;
+  if (errorApi) {
+    return {
+      codigo: errorApi.codigo ?? "ERROR_DESCONOCIDO",
+      mensaje: errorApi.mensaje ?? "No se pudo completar la solicitud.",
+    };
+  }
+
+  if (estadoHttp === 429) {
+    return {
+      codigo: "LIMITE_SOLICITUDES",
+      mensaje:
+        "Has superado el límite de solicitudes por minuto. Espera un momento e inténtalo de nuevo.",
+    };
+  }
+
+  return {
+    codigo: "ERROR_DESCONOCIDO",
+    mensaje: "No se pudo completar la solicitud.",
+  };
+}
+
+async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
+  const entorno = import.meta.env;
+  const urlBase = normalizarUrlBaseApi(entorno?.VITE_URL_API);
+  const url = `${urlBase}/api${ruta}`;
+  const encabezados = construirEncabezadosApi(tokenActual, entorno?.VITE_CLAVE_GATEWAY);
 
   let respuesta: Response;
   try {
@@ -68,18 +112,15 @@ async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Pro
   }
 
   if (!respuesta.ok) {
-    let codigo = "ERROR_DESCONOCIDO";
-    let mensaje = "No se pudo completar la solicitud.";
+    let datosError: unknown = null;
 
     try {
-      const datosError = await respuesta.json();
-      if (datosError?.error) {
-        codigo = datosError.error.codigo ?? codigo;
-        mensaje = datosError.error.mensaje ?? mensaje;
-      }
+      datosError = await respuesta.json();
     } catch {
       // simplificacion: si el cuerpo no es JSON legible, se usan los valores por defecto.
     }
+
+    const { codigo, mensaje } = resolverErrorRespuestaHttp(respuesta.status, datosError);
 
     if (respuesta.status === 401 && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("aethelgard:no-autorizado"));

@@ -17,5 +17,78 @@ services:
       timeout: 5s
       retries: 10
 
+  kong:
+    image: kong:3.9
+    container_name: aventura-kong
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      # simplificacion: se valida KONG_CLAVE_API al arrancar kong y no por interpolacion compose :? para no bloquear `docker compose up -d postgres` en pnpm dev.
+      KONG_CLAVE_API: ${KONG_CLAVE_API:-}
+      KONG_UPSTREAM_URL: ${KONG_UPSTREAM_URL:-http://host.docker.internal:3000}
+      KONG_CORS_ORIGEN: ${CORS_ORIGEN:-http://localhost:5173}
+      KONG_EXPLORACION_LIMITE_MINUTO: ${KONG_EXPLORACION_LIMITE_MINUTO:-5}
+    entrypoint:
+      - /bin/sh
+      - -eu
+      - -c
+      - |
+        if [ -z "$${KONG_CLAVE_API:-}" ]; then
+          echo "Error: Define KONG_CLAVE_API en .env antes de iniciar el servicio kong." >&2
+          exit 1
+        fi
+        case "$${KONG_EXPLORACION_LIMITE_MINUTO}" in
+          ''|*[!0-9]*|0)
+            echo "Error: KONG_EXPLORACION_LIMITE_MINUTO debe ser un entero positivo." >&2
+            exit 1
+            ;;
+        esac
+        ORIGENES_YAML=$$(awk 'BEGIN {
+          n = split(ENVIRON["KONG_CORS_ORIGEN"], arr, ",");
+          out = "";
+          for (i = 1; i <= n; i++) {
+            gsub(/^[ \t]+|[ \t]+$$/, "", arr[i]);
+            sub(/\/+$$/, "", arr[i]);
+            if (arr[i] == "" || arr[i] == "*") continue;
+            out = (out == "" ? "" : out ", ") "\"" arr[i] "\"";
+          }
+          if (out == "") out = "\"http://localhost:5173\"";
+          print out;
+        }')
+        export KONG_CORS_ORIGENES_YAML="$$ORIGENES_YAML"
+        awk 'function rep(s, k, v, i) {
+          while ((i = index(s, k)) > 0) {
+            s = substr(s, 1, i - 1) v substr(s, i + length(k));
+          }
+          return s;
+        }
+        {
+          $$0 = rep($$0, "__KONG_CLAVE_API__", ENVIRON["KONG_CLAVE_API"]);
+          $$0 = rep($$0, "__KONG_UPSTREAM_URL__", ENVIRON["KONG_UPSTREAM_URL"]);
+          $$0 = rep($$0, "__KONG_CORS_ORIGENES_YAML__", ENVIRON["KONG_CORS_ORIGENES_YAML"]);
+          $$0 = rep($$0, "__KONG_EXPLORACION_LIMITE_MINUTO__", ENVIRON["KONG_EXPLORACION_LIMITE_MINUTO"]);
+          print;
+        }' /kong/kong.yml.plantilla > /tmp/kong.yml
+        kong config parse /tmp/kong.yml
+        exec /docker-entrypoint.sh kong docker-start
+    ports:
+      - "${KONG_PUERTO_PROXY:-8000}:8000"
+      - "127.0.0.1:${KONG_PUERTO_ADMIN:-8001}:8001"
+    volumes:
+      - ./kong/kong.yml.plantilla:/kong/kong.yml.plantilla:ro
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   datos-postgres:

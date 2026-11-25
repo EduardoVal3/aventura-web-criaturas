@@ -1,0 +1,67 @@
+# Plantilla declarativa de Kong Gateway (modo DB-less, _format_version 3.0)
+# No almacena secretos reales: el contenedor inyecta variables de .env en /tmp/kong.yml al iniciar.
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: aethelgard-api
+    url: __KONG_UPSTREAM_URL__
+    routes:
+      - name: ruta-exploracion
+        paths:
+          - /api/exploracion
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: __KONG_EXPLORACION_LIMITE_MINUTO__
+              policy: local
+              limit_by: consumer
+              hide_client_headers: false
+              fault_tolerant: true
+      - name: ruta-api-general
+        paths:
+          - /api
+        strip_path: false
+    plugins:
+      - name: cors
+        config:
+          origins: [__KONG_CORS_ORIGENES_YAML__]
+          methods:
+            - GET
+            - HEAD
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Authorization
+            - Content-Type
+            - apikey
+          exposed_headers:
+            - X-RateLimit-Limit-Minute
+            - X-RateLimit-Remaining-Minute
+            - RateLimit-Limit
+            - RateLimit-Remaining
+            - RateLimit-Reset
+            - Retry-After
+          credentials: true
+          max_age: 3600
+          preflight_continue: false
+      - name: key-auth
+        config:
+          key_names:
+            - apikey
+          key_in_header: true
+          key_in_query: false
+          key_in_body: false
+          hide_credentials: true
+          run_on_preflight: false
+
+consumers:
+  - username: cliente-web-aethelgard
+    custom_id: aethelgard-web-spa
+    keyauth_credentials:
+      - key: "__KONG_CLAVE_API__"

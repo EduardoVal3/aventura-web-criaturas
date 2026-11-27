@@ -1,26 +1,29 @@
 erDiagram
     USUARIO ||--o| PERSONAJE : "posee"
-    PERSONAJE ||--o{ CRIATURA : "tiene"
-    PERSONAJE ||--o{ INVENTARIO_ITEM : "guarda"
-    PERSONAJE }o--|| UBICACION : "se encuentra en"
+    PERSONAJE ||--o{ CRIATURA : "captura y entrena"
+    PERSONAJE ||--o{ INVENTARIO_PERSONAJE : "guarda"
+    PERSONAJE }o--|| ZONA : "se encuentra en"
+    PERSONAJE ||--o{ ZONA_DESBLOQUEADA : "desbloquea"
     PERSONAJE ||--o{ ENCUENTRO : "participa en"
-    PERSONAJE ||--o{ HISTORIAL_EVENTO : "registra"
-    
-    UBICACION ||--o{ CONEXION_UBICACION : "conecta desde"
-    UBICACION ||--o{ TABLA_APARICION : "alberga"
-    UBICACION ||--o{ TABLA_EVENTO : "dispone de"
+    PERSONAJE ||--o{ HISTORIAL : "registra"
 
-    ESPECIE ||--o{ MOVIMIENTO : "dispone de"
+    ZONA ||--o{ CONEXION_ZONA : "conecta"
+    ZONA ||--o{ APARICION_ZONA : "alberga fauna"
+    ZONA ||--o{ EVENTO_ZONA : "dispone de eventos"
+    ZONA ||--o{ ZONA_DESBLOQUEADA : "habilitada para"
+
+    ESPECIE ||--o{ MOVIMIENTO : "domina 4 movimientos"
     ESPECIE ||--o{ CRIATURA : "arquetipo de"
-    ESPECIE ||--o{ TABLA_APARICION : "se sortea en"
-    
-    ITEM ||--o{ INVENTARIO_ITEM : "clasifica"
-    ENCUENTRO }o--|| ESPECIE : "enfrenta especie"
+    ESPECIE ||--o{ APARICION_ZONA : "se sortea en"
+
+    OBJETO ||--o{ INVENTARIO_PERSONAJE : "clasifica"
+    CRIATURA ||--o{ ENCUENTRO : "rival en"
+    ENCUENTRO ||--o{ COMBATE : "registra turnos"
 
     USUARIO {
         string id
-        string correo
         string nombreUsuario
+        string correo
     }
     PERSONAJE {
         string id
@@ -28,25 +31,30 @@ erDiagram
         int monedas
         string ubicacionActualId
     }
-    UBICACION {
+    ZONA {
         string id
         string nombre
         string tipo
         boolean esSegura
-        string descripcion
+        int nivelMinimo
+        int nivelMaximo
     }
-    CONEXION_UBICACION {
-        string origenId
-        string destinoId
-        boolean estaBloqueada
-        string requisitoDesbloqueo
+    CONEXION_ZONA {
+        string zonaOrigenId
+        string zonaDestinoId
+    }
+    ZONA_DESBLOQUEADA {
+        string id
+        int progreso
+        datetime fechaDesbloqueo
     }
     ESPECIE {
         string id
-        string keyExterna
+        string idExterno
         string nombre
         string slug
         string tipo
+        string elemento
         float challengeRating
         int hpBase
         int ataqueBase
@@ -54,54 +62,69 @@ erDiagram
         int velocidadBase
         float tasaCaptura
         boolean esEspecial
+        boolean esLegendaria
     }
     MOVIMIENTO {
         string id
         string nombre
         string nombreOriginal
+        string tipoAccion
         float poder
+        int slot
+        string efecto
     }
     CRIATURA {
         string id
+        string apodo
         int nivel
+        int experiencia
         int hpActual
         int hpMaximo
-        int puntosExperiencia
+        int ataque
+        int defensa
+        int velocidad
         boolean enEquipo
         int ordenEquipo
-        boolean enAlmacen
     }
-    ITEM {
+    OBJETO {
         string id
         string codigo
         string nombre
         string tipo
-        int precio
+        int precioCompra
+        int efectoValor
     }
-    INVENTARIO_ITEM {
+    INVENTARIO_PERSONAJE {
         string id
         int cantidad
     }
     ENCUENTRO {
         string id
         string estado
+        datetime fechaCreacion
+        datetime fechaResolucion
+    }
+    COMBATE {
+        string id
         int turno
-        int hpActualRival
+        boolean esTurnoJugador
+        string accionUltima
+        json detalleJson
     }
-    TABLA_APARICION {
+    APARICION_ZONA {
         string id
         int peso
-        int nivelMin
-        int nivelMax
+        int nivelMinimo
+        int nivelMaximo
     }
-    TABLA_EVENTO {
+    EVENTO_ZONA {
         string id
-        string tipoEvento
+        string tipo
         int peso
     }
-    HISTORIAL_EVENTO {
+    HISTORIAL {
         string id
-        string tipoEvento
+        string tipo
         string descripcion
-        string marcaTiempo
+        datetime fechaRegistro
     }

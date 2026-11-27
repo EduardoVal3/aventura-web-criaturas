@@ -1,55 +1,64 @@
 flowchart TD
     subgraph Cliente["1. Capa de Cliente"]
-        Navegador["Navegador Web (apps/web)"]
-        Swagger["Explorador Swagger (/docs)"]
-        Curl["Cliente HTTP / Pruebas"]
+        Navegador["Navegador Web SPA (apps/web · React 19 + Vite 8)"]
+        Swagger["Explorador OpenAPI / Swagger (/docs · 44 rutas / 46 ops)"]
+        Pruebas["Suites Unitarias y E2E (node:test · S-1 a S-7)"]
     end
 
-    subgraph Enrutamiento["2. Capa de Enrutamiento Global"]
-        Prefijo["Prefijo Global (/api)"]
-        CORS["CORS (CORS_ORIGEN)"]
+    subgraph Enrutamiento["2. Perímetro y Enrutamiento Global"]
+        Gateway["API Gateway Opcional: Kong 3.9.5 DB-less (:8000 · key-auth, rate-limiting)"]
+        Prefijo["Prefijo Global (/api) + CORS Estricto (CORS_ORIGEN sin comodín)"]
     end
 
     subgraph MiddlewareGlobal["3. Filtros, Guards y Pipes Globales"]
         Filtro["ExcepcionesFilter (Formato unificado de error)"]
-        Guard["AutenticacionGuard (@Publico / Bearer JWT)"]
+        Guard["AutenticacionGuard (APP_GUARD · @Publico / Bearer JWT + verificación BD)"]
         Pipe["ValidationPipe (whitelist, forbidNonWhitelisted, transform)"]
     end
 
-    subgraph Controladores["4. Capa de Controladores (apps/api/src/modulos)"]
-        CtrlAuth["AutenticacionController (/api/autenticacion)"]
-        CtrlDominios["Controladores de Dominio (Fases futuras)"]
+    subgraph Controladores["4. Capa de Controladores (apps/api/src · 14 controladores)"]
+        CtrlSaludAuth["SaludController (/api/salud)<br/>AutenticacionController (/api/autenticacion y /api/usuarios)"]
+        CtrlMundo["PersonajesController (/api/personajes) · MundoController (/api/mundo)<br/>ProgresoController (/api/progreso) · CriaturasController (/api/especies)"]
+        CtrlCombate["ExploracionController (/api/exploracion) · EncuentrosController (/api/encuentros)<br/>CombateController (/api/combate y /api/combates)"]
+        CtrlGestion["EquipoController (/api/equipo, /api/almacen) · InventarioController (/api/inventario)<br/>TiendaController (/api/tienda) · CuracionController (/api/curacion) · HistorialController (/api/historial)"]
     end
 
-    subgraph Servicios["5. Capa de Servicios de Dominio"]
-        SrvAuth["AutenticacionService (Registro, Login, bcrypt, JWT)"]
-        SrvDominios["10 Módulos de Dominio (usuarios, personajes, mundo, etc.)"]
+    subgraph Servicios["5. Capa de Servicios de Dominio (15 módulos en apps/api/src/modulos)"]
+        SrvCore["Núcleo: autenticacion, usuarios, personajes, mundo, progreso, criaturas, historial"]
+        SrvMotor["Motor Autoritativo (A-8): exploracion, encuentros, combate, captura (51 efectos)"]
+        SrvSoporte["Gestión y Catálogo: equipo, inventario, tienda, curacion, externo (Open5e SRD 5.2)"]
     end
 
     subgraph Persistencia["6. Capa de Persistencia"]
-        Prisma["PrismaService (Prisma Client Singleton)"]
+        Prisma["PrismaService (Prisma ORM 6.3.1 · Transacciones ACID + FOR UPDATE)"]
     end
 
     subgraph BaseDatos["7. Almacenamiento Relacional"]
-        Postgres["PostgreSQL 17 en Docker (aventura-postgres)"]
+        Postgres["PostgreSQL 17 (Docker aventura-postgres :5432, local o Neon en nube · 15 tablas)"]
     end
 
-    Navegador --> Prefijo
+    Navegador -->|"Con Kong (:8000)"| Gateway
+    Navegador -.->|"Directo (:3000 o Render Free)"| Prefijo
     Swagger --> Prefijo
-    Curl --> Prefijo
+    Pruebas --> Prefijo
+    Gateway --> Prefijo
 
-    Prefijo --> CORS
-    CORS --> Filtro
+    Prefijo --> Filtro
     Filtro --> Guard
     Guard --> Pipe
 
-    Pipe --> CtrlAuth
-    Pipe --> CtrlDominios
+    Pipe --> CtrlSaludAuth
+    Pipe --> CtrlMundo
+    Pipe --> CtrlCombate
+    Pipe --> CtrlGestion
 
-    CtrlAuth --> SrvAuth
-    CtrlDominios --> SrvDominios
+    CtrlSaludAuth --> SrvCore
+    CtrlMundo --> SrvCore
+    CtrlCombate --> SrvMotor
+    CtrlGestion --> SrvSoporte
 
-    SrvAuth --> Prisma
-    SrvDominios --> Prisma
+    SrvCore --> Prisma
+    SrvMotor --> Prisma
+    SrvSoporte --> Prisma
 
     Prisma --> Postgres

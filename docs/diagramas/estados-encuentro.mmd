@@ -1,11 +1,15 @@
 stateDiagram-v2
-    [*] --> ACTIVO: Exploración genera encuentro
-    ACTIVO --> ACTIVO: Atacar / Fallo captura / Fallo huida
-    ACTIVO --> VICTORIA: Rival debilitado (HP = 0)
-    ACTIVO --> DERROTA: Equipo aliado debilitado (HP = 0)
-    ACTIVO --> CAPTURADO: Captura exitosa (Talismán)
-    ACTIVO --> HUIDO: Escape exitoso
+    [*] --> EN_CURSO: Exploración sortea evento ENCUENTRO
+    EN_CURSO --> EN_CURSO: Atacar (M1..M4) / Captura fallida / Huida fallida
+    EN_CURSO --> VICTORIA: Rival debilitado (HP = 0 · +XP, +monedas, +20% progreso)
+    EN_CURSO --> DERROTA: Equipo aliado debilitado (HP = 0)
+    EN_CURSO --> CAPTURADO: Captura exitosa con talismán (Equipo <= 6 o Almacén, +20% progreso)
+    EN_CURSO --> HUIDO: Escape probabilístico exitoso
     VICTORIA --> [*]
     DERROTA --> [*]
     CAPTURADO --> [*]
     HUIDO --> [*]
+    note right of EN_CURSO
+        Constante en código: ESTADOS_ENCUENTRO.ACTIVO = "EN_CURSO"
+        Estados terminales rechazan mutaciones (400 ENCUENTRO_NO_ACTIVO)
+    end note

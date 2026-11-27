@@ -2,26 +2,28 @@ sequenceDiagram
     autonumber
     actor Usuario
     participant UI as React SPA (PantallaCombate)
-    participant API as apiHttp (Fetch)
-    participant Nest as NestJS (CombateController)
-    participant DB as PostgreSQL (Prisma)
+    participant API as apiHttp.ts (Fetch + JWT + apikey opcional)
+    participant Nest as NestJS (EncuentrosController / CombateController)
+    participant DB as PostgreSQL 17 (Prisma $transaction)
 
-    Usuario->>UI: Recarga página (/combate)
+    Usuario->>UI: Abre o recarga página (/combate)
     UI->>API: obtenerEncuentroActivo()
     API->>Nest: GET /api/encuentros/activo (Bearer JWT)
-    Nest->>DB: Consultar encuentro ACTIVO del personaje
-    DB-->>Nest: Registro de encuentro + criaturas
+    Nest->>DB: Consultar encuentro EN_CURSO del personaje (JWT sub)
+    DB-->>Nest: Encuentro + criatura aliada, rival, 4 movimientos, estados y resonancia
     Nest-->>API: 200 OK (EncuentroActivo JSON)
     API-->>UI: EncuentroActivo
-    UI->>UI: Renderizar rival, aliado y turno
+    UI->>UI: Renderizar arena, afinidades, 4 slots tácticos y turno actual
 
-    Usuario->>UI: Clic en "Atacar" (movimiento 0)
-    UI->>UI: Deshabilitar controles (cargando = true)
-    UI->>API: atacar({ encuentroId, movimientoIndice: 0 })
-    API->>Nest: POST /api/combate/atacar (Bearer JWT)
-    Nest->>Nest: Calcular daño (fórmulas servidor)
-    Nest->>DB: Actualizar HP en transacción atómica
-    DB-->>Nest: HP actualizado
+    Usuario->>UI: Clic en movimiento (cerrojo useRef anti-doble clic)
+    UI->>UI: Deshabilitar controles (aria-busy = true)
+    UI->>API: atacar({ encuentroId, movimientoIndice, turnoEsperado })
+    API->>Nest: POST /api/combate/atacar (Bearer JWT + apikey si usa Kong)
+    Nest->>DB: BEGIN TRANSACTION + SELECT id FROM personaje FOR UPDATE
+    Nest->>DB: Validar encuentro EN_CURSO y turnoEsperado (409 TURNO_DESACTUALIZADO si difiere)
+    Nest->>Nest: Resolver ronda autoritativa (afinidades 6x6, 51 efectos, resonancia, INV-04)
+    Nest->>DB: Persistir HP, turno combate, XP/monedas, progreso +20% e historial
+    DB-->>Nest: COMMIT TRANSACTION
     Nest-->>API: 200 OK (RespuestaAtacar)
     API-->>UI: RespuestaAtacar
-    UI->>UI: Actualizar barras de HP y bitácora de combate
+    UI->>UI: Actualizar barras 8bitcn/ui, estados, audio Web Audio y bitácora

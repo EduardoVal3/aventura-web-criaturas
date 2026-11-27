@@ -1,6 +1,6 @@
 # Contrato REST de la API: Aethelgard
 
-Este documento define la especificación técnica de la API REST que comunica el Front-End y el Back-End. Rige el comportamiento de la API simulada (`apiSimulada.ts`) y del servidor definitivo en NestJS.
+Este documento define la especificación técnica de la API REST que comunica el Front-End (`apps/web/src/api/apiHttp.ts`) y el Back-End en NestJS 10 (`apps/api`, **44 rutas REST / 46 operaciones HTTP** exportadas en [`docs/swagger-openapi.json`](swagger-openapi.json)). Cuando el cliente opera detrás del API Gateway opcional **Kong 3.9.5 DB-less** (`:8000`), `apiHttp.ts` adjunta adicionalmente la cabecera `apikey` configurada mediante `VITE_CLAVE_GATEWAY`.
 
 ---
 
@@ -17,7 +17,8 @@ Este documento define la especificación técnica de la API REST que comunica el
    - `401 Unauthorized`: Falta de token de autenticación o sesión inválida (`NO_AUTORIZADO`, `CREDENCIALES_INVALIDAS` o `USUARIO_NO_ENCONTRADO` si el usuario no existe en la base de datos).
    - `403 Forbidden`: Acción no autorizada por reglas de seguridad o estado de juego (ej. moverse a zona bloqueada o actuar fuera de turno).
    - `404 Not Found`: Recurso solicitado no encontrado.
-   - `409 Conflict`: Conflicto de estado (ej. nombre de usuario duplicado o equipo completo sin almacén).
+   - `409 Conflict`: Conflicto de estado (ej. nombre de usuario duplicado, turno desactualizado `TURNO_DESACTUALIZADO` o equipo completo sin intercambio).
+   - `429 Too Many Requests`: Cuota de solicitudes por minuto excedida en `/api/exploracion*` cuando se opera detrás de Kong Gateway (`apiHttp.ts` lo normaliza a `LIMITE_SOLICITUDES`).
    - `500 Internal Server Error`: Falla interna no controlada en el servidor.
 4. **Formato único de error:**
    Toda respuesta con código $\ge 400$ retorna estrictamente la siguiente estructura:
@@ -43,7 +44,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "estado": "activo",
+    "estado": "disponible",
     "marcaTiempo": "2026-10-07T12:00:00.000Z",
     "version": "0.1.0"
   }
@@ -54,7 +55,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 ### 2.2 Autenticación y usuarios (`M-USR`)
 
-#### `POST /api/usuarios/registro`
+#### `POST /api/usuarios/registro` (alias `/api/autenticacion/registro`)
 - **Módulo:** `M-USR`.
 - **Descripción:** Registra un nuevo usuario en la plataforma.
 - **Cuerpo de petición:**
@@ -71,16 +72,16 @@ Este documento define la especificación técnica de la API REST que comunica el
     "usuarioId": "usr-101",
     "nombreUsuario": "arturo_sendas",
     "correo": "arturo@ejemplo.com",
-    "tokenAcceso": "jwt.token.simulado"
+    "tokenAcceso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
   }
   ```
 - **Errores posibles:**
   - `400 DATOS_INVALIDOS` (correo o clave no cumplen formato).
   - `409 USUARIO_DUPLICADO` (nombre de usuario o correo ya registrado).
 
-#### `POST /api/usuarios/login`
+#### `POST /api/usuarios/login` (aliases `/api/usuarios/ingreso`, `/api/autenticacion/ingreso`, `/api/autenticacion/login`)
 - **Módulo:** `M-USR`.
-- **Descripción:** Inicia sesión y genera token de autenticación.
+- **Descripción:** Inicia sesión y genera token de autenticación JWT (vigencia 24 h).
 - **Cuerpo de petición:**
   ```json
   {
@@ -93,23 +94,25 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "usuarioId": "usr-101",
     "nombreUsuario": "arturo_sendas",
-    "tokenAcceso": "jwt.token.simulado",
+    "tokenAcceso": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "tienePersonaje": true
   }
   ```
 - **Errores posibles:**
   - `401 CREDENCIALES_INVALIDAS` (usuario o clave incorrectos).
 
-#### `POST /api/usuarios/logout`
+#### `GET /api/autenticacion/perfil` (alias `GET /api/usuarios/perfil`)
 - **Módulo:** `M-USR`.
-- **Descripción:** Invalida la sesión del explorador.
-- **Cuerpo de petición:** Ninguno (requiere cabecera `Authorization: Bearer <token>`).
+- **Descripción:** Retorna los datos del usuario autenticado extraídos del JWT verificado. Requiere cabecera `Authorization: Bearer <token>`.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "mensaje": "Sesión cerrada correctamente."
+    "sub": "usr-101",
+    "nombreUsuario": "arturo_sendas",
+    "correo": "arturo@ejemplo.com"
   }
   ```
+- **Nota sobre cierre de sesión:** La autenticación es *stateless* con JWT; el cierre de sesión se efectúa en el cliente (`ContextoAutenticacion.tsx`) eliminando `aethelgard_token_acceso` de `localStorage` y limpiando el estado reactivo (el servidor NestJS no expone ruta `/logout`).
 - **Salvaguarda de Autenticación Global (`AutenticacionGuard`):** Todas las rutas protegidas validan tanto la firma criptográfica del JWT como la existencia efectiva del usuario en PostgreSQL (`Usuario.id`). Si el registro fue eliminado o la base de datos fue reseteada, el guard arroja `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`, provocando que el Front-End purgue de inmediato `aethelgard_token_acceso` y emita el evento global `aethelgard:no-autorizado`.
 
 ---
@@ -117,9 +120,9 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 ### 2.3 Personaje y progreso inicial (`M-PJ`)
 
-#### `POST /api/personajes`
+#### `POST /api/personajes` (alias `POST /api/personaje`)
 - **Módulo:** `M-PJ`, `M-CRI`.
-- **Descripción:** Crea el personaje explorador asignando ubicación inicial (`LOC-01`) y la especie inicial elegida.
+- **Descripción:** Crea el personaje explorador asignando ubicación inicial (`LOC-01`), inventario de bienvenida (`3` talismanes básicos, `2` pociones menores), `100` monedas, desbloqueo inicial (`LOC-01`, `ZON-01`, `ZON-02`) y la especie inicial elegida (`lobo-estepario`, `vibora-rocosa` o `cangrejo-abismal`).
 - **Cuerpo de petición:**
   ```json
   {
@@ -139,8 +142,8 @@ Este documento define la especificación técnica de la API REST que comunica el
       "especieSlug": "lobo-estepario",
       "nombre": "Lobo Estepario",
       "nivel": 1,
-      "hpActual": 30,
-      "hpMaximo": 30,
+      "hpActual": 34,
+      "hpMaximo": 34,
       "puntosExperiencia": 0
     }
   }
@@ -149,7 +152,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   - `400 ESPECIE_INICIAL_INVALIDA`.
   - `409 PERSONAJE_YA_EXISTE` (usuario ya tiene personaje activo).
 
-#### `GET /api/personajes/activo`
+#### `GET /api/personajes/activo` (aliases `GET /api/personajes`, `GET /api/personaje`, `GET /api/personaje/activo`)
 - **Módulo:** `M-PJ`.
 - **Descripción:** Obtiene los datos del explorador autenticado.
 - **Respuesta exitosa (`200 OK`):**
@@ -195,7 +198,7 @@ Este documento define la especificación técnica de la API REST que comunica el
       "nivelPromedioEquipo": 4,
       "nivelMaximoColeccion": 5,
       "criaturasEquipoNv5": 2,
-      "rangoDomador": "Domador Novato"
+      "rangoDomador": "Domador de Riscos"
     },
     "nodosMapa": [
       {
@@ -246,8 +249,8 @@ Este documento define la especificación técnica de la API REST que comunica el
           {
             "slug": "lobo-estepario",
             "nombre": "Lobo Estepario",
-            "tipo": "BESTIA",
-            "elemento": "Natura",
+            "tipo": "beast",
+            "elemento": "fisico",
             "esEspecial": false,
             "esLegendaria": false,
             "pesoAparicion": 35
@@ -310,28 +313,29 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 ### 2.5 Exploración (`M-EXP`, `M-ENC`)
 
-#### `POST /api/exploracion/explorar`
+#### `POST /api/exploracion/explorar` (alias `POST /api/exploracion`)
 - **Módulo:** `M-EXP`.
-- **Descripción:** Ejecuta una tirada probabilística de exploración en la ruta silvestre activa. Si el evento es `OBJETO` o `SIN_EVENTO`, computa y persiste el avance cartográfico (+20% hasta 100%). Si resulta en `ENCUENTRO`, el progreso de la zona se mantiene en su valor actual sin incremento prematuro, acreditándose el +20% al resolver el combate en el servidor (`VICTORIA` o `CAPTURADO`).
+- **Descripción:** Ejecuta una tirada probabilística de exploración en la ruta silvestre activa. Si el evento es `OBJETO` o `SIN_EVENTO`, computa y persiste el avance cartográfico (+20% hasta 100%). Si resulta en `ENCUENTRO`, el progreso de la zona se mantiene en su valor actual sin incremento prematuro, acreditándose el +20% al resolver el combate en el servidor (`VICTORIA` o `CAPTURADO`). Cuando se accede vía Kong Gateway (`:8000`), esta ruta aplica `rate-limiting` (5 req/min por consumidor).
 - **Cuerpo de petición:** Ninguno.
 - **Respuesta exitosa (`200 OK`) - Caso Encuentro:**
   ```json
   {
     "tipoEvento": "ENCUENTRO",
-    "mensaje": "¡Una criatura salvaje te desafía en el camino!",
+    "mensaje": "¡Una criatura salvaje te desafía en el camino: Víbora Rocosa (Nivel 2)!",
     "progresoZona": 0,
     "encuentro": {
       "encuentroId": "enc-401",
       "estado": "EN_CURSO",
       "especie": {
-        "slug": "pico-de-hacha",
-        "nombre": "Pico de Hacha",
+        "slug": "vibora-rocosa",
+        "nombre": "Víbora Rocosa",
+        "esLegendaria": false,
         "nivel": 2,
-        "hpActual": 19,
-        "hpMaximo": 19,
-        "ataque": 42,
-        "defensa": 51,
-        "velocidad": 60
+        "hpActual": 33,
+        "hpMaximo": 33,
+        "ataque": 46,
+        "defensa": 33,
+        "velocidad": 54
       }
     }
   }
@@ -363,7 +367,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/encuentros/activo`
 - **Módulo:** `M-ENC`.
-- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo, incluyendo movimientos de la aliada líder, turno real y bitácora reconstruida para reanudación fiel.
+- **Descripción:** Consulta el estado del encuentro o combate actualmente en desarrollo, incluyendo afinidades elementales, barras de Resonancia, estados alterados, movimientos tácticos (slots 1..4) de la aliada líder, turno real y bitácora reconstruida para reanudación fiel (ver contrato táctico completo en §2.13).
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -372,41 +376,47 @@ Este documento define la especificación técnica de la API REST que comunica el
     "turno": 2,
     "esTurnoJugador": true,
     "criaturaRival": {
-      "slug": "pico-de-hacha",
-      "nombre": "Pico de Hacha",
+      "slug": "vibora-rocosa",
+      "nombre": "Víbora Rocosa",
       "nivel": 2,
-      "hpActual": 14,
-      "hpMaximo": 19,
-      "ataque": 42,
-      "defensa": 51,
-      "velocidad": 60
+      "hpActual": 21,
+      "hpMaximo": 33,
+      "ataque": 46,
+      "defensa": 33,
+      "velocidad": 54,
+      "afinidad": "natura",
+      "resonancia": 16,
+      "esLegendaria": false,
+      "estados": []
     },
     "criaturaAliada": {
       "criaturaId": "cri-301",
-      "slug": "lobo-gris",
-      "nombre": "Lobo Gris",
-      "nombreEspecie": "Lobo Gris",
+      "slug": "lobo-estepario",
+      "nombre": "Lobo Estepario",
+      "nombreEspecie": "Lobo Estepario",
       "nivel": 2,
-      "hpActual": 25,
-      "hpMaximo": 30,
+      "hpActual": 29,
+      "hpMaximo": 37,
       "ataque": 42,
-      "defensa": 58,
-      "velocidad": 50,
-      "experiencia": 45,
-      "porcentajeXp": 30,
-      "xpSiguienteNivel": 150,
-      "xpNivelActual": 0,
+      "defensa": 35,
+      "velocidad": 47,
+      "afinidad": "fisico",
+      "resonancia": 24,
+      "estados": [],
+      "experiencia": 180,
+      "porcentajeXp": 13,
+      "xpSiguienteNivel": 374,
+      "xpNivelActual": 150,
       "movimientos": [
-        {
-          "nombre": "Mordisco Feroz",
-          "poder": 14,
-          "tipoAccion": "ATAQUE"
-        }
+        { "slot": 1, "nombre": "Mordisco", "poder": 12, "tipoAccion": "Ataque melé", "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "slot": 2, "nombre": "Acometida Ágil", "poder": 14, "tipoAccion": "Ataque melé", "efecto": "VEL_UP", "estadoAplicado": null, "bloqueado": false },
+        { "slot": 3, "nombre": "Aullido Estepario", "poder": 10, "tipoAccion": "Estado", "efecto": "DEF_DOWN", "estadoAplicado": null, "bloqueado": false },
+        { "slot": 4, "nombre": "Furia de Manada", "poder": 24, "tipoAccion": "Ataque melé", "efecto": "CRITICO", "estadoAplicado": null, "bloqueado": true }
       ]
     },
     "bitacora": [
-      "Turno 1: ¡Un Pico de Hacha salvaje (Nv. 2) está frente a ti!",
-      "¡Tu aliada es Lobo Gris (Nv. 2)!"
+      "Turno 1: ¡Un Víbora Rocosa salvaje (Nv. 2) está frente a ti!",
+      "¡Tu aliada es Lobo Estepario (Nv. 2)!"
     ]
   }
   ```
@@ -417,14 +427,15 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 ### 2.6 Combate y captura (`M-COM`, `M-CAP`)
 
-#### `POST /api/combate/atacar`
+#### `POST /api/combate/atacar` (alias `POST /api/combates/atacar`)
 - **Módulo:** `M-COM`.
-- **Descripción:** Ejecuta el movimiento seleccionado por el jugador (`movimientoIndice: 0..2` correspondiente a los slots 1, 2 y 3) y resuelve el contraataque rival (sorteado exclusivamente entre sus slots 1 a 3). En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas.
+- **Descripción:** Ejecuta el movimiento seleccionado por el jugador (`movimientoIndice: 0..3`, donde el slot 4 o índice `3` requiere `resonancia === 100`) y resuelve el contraataque rival (sorteado exclusivamente entre sus slots 1 a 3) dentro de una transacción serializada con `SELECT ... FOR UPDATE`. En caso de victoria, incluye el desglose de progreso de XP, subida de nivel y monedas (ver detalle táctico completo en §2.13).
 - **Cuerpo de petición:**
   ```json
   {
     "encuentroId": "enc-401",
-    "movimientoIndice": 0
+    "movimientoIndice": 0,
+    "turnoEsperado": 2
   }
   ```
 - **Respuesta exitosa (`200 OK`):**
@@ -435,12 +446,12 @@ Este documento define la especificación técnica de la API REST que comunica el
     "turno": 2,
     "accionJugador": {
       "movimiento": "Mordisco",
-      "danoCausado": 5,
+      "danoCausado": 12,
       "hpRestanteRival": 9
     },
     "accionRival": {
       "movimiento": "Picotazo",
-      "danoCausado": 4,
+      "danoCausado": 8,
       "hpRestanteAliado": 21
     },
     "resultadoFinal": null,
@@ -462,7 +473,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "resultadoFinal": "VICTORIA",
     "progreso": {
       "xpGanada": 45,
-      "monedasGanadas": 60,
+      "monedasGanadas": 30,
       "subioNivel": true,
       "nivelAnterior": 2,
       "nivelNuevo": 3,
@@ -474,35 +485,37 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
-  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.") si se envía `movimientoIndice: 3` (Slot 4 de Furia, Decisión D-4).
+  - `400 MOVIMIENTO_BLOQUEADO` ("El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.") si se envía `movimientoIndice: 3` con resonancia `< 100`.
   - `400 Bad Request` ("movimientoIndice must not be greater than 3") ante índices inválidos.
-  - `400 ACCION_FUERA_DE_TURNO` (regla `S-5`).
+  - `400 ACCION_FUERA_DE_TURNO` / `400 ENCUENTRO_NO_ACTIVO` (regla `S-5`).
+  - `409 TURNO_DESACTUALIZADO` (avance concurrente detectado vía `turnoEsperado` y `FOR UPDATE`).
   - `404 ENCUENTRO_NO_ENCONTRADO`.
 
-#### `POST /api/combate/capturar`
+#### `POST /api/combate/capturar` (aliases `POST /api/combates/capturar`, `POST /api/encuentros/:id/capturar`)
 - **Módulo:** `M-CAP`, `M-INV`.
-- **Descripción:** Intenta capturar la criatura enemiga usando un talismán del inventario (reglas `S-3`, `S-4`).
+- **Descripción:** Intenta capturar la criatura enemiga usando un talismán del inventario (`talisman-basico` o `talisman-avanzado`) en una transacción atómica serializada con `FOR UPDATE` (reglas `S-3`, `S-4`, `S-5` e `INV-02`).
 - **Cuerpo de petición:**
   ```json
   {
     "encuentroId": "enc-401",
-    "itemCodigo": "talisman-basico"
+    "itemCodigo": "talisman-basico",
+    "turnoEsperado": 2
   }
   ```
 - **Respuesta exitosa (`200 OK`) - Captura exitosa:**
   ```json
   {
     "exito": true,
-    "mensaje": "¡Captura exitosa! Pico de Hacha ha sido incorporado a tu equipo.",
+    "mensaje": "¡Captura exitosa! Víbora Rocosa ha sido incorporado a tu equipo.",
     "encuentroId": "enc-401",
     "estado": "CAPTURADO",
     "destinoCaptura": "EQUIPO",
     "criaturaCapturada": {
       "criaturaId": "cri-302",
-      "nombre": "Pico de Hacha",
+      "nombre": "Víbora Rocosa",
       "nivel": 2,
       "hpActual": 9,
-      "hpMaximo": 19
+      "hpMaximo": 33
     }
   }
   ```
@@ -514,23 +527,25 @@ Este documento define la especificación técnica de la API REST que comunica el
     "encuentroId": "enc-401",
     "estado": "EN_CURSO",
     "contraataqueRival": {
-      "movimiento": "Picotazo Cortante",
-      "danoCausado": 4,
+      "movimiento": "Mordedura Tóxica",
+      "danoCausado": 7,
       "hpRestanteAliado": 17
     }
   }
   ```
 - **Errores posibles:**
   - `400 ITEM_NO_DISPONIBLE` (el jugador no posee el talismán en su inventario, regla `S-4`).
+  - `409 TURNO_DESACTUALIZADO` (avance concurrente de turno, regla `S-5`).
   - `404 ENCUENTRO_NO_ENCONTRADO` (sin encuentro activo, regla `S-3`).
 
-#### `POST /api/combate/huir`
+#### `POST /api/combate/huir` (alias `POST /api/combates/huir`)
 - **Módulo:** `M-COM`.
 - **Descripción:** Intenta retirarse del combate.
 - **Cuerpo de petición:**
   ```json
   {
-    "encuentroId": "enc-401"
+    "encuentroId": "enc-401",
+    "turnoEsperado": 2
   }
   ```
 - **Respuesta exitosa - Huida lograda (`200 OK`):**
@@ -548,7 +563,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "mensaje": "¡No pudiste escapar! El rival aprovecha tu distracción.",
     "estado": "EN_CURSO",
     "contraataqueRival": {
-      "movimiento": "Mordisco Feroz",
+      "movimiento": "Picotazo",
       "danoCausado": 6,
       "hpRestanteAliado": 14
     }
@@ -568,19 +583,19 @@ Este documento define la especificación técnica de la API REST que comunica el
     "criaturas": [
       {
         "criaturaId": "cri-301",
-        "slug": "lobo-gris",
-        "nombre": "Lobo Gris",
+        "slug": "lobo-estepario",
+        "nombre": "Lobo Estepario",
         "apodo": "Colmillo",
         "nivel": 2,
-        "hpActual": 25,
-        "hpMaximo": 30,
+        "hpActual": 29,
+        "hpMaximo": 37,
         "ataque": 42,
-        "defensa": 58,
-        "velocidad": 50,
-        "experiencia": 45,
-        "porcentajeXp": 30,
-        "xpSiguienteNivel": 150,
-        "xpNivelActual": 0,
+        "defensa": 35,
+        "velocidad": 47,
+        "experiencia": 180,
+        "porcentajeXp": 13,
+        "xpSiguienteNivel": 374,
+        "xpNivelActual": 150,
         "orden": 1
       }
     ],
@@ -598,19 +613,19 @@ Este documento define la especificación técnica de la API REST que comunica el
     "criaturas": [
       {
         "criaturaId": "cri-303",
-        "slug": "arana-lobo-gigante",
-        "nombre": "Araña Lobo Gigante",
+        "slug": "arana-gigante",
+        "nombre": "Araña Gigante",
         "apodo": null,
-        "nivel": 1,
-        "hpActual": 11,
-        "hpMaximo": 11,
-        "ataque": 35,
-        "defensa": 40,
-        "velocidad": 48,
-        "experiencia": 0,
+        "nivel": 3,
+        "hpActual": 46,
+        "hpMaximo": 46,
+        "ataque": 53,
+        "defensa": 42,
+        "velocidad": 53,
+        "experiencia": 374,
         "porcentajeXp": 0,
-        "xpSiguienteNivel": 150,
-        "xpNivelActual": 0,
+        "xpSiguienteNivel": 661,
+        "xpNivelActual": 374,
         "orden": null
       }
     ],
@@ -664,7 +679,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
-    "mensaje": "Intercambio completado: Araña Lobo Gigante ocupa el puesto de Lobo Gris.",
+    "mensaje": "Intercambio completado: Araña Gigante ocupa el puesto de Lobo Estepario.",
     "totalEnEquipo": 6,
     "totalEnAlmacen": 4
   }
@@ -843,29 +858,29 @@ Este documento define la especificación técnica de la API REST que comunica el
     "detalles": [
       {
         "criaturaId": "cri-301",
-        "nombre": "Lobo Alfa",
-        "hpPrevio": 30,
-        "hpNuevo": 30,
-        "hpMaximo": 30,
+        "nombre": "Lobo Estepario",
+        "hpPrevio": 34,
+        "hpNuevo": 34,
+        "hpMaximo": 34,
         "hpRestaurado": 0,
         "fueRevivida": false
       },
       {
         "criaturaId": "cri-302",
-        "nombre": "Águila Veloz",
-        "hpPrevio": 12,
-        "hpNuevo": 30,
-        "hpMaximo": 30,
+        "nombre": "Halcón Ceniza",
+        "hpPrevio": 36,
+        "hpNuevo": 54,
+        "hpMaximo": 54,
         "hpRestaurado": 18,
         "fueRevivida": false
       },
       {
         "criaturaId": "cri-303",
-        "nombre": "Oso Pardo",
+        "nombre": "Oso Fresno",
         "hpPrevio": 0,
-        "hpNuevo": 35,
-        "hpMaximo": 35,
-        "hpRestaurado": 35,
+        "hpNuevo": 90,
+        "hpMaximo": 90,
+        "hpRestaurado": 90,
         "fueRevivida": true
       }
     ]
@@ -881,17 +896,20 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/progreso/desbloqueos`
 - **Módulo:** `M-PRO`.
-- **Descripción:** Consulta el estado de las zonas del mundo (desbloqueadas y pendientes).
+- **Descripción:** Consulta el estado de las 9 ubicaciones del mundo (3 localidades seguras y 6 zonas silvestres), sus requisitos territoriales y avance cartográfico.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "zonas": [
-      { "zonaId": "ZON-01", "desbloqueada": true },
-      { "zonaId": "ZON-02", "desbloqueada": true },
-      { "zonaId": "ZON-03", "desbloqueada": true },
-      { "zonaId": "ZON-04", "desbloqueada": true },
-      { "zonaId": "ZON-05", "desbloqueada": false, "requisito": "Poseer al menos 3 criaturas en equipo de Nivel >= 5" },
-      { "zonaId": "ZON-06", "desbloqueada": false, "requisito": "Haber superado la expedición de Cueva Umbría" }
+      { "zonaId": "LOC-01", "nombre": "Villa Serena", "desbloqueada": true, "progresoActual": 100, "progresoObjetivo": 100, "cumpleRequisito": true, "requisito": null },
+      { "zonaId": "ZON-01", "nombre": "Praderas del Amanecer", "desbloqueada": true, "progresoActual": 60, "progresoObjetivo": 100, "cumpleRequisito": true, "requisito": null },
+      { "zonaId": "ZON-02", "nombre": "Riberas del Lago Espejo", "desbloqueada": true, "progresoActual": 20, "progresoObjetivo": 100, "cumpleRequisito": true, "requisito": null },
+      { "zonaId": "LOC-02", "nombre": "Puesto Fronterizo del Río", "desbloqueada": false, "progresoActual": 60, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Praderas del Amanecer al 100%" },
+      { "zonaId": "ZON-03", "nombre": "Bosque Susurrante", "desbloqueada": false, "progresoActual": 20, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Riberas del Lago Espejo al 100%" },
+      { "zonaId": "ZON-04", "nombre": "Paso de los Riscos", "desbloqueada": false, "progresoActual": 0, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Bosque Susurrante al 100% y poseer 1 criatura Nv. 5+" },
+      { "zonaId": "LOC-03", "nombre": "Bastión del Norte", "desbloqueada": false, "progresoActual": 0, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Paso de los Riscos al 100%" },
+      { "zonaId": "ZON-05", "nombre": "Cueva Umbría", "desbloqueada": false, "progresoActual": 0, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Paso de los Riscos al 100% y 3 criaturas en equipo Nv. 5+" },
+      { "zonaId": "ZON-06", "nombre": "Pico de la Cumbre", "desbloqueada": false, "progresoActual": 0, "progresoObjetivo": 100, "cumpleRequisito": false, "requisito": "Cartografiar Cueva Umbría al 100% y poseer 1 criatura Nv. 10+" }
     ]
   }
   ```
@@ -1001,15 +1019,15 @@ Este documento define la especificación técnica de la API REST que comunica el
     "elemento": "sombra",
     "challengeRating": 11,
     "hpBase": 94,
-    "ataqueBase": 94,
-    "defensaBase": 88,
-    "velocidadBase": 79,
+    "ataqueBase": 96,
+    "defensaBase": 89,
+    "velocidadBase": 81,
     "tasaCaptura": 0.15,
     "esEspecial": true,
     "esLegendaria": true,
     "zona": {
       "id": "ZON-05",
-      "nombre": "Abismo Ciego"
+      "nombre": "Cueva Umbría"
     },
     "descripcion": "Serpentina criatura colosal que domina las profundidades del abismo.",
     "arquetipo": "ATACANTE",
@@ -1075,15 +1093,15 @@ Este documento define la especificación técnica de la API REST que comunica el
         "eventoId": "his-501",
         "tipo": "VICTORIA_COMBATE",
         "categoria": "COMBATE",
-        "descripcion": "Victoria contra Pico de Hacha (Nv. 2) en Praderas del Amanecer (+45 XP)",
+        "descripcion": "Victoria contra Víbora Rocosa (Nv. 2) en Praderas del Amanecer (+45 XP)",
         "marcaTiempo": "2026-10-07T12:45:00.000Z",
-        "datosJson": { "monedas": 25, "xp": 45 }
+        "datosJson": { "monedas": 30, "xp": 45 }
       },
       {
         "eventoId": "his-502",
         "tipo": "CAPTURA",
         "categoria": "CAPTURA",
-        "descripcion": "Captura exitosa de Lobo Gris con Talismán Básico",
+        "descripcion": "Captura exitosa de Lobo Estepario con Talismán Básico de Captura",
         "marcaTiempo": "2026-10-07T12:42:00.000Z",
         "datosJson": { "criaturaId": "cri-101" }
       }
@@ -1095,7 +1113,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 ---
 
-### 2.13 Encuentros y combate táctico por turnos (`M-ENC` / `M-CBT`) (Subfase 10k)
+### 2.13 Encuentros y combate táctico por turnos (`M-ENC` / `M-COM`) (Subfase 10k)
 
 #### `GET /api/encuentros/activo`
 - **Módulo:** `M-ENC`.
@@ -1112,63 +1130,63 @@ Este documento define la especificación técnica de la API REST que comunica el
       "etiqueta": "VENTAJA"
     },
     "criaturaRival": {
-      "slug": "salamandra-roca",
-      "nombre": "Salamandra de Roca",
-      "nivel": 5,
+      "slug": "cangrejo-abismal",
+      "nombre": "Cangrejo Abismal",
+      "nivel": 4,
       "hpActual": 35,
-      "hpMaximo": 45,
-      "ataque": 18,
-      "defensa": 12,
-      "velocidad": 10,
+      "hpMaximo": 47,
+      "ataque": 46,
+      "defensa": 73,
+      "velocidad": 37,
       "afinidad": "agua",
       "resonancia": 24,
       "esLegendaria": false,
       "estados": [
-        { "codigo": "QUEMADURA", "turnosRestantes": 2, "valor": 5 }
+        { "codigo": "VENENO", "turnosRestantes": 3, "valor": 2 }
       ]
     },
     "criaturaAliada": {
       "criaturaId": "cri-101",
-      "slug": "lobo-bosque",
-      "nombre": "Lobo del Bosque",
-      "nombreEspecie": "Lobo del Bosque",
+      "slug": "treant-anciano",
+      "nombre": "Treant Anciano",
+      "nombreEspecie": "Treant Anciano",
       "nivel": 5,
-      "hpActual": 42,
-      "hpMaximo": 50,
-      "ataque": 20,
-      "defensa": 15,
-      "velocidad": 14,
+      "hpActual": 96,
+      "hpMaximo": 118,
+      "ataque": 90,
+      "defensa": 107,
+      "velocidad": 50,
       "afinidad": "natura",
       "resonancia": 86,
       "estados": [],
       "experiencia": 1250,
-      "porcentajeXp": 45,
-      "xpSiguienteNivel": 1500,
+      "porcentajeXp": 62,
+      "xpSiguienteNivel": 1397,
       "xpNivelActual": 1006,
       "movimientos": [
-        { "nombre": "Arañazo", "poder": 10, "tipoAccion": "ATAQUE", "slot": 1, "efecto": null, "estadoAplicado": null, "bloqueado": false },
-        { "nombre": "Liana", "poder": 20, "tipoAccion": "ATAQUE", "slot": 2, "efecto": null, "estadoAplicado": null, "bloqueado": false },
-        { "nombre": "Esporas", "poder": 0, "tipoAccion": "ESTADO", "slot": 3, "efecto": "VENENO", "estadoAplicado": "VENENO", "bloqueado": false },
-        { "nombre": "Furia de la Selva", "poder": 60, "tipoAccion": "INSIGNIA", "slot": 4, "efecto": null, "estadoAplicado": null, "bloqueado": true }
+        { "nombre": "Tajo de Rama", "poder": 15, "tipoAccion": "Ataque melé", "slot": 1, "efecto": null, "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Arraigo Boscoso", "poder": 14, "tipoAccion": "Estado", "slot": 2, "efecto": "REGENERACION", "estadoAplicado": null, "bloqueado": false },
+        { "nombre": "Embestida de Tronco", "poder": 20, "tipoAccion": "Ataque melé", "slot": 3, "efecto": "STUN", "estadoAplicado": "PARALISIS", "bloqueado": false },
+        { "nombre": "Furia Silvestre", "poder": 30, "tipoAccion": "Ataque melé", "slot": 4, "efecto": "BARRERA", "estadoAplicado": "BASTION", "bloqueado": true }
       ]
     },
     "bitacora": [
-      "¡Lobo del Bosque usó Liana causando 25 de daño!",
-      "Turno 1: ¡Un Salamandra de Roca salvaje (Nv. 5) está frente a ti!"
+      "¡Treant Anciano usó Tajo de Rama causando 22 de daño!",
+      "Turno 1: ¡Un Cangrejo Abismal salvaje (Nv. 4) está frente a ti!"
     ]
   }
   ```
 - **Errores posibles:**
   - `404 ENCUENTRO_NO_ENCONTRADO` ("No tienes ningún encuentro o combate activo en este momento.").
 
-#### `POST /api/combates/:id/acciones` y `POST /api/combate/atacar`
-- **Módulo:** `M-CBT`.
-- **Descripción:** Despachador de acciones tácticas del turno (`ATACAR`, `RESONANCIA`, `HUIR`, `CAPTURAR`). Soporta ejecución del movimiento insignia (`RESONANCIA` o `movimientoIndice: 3`) previa validación de `resonancia === 100`, con reinicio inmediato a 0% tras el ataque. Incluye validación de concurrencia y serialización mediante `turnoEsperado`.
+#### `POST /api/combate/:id/acciones` (aliases `POST /api/combates/:id/acciones`, `POST /api/combate/atacar`)
+- **Módulo:** `M-COM`.
+- **Descripción:** Despachador de acciones tácticas del turno (`ATACAR`, `RESONANCIA`, `HUIR`, `CAPTURAR`). Soporta ejecución del movimiento insignia (`RESONANCIA` o `movimientoIndice: 3`) previa validación de `resonancia === 100`, con reinicio inmediato a 0% tras el ataque. Incluye validación de concurrencia y serialización mediante `turnoEsperado` y bloqueo `FOR UPDATE`.
 - **Cuerpo de petición:**
   ```json
   {
     "tipoAccion": "ATACAR",
-    "movimientoIndice": 1,
+    "movimientoIndice": 0,
     "turnoEsperado": 2
   }
   ```
@@ -1177,9 +1195,9 @@ Este documento define la especificación técnica de la API REST que comunica el
   {
     "turno": 2,
     "accionJugador": {
-      "movimiento": "Liana",
+      "movimiento": "Tajo de Rama",
       "danoCausado": 22,
-      "hpRestanteRival": 23,
+      "hpRestanteRival": 13,
       "efectividad": "VENTAJA",
       "multiplicadorAfinidad": 1.5,
       "danoAbsorbido": 0,
@@ -1188,9 +1206,9 @@ Este documento define la especificación técnica de la API REST que comunica el
       "esInsignia": false
     },
     "accionRival": {
-      "movimiento": "Placaje",
-      "danoCausado": 8,
-      "hpRestanteAliado": 34,
+      "movimiento": "Pinzazo",
+      "danoCausado": 6,
+      "hpRestanteAliado": 90,
       "efectividad": "DESVENTAJA",
       "multiplicadorAfinidad": 0.75,
       "danoAbsorbido": 0,
@@ -1200,23 +1218,23 @@ Este documento define la especificación técnica de la API REST que comunica el
     "efectosFinDeTurno": [
       {
         "objetivo": "RIVAL",
-        "codigo": "QUEMADURA",
-        "dano": 5,
-        "hpRestante": 18
+        "codigo": "VENENO",
+        "dano": 2,
+        "hpRestante": 11
       }
     ],
     "resonancia": {
-      "aliada": 94,
+      "aliada": 100,
       "rival": 32
     },
     "estados": {
       "aliada": [],
-      "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }]
+      "rival": [{ "codigo": "VENENO", "turnosRestantes": 2, "valor": 2 }]
     },
     "mensajes": [
-      "¡Lobo del Bosque usó Liana causando 22 de daño! (¡Es súper efectivo!)",
-      "El rival respondió con Placaje causando 8 de daño.",
-      "Salamandra de Roca sufre 5 de daño por QUEMADURA."
+      "¡Treant Anciano usó Tajo de Rama causando 22 de daño! (¡Es súper efectivo!)",
+      "El rival respondió con Pinzazo causando 6 de daño.",
+      "Cangrejo Abismal sufre 2 de daño por VENENO."
     ],
     "estado": "EN_CURSO"
   }
@@ -1227,7 +1245,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
 
 #### `POST /api/combate/capturar`
-- **Módulo:** `M-CBT`.
+- **Módulo:** `M-CAP`.
 - **Descripción:** Resuelve el intento probabilístico de captura aplicando $\times 1.25$ al multiplicador de estado si la criatura rival padece un estado alterado activo (`tieneEstadoAlterado`). Si la captura fracasa, el rival contraataca y resuelve el fin de turno con el motor determinista.
 - **Cuerpo de petición:**
   ```json
@@ -1245,16 +1263,16 @@ Este documento define la especificación técnica de la API REST que comunica el
     "encuentroId": "enc-401",
     "estado": "EN_CURSO",
     "contraataqueRival": {
-      "movimiento": "Placaje",
-      "danoCausado": 10,
-      "hpRestanteAliado": 32
+      "movimiento": "Pinzazo",
+      "danoCausado": 6,
+      "hpRestanteAliado": 84
     },
     "efectosFinDeTurno": [],
     "resonancia": { "aliada": 16, "rival": 30 },
-    "estados": { "aliada": [], "rival": [{ "codigo": "QUEMADURA", "turnosRestantes": 1, "valor": 5 }] },
+    "estados": { "aliada": [], "rival": [{ "codigo": "VENENO", "turnosRestantes": 1, "valor": 2 }] },
     "mensajes": [
       "¡El talismán no logró contener a la criatura! Se ha roto.",
-      "El rival respondió con Placaje causando 10 de daño."
+      "El rival respondió con Pinzazo causando 6 de daño."
     ]
   }
   ```
@@ -1263,8 +1281,8 @@ Este documento define la especificación técnica de la API REST que comunica el
   - `409 TURNO_DESACTUALIZADO` ("El turno del combate ya ha sido resuelto por otra acción concurrente.").
 
 #### `POST /api/combate/huir`
-- **Módulo:** `M-CBT`.
-- **Descripción:** Evalúa la huida usando velocidades efectivas ($\text{vel} \times 0.60$ si sufre Escarcha, $\times 0.75$ si sufre Parálisis). Si fracasa, ejecuta contraataque rival determinista.
+- **Módulo:** `M-COM`.
+- **Descripción:** Evalúa la huida usando velocidades efectivas ($\text{vel} \times 0.50$ si sufre `ESCARCHA`). Si fracasa, ejecuta contraataque rival determinista.
 - **Cuerpo de petición:**
   ```json
   {

@@ -1207,7 +1207,7 @@ La auditoría heurística y de ergonomía visual sobre `PaginaCreditos.tsx` medi
 - **Erradicación Total de Fuentes Sans-Serif y Mono Estándar:** Adopción universal de la clase `.retro` (`Press Start 2P`) en absolutamente todos los elementos de la vista:
   - Títulos principales, insignias heráldicas y descripciones.
   - Homenaje académico al Ingeniero Claudio y principios rectores de software.
-  - Cuadrícula técnica de arquitectura full-stack (Front-End React 19, Back-End NestJS 11, Audio Web Audio API).
+  - Cuadrícula técnica de arquitectura full-stack (Front-End React 19, Back-End NestJS 10, Audio Web Audio API; corregido de la mención inicial errónea a NestJS 11 en la auditoría de §27).
   - Mención de 8bitcn/ui y texto literal de la Licencia MIT.
   - Atribución exigida de Open5e / SRD 5.2 (en inglés canónico y traducción de cortesía en español).
   - Galería de criaturas victoriosas y botones de interacción.
@@ -1526,7 +1526,7 @@ Previo a esta subfase, se detectaron las siguientes debilidades estructurales y 
     - `nivelMaximoEquipo`: Nivel más alto entre las criaturas asignadas al equipo activo (1 a 6).
     - `nivelPromedioEquipo`: Promedio aritmético redondeado del equipo activo.
     - `nivelMaximoColeccion`: Nivel más alto considerando todo el inventario (equipo + almacén).
-    - `rangoDomador`: Título oficial jerárquico (`Aspirante a Domador`, `Domador Novato`, `Explorador de Senderos`, `Veterano de Aethelgard`, `Maestro Domador de la Cumbre`).
+    - `rangoDomador`: Título oficial jerárquico derivado por `determinarRangoDomador` (`Recluta del Gremio`, `Rastreador de Sendas`, `Domador de Riscos`, `Custodio Umbrío`, `Maestro de la Cumbre`).
   - **Chip de Evaluación de Riesgo Táctico:** Clasificación comparativa en tiempo real entre el nivel máximo del equipo y la fauna de la senda:
     - `RIESGO CONTROLADO` (Esmeralda): $\text{nivelMaximoEquipo} \ge \text{faunaNivelMaximo}$.
     - `DESAFÍO EQUILIBRADO` (Cian): $\text{faunaNivelMinimo} \le \text{nivelMaximoEquipo} < \text{faunaNivelMaximo}$.

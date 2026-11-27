@@ -10,8 +10,8 @@ Todo lo que nombramos nosotros va en español: variables, funciones, clases, DTO
 
 1. Los identificadores no llevan tildes ni ñ (`exploracion`, `contrasena`); los comentarios y textos de UI sí.
 2. Variables y funciones en `camelCase`, clases en `PascalCase`, constantes en `MAYUSCULAS_CON_GUION_BAJO`, archivos en `kebab-case` con el sufijo del framework (`captura.service.ts`).
-3. Estados y valores de enumeración en español y mayúsculas (`ACTIVO`, `CAPTURADO`).
-4. Rutas REST en español, sin tildes: `/api/exploracion`, `/api/encuentros/{id}/capturar`.
+3. Estados y valores de enumeración en español y mayúsculas (`EN_CURSO`, `CAPTURADO`, `VICTORIA`, `DERROTA`, `HUIDO`).
+4. Rutas REST en español, sin tildes: `/api/exploracion`, `/api/combate/capturar` (y alias `/api/encuentros/{id}/capturar`).
 5. Modelos de Prisma en `PascalCase` español, con `@@map` a tablas en minúsculas (`Especie` → `especie`).
 6. Los comentarios explican el porqué, no repiten el código. El código debe ser autodocumentado.
 7. Hooks propios de React: `use` + nombre en español (`useSesion`), porque `use` lo impone React.
@@ -57,7 +57,7 @@ El profesor exige evidenciar la evolución progresiva. El historial debe refleja
 4. **Commits pequeños, descriptivos y frecuentes:** un commit por tarea del workflow; si una tarea toca más de unos 10 archivos o mezcla temas, se divide. Formato: `tipo(alcance): descripción en español` (por ejemplo `funcionalidad(exploracion): agrega selector ponderado con generador inyectable`).
 5. **Los PR se integran con "merge commit"**, nunca con squash, para conservar los commits individuales como evidencia.
 6. **Historial honesto:** no se alteran fechas (`--date`, `GIT_AUTHOR_DATE`), no se usa `push --force` ni `rebase -i` sobre ramas ya subidas, y no se reescribe historia para aparentar días que no ocurrieron.
-7. **Tags:** `version-0.0.0`, `avance-1` … `avance-5`, `version-1.0.0`.
+7. **Tags:** `version-0.0.0`, `avance-1` … `avance-4`, `version-1.0.0`, `version-1.0.1`.
 
 ```bash
 git switch desarrollo && git pull
@@ -117,6 +117,6 @@ Van en `docs/reglas-de-trabajo.md` junto con R1, R2 y R3; la IA flash las lee an
 2. El `personajeId` sale siempre del JWT, nunca del body ni de la URL (S-1).
 3. Toda aleatoriedad pasa por un `GeneradorAleatorio` inyectable, para poder probar con valores fijos.
 4. Las probabilidades, pesos, requisitos y precios son datos en BD (seed), no constantes en el código (CFG).
-5. El contrato de la API (`docs/contrato-api.md`) se escribe antes que el código; la API simulada y el Back-End lo implementan igual.
-6. Todo código simulado lleva `// SIMULADO: eliminar en Fase 8`.
+5. El contrato de la API (`docs/contrato-api.md`) rige al servidor NestJS y al cliente HTTP único `apiHttp.ts` *(nota histórica: en Fases 2–7 existió una API simulada temporal bajo este mismo contrato, eliminada definitivamente en Fase 8)*.
+6. *(Histórico Fases 2–7)* Todo código temporal de prototipo llevó `// SIMULADO: eliminar en Fase 8` y fue retirado por completo antes del cierre de la integración.
 7. Las fórmulas viven en `docs/reglas-juego.md` y cada una tiene su prueba unitaria; si el documento y el código difieren, gana el documento y se corrige el código.

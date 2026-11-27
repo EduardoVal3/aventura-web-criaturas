@@ -4,7 +4,7 @@ flowchart TD
         Verificador["Script de Verificación / Cliente HTTP<br/>(scripts/verificar-gateway.mjs)"]
     end
 
-    subgraph Gateway["2. API Gateway — Kong 3.9 DB-less (Docker: aventura-kong)"]
+    subgraph Gateway["2. API Gateway — Kong 3.9.5 DB-less (Docker: aventura-kong)"]
         Proxy["Proxy HTTP (:8000) · Admin solo lectura (127.0.0.1:8001)<br/>Plantilla declarativa kong/kong.yml.plantilla → /tmp/kong.yml"]
         PluginCors["Plugin cors<br/>Origen exacto CORS_ORIGEN · credentials: true<br/>Responde preflight OPTIONS sin consumir cuota"]
         PluginKeyAuth["Plugin key-auth<br/>Cabecera apikey · run_on_preflight: false<br/>hide_credentials: true · Consumidor cliente-web-aethelgard"]
@@ -16,15 +16,15 @@ flowchart TD
         LogsKong["Observabilidad<br/>Logs en /dev/stdout y /dev/stderr<br/>(docker compose logs kong)"]
     end
 
-    subgraph Backend["3. Back-End NestJS (apps/api en host.docker.internal:3000)"]
+    subgraph Backend["3. Back-End NestJS 10 (apps/api en host.docker.internal:3000 · 44 rutas / 46 ops)"]
         PipelineNest["Prefijo /api · CORS (S-7)<br/>AutenticacionGuard (JWT) · ValidationPipe (S-6) · ExcepcionesFilter"]
         CtrlExploracion["ExploracionController<br/>(POST /api/exploracion y /explorar)"]
-        CtrlDominio["Módulos de Dominio<br/>(salud, usuarios, personajes, mundo, combate, inventario, tienda)"]
+        CtrlDominio["14 Controladores y 15 Módulos de Dominio<br/>(salud, autenticación, usuarios, personajes, mundo, criaturas,<br/>encuentros, combate, equipo, inventario, tienda, curación, progreso, historial, externo)"]
     end
 
     subgraph Persistencia["4. Persistencia Relacional"]
-        Prisma["PrismaService (ORM)"]
-        Postgres["PostgreSQL 17<br/>(Docker aventura-postgres :5432 o Neon en nube)"]
+        Prisma["PrismaService (ORM 6.3.1 · FOR UPDATE)"]
+        Postgres["PostgreSQL 17 (15 tablas)<br/>(Docker aventura-postgres :5432, local o Neon en nube)"]
     end
 
     Navegador -->|"Modo con Gateway (:8000)"| Proxy

@@ -1,8 +1,8 @@
-# Informe Técnico Final — *Aethelgard: Sendas y Criaturas* (`v1.0.0`)
+# Informe Técnico Final — *Aethelgard: Sendas y Criaturas* (`v1.0.1`)
 
 - **Asignatura:** ISC-305 · Programación Web · III PAC 2026
 - **Docente:** Ing. Claudio Paz
-- **Versión de cierre:** `version-1.0.0`
+- **Versión vigente:** `version-1.0.1` *(auditoría integral de coherencia documental sobre el cierre `version-1.0.0`)*
 - **Repositorio:** `https://github.com/EduardoVal3/aventura-web-criaturas`
 - **Stack principal:** React 19 + TypeScript + Vite 8 + Tailwind CSS v4 + `8bitcn/ui` | NestJS 10 + Prisma 6 + PostgreSQL 17 + JWT | Kong Gateway `3.9.5` DB-less (Docker) | Despliegue en nube: Cloudflare Pages + Render Free + Neon.
 
@@ -37,7 +37,7 @@ El proyecto cumple el **100 % de los módulos funcionales obligatorios** (`M-USR
 3. **[03 — Prototipo Navegable y Flujos de Pantalla](03-prototipo-frontend.md):** Rutas protegidas, navegación y desacoplamiento por interfaz `ApiJuego`.
 4. **[04 — Back-End NestJS, API REST e Integración](04-backend-y-api-rest.md):** Controladores, DTOs, `ExcepcionesFilter`, JWT e integración real Front↔API.
 5. **[05 — Modelo de Datos y Persistencia Relacional](05-modelo-de-datos.md):** Esquema Prisma, PostgreSQL 17, índices, llaves foráneas y migraciones.
-6. **[06 — Reglas de Juego y Motor Matemático](06-reglas-de-juego.md):** Exploración ponderada, combate elemental, 52 efectos, captura, XP y economía.
+6. **[06 — Reglas de Juego y Motor Matemático](06-reglas-de-juego.md):** Exploración ponderada, combate elemental, 51 efectos, captura, XP y economía.
 7. **[07 — Integración con API Externa (Open5e SRD 5.2)](07-integracion-externa.md):** Frontera externo/interno, adaptador, normalizador y licencia CC BY 4.0.
 8. **[08 — Seguridad y Auditoría `S-1` a `S-7`](08-seguridad.md):** Blindaje defensivo y batería E2E de pruebas negativas.
 9. **[09 — Experiencia de Usuario Pantalla por Pantalla (Fase 10)](09-experiencia-usuario.md):** Auditorías Impeccable, dioramas Canvas/WebP, audio Web Audio y hardening móvil.
@@ -48,7 +48,7 @@ El proyecto cumple el **100 % de los módulos funcionales obligatorios** (`M-USR
 
 ## 4. Documentación Técnica de Referencia y Artefactos Exportados
 
-- **Especificación OpenAPI 3.0 (Swagger exportado, 44 rutas):** [docs/swagger-openapi.json](../swagger-openapi.json)
+- **Especificación OpenAPI 3.0 (Swagger exportado, 44 rutas REST / 46 operaciones HTTP):** [docs/swagger-openapi.json](../swagger-openapi.json)
 - **Contrato REST redactado:** [docs/contrato-api.md](../contrato-api.md)
 - **Bitácora de decisiones técnicas (`D-01` a `D-23`):** [docs/decisiones.md](../decisiones.md)
 - **Fórmulas y balance autoritativo:** [docs/reglas-juego.md](../reglas-juego.md)

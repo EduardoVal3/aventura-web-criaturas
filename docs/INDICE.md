@@ -22,7 +22,7 @@ Este documento es el enrutador ligero (~2 KB) para navegar el proyecto sin neces
 | **9** | Seguridad y cierre base | ✅ Completada | `pruebas/fase-09-seguridad` | [FASE-09.md](file:///docs/workflows/FASE-09.md) | L415–L431 |
 | **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10v + limpieza tarjetas, equilibrio abisal, ondas en pilares, calibración columnas, responsive del hub, modales sin desborde, requisitos limpios, diorama vivo y aurora multicapa de La Cumbre, diorama volcánico/arcano de Cueva Umbría, diorama del desfiladero de Paso de los Riscos y auditoría integral móvil/copy/safe-area) | `correccion/auditoria-movil-copy-viewport` | [10-19-oceano-vivo.md](file:///docs/workflows/fase-10/10-19-oceano-vivo.md) | L437–L572 |
 | **11** | Extras: Gateway y UI (+5) | ✅ Completada (**11a:** Kong DB-less +2 · **11b:** Auditoría UI `8bitcn/ui` +3) | `funcionalidad/fase-11b-auditoria-ui` | [FASE-11.md](file:///docs/workflows/FASE-11.md) | L574–L591 |
-| **12** | Entrega final (FIN) | ✅ Completada (`version-1.0.0`) | `documentacion/fase-12-entrega-final` | [INFORME-FINAL.md](file:///docs/informe/INFORME-FINAL.md) | L593–L606 |
+| **12** | Entrega final (FIN) y coherencia v1.0.1 | ✅ Completada (`version-1.0.0` + auditoría documental `version-1.0.1`) | `documentacion/auditoria-coherencia-v1` | [INFORME-FINAL.md](informe/INFORME-FINAL.md) | L593–L606 |
 | **13** | Multijugador (opcional) | Descartada (sin puntos extra, `A-7`) | `funcionalidad/fase-13-presencia` | — | L608–L620 |
 
 ---
@@ -38,11 +38,11 @@ Consulta estos archivos solo cuando la tarea toque directamente su dominio:
 | **Sistema de Diseño Retro** | [docs/DESIGN.md](file:///docs/DESIGN.md) | Paleta HSL retro, tokens, tipografía 8-bit, contrastes y animaciones con Impeccable (Fase 10 y 11). |
 | **Recursos y Multimedia** | [apps/web/public/assets/README.md](file:///apps/web/public/assets/README.md) · [apps/web/src/lib/assets.ts](file:///apps/web/src/lib/assets.ts) | Convención de nombres, pipeline WebP completo (30 `criaturas/`, 9 `zonas/`, 6 `battlegrounds/` y 4 `objetos/`), fallback SVG y audio retro. |
 | **Servidores MCP** | [docs/mcp.md](file:///docs/mcp.md) | Configuración y límites de MCP. |
-| **Fórmulas y Balance** | `docs/reglas-juego.md` | Daño, captura, XP, pesos y progreso. |
-| **Contrato REST** | `docs/contrato-api.md` | Rutas, DTOs y payloads. |
-| **Decisiones técnicas** | `docs/decisiones.md` | Elección de librerías, versiones y justificaciones. |
-| **Diagramas Mermaid** | `docs/diagramas/` | Arquitectura o flujos de interacción. |
-| **Informe técnico** | `docs/informe/` | Secciones incrementales por fase. |
+| **Fórmulas y Balance** | [docs/reglas-juego.md](reglas-juego.md) | Daño, captura, XP, pesos y progreso. |
+| **Contrato REST** | [docs/contrato-api.md](contrato-api.md) | Rutas, DTOs y payloads (`44` rutas / `46` operaciones en [swagger-openapi.json](swagger-openapi.json)). |
+| **Decisiones técnicas** | [docs/decisiones.md](decisiones.md) | Elección de librerías, versiones y justificaciones (`D-01` a `D-23`). |
+| **Diagramas Mermaid** | [docs/diagramas/](diagramas/) | 10 diagramas `.mmd` y `.png` sincronizados a `v1.0.1`. |
+| **Informe técnico** | [docs/informe/INFORME-FINAL.md](informe/INFORME-FINAL.md) | Secciones incrementales `01` a `11` e índice maestro consolidado. |
 
 ---
 

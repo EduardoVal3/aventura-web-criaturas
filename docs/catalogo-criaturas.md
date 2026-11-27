@@ -11,7 +11,7 @@ De las criaturas del compendio `srd-2024` de Open5e, se consagraron exactamente 
 2. **Variedad biológica equilibrada:** Cobertura estricta de los 6 tipos biológicos del SRD 5.2: Bestia (`beast`), Monstruosidad (`monstrosity`), No-muerto (`undead`), Elemental (`elemental`), Autómata (`construct`) y Planta (`plant`).
 3. **Afinidades elementales de Aethelgard:** Asignación canónica de afinidad elemental retro: Físico (`fisico`), Fuego (`fuego`), Agua (`agua`), Natura (`natura`), Sombra (`sombra`) y Luz (`luz`).
 4. **Soberanía interna de atributos (Decisión D-6):** Las estadísticas base (`hpBase`, `ataqueBase`, `defensaBase`, `velocidadBase`) y el set de movimientos residen de forma inmutable y soberana en el servidor de juego (`apps/api/src/modulos/externo/bestiario-canonico.ts`). El snapshot externo de Open5e provee la semilla de lore y legitimidad SRD, pero no altera el balance competitivo.
-5. **Consagración de Criaturas Legendarias:** Se eleva formalmente a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380) a la categoría de **Criaturas Legendarias** (`esLegendaria: true`), identificadas con la insignia `Crown` de Lucide y halo dorado retro.
+5. **Consagración de Criaturas Legendarias:** Se eleva formalmente a `behir-abismo` (Zona 5, Presupuesto BST 360) y `remorhaz-glaciar` (Zona 6, Presupuesto BST 375) a la categoría de **Criaturas Legendarias** (`esLegendaria: true`), identificadas con la insignia `Crown` de Lucide y halo dorado retro.
 
 ---
 
@@ -74,26 +74,26 @@ Cada especie canónica dispone de exactamente **4 movimientos ordenados por slot
 - **Slot 1 (M1 - Básico):** Ataque elemental o físico estándar de daño constante ($12 - 16$).
 - **Slot 2 (M2 - Táctico):** Ataque con efecto secundario de control, debilidad o daño moderado ($14 - 18$).
 - **Slot 3 (M3 - Cobertura):** Ataque de defensa, drenaje, ventaja o potencia elevada ($16 - 22$).
-- **Slot 4 (M4 - Movimiento Insignia / Furia):** Técnica definitiva de alta potencia ($24 - 36$). Bloqueada autoritativamente en servidor con código `MOVIMIENTO_BLOQUEADO` (HTTP 400) mientras la criatura posea $< 100$ de Resonancia táctica. Al alcanzar el **100% de Resonancia** (acumulada por asestar y recibir golpes), se desbloquea autoritativamente; su ejecución consume íntegramente la Resonancia reiniciando el acumulador a $0$ (implementado en **Subfase 10k**).
+- **Slot 4 (M4 - Movimiento Insignia / Furia):** Técnica definitiva de alta potencia ($24 - 40$). Bloqueada autoritativamente en servidor con código `MOVIMIENTO_BLOQUEADO` (HTTP 400) mientras la criatura posea $< 100$ de Resonancia táctica. Al alcanzar el **100% de Resonancia** (acumulada por asestar y recibir golpes), se desbloquea autoritativamente; su ejecución consume íntegramente la Resonancia reiniciando el acumulador a $0$ (implementado en **Subfase 10k**).
 
 ### 4.1 Correspondencia de Efectos del Bestiario a Estados Alterados Autoritativos
 
-El motor autoritativo de combate (Subfase 10k) mapea los efectos de movimientos a 6 estados alterados canónicos persistidos en `detalleJson`:
+El motor autoritativo de combate (`motor-combate.ts`) resuelve los **51 efectos mecánicos únicos** del bestiario: **40 efectos** se mapean en `EFECTO_A_ESTADO` a 6 estados alterados canónicos persistidos en `detalleJson`, y **11 efectos tácticos instantáneos** se resuelven directamente en el cálculo de ronda:
 
-| Efecto en Movimiento | Código de Estado Autoritativo | Duración | Comportamiento en Combate |
+| Efectos mapeados en `EFECTO_A_ESTADO` (40) | Código de Estado Autoritativo | Duración base | Comportamiento en Combate |
 | --- | --- | :---: | --- |
-| `QUEMADURA`, `IGNICION`, `QUEMADURA_GRAVE` | `QUEMADURA` | 3 turnos | DoT de Fuego: $\lfloor 0.08 \times \text{HP}_{\text{máx}} \rfloor$. No letal ($hp \ge 1$). |
-| `VENENO`, `VENENO_GRAVE` | `VENENO` | 3 turnos | DoT de Natura: $\lfloor 0.06 \times \text{HP}_{\text{máx}} \rfloor$. No letal ($hp \ge 1$). |
-| `ENFRIAMIENTO`, `CONGELACION` | `ESCARCHA` | 2 turnos | Reduce la velocidad efectiva a la mitad ($\lfloor \text{vel} / 2 \rfloor$). |
-| `PARALISIS`, `STUN`, `ATURDIMIENTO` | `PARALISIS` | 1 turno | Pierde el turno de acción con $50\%$ de probabilidad determinista. |
-| `PETRIFICACION`, `PETRIFICACION_LEVE` | `PETRIFICACION` | 1 turno | Inmoviliza totalmente a la criatura (pierde turno de acción garantizado). |
-| `BASTION`, `BARRERA`, `FORTALEZA` | `BASTION` | 2 turnos | Escudo de absorción equivalente a $\lfloor 0.20 \times \text{HP}_{\text{máx}} \rfloor$. |
+| `QUEMADURA`, `QUEMADURA_GRAVE`, `IGNICION`, `COMBUSTION`, `TRAMPA_FUEGO`, `BOMBARDEO`, `DEVASTACION_LEGENDARIA`, `CALAMIDAD` | `QUEMADURA` | 3 turnos | DoT de Fuego: $\max(1, \lfloor 0.08 \times \text{HP}_{\text{máx}} \rfloor)$. No letal ($hp \ge 1$). |
+| `VENENO`, `VENENO_GRAVE`, `DESGARRO`, `HERIDA`, `CONDENA` | `VENENO` | 4 turnos | DoT de Natura: $\max(1, \lfloor 0.06 \times \text{HP}_{\text{máx}} \rfloor)$. No letal ($hp \ge 1$). |
+| `ENFRIAMIENTO`, `CONGELACION`, `LENTITUD`, `MAREJADA` | `ESCARCHA` | 2 turnos | Reduce la velocidad efectiva a la mitad ($\max(1, \lfloor \text{vel} \times 0.50 \rfloor)$). |
+| `PARALISIS`, `STUN`, `ATURDIMIENTO`, `ENREDO`, `MIEDO`, `TERROR`, `CONFUSION`, `CEGUERA`, `SOBRECARGA_LEGENDARIA`, `DISTANCIA` | `PARALISIS` | 3 turnos | Pierde el turno de acción con $25\,\%$ de probabilidad determinista ($r < 0.25$). |
+| `PETRIFICACION`, `PETRIFICACION_LEVE`, `SISMICO` | `PETRIFICACION` | 2 turnos | Inmoviliza totalmente a la criatura (pierde turno garantizado) y eleva $\text{defensaEfectiva} = \lfloor \text{defensa} \times 1.50 \rfloor$. |
+| `BASTION`, `BARRERA`, `FORTALEZA`, `BLOQUEO`, `RETRIBUCION`, `ESPINAS`, `DESFASADO`, `INVISIBILIDAD`, `DEF_UP`, `EVASION_UP` | `BASTION` | 3 turnos | Escudo de absorción equivalente a $\max(1, \lfloor 0.15 \times \text{HP}_{\text{máx}} \rfloor)$ (`esBeneficioso: true`). |
 
-*Nota sobre efectos estadísticos directos (`ATQ_UP`, `DEF_DOWN`, `VEL_UP`, `CRITICO`, `DRENAJE`):* Se resuelven como modificadores inmediatos en la ronda o cálculo de daño directo.
+*Nota sobre los 11 efectos tácticos instantáneos (`CRITICO`, `EJECUCION`, `EMPUJE`, `DRENAJE`, `REGENERACION`, `PURIFICACION`, `LUZ`, `ATQ_UP`, `DEF_DOWN`, `ATQ_DOWN`, `VEL_UP`):* Se resuelven como modificadores de daño, curación, purificación o ganancia de Resonancia en el servidor (ver [docs/reglas-juego.md](reglas-juego.md#2111-taxonomía-de-cobertura-de-los-51-efectos-del-bestiario-decisión-d-12)).
 
 ### Desglose por Especie y Slot
 
-| Especie (`slug`) | Slot 1 (M1 Básico) | Slot 2 (M2 Táctico) | Slot 3 (M3 Cobertura) | Slot 4 (M4 Furia - Bloqueado) |
+| Especie (`slug`) | Slot 1 (M1 Básico) | Slot 2 (M2 Táctico) | Slot 3 (M3 Cobertura) | Slot 4 (M4 Insignia — 100 % Resonancia) |
 | --- | --- | --- | --- | --- |
 | `lobo-estepario` | Mordisco (Pot. 12) | Acometida Ágil (Pot. 14, `VEL_UP`) | Aullido Estepario (Pot. 10, `DEF_DOWN`) | Furia de Manada (Pot. 24, `CRITICO`) |
 | `vibora-rocosa` | Picotazo (Pot. 11) | Mordedura Tóxica (Pot. 14, `VENENO`) | Constricción (Pot. 16, `PARALISIS`) | Colmillo Pétreo (Pot. 24, `VENENO_GRAVE`) |
@@ -201,25 +201,25 @@ Cada tabla asigna una probabilidad exacta y normalizada a sus 5 especies autóct
 
 ## 6. Tablas de Eventos de Exploración
 
-Los eventos de exploración continúan respetando las probabilidades de la especificación (§4 y §9), satisfaciendo el invariante **INV-01**:
+Las probabilidades de eventos de exploración sembradas en PostgreSQL (`apps/api/prisma/seed.ts`) cumplen estrictamente el invariante **INV-01** ($\sum \text{pesos} = 100$) en las 6 zonas silvestres:
 
 | Zona | Evento (`tipo`) | Peso | Probabilidad |
 | --- | --- | :---: | :---: |
-| **ZON-01: Praderas del Amanecer** | `ENCUENTRO` | 60 | 60.0 % |
-| | `OBJETO` | 25 | 25.0 % |
-| | `SIN_EVENTO` | 15 | 15.0 % |
-| **ZON-02: Marismas del Ocaso** | `ENCUENTRO` | 65 | 65.0 % |
-| | `OBJETO` | 20 | 20.0 % |
-| | `SIN_EVENTO` | 15 | 15.0 % |
-| **ZON-03: Bosque Susurrante** | `ENCUENTRO` | 65 | 65.0 % |
-| | `OBJETO` | 20 | 20.0 % |
-| | `SIN_EVENTO` | 15 | 15.0 % |
-| **ZON-04: Paso de los Riscos** | `ENCUENTRO` | 70 | 70.0 % |
-| | `OBJETO` | 20 | 20.0 % |
-| | `SIN_EVENTO` | 10 | 10.0 % |
-| **ZON-05: Cueva Umbría** | `ENCUENTRO` | 75 | 75.0 % |
-| | `OBJETO` | 15 | 15.0 % |
-| | `SIN_EVENTO` | 10 | 10.0 % |
-| **ZON-06: Pico de la Cumbre** | `ENCUENTRO` | 80 | 80.0 % |
-| | `OBJETO` | 15 | 15.0 % |
-| | `SIN_EVENTO` | 5 | 5.0 % |
+| **ZON-01: Praderas del Amanecer** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |
+| **ZON-02: Riberas del Lago Espejo** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |
+| **ZON-03: Bosque Susurrante** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |
+| **ZON-04: Paso de los Riscos** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |
+| **ZON-05: Cueva Umbría** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |
+| **ZON-06: Pico de la Cumbre** | `ENCUENTRO` | 50 | 50.0 % |
+| | `OBJETO` | 30 | 30.0 % |
+| | `SIN_EVENTO` | 20 | 20.0 % |

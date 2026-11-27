@@ -5,7 +5,7 @@ erDiagram
     PERSONAJE ||--o{ ENCUENTRO : "inicia"
     PERSONAJE ||--o{ ZONA_DESBLOQUEADA : "desbloquea"
     PERSONAJE ||--o{ HISTORIAL : "registra"
-    PERSONAJE }|--|| ZONA : "reside_en"
+    PERSONAJE }o--|| ZONA : "reside_en"
 
     ZONA ||--o{ CONEXION_ZONA : "origen"
     ZONA ||--o{ CONEXION_ZONA : "destino"
@@ -20,7 +20,7 @@ erDiagram
 
     OBJETO ||--o{ INVENTARIO_PERSONAJE : "contenido_en"
 
-    ENCUENTRO ||--|| CRIATURA : "enfrenta_rival"
+    CRIATURA ||--o{ ENCUENTRO : "rival_en"
     ENCUENTRO ||--o{ COMBATE : "registra_turnos"
 
     USUARIO {
@@ -81,6 +81,7 @@ erDiagram
         string nombre
         string slug UK
         string tipo
+        string elemento
         float challenge_rating
         int hp_base
         int ataque_base
@@ -88,6 +89,7 @@ erDiagram
         int velocidad_base
         float tasa_captura
         boolean es_especial
+        boolean es_legendaria
         string descripcion
     }
 
@@ -98,6 +100,8 @@ erDiagram
         string nombre
         string tipo_accion
         float poder
+        int slot
+        string efecto
     }
 
     CRIATURA {
@@ -158,6 +162,7 @@ erDiagram
         string id PK
         string personaje_id FK
         string zona_id FK
+        int progreso
         datetime fecha_desbloqueo
     }
 

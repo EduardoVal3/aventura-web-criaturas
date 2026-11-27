@@ -1,52 +1,55 @@
 flowchart TD
-    Ingreso["PantallaIngreso"]
-    Registro["PantallaRegistro"]
-    Creditos["PantallaCreditos"]
-    CrearPJ["PantallaCrearPersonaje"]
-    Hub["PantallaHubUbicacion"]
-    Explorar["PantallaExploracion"]
-    Combate["PantallaCombate"]
-    Equipo["PantallaEquipo"]
-    Almacen["PantallaAlmacen"]
-    Inventario["PantallaInventario"]
-    Tienda["PantallaTienda"]
-    Curacion["PantallaCuracion"]
-    Catalogo["PantallaCatalogo"]
-    Historial["PantallaHistorial"]
+    Ingreso["PantallaIngreso (/ingreso)"]
+    Registro["PantallaRegistro (/registro)"]
+    CrearPJ["PantallaCrearPersonaje (/crear-personaje)"]
+    Hub["PantallaHubUbicacion (/hub)"]
+    Explorar["PantallaExploracion (/exploracion)"]
+    Combate["PantallaCombate (/combate)"]
+    Equipo["PantallaEquipo (/equipo)"]
+    Almacen["PantallaAlmacen (/almacen)"]
+    Inventario["PantallaInventario (/inventario)"]
+    Tienda["PantallaTienda (/tienda)"]
+    Curacion["PantallaCuracion (/curacion)"]
+    Catalogo["PantallaCatalogo (/catalogo)"]
+    Historial["PantallaHistorial (/historial)"]
+    KitUi["PaginaKitUi (/kit-ui)"]
+    Creditos["PaginaCreditos (/creditos)"]
 
-    Ingreso -->|¿No tiene cuenta?| Registro
-    Ingreso -->|Ver atribuciones| Creditos
-    Registro -->|Cuenta creada| CrearPJ
-    Ingreso -->|Sesión iniciada sin PJ| CrearPJ
-    Ingreso -->|Sesión iniciada con PJ| Hub
+    Ingreso -->|"Sin cuenta"| Registro
+    Registro -->|"Cuenta creada"| CrearPJ
+    Ingreso -->|"Sesión JWT sin personaje"| CrearPJ
+    Ingreso -->|"Sesión JWT con personaje"| Hub
 
-    CrearPJ -->|Personaje creado| Hub
-    CrearPJ -->|Cancelar| Ingreso
-    Creditos -->|Volver| Ingreso
+    CrearPJ -->|"Personaje creado"| Hub
+    CrearPJ -->|"Salir al ingreso"| Ingreso
 
-    Hub -->|Cerrar sesión| Ingreso
-    Hub -->|Viajar a ruta silvestre| Explorar
-    Hub -->|Gestionar compañeros| Equipo
-    Hub -->|Ver objetos| Inventario
-    Hub -->|Visitar bazar| Tienda
-    Hub -->|Santuario de salud| Curacion
-    Hub -->|Consultar compendio| Catalogo
-    Hub -->|Ver bitácora| Historial
+    Hub -->|"Cerrar sesión"| Ingreso
+    Hub -->|"Explorar zona silvestre"| Explorar
+    Hub -->|"Gestionar equipo"| Equipo
+    Hub -->|"Abrir almacén"| Almacen
+    Hub -->|"Ver inventario"| Inventario
+    Hub -->|"Visitar tienda"| Tienda
+    Hub -->|"Santuario de curación"| Curacion
+    Hub -->|"Consultar bestiario"| Catalogo
+    Hub -->|"Ver historial"| Historial
 
-    Explorar -->|Retirada segura| Hub
-    Explorar -->|Evento ENCUENTRO| Combate
-    Explorar -->|Viajar entre zonas| Explorar
+    Explorar -->|"Volver al hub"| Hub
+    Explorar -->|"Evento ENCUENTRO"| Combate
 
-    Combate -->|Victoria / Derrota / Huida| Explorar
-    Combate -->|Captura exitosa| Explorar
+    Combate -->|"Victoria / Derrota / Huida / Captura"| Explorar
 
-    Equipo -->|Transferir al almacén| Almacen
-    Equipo -->|Volver al hub| Hub
-    Almacen -->|Mover al equipo| Equipo
-    Almacen -->|Volver al hub| Hub
+    Equipo -->|"Ir al almacén"| Almacen
+    Equipo -->|"Volver al hub"| Hub
+    Almacen -->|"Ir al equipo"| Equipo
+    Almacen -->|"Volver al hub"| Hub
 
-    Inventario -->|Volver al hub| Hub
-    Tienda -->|Volver al hub| Hub
-    Curacion -->|Equipo restaurado / Volver| Hub
-    Catalogo -->|Volver al hub| Hub
-    Historial -->|Volver al hub| Hub
+    Inventario -->|"Volver al hub"| Hub
+    Tienda -->|"Volver al hub"| Hub
+    Curacion -->|"Volver al hub"| Hub
+    Catalogo -->|"Volver al hub"| Hub
+    Historial -->|"Volver al hub"| Hub
+
+    Ingreso -.->|"Barra global"| KitUi
+    Ingreso -.->|"Barra global"| Creditos
+    Hub -.->|"Barra global"| KitUi
+    Hub -.->|"Barra global"| Creditos

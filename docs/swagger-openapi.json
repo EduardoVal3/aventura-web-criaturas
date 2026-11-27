@@ -1,0 +1,1483 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/salud": {
+      "get": {
+        "operationId": "SaludController_obtenerSalud",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Servidor operativo."
+          }
+        },
+        "summary": "Verificar estado del servidor",
+        "tags": [
+          "Salud"
+        ]
+      }
+    },
+    "/api/autenticacion/registro": {
+      "post": {
+        "operationId": "AutenticacionController_registrar[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente."
+          },
+          "400": {
+            "description": "Datos de registro inválidos."
+          },
+          "409": {
+            "description": "Usuario o correo ya registrado."
+          }
+        },
+        "summary": "Registrar un nuevo explorador",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/usuarios/registro": {
+      "post": {
+        "operationId": "AutenticacionController_registrar[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente."
+          },
+          "400": {
+            "description": "Datos de registro inválidos."
+          },
+          "409": {
+            "description": "Usuario o correo ya registrado."
+          }
+        },
+        "summary": "Registrar un nuevo explorador",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/autenticacion/ingreso": {
+      "post": {
+        "operationId": "AutenticacionController_ingresar[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngresoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso."
+          },
+          "401": {
+            "description": "Credenciales inválidas."
+          }
+        },
+        "summary": "Iniciar sesión y obtener token JWT",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/autenticacion/login": {
+      "post": {
+        "operationId": "AutenticacionController_ingresar[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngresoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso."
+          },
+          "401": {
+            "description": "Credenciales inválidas."
+          }
+        },
+        "summary": "Iniciar sesión y obtener token JWT",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/usuarios/ingreso": {
+      "post": {
+        "operationId": "AutenticacionController_ingresar[2]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngresoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso."
+          },
+          "401": {
+            "description": "Credenciales inválidas."
+          }
+        },
+        "summary": "Iniciar sesión y obtener token JWT",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/usuarios/login": {
+      "post": {
+        "operationId": "AutenticacionController_ingresar[3]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngresoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso."
+          },
+          "401": {
+            "description": "Credenciales inválidas."
+          }
+        },
+        "summary": "Iniciar sesión y obtener token JWT",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/autenticacion/perfil": {
+      "get": {
+        "operationId": "AutenticacionController_obtenerPerfil[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Perfil obtenido exitosamente."
+          },
+          "401": {
+            "description": "Token faltante o inválido."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener datos del usuario autenticado",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/usuarios/perfil": {
+      "get": {
+        "operationId": "AutenticacionController_obtenerPerfil[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Perfil obtenido exitosamente."
+          },
+          "401": {
+            "description": "Token faltante o inválido."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtener datos del usuario autenticado",
+        "tags": [
+          "Autenticación"
+        ]
+      }
+    },
+    "/api/personajes": {
+      "post": {
+        "operationId": "PersonajesController_crear[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPersonajeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crea un personaje explorador con criatura inicial e inventario de bienvenida",
+        "tags": [
+          "Personajes"
+        ]
+      },
+      "get": {
+        "operationId": "PersonajesController_obtenerPersonaje[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene los datos del personaje activo (ruta compatible /api/personaje)",
+        "tags": [
+          "Personajes"
+        ]
+      }
+    },
+    "/api/personaje": {
+      "post": {
+        "operationId": "PersonajesController_crear[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPersonajeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Crea un personaje explorador con criatura inicial e inventario de bienvenida",
+        "tags": [
+          "Personajes"
+        ]
+      },
+      "get": {
+        "operationId": "PersonajesController_obtenerPersonaje[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene los datos del personaje activo (ruta compatible /api/personaje)",
+        "tags": [
+          "Personajes"
+        ]
+      }
+    },
+    "/api/personajes/activo": {
+      "get": {
+        "operationId": "PersonajesController_obtenerActivo[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene el personaje activo del explorador autenticado",
+        "tags": [
+          "Personajes"
+        ]
+      }
+    },
+    "/api/personaje/activo": {
+      "get": {
+        "operationId": "PersonajesController_obtenerActivo[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene el personaje activo del explorador autenticado",
+        "tags": [
+          "Personajes"
+        ]
+      }
+    },
+    "/api/equipo": {
+      "get": {
+        "operationId": "EquipoController_obtenerEquipo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene el listado de hasta 6 criaturas activas en el equipo",
+        "tags": [
+          "Equipo"
+        ]
+      }
+    },
+    "/api/almacen": {
+      "get": {
+        "operationId": "EquipoController_obtenerAlmacen",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene las criaturas resguardadas en el almacén de reserva",
+        "tags": [
+          "Equipo"
+        ]
+      }
+    },
+    "/api/equipo/orden": {
+      "patch": {
+        "operationId": "EquipoController_actualizarOrden",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarOrdenEquipoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Actualiza el orden táctico de las criaturas del equipo",
+        "tags": [
+          "Equipo"
+        ]
+      }
+    },
+    "/api/equipo/mover": {
+      "post": {
+        "operationId": "EquipoController_moverCriatura[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoverCriaturaEquipoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mueve una criatura entre el equipo activo y el almacén",
+        "tags": [
+          "Equipo"
+        ]
+      }
+    },
+    "/api/equipo/transferir": {
+      "post": {
+        "operationId": "EquipoController_moverCriatura[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoverCriaturaEquipoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mueve una criatura entre el equipo activo y el almacén",
+        "tags": [
+          "Equipo"
+        ]
+      }
+    },
+    "/api/mundo/ubicacion-actual": {
+      "get": {
+        "operationId": "MundoController_obtenerUbicacionActual[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta la ubicación actual del personaje, servicios y destinos conectados",
+        "tags": [
+          "Mundo"
+        ]
+      }
+    },
+    "/api/mundo/ubicacion": {
+      "get": {
+        "operationId": "MundoController_obtenerUbicacionActual[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta la ubicación actual del personaje, servicios y destinos conectados",
+        "tags": [
+          "Mundo"
+        ]
+      }
+    },
+    "/api/mundo/viajar": {
+      "post": {
+        "operationId": "MundoController_viajar[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViajarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Desplaza al personaje hacia una zona conectada y desbloqueada",
+        "tags": [
+          "Mundo"
+        ]
+      }
+    },
+    "/api/mundo/mover": {
+      "post": {
+        "operationId": "MundoController_viajar[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViajarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Desplaza al personaje hacia una zona conectada y desbloqueada",
+        "tags": [
+          "Mundo"
+        ]
+      }
+    },
+    "/api/progreso/desbloqueos": {
+      "get": {
+        "operationId": "ProgresoController_obtenerDesbloqueos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Listado de zonas con estado de desbloqueo y requisitos."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta el catálogo de zonas del mundo y su estado de desbloqueo",
+        "tags": [
+          "Progreso"
+        ]
+      }
+    },
+    "/api/progreso/verificar-zona": {
+      "post": {
+        "operationId": "ProgresoController_verificarZona",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificarZonaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Zona desbloqueada exitosamente."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Evalúa requisitos y desbloquea el acceso formal a una zona bloqueada",
+        "tags": [
+          "Progreso"
+        ]
+      }
+    },
+    "/api/especies": {
+      "get": {
+        "operationId": "CriaturasController_obtenerEspecies",
+        "parameters": [
+          {
+            "name": "tipo",
+            "required": false,
+            "in": "query",
+            "description": "Filtro por tipo biológico (beast, monstrosity, undead, elemental, construct, plant)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catálogo de especies consultado exitosamente."
+          }
+        },
+        "summary": "Lista las especies del compendio enriquecidas con movimientos y arquetipo táctico",
+        "tags": [
+          "Especies"
+        ]
+      }
+    },
+    "/api/especies/{slug}": {
+      "get": {
+        "operationId": "CriaturasController_obtenerEspecie",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha de la especie obtenida exitosamente."
+          },
+          "404": {
+            "description": "Especie no encontrada en el compendio."
+          }
+        },
+        "summary": "Obtiene la ficha técnica detallada de una especie por su identificador slug",
+        "tags": [
+          "Especies"
+        ]
+      }
+    },
+    "/api/exploracion": {
+      "post": {
+        "operationId": "ExploracionController_explorar[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ejecuta una acción de exploración probabilística en la zona activa",
+        "tags": [
+          "Exploración"
+        ]
+      }
+    },
+    "/api/exploracion/explorar": {
+      "post": {
+        "operationId": "ExploracionController_explorar[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ejecuta una acción de exploración probabilística en la zona activa",
+        "tags": [
+          "Exploración"
+        ]
+      }
+    },
+    "/api/historial": {
+      "get": {
+        "operationId": "HistorialController_obtenerHistorial",
+        "parameters": [
+          {
+            "name": "pagina",
+            "required": false,
+            "in": "query",
+            "description": "Número de página (por defecto 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "description": "Elementos por página (por defecto 20)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "categoria",
+            "required": false,
+            "in": "query",
+            "description": "Filtro por categoría canónica (COMBATE, CAPTURA, EXPLORACION, TIENDA, CURACION)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": false,
+            "in": "query",
+            "description": "Alias o filtro directo por tipo de evento",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bitácora consultada exitosamente."
+          },
+          "404": {
+            "description": "Personaje no encontrado para el usuario activo."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta la bitácora cronológica de eventos del personaje de forma paginada y categorizada",
+        "tags": [
+          "Historial"
+        ]
+      }
+    },
+    "/api/encuentros/activo": {
+      "get": {
+        "operationId": "EncuentrosController_obtenerEncuentroActivo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta el estado del encuentro silvestre en curso",
+        "tags": [
+          "Encuentros"
+        ]
+      }
+    },
+    "/api/encuentros/{id}/capturar": {
+      "post": {
+        "operationId": "EncuentrosController_capturar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapturarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolución probabilística de la captura y asignación atómica."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Intenta capturar la criatura del encuentro con un talismán",
+        "tags": [
+          "Encuentros"
+        ]
+      }
+    },
+    "/api/combate/atacar": {
+      "post": {
+        "operationId": "CombateController_atacar[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtacarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ataque ejecutado y contraataque resuelto con éxito."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ejecuta un ataque contra la criatura rival en combate",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combates/atacar": {
+      "post": {
+        "operationId": "CombateController_atacar[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtacarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ataque ejecutado y contraataque resuelto con éxito."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ejecuta un ataque contra la criatura rival en combate",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combate/huir": {
+      "post": {
+        "operationId": "CombateController_huir[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HuirDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolución probabilística del intento de huida."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Intenta huir del combate salvaje",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combates/huir": {
+      "post": {
+        "operationId": "CombateController_huir[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HuirDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolución probabilística del intento de huida."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Intenta huir del combate salvaje",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combate/capturar": {
+      "post": {
+        "operationId": "CombateController_capturar[0]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapturarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolución probabilística de la captura y actualización atómica."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Intenta capturar la criatura rival usando un talismán del inventario",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combates/capturar": {
+      "post": {
+        "operationId": "CombateController_capturar[1]",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapturarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resolución probabilística de la captura y actualización atómica."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Intenta capturar la criatura rival usando un talismán del inventario",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combate/{id}/acciones": {
+      "post": {
+        "operationId": "CombateController_ejecutarAccion[0]",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccionCombateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acción despachada y turno resuelto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Despachador unificado de acciones de combate por turno",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/combates/{id}/acciones": {
+      "post": {
+        "operationId": "CombateController_ejecutarAccion[1]",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccionCombateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acción despachada y turno resuelto."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Despachador unificado de acciones de combate por turno",
+        "tags": [
+          "Combate"
+        ]
+      }
+    },
+    "/api/curacion/restaurar": {
+      "post": {
+        "operationId": "CuracionController_restaurar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Criaturas completamente restauradas a su HP máximo."
+          },
+          "403": {
+            "description": "La ubicación actual no cuenta con un centro de curación autorizado o no es segura."
+          },
+          "404": {
+            "description": "No se encontró el personaje activo del explorador."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restaura completamente los puntos de golpe de las criaturas del equipo en un centro de curación",
+        "tags": [
+          "Curación"
+        ]
+      }
+    },
+    "/api/inventario": {
+      "get": {
+        "operationId": "InventarioController_obtener",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Obtiene el inventario y saldo de monedas del personaje activo",
+        "tags": [
+          "Inventario"
+        ]
+      }
+    },
+    "/api/inventario/usar": {
+      "post": {
+        "operationId": "InventarioController_usar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsarObjetoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Objeto aplicado y puntos de golpe restaurados con éxito."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aplica un objeto consumible sobre una criatura aliada",
+        "tags": [
+          "Inventario"
+        ]
+      }
+    },
+    "/api/tienda": {
+      "get": {
+        "operationId": "TiendaController_obtenerCatalogo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Catálogo de artículos y saldo de monedas disponible."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consulta el catálogo de objetos disponibles para la venta en la tienda local",
+        "tags": [
+          "Tienda"
+        ]
+      }
+    },
+    "/api/tienda/comprar": {
+      "post": {
+        "operationId": "TiendaController_comprar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComprarDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Compra procesada atómicamente y acreditada al inventario."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compra uno o más artículos en la tienda local descontando monedas",
+        "tags": [
+          "Tienda"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Aethelgard API REST",
+    "description": "Documentación interactiva de la API REST del juego Aethelgard",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RegistroDto": {
+        "type": "object",
+        "properties": {
+          "nombreUsuario": {
+            "type": "string",
+            "example": "arturo_sendas",
+            "description": "Nombre de usuario único"
+          },
+          "correo": {
+            "type": "string",
+            "example": "arturo@ejemplo.com",
+            "description": "Correo electrónico único"
+          },
+          "clave": {
+            "type": "string",
+            "example": "SecretoSeguro2026!",
+            "description": "Contraseña de acceso"
+          }
+        },
+        "required": [
+          "nombreUsuario",
+          "correo",
+          "clave"
+        ]
+      },
+      "IngresoDto": {
+        "type": "object",
+        "properties": {
+          "correo": {
+            "type": "string",
+            "example": "arturo@ejemplo.com",
+            "description": "Correo electrónico registrado"
+          },
+          "clave": {
+            "type": "string",
+            "example": "SecretoSeguro2026!",
+            "description": "Contraseña de la cuenta"
+          }
+        },
+        "required": [
+          "correo",
+          "clave"
+        ]
+      },
+      "CrearPersonajeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ActualizarOrdenEquipoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "MoverCriaturaEquipoDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ViajarDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "VerificarZonaDto": {
+        "type": "object",
+        "properties": {
+          "zonaId": {
+            "type": "string",
+            "description": "Identificador de la zona a verificar y desbloquear",
+            "example": "ZON-05"
+          }
+        },
+        "required": [
+          "zonaId"
+        ]
+      },
+      "CapturarDto": {
+        "type": "object",
+        "properties": {
+          "encuentroId": {
+            "type": "string",
+            "description": "Identificador del encuentro (requerido para endpoint /api/combate/capturar)",
+            "example": "enc-401"
+          },
+          "itemCodigo": {
+            "type": "string",
+            "description": "Código del talismán a emplear en el intento de captura",
+            "example": "talisman-basico"
+          },
+          "turnoEsperado": {
+            "type": "number",
+            "description": "Turno esperado por el cliente para prevenir desincronizaciones",
+            "example": 1
+          }
+        },
+        "required": [
+          "itemCodigo"
+        ]
+      },
+      "AtacarDto": {
+        "type": "object",
+        "properties": {
+          "encuentroId": {
+            "type": "string",
+            "description": "Identificador único del encuentro en curso",
+            "example": "enc-401"
+          },
+          "movimientoIndice": {
+            "type": "number",
+            "description": "Índice del movimiento a utilizar por la criatura activa (0 a 3)",
+            "example": 0,
+            "default": 0
+          },
+          "turnoEsperado": {
+            "type": "number",
+            "description": "Turno esperado por el cliente para prevenir desincronizaciones concurrentes",
+            "example": 1
+          }
+        },
+        "required": [
+          "encuentroId"
+        ]
+      },
+      "HuirDto": {
+        "type": "object",
+        "properties": {
+          "encuentroId": {
+            "type": "string",
+            "description": "Identificador único del encuentro en curso",
+            "example": "enc-401"
+          },
+          "turnoEsperado": {
+            "type": "number",
+            "description": "Turno esperado por el cliente para prevenir desincronizaciones concurrentes",
+            "example": 1
+          }
+        },
+        "required": [
+          "encuentroId"
+        ]
+      },
+      "AccionCombateDto": {
+        "type": "object",
+        "properties": {
+          "tipoAccion": {
+            "type": "string",
+            "description": "Tipo de acción a ejecutar en el turno de combate",
+            "enum": [
+              "ATACAR",
+              "RESONANCIA",
+              "USAR_OBJETO",
+              "CAMBIAR_CRIATURA",
+              "CAPTURAR",
+              "HUIR"
+            ],
+            "example": "ATACAR"
+          },
+          "movimientoIndice": {
+            "type": "number",
+            "description": "Índice del movimiento a ejecutar (si tipoAccion es ATACAR, 0 a 3)",
+            "example": 0,
+            "default": 0
+          },
+          "itemCodigo": {
+            "type": "string",
+            "description": "Código del objeto a utilizar (si tipoAccion es USAR_OBJETO o CAPTURAR)",
+            "example": "talisman-basico"
+          },
+          "turnoEsperado": {
+            "type": "number",
+            "description": "Turno esperado por el cliente para prevenir desincronizaciones concurrentes",
+            "example": 1
+          }
+        },
+        "required": [
+          "tipoAccion"
+        ]
+      },
+      "UsarObjetoDto": {
+        "type": "object",
+        "properties": {
+          "itemCodigo": {
+            "type": "string",
+            "description": "Código único del objeto consumible a utilizar",
+            "example": "pocion-menor"
+          },
+          "criaturaId": {
+            "type": "string",
+            "description": "Identificador único de la criatura aliada destinataria",
+            "example": "cri-301"
+          }
+        },
+        "required": [
+          "itemCodigo",
+          "criaturaId"
+        ]
+      },
+      "ComprarDto": {
+        "type": "object",
+        "properties": {
+          "itemCodigo": {
+            "type": "string",
+            "description": "Código del objeto que se desea adquirir en la tienda",
+            "example": "talisman-basico"
+          },
+          "cantidad": {
+            "type": "number",
+            "description": "Cantidad de unidades a comprar",
+            "example": 1,
+            "default": 1
+          }
+        },
+        "required": [
+          "itemCodigo"
+        ]
+      }
+    }
+  }
+}

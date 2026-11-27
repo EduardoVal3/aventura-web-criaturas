@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { Volume2, VolumeX } from "lucide-react";
+import { Swords, Volume2, VolumeX } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
+import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import {
   alternarSonidoSilenciado,
   estaSonidoSilenciado,
@@ -10,6 +11,7 @@ import {
 
 export function LayoutPrincipal() {
   const location = useLocation();
+  const { combateActivo } = useAutenticacion();
   const esCombate = location.pathname.startsWith("/combate");
   const esHub = location.pathname === "/hub" || location.pathname.startsWith("/hub/");
   const [silenciado, setSilenciado] = useState(() => estaSonidoSilenciado());
@@ -37,7 +39,8 @@ export function LayoutPrincipal() {
       <header className="border-b-4 border-black bg-card/95 shadow-[0_4px_0_0_#000] sticky top-0 z-40 px-2.5 py-1.5 sm:px-6 sm:py-2.5 backdrop-blur-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4 w-full">
           <Link
-            to="/hub"
+            to={combateActivo ? "/combate" : "/hub"}
+            state={combateActivo ? { encuentroActivoConfirmado: true } : undefined}
             onClick={() => reproducirSonido("click", 0.3)}
             className="inline-flex items-center gap-1.5 sm:gap-2.5 text-[10px] sm:text-base md:text-lg font-bold tracking-tight sm:tracking-wider text-primary retro drop-shadow-[1px_1px_0_#000] hover:text-primary/90 transition-colors shrink-0"
           >
@@ -94,6 +97,27 @@ export function LayoutPrincipal() {
           </nav>
         </div>
       </header>
+
+      {combateActivo && (
+        <div className="border-b-4 border-black bg-red-950/95 px-2.5 py-1.5 sm:px-6 shadow-[0_3px_0_0_#000]">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 w-full">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Swords className="size-3.5 text-amber-300 shrink-0 animate-pulse" aria-hidden="true" />
+              <span className="retro text-[7.5px] sm:text-[9px] text-amber-200 truncate">
+                COMBATE EN PAUSA · ARENA ACTIVA
+              </span>
+            </div>
+            <Link
+              to="/combate"
+              state={{ encuentroActivoConfirmado: true }}
+              onClick={() => reproducirSonido("confirmar", 0.35)}
+              className="retro text-[7.5px] sm:text-[9px] px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none whitespace-nowrap shrink-0 transition-all"
+            >
+              VOLVER AL COMBATE
+            </Link>
+          </div>
+        </div>
+      )}
 
       <main className="p-3 sm:p-6 lg:p-8 flex-1 max-w-6xl w-full mx-auto">
         <Outlet />

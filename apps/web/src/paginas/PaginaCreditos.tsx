@@ -11,7 +11,9 @@ import {
   Code2,
   ShieldCheck,
   BookOpen,
+  Swords,
 } from "lucide-react";
+import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 
 import { Badge } from "@/components/ui/8bit/badge";
 import { Button } from "@/components/ui/8bit/button";
@@ -30,7 +32,18 @@ import {
 
 export function PaginaCreditos() {
   const navigate = useNavigate();
+  const { combateActivo } = useAutenticacion();
   const [celebrando, setCelebrando] = useState(false);
+
+  const volverDestino = () => {
+    if (combateActivo) {
+      reproducirSonido("confirmar", 0.4);
+      navigate("/combate", { state: { encuentroActivoConfirmado: true } });
+      return;
+    }
+    reproducirSonido("victoria");
+    navigate("/hub");
+  };
 
   const festejarFanfarria = () => {
     if (celebrando) return;
@@ -116,13 +129,14 @@ export function PaginaCreditos() {
               variant="outline"
               size="sm"
               className="w-full sm:w-auto justify-center retro text-[8px] sm:text-[9px] font-bold rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none hover:shadow-[4px_4px_0_0_#000] bg-bastion hover:bg-panel text-foreground px-4 py-3 h-auto flex items-center gap-2 cursor-pointer transition-all"
-              onClick={() => {
-                reproducirSonido("victoria");
-                navigate("/hub");
-              }}
+              onClick={volverDestino}
             >
-              <ArrowLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>Volver al Asentamiento</span>
+              {combateActivo ? (
+                <Swords className="w-3.5 h-3.5 shrink-0 text-red-400" aria-hidden="true" />
+              ) : (
+                <ArrowLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              )}
+              <span>{combateActivo ? "Volver al Combate" : "Volver al Asentamiento"}</span>
             </Button>
           </div>
         </div>
@@ -386,13 +400,14 @@ SOFTWARE.`}
           variant="secondary"
           size="sm"
           className="w-full sm:w-auto justify-center retro text-[8px] sm:text-[9px] font-bold rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none hover:shadow-[4px_4px_0_0_#000] bg-bastion hover:bg-panel text-foreground px-5 py-3 h-auto flex items-center gap-2 cursor-pointer transition-all shrink-0"
-          onClick={() => {
-            reproducirSonido("victoria");
-            navigate("/hub");
-          }}
+          onClick={volverDestino}
         >
-          <ArrowLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          <span>Regresar al Asentamiento</span>
+          {combateActivo ? (
+            <Swords className="w-3.5 h-3.5 shrink-0 text-red-400" aria-hidden="true" />
+          ) : (
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          )}
+          <span>{combateActivo ? "Regresar al Combate" : "Regresar al Asentamiento"}</span>
         </Button>
       </div>
     </div>

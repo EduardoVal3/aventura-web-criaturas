@@ -70,7 +70,10 @@ import {
   RotateCcw,
   BookOpen,
   Award,
+  Backpack,
+  Compass,
 } from "lucide-react";
+import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import { TRADUCCION_ELEMENTOS } from "@/lib/catalogo-historial";
 import {
   construirSlotsTacticos,
@@ -124,6 +127,7 @@ type EstadoMenuConsola = "ROOT" | "ATTACK" | "ITEMS" | "SWAP" | "CAPTURE";
 export function PantallaCombate() {
   const navigate = useNavigate();
   const ubicacionRuta = useLocation();
+  const { establecerCombateActivo } = useAutenticacion();
   const encuentroActivoConfirmado = Boolean(
     (ubicacionRuta.state as { encuentroActivoConfirmado?: boolean } | null)
       ?.encuentroActivoConfirmado,
@@ -200,6 +204,7 @@ export function PantallaCombate() {
           const estadoUbicacion = await api.obtenerUbicacionActual();
           if (cancelado) return;
           if (estadoUbicacion.tieneEncuentroActivo === false) {
+            establecerCombateActivo(false);
             toast.info("No tienes ningún combate pendiente.");
             navigate("/exploracion", { replace: true });
             return;
@@ -208,6 +213,7 @@ export function PantallaCombate() {
 
         const datos = await api.obtenerEncuentroActivo();
         if (cancelado) return;
+        establecerCombateActivo(datos.estado === "EN_CURSO");
         setEncuentro(datos);
         setRival(datos.criaturaRival);
         setAliado(datos.criaturaAliada);
@@ -252,8 +258,9 @@ export function PantallaCombate() {
         if (cancelado) return;
         if (error instanceof ErrorApi) {
           if (error.codigo === "ENCUENTRO_NO_ENCONTRADO" || error.estado === 404) {
+            establecerCombateActivo(false);
             toast.info("No tienes ningún combate pendiente.");
-            navigate("/exploracion");
+            navigate("/exploracion", { replace: true });
             return;
           }
           if (error.estado === 401) {
@@ -264,7 +271,8 @@ export function PantallaCombate() {
         } else {
           toast.error("Error al cargar los datos del combate activo.");
         }
-        navigate("/exploracion");
+        establecerCombateActivo(false);
+        navigate("/exploracion", { replace: true });
       } finally {
         if (!cancelado) {
           setCargando(false);
@@ -276,7 +284,7 @@ export function PantallaCombate() {
     return () => {
       cancelado = true;
     };
-  }, [navigate, encuentroActivoConfirmado]);
+  }, [navigate, encuentroActivoConfirmado, establecerCombateActivo]);
 
   // Cerrojo síncrono para hardening estricto contra doble clic rápido
   const cerrojoAccion = useRef(false);
@@ -576,6 +584,7 @@ export function PantallaCombate() {
       // Procesar recompensas de victoria
       const procesarVictoria = () => {
         reproducirSonido("victoria");
+        establecerCombateActivo(false);
         setCombateFinalizado(true);
         setEstadoFinal("VICTORIA");
 
@@ -626,9 +635,10 @@ export function PantallaCombate() {
         if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
           if (resultado.estado === "DERROTA") {
             reproducirSonido("error");
+            establecerCombateActivo(false);
             setCombateFinalizado(true);
             setEstadoFinal("DERROTA");
-            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            toast.error("Has sido derrotado. Usa una poción o viaja al santuario desde el mapa.");
             return;
           }
 
@@ -657,9 +667,10 @@ export function PantallaCombate() {
         if (resultado.resultadoFinal === "ALIADA_DEBILITADA" || resultado.estado === "DERROTA") {
           if (resultado.estado === "DERROTA") {
             reproducirSonido("error");
+            establecerCombateActivo(false);
             setCombateFinalizado(true);
             setEstadoFinal("DERROTA");
-            toast.error("Has sido derrotado. Viaja al santuario a curar a tu equipo.");
+            toast.error("Has sido derrotado. Usa una poción o viaja al santuario desde el mapa.");
             return;
           }
 
@@ -685,6 +696,10 @@ export function PantallaCombate() {
       if (error instanceof ErrorApi && error.codigo === "TURNO_DESACTUALIZADO") {
         toast.info("El combate avanzó en otra pestaña. Sincronizando...");
         await refrescarCombate();
+      } else if (error instanceof ErrorApi && error.codigo === "ENCUENTRO_NO_ACTIVO") {
+        establecerCombateActivo(false);
+        toast.info(error.message);
+        navigate("/exploracion", { replace: true });
       } else if (error instanceof ErrorApi) {
         toast.error(error.message);
       } else {
@@ -813,6 +828,7 @@ export function PantallaCombate() {
         toast.success(`¡Captura exitosa! Criatura enviada a ${destino}.`);
 
         setBitacoraCombate((prev) => [resultado.mensaje, ...prev]);
+        establecerCombateActivo(false);
         setCombateFinalizado(true);
         setEstadoFinal("CAPTURADO");
         setDestinoCaptura(resultado.destinoCaptura || "EQUIPO");
@@ -837,16 +853,19 @@ export function PantallaCombate() {
           resultado.efectosFinDeTurno,
         );
 
-        if (
-          (resultado.estado as string) === "DERROTA" ||
-          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
-            resultado.contraataqueRival.hpRestanteAliado <= 0)
-        ) {
+        if ((resultado.estado as string) === "DERROTA") {
           reproducirSonido("error");
+          establecerCombateActivo(false);
           setCombateFinalizado(true);
           setEstadoFinal("DERROTA");
-          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+          toast.error("Tu equipo ha quedado fuera de combate tras el contraataque.");
         } else if (resultado.estado === "EN_CURSO") {
+          if (
+            typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0
+          ) {
+            toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          }
           await refrescarCombate();
         }
 
@@ -887,6 +906,7 @@ export function PantallaCombate() {
 
       if (resultado.exito) {
         reproducirSonido("paso");
+        establecerCombateActivo(false);
         toast.info(resultado.mensaje || "Has escapado exitosamente del combate.");
         navigate("/exploracion");
       } else {
@@ -907,16 +927,19 @@ export function PantallaCombate() {
           resultado.efectosFinDeTurno,
         );
 
-        if (
-          resultado.estado === "DERROTA" ||
-          (typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
-            resultado.contraataqueRival.hpRestanteAliado <= 0)
-        ) {
+        if (resultado.estado === "DERROTA") {
           reproducirSonido("error");
+          establecerCombateActivo(false);
           setCombateFinalizado(true);
           setEstadoFinal("DERROTA");
-          toast.error("Tu criatura ha quedado fuera de combate tras el contraataque.");
+          toast.error("Tu equipo ha quedado fuera de combate tras el contraataque.");
         } else if (resultado.estado === "EN_CURSO") {
+          if (
+            typeof resultado.contraataqueRival?.hpRestanteAliado === "number" &&
+            resultado.contraataqueRival.hpRestanteAliado <= 0
+          ) {
+            toast.info("¡Tu criatura cayó debilitada! Entra la siguiente criatura activa del equipo.");
+          }
           await refrescarCombate();
         }
       }
@@ -1458,17 +1481,30 @@ export function PantallaCombate() {
 
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
               {estadoFinal === "DERROTA" ? (
-                <Button
-                  onClick={() => {
-                    reproducirSonido("click", 0.4);
-                    navigate("/curacion");
-                  }}
-                  variant="destructive"
-                  className="col-span-2 text-[10px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
-                >
-                  <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
-                  <span>Ir a Curación</span>
-                </Button>
+                <>
+                  <Button
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/hub");
+                    }}
+                    variant="destructive"
+                    className="text-[9px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+                  >
+                    <Compass className="size-3.5 mr-1.5" aria-hidden="true" />
+                    <span>Ir al Mapa</span>
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      reproducirSonido("click", 0.4);
+                      navigate("/inventario");
+                    }}
+                    variant="outline"
+                    className="text-[9px] sm:text-xs h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
+                  >
+                    <Backpack className="size-3.5 mr-1.5" aria-hidden="true" />
+                    <span>Usar Poción</span>
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button
@@ -1995,6 +2031,9 @@ export function PantallaCombate() {
                 Créditos
               </Button>
             </div>
+            <p className="text-[7.5px] sm:text-[8px] text-muted-foreground retro leading-relaxed text-center">
+              Consultar estas vistas informativas mantiene tu combate en pausa en el servidor; podrás volver directo a la arena.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
@@ -2163,7 +2202,7 @@ export function PantallaCombate() {
               EQUIPO DEBILITADO
             </DialogTitle>
             <DialogDescription className="text-[9px] sm:text-[10px] text-muted-foreground retro leading-relaxed">
-              Tu criatura aliada ha quedado fuera de combate. Debes acudir al santuario para sanar a tu equipo.
+              Todas tus criaturas del equipo han quedado en 0 HP. Usa una poción desde tu bolsa o vuelve al mapa para viajar a un asentamiento con santuario.
             </DialogDescription>
           </DialogHeader>
 
@@ -2173,21 +2212,22 @@ export function PantallaCombate() {
               className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
               onClick={() => {
                 reproducirSonido("click", 0.4);
-                navigate("/curacion");
+                navigate("/hub");
               }}
             >
-              <HeartPulse className="size-3.5 mr-1.5" aria-hidden="true" />
-              <span>Ir a Centro de Curación</span>
+              <Compass className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Ir al Mapa (Viajar a Santuario)</span>
             </Button>
             <Button
               variant="outline"
               className="w-full text-[9px] sm:text-[10px] h-11 border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 retro"
               onClick={() => {
                 reproducirSonido("click", 0.4);
-                navigate("/hub");
+                navigate("/inventario");
               }}
             >
-              <span>Volver al Hub</span>
+              <Backpack className="size-3.5 mr-1.5" aria-hidden="true" />
+              <span>Abrir Bolsa (Usar Poción)</span>
             </Button>
           </div>
         </DialogContent>

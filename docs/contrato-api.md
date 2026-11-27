@@ -103,7 +103,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/autenticacion/perfil` (alias `GET /api/usuarios/perfil`)
 - **Módulo:** `M-USR`.
-- **Descripción:** Retorna los datos del usuario autenticado extraídos del JWT verificado junto con el estado de personaje activo (`tienePersonaje` y resumen `personaje` o `null`), permitiendo al Front-End hidratar sesión al recargar sin provocar `404` en `/api/personajes/activo` para cuentas nuevas. Requiere cabecera `Authorization: Bearer <token>`.
+- **Descripción:** Retorna los datos del usuario autenticado extraídos del JWT verificado junto con el estado de personaje activo (`tienePersonaje` y resumen `personaje` o `null`) y si mantiene un combate `EN_CURSO` vigente (`tieneEncuentroActivo`, con autorreparación automática a `DERROTA` ante encuentros huérfanos con todo el equipo en `0 HP`), permitiendo al Front-End hidratar sesión y cerrojo de combate al recargar sin provocar `404` en `/api/personajes/activo`. Requiere cabecera `Authorization: Bearer <token>`.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
@@ -112,6 +112,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "nombreUsuario": "arturo_sendas",
     "correo": "arturo@ejemplo.com",
     "tienePersonaje": true,
+    "tieneEncuentroActivo": false,
     "personaje": {
       "personajeId": "pj-201",
       "nombre": "Arturo",
@@ -203,6 +204,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "servicios": ["CURACION", "ALMACEN", "HISTORIAL"],
     "progresoZona": 100,
     "tieneEncuentroActivo": false,
+    "equipoDebilitado": false,
     "especiesHabitantes": [],
     "poderEquipo": {
       "nivelMaximoEquipo": 5,
@@ -319,6 +321,7 @@ Este documento define la especificación técnica de la API REST que comunica el
 - **Errores posibles:**
   - `403 ZONA_BLOQUEADA` (la zona exige requisitos no cumplidos por el jugador, regla `S-2`).
   - `400 CONEXION_INVALIDA` (el destino no está conectado directamente con la ubicación actual).
+  - `409 ENCUENTRO_PREVIO_ACTIVO` (existe un combate `EN_CURSO` pendiente de resolución).
 
 ---
 
@@ -373,6 +376,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
+  - `400 EQUIPO_DEBILITADO` (todas las criaturas del equipo activo se encuentran en `0 HP`; debe usarse una poción o curarse en un santuario antes de explorar).
   - `403 ZONA_NO_EXPLORABLE` (se intentó explorar dentro de una localidad segura).
   - `409 ENCUENTRO_PREVIO_ACTIVO` (ya existe un combate en curso pendiente de resolver).
 
@@ -696,6 +700,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
+  - `409 ENCUENTRO_PREVIO_ACTIVO` (no se permiten transferencias con el almacén durante un combate activo).
   - `403 ACCION_NO_PERMITIDA` (la ubicación actual del explorador no es una localidad segura).
   - `404 CRIATURA_NO_ENCONTRADA` (criatura no encontrada o no pertenece al jugador).
   - `409 EQUIPO_COMPLETO` (se intentó mover al equipo sin intercambio teniendo 6 criaturas, regla `A-6`).
@@ -816,6 +821,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
+  - `409 ENCUENTRO_PREVIO_ACTIVO` (no se permiten compras en tienda mientras existe un combate activo).
   - `400 MONEDAS_INSUFICIENTES` (saldo menor a `costoTotal`).
   - `400 Bad Request` (si se inyectan campos adicionales como `costoTotal` vía `forbidNonWhitelisted` o cantidad fuera de rango `1..99`).
   - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no cuenta con el servicio `TIENDA`).
@@ -898,6 +904,7 @@ Este documento define la especificación técnica de la API REST que comunica el
   }
   ```
 - **Errores posibles:**
+  - `409 ENCUENTRO_PREVIO_ACTIVO` (no se permite activar el santuario mientras existe un combate activo).
   - `403 SERVICIO_NO_DISPONIBLE` (la ubicación actual no es una localidad segura o no cuenta con servicio de curación autorizado).
   - `404 PERSONAJE_NO_ENCONTRADO` (no se encontró el personaje activo del explorador).
 

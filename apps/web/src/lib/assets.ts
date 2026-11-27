@@ -352,6 +352,17 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       ganancia.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.5);
+    } else if (nombre === "velo") {
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(392.0, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(587.33, ctx.currentTime + 0.11);
+      osc.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.24);
+      ganancia.gain.setValueAtTime(Math.min(0.18, volumen * 0.18), ctx.currentTime);
+      ganancia.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      osc.connect(ganancia);
+      ganancia.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.28);
     }
   } catch {
     // simplificacion: silencio controlado si el navegador bloquea la Web Audio API; sin efectos colaterales en la UI.

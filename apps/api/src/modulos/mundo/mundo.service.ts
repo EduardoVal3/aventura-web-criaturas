@@ -3,10 +3,13 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
-  ConflictException,
   Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import {
+  asegurarSinEncuentroActivo,
+  obtenerOReconciliarEncuentroActivo,
+} from '../../comun/util/encuentro-activo.util';
 import {
   ProgresoService,
   calcularPoderEquipoDesdeCriaturas,
@@ -114,18 +117,24 @@ export class MundoService {
       });
     }
 
-    let criaturas: { nivel: number; enEquipo: boolean }[] = [];
+    let criaturas: { nivel: number; enEquipo: boolean; hpActual?: number }[] = [];
     if (this.prisma.criatura?.findMany) {
       try {
         criaturas = await this.prisma.criatura.findMany({
           where: { personajeId: personaje.id },
-          select: { nivel: true, enEquipo: true },
+          select: { nivel: true, enEquipo: true, hpActual: true },
         });
       } catch {
         criaturas = [];
       }
     }
     const poderEquipo: PoderEquipoDto = calcularPoderEquipoDesdeCriaturas(criaturas);
+    const criaturasEquipo = criaturas.filter((c) => c.enEquipo);
+    const equipoDebilitado =
+      criaturasEquipo.length > 0 &&
+      criaturasEquipo.every(
+        (c) => typeof c.hpActual === 'number' && c.hpActual <= 0,
+      );
 
     const conexionesOrigen = await this.prisma.conexionZona.findMany({
       where: { zonaOrigenId: zona.id },
@@ -238,19 +247,15 @@ export class MundoService {
     });
 
     let tieneEncuentroActivo = false;
-    if (this.prisma.encuentro?.findFirst) {
-      try {
-        const encuentroEnCurso = await this.prisma.encuentro.findFirst({
-          where: {
-            personajeId: personaje.id,
-            estado: 'EN_CURSO',
-          },
-          select: { id: true },
-        });
-        tieneEncuentroActivo = Boolean(encuentroEnCurso);
-      } catch {
-        tieneEncuentroActivo = false;
-      }
+    try {
+      const encuentroEnCurso = await obtenerOReconciliarEncuentroActivo(
+        this.prisma,
+        personaje.id,
+        criaturasEquipo,
+      );
+      tieneEncuentroActivo = Boolean(encuentroEnCurso);
+    } catch {
+      tieneEncuentroActivo = false;
     }
 
     return {
@@ -269,6 +274,7 @@ export class MundoService {
       servicios: zona.servicios,
       progresoZona,
       tieneEncuentroActivo,
+      equipoDebilitado,
       poderEquipo,
       nodosMapa,
       conexiones,
@@ -333,19 +339,11 @@ export class MundoService {
     }
 
     // Validación 3: Ausencia de encuentro o combate activo pendiente
-    const encuentroActivo = await this.prisma.encuentro.findFirst({
-      where: {
-        personajeId: personaje.id,
-        estado: 'EN_CURSO',
-      },
-    });
-
-    if (encuentroActivo) {
-      throw new ConflictException({
-        codigo: 'ENCUENTRO_PREVIO_ACTIVO',
-        mensaje: 'No puedes desplazarte mientras tienes un encuentro activo pendiente de resolución.',
-      });
-    }
+    await asegurarSinEncuentroActivo(
+      this.prisma,
+      personaje.id,
+      'No puedes desplazarte mientras tienes un encuentro activo pendiente de resolución.',
+    );
 
     const origenId = personaje.ubicacionActualId;
 

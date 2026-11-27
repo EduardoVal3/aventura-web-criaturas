@@ -81,7 +81,7 @@ const IDS_SERVICIOS_DERECHA = ["curacion", "tienda", "inventario"] as const;
 
 export function PantallaHubUbicacion() {
   const navigate = useNavigate();
-  const { cerrarSesion } = useAutenticacion();
+  const { cerrarSesion, establecerCombateActivo } = useAutenticacion();
   const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
   const [personaje, setPersonaje] = useState<PersonajeActivo | null>(null);
   const [equipo, setEquipo] = useState<CriaturaEquipo[]>([]);
@@ -116,7 +116,10 @@ export function PantallaHubUbicacion() {
     setPersonaje(datosPersonaje);
     setEquipo(datosEquipo?.criaturas ?? []);
     setLimiteEquipo(Math.max(6, datosEquipo?.limiteEquipo ?? 6));
-  }, []);
+    if (datosUbicacion.tieneEncuentroActivo === true) {
+      establecerCombateActivo(true);
+    }
+  }, [establecerCombateActivo]);
 
   useEffect(() => {
     iniciarMusicaAmbiente("hub");
@@ -246,7 +249,11 @@ export function PantallaHubUbicacion() {
       setViajando(false);
       reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
-        if (error.codigo === "ZONA_BLOQUEADA") {
+        if (error.codigo === "ENCUENTRO_PREVIO_ACTIVO") {
+          establecerCombateActivo(true);
+          toast.info("Tienes un combate activo pendiente de resolución.");
+          navigate("/combate", { state: { encuentroActivoConfirmado: true } });
+        } else if (error.codigo === "ZONA_BLOQUEADA") {
           toast.error(`Zona bloqueada: ${error.message}`);
         } else {
           toast.error(error.message);

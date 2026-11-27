@@ -55,6 +55,7 @@ export interface RespuestaPerfil {
   nombreUsuario?: string;
   correo?: string;
   tienePersonaje?: boolean;
+  tieneEncuentroActivo?: boolean;
   personaje?: PersonajeActivo | null;
 }
 
@@ -173,6 +174,7 @@ export interface UbicacionActual {
   servicios: string[];
   progresoZona?: number;
   tieneEncuentroActivo?: boolean;
+  equipoDebilitado?: boolean;
   poderEquipo?: PoderEquipoExplorador;
   nodosMapa?: NodoMapaTerritorial[];
   conexiones: ConexionUbicacion[];

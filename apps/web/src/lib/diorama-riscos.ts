@@ -785,22 +785,36 @@ function dibujarFisurasTectonicasRiscos(
     }
     ctx.stroke();
 
-    // Filamento cálido por tramo exacto viajando con la respiración izquierda -> derecha
+    // Filamento cálido agrupado en 2 bandas térmicas por fisura (2 strokes en vez de 1 por tramo)
+    ctx.globalAlpha = (0.28 + respiracionLocal * 0.24) * fisura.intensidad;
+    ctx.strokeStyle = "#fb923c";
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
     for (let v = 0; v < totalVertices - 1; v++) {
       const mx = (fisuraBufferX[v] + fisuraBufferX[v + 1]) * 0.5;
       const ondaSegmento = reducirMovimiento
         ? 0.52
         : 0.5 + 0.5 * Math.sin((mx - 770) * 0.022 - t * 0.0024 + fisura.fase * 0.2);
-      if (ondaSegmento < 0.28) continue;
-
-      ctx.globalAlpha = (0.14 + ondaSegmento * 0.42) * fisura.intensidad;
-      ctx.strokeStyle = ondaSegmento > 0.8 ? "#fde047" : ondaSegmento > 0.52 ? "#fb923c" : "#ea580c";
-      ctx.lineWidth = 0.75 + ondaSegmento * 0.7;
-      ctx.beginPath();
+      if (ondaSegmento < 0.32) continue;
       ctx.moveTo(fisuraBufferX[v], fisuraBufferY[v]);
       ctx.lineTo(fisuraBufferX[v + 1], fisuraBufferY[v + 1]);
-      ctx.stroke();
     }
+    ctx.stroke();
+
+    ctx.globalAlpha = (0.36 + respiracionLocal * 0.28) * fisura.intensidad;
+    ctx.strokeStyle = "#fde047";
+    ctx.lineWidth = 1.35;
+    ctx.beginPath();
+    for (let v = 0; v < totalVertices - 1; v++) {
+      const mx = (fisuraBufferX[v] + fisuraBufferX[v + 1]) * 0.5;
+      const ondaSegmento = reducirMovimiento
+        ? 0.52
+        : 0.5 + 0.5 * Math.sin((mx - 770) * 0.022 - t * 0.0024 + fisura.fase * 0.2);
+      if (ondaSegmento < 0.72) continue;
+      ctx.moveTo(fisuraBufferX[v], fisuraBufferY[v]);
+      ctx.lineTo(fisuraBufferX[v + 1], fisuraBufferY[v + 1]);
+    }
+    ctx.stroke();
 
     // Chispas puntuales brotando solo desde las junturas más profundas
     if (!reducirMovimiento && fisura.junturaChispa) {
@@ -938,18 +952,32 @@ function dibujarCascadaIgneaRiscos(
   }
   ctx.stroke();
 
-  // Núcleo brillante descendiendo lentamente como magma espeso
+  // Núcleo brillante agrupado en 2 bandas térmicas descendiendo como magma espeso
+  ctx.globalAlpha = 0.62;
+  ctx.strokeStyle = "#fbbf24";
+  ctx.lineWidth = 1.65;
+  ctx.beginPath();
   for (let s = 0; s < pasos; s++) {
     const u = (s + 0.5) / pasos;
     const onda = reducirMovimiento ? 0.7 : 0.5 + 0.5 * Math.sin(u * 10.5 - t * 0.0052);
-    ctx.globalAlpha = 0.38 + onda * 0.58;
-    ctx.strokeStyle = onda > 0.72 ? "#fef08a" : onda > 0.44 ? "#fbbf24" : "#f97316";
-    ctx.lineWidth = 1.0 + onda * 1.1;
-    ctx.beginPath();
+    if (onda <= 0.35) continue;
     ctx.moveTo(cascadaBufferX[s], cascadaBufferY[s]);
     ctx.lineTo(cascadaBufferX[s + 1], cascadaBufferY[s + 1]);
-    ctx.stroke();
   }
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.88;
+  ctx.strokeStyle = "#fef08a";
+  ctx.lineWidth = 1.95;
+  ctx.beginPath();
+  for (let s = 0; s < pasos; s++) {
+    const u = (s + 0.5) / pasos;
+    const onda = reducirMovimiento ? 0.7 : 0.5 + 0.5 * Math.sin(u * 10.5 - t * 0.0052);
+    if (onda <= 0.7) continue;
+    ctx.moveTo(cascadaBufferX[s], cascadaBufferY[s]);
+    ctx.lineTo(cascadaBufferX[s + 1], cascadaBufferY[s + 1]);
+  }
+  ctx.stroke();
 
   // Goterones viscosos ocasionales desprendiéndose en la caída hacia la poza
   if (!reducirMovimiento) {

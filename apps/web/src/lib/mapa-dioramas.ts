@@ -499,6 +499,58 @@ export function dibujarRespaldoIslasBase(
   }
 }
 
+const spritesHaloMapaCache = new Map<string, HTMLCanvasElement>();
+
+function obtenerSpriteHaloMapa(
+  colorCentro: string,
+  colorBorde: string,
+): HTMLCanvasElement | null {
+  if (typeof document === "undefined") return null;
+  const clave = `${colorCentro}|${colorBorde}`;
+  const existente = spritesHaloMapaCache.get(clave);
+  if (existente) return existente;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 64;
+  canvas.height = 64;
+  const hCtx = canvas.getContext("2d");
+  if (!hCtx) return null;
+
+  const grad = hCtx.createRadialGradient(32, 32, 1, 32, 32, 31);
+  grad.addColorStop(0, colorCentro);
+  grad.addColorStop(0.5, colorBorde);
+  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+  hCtx.fillStyle = grad;
+  hCtx.fillRect(0, 0, 64, 64);
+
+  spritesHaloMapaCache.set(clave, canvas);
+  return canvas;
+}
+
+/**
+ * Determina si la caja envolvente de una isla intersecta la vista activa de cámara (frustum culling).
+ * Evita renderizar dioramas y partículas fuera de pantalla al hacer zoom o navegar en móvil.
+ */
+export function esIslaVisibleEnVista(
+  islaId: string,
+  vistaMundo?: VistaCamaraMundo | null,
+  margen = 120,
+): boolean {
+  if (!vistaMundo) return true;
+  const isla = CONFIGURACION_ISLAS_MAPA[islaId];
+  if (!isla) return true;
+  const minX = isla.x - isla.radioX - margen;
+  const maxX = isla.x + isla.radioX + margen;
+  const minY = isla.y - isla.radioY - margen;
+  const maxY = isla.y + isla.radioY + margen;
+  return !(
+    maxX < vistaMundo.minX ||
+    minX > vistaMundo.maxX ||
+    maxY < vistaMundo.minY ||
+    minY > vistaMundo.maxY
+  );
+}
+
 function dibujarHaloFuego(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -508,17 +560,23 @@ function dibujarHaloFuego(
   colorCentro: string,
   colorBorde: string,
 ): void {
+  if (intensidad <= 0.005) return;
+  const sprite = obtenerSpriteHaloMapa(colorCentro, colorBorde);
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const grad = ctx.createRadialGradient(x, y, 1, x, y, radio);
-  grad.addColorStop(0, colorCentro);
-  grad.addColorStop(0.5, colorBorde);
-  grad.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.globalAlpha = intensidad;
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(x, y, radio, 0, Math.PI * 2);
-  ctx.fill();
+  if (sprite) {
+    ctx.drawImage(sprite, x - radio, y - radio, radio * 2, radio * 2);
+  } else {
+    const grad = ctx.createRadialGradient(x, y, 1, x, y, radio);
+    grad.addColorStop(0, colorCentro);
+    grad.addColorStop(0.5, colorBorde);
+    grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, radio, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }
 
@@ -532,17 +590,16 @@ function dibujarChispasAscendentes(
   t: number,
   color: string,
 ): void {
+  ctx.save();
+  ctx.fillStyle = color;
   for (let i = 0; i < cantidad; i++) {
     const fase = (t * 0.0005 + i * (1 / cantidad) + x * 0.003) % 1;
     const cx = x + Math.sin(t * 0.0028 + i * 2.1) * dispersionX;
     const cy = y - fase * altura;
-    const alpha = Math.sin(fase * Math.PI);
-    ctx.save();
-    ctx.globalAlpha = alpha * 0.92;
-    ctx.fillStyle = color;
+    ctx.globalAlpha = Math.sin(fase * Math.PI) * 0.92;
     ctx.fillRect(Math.round(cx), Math.round(cy), 2.5, 2.5);
-    ctx.restore();
   }
+  ctx.restore();
 }
 
 function dibujarHumoChimenea(
@@ -641,9 +698,10 @@ export function dibujarFondoCieloMapa(
   nodos: NodoMapaTerritorial[],
   tiempo: number,
   reducirMovimiento: boolean,
+  vistaMundo?: VistaCamaraMundo | null,
 ): void {
   const riscos = nodos.find((n) => n.id === "ZON-04");
-  if (riscos) {
+  if (riscos && esIslaVisibleEnVista("ZON-04", vistaMundo, 150)) {
     dibujarFondoRiscos(
       ctx,
       Boolean(riscos.desbloqueada),
@@ -653,7 +711,7 @@ export function dibujarFondoCieloMapa(
   }
 
   const cueva = nodos.find((n) => n.id === "ZON-05");
-  if (cueva) {
+  if (cueva && esIslaVisibleEnVista("ZON-05", vistaMundo, 150)) {
     dibujarFondoCuevaUmbria(
       ctx,
       Boolean(cueva.desbloqueada),
@@ -663,7 +721,7 @@ export function dibujarFondoCieloMapa(
   }
 
   const cumbre = nodos.find((n) => n.id === "ZON-06");
-  if (cumbre) {
+  if (cumbre && esIslaVisibleEnVista("ZON-06", vistaMundo, 180)) {
     dibujarCieloAuroraCumbre(
       ctx,
       Boolean(cumbre.desbloqueada),
@@ -783,6 +841,7 @@ export function resolverIndiceIslaEnMapa(lx: number, ly: number): number {
 interface CacheVeloBloqueadas {
   islaPorCelda: Int8Array;
   bitmaskActual: number;
+  ultimoTiempoBrumaMs: number;
   canvasSilueta: HTMLCanvasElement;
   ctxSilueta: CanvasRenderingContext2D;
   canvasComp: HTMLCanvasElement;
@@ -829,6 +888,7 @@ function obtenerCacheVeloBloqueadas(
   const cache: CacheVeloBloqueadas = {
     islaPorCelda,
     bitmaskActual: -1,
+    ultimoTiempoBrumaMs: -1000,
     canvasSilueta,
     ctxSilueta,
     canvasComp,
@@ -920,58 +980,52 @@ function dibujarVeloIslasBloqueadas(
     ? obtenerCacheVeloBloqueadas(mascaraOceano)
     : null;
   if (cache && mascaraOceano) {
-    if (cache.bitmaskActual !== bitmaskBloq) {
+    const cambioBitmask = cache.bitmaskActual !== bitmaskBloq;
+    if (cambioBitmask) {
       reconstruirSiluetaBloqueadas(cache, mascaraOceano, bitmaskBloq);
     }
 
-    const { ctxComp, canvasSilueta, canvasComp } = cache;
-    const escala = mascaraOceano.escala;
-    ctxComp.save();
-    ctxComp.globalCompositeOperation = "copy";
-    ctxComp.drawImage(canvasSilueta, 0, 0);
-    ctxComp.globalCompositeOperation = "source-atop";
-
-    // Brumas crepusculares suaves confinadas estrictamente a los píxeles de las islas bloqueadas
     const anim = reducirMovimiento ? 0 : t;
-    for (let i = 0; i < IDS_ISLAS_VELLUM.length; i++) {
-      if ((bitmaskBloq & (1 << i)) === 0) continue;
-      const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[i]];
-      for (let b = 0; b < 2; b++) {
-        const fase = i * 1.7 + b * 2.6;
-        const bx =
-          (isla.x +
-            Math.sin(anim * 0.00045 + fase) * isla.radioX * 0.28 +
-            (b === 0 ? -24 : 26)) *
-          escala;
-        const by =
-          (isla.y +
-            Math.cos(anim * 0.00038 + fase) * isla.radioY * 0.16 +
-            (b === 0 ? -12 : 16)) *
-          escala;
-        const rx = isla.radioX * (0.62 + b * 0.14) * escala;
-        const grad = ctxComp.createRadialGradient(
-          bx,
-          by,
-          rx * 0.08,
-          bx,
-          by,
-          rx,
-        );
-        grad.addColorStop(
-          0,
-          b === 0 ? "rgba(148, 178, 224, 0.24)" : "rgba(129, 140, 248, 0.16)",
-        );
-        grad.addColorStop(1, "rgba(148, 178, 224, 0)");
-        ctxComp.fillStyle = grad;
-        ctxComp.beginPath();
-        ctxComp.arc(bx, by, rx, 0, Math.PI * 2);
-        ctxComp.fill();
+    // simplificacion: la bruma crepuscular se desplaza a 0.00045 rad/ms; recomponer cada 80 ms (~12 Hz) es visualmente idéntico y ahorra ~80 % de trabajo offscreen
+    if (cambioBitmask || Math.abs(anim - cache.ultimoTiempoBrumaMs) >= 80) {
+      cache.ultimoTiempoBrumaMs = anim;
+      const { ctxComp, canvasSilueta } = cache;
+      const escala = mascaraOceano.escala;
+      const spriteBrumaA = obtenerSpriteHaloMapa("rgba(148, 178, 224, 0.24)", "rgba(148, 178, 224, 0.08)");
+      const spriteBrumaB = obtenerSpriteHaloMapa("rgba(129, 140, 248, 0.16)", "rgba(129, 140, 248, 0.05)");
+
+      ctxComp.save();
+      ctxComp.globalCompositeOperation = "copy";
+      ctxComp.drawImage(canvasSilueta, 0, 0);
+      ctxComp.globalCompositeOperation = "source-atop";
+
+      for (let i = 0; i < IDS_ISLAS_VELLUM.length; i++) {
+        if ((bitmaskBloq & (1 << i)) === 0) continue;
+        const isla = CONFIGURACION_ISLAS_MAPA[IDS_ISLAS_VELLUM[i]];
+        for (let b = 0; b < 2; b++) {
+          const fase = i * 1.7 + b * 2.6;
+          const bx =
+            (isla.x +
+              Math.sin(anim * 0.00045 + fase) * isla.radioX * 0.28 +
+              (b === 0 ? -24 : 26)) *
+            escala;
+          const by =
+            (isla.y +
+              Math.cos(anim * 0.00038 + fase) * isla.radioY * 0.16 +
+              (b === 0 ? -12 : 16)) *
+            escala;
+          const rx = isla.radioX * (0.62 + b * 0.14) * escala;
+          const sprite = b === 0 ? spriteBrumaA : spriteBrumaB;
+          if (sprite) {
+            ctxComp.drawImage(sprite, bx - rx, by - rx, rx * 2, rx * 2);
+          }
+        }
       }
+      ctxComp.restore();
     }
-    ctxComp.restore();
 
     ctx.drawImage(
-      canvasComp,
+      cache.canvasComp,
       0,
       0,
       DIMENSIONES_MAPA_MUNDO.ancho,
@@ -1015,6 +1069,7 @@ export function dibujarCapaVivaMapa(
   reducirMovimiento: boolean,
   mascaraOceano?: MascaraOceano | null,
   auroraDetrasDibujada = false,
+  vistaMundo?: VistaCamaraMundo | null,
 ): void {
   const t = reducirMovimiento ? 0 : tiempo;
   const nodosPorId = new Map(nodos.map((n) => [n.id, n]));
@@ -1031,12 +1086,14 @@ export function dibujarCapaVivaMapa(
     t,
   );
 
-  // 3. Efectos ambientales recalibrados por centroide real sobre la lámina 1616x897
+  // 3. Efectos ambientales recalibrados por centroide real sobre la lámina 1616x897 (con frustum culling)
   const desbloqueada = (id: string) =>
     Boolean(nodosPorId.get(id)?.desbloqueada);
+  const visible = (id: string, margen = 120) =>
+    esIslaVisibleEnVista(id, vistaMundo, margen);
 
   // LOC-01: Villa Serena — fuente central (237, 672), 8 faroles reales y 2 chimeneas de piedra sobre tejados
-  if (desbloqueada("LOC-01")) {
+  if (desbloqueada("LOC-01") && visible("LOC-01")) {
     const pulsoFuente = 0.7 + Math.sin(t * 0.005) * 0.3;
     dibujarHaloFuego(
       ctx,
@@ -1076,7 +1133,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-01: Praderas — los 5 monolitos rúnicos exactos y motas doradas de pradera
-  if (desbloqueada("ZON-01")) {
+  if (desbloqueada("ZON-01") && visible("ZON-01")) {
     const runas: [number, number][] = [
       [81, 398],
       [147, 344],
@@ -1100,7 +1157,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // LOC-02: Puesto del Río — 4 atalayas encendidas, 3 fogatas reales y cascada frontal (732..756, y=528..587)
-  if (desbloqueada("LOC-02")) {
+  if (desbloqueada("LOC-02") && visible("LOC-02")) {
     const pebeteros: [number, number][] = [
       [524, 414],
       [636, 365],
@@ -1174,7 +1231,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-02: Lago Espejo — espejo lacustre (820, 718) y los 5 grupos de cristales cian/violeta exactos
-  if (desbloqueada("ZON-02")) {
+  if (desbloqueada("ZON-02") && visible("ZON-02")) {
     const reflejo = 0.55 + Math.sin(t * 0.0032) * 0.35;
     dibujarHaloFuego(
       ctx,
@@ -1218,7 +1275,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-03: Bosque — aura en escalinata/trono de piedra (1390, 668) y luciérnagas confinadas al claro
-  if (desbloqueada("ZON-03")) {
+  if (desbloqueada("ZON-03") && visible("ZON-03")) {
     const auro = 0.65 + Math.sin(t * 0.0034) * 0.3;
     dibujarHaloFuego(
       ctx,
@@ -1240,7 +1297,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-04: Riscos — desfiladero escarpado, arcos con viento, fisuras vivas, fumarolas, cascada ígnea y micro-vida geológica
-  if (nodosPorId.has("ZON-04")) {
+  if (nodosPorId.has("ZON-04") && visible("ZON-04", 150)) {
     dibujarDioramaRiscos(
       ctx,
       desbloqueada("ZON-04"),
@@ -1252,7 +1309,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // LOC-03: Bastión Norte — las 3 torres exactas (363,102 / 477,150 / 584,98), portón ardiente (524, 198) y nieve ligera
-  if (desbloqueada("LOC-03")) {
+  if (desbloqueada("LOC-03") && visible("LOC-03")) {
     const torres: [number, number][] = [
       [363, 102],
       [477, 150],
@@ -1292,7 +1349,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-05: Cueva Umbría — diorama volcánico y arcano multicapa (caverna, magma, vapor, cristales y arcos)
-  if (nodosPorId.has("ZON-05")) {
+  if (nodosPorId.has("ZON-05") && visible("ZON-05", 150)) {
     dibujarDioramaCuevaUmbria(
       ctx,
       desbloqueada("ZON-05"),
@@ -1304,7 +1361,7 @@ export function dibujarCapaVivaMapa(
   }
 
   // ZON-06: La Cumbre — aurora multicapa, ventisca confinada, cristales vivos, dragón ancestral y cornisa
-  if (nodosPorId.has("ZON-06")) {
+  if (nodosPorId.has("ZON-06") && visible("ZON-06", 180)) {
     dibujarDioramaCumbre(
       ctx,
       desbloqueada("ZON-06"),

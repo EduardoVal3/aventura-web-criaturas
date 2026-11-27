@@ -62,6 +62,27 @@ export class EncuentrosService {
       });
     }
 
+    // Autorreparación: si el encuentro quedó EN_CURSO pero todo el equipo está en 0 HP, cerrarlo como DERROTA
+    if (
+      personaje.criaturas.length > 0 &&
+      !personaje.criaturas.some((c) => c.hpActual > 0)
+    ) {
+      if (typeof this.prisma.encuentro?.update === 'function') {
+        await this.prisma.encuentro.update({
+          where: { id: encuentro.id },
+          data: {
+            estado: 'DERROTA',
+            fechaResolucion: new Date(),
+          },
+        });
+      }
+      throw new NotFoundException({
+        codigo: 'ENCUENTRO_NO_ENCONTRADO',
+        mensaje:
+          'El combate anterior finalizó automáticamente porque todo tu equipo estaba debilitado.',
+      });
+    }
+
     const aliadaLider =
       personaje.criaturas.find((c) => c.hpActual > 0) ?? personaje.criaturas[0];
     const ultimoCombate =

@@ -441,6 +441,7 @@ test("Subfase 10n: Cumplimiento de Regla R1 (cero emojis) e inspección de orien
     join(__dirname, "../src/components/mundo/MinimapaRedTerritorial.tsx"),
     join(__dirname, "../src/components/mundo/MapaInteractivoCanvas.tsx"),
     join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"),
+    join(__dirname, "../src/lib/transicion-viaje.ts"),
     join(__dirname, "../src/lib/mapa-mundo.ts"),
     join(__dirname, "../src/lib/mapa-dioramas.ts"),
     join(__dirname, "../src/lib/diorama-cumbre.ts"),
@@ -1125,6 +1126,133 @@ test("Subfase 10v: Diorama vivo de Paso de los Riscos (ZON-04) calibrado, con ar
   assert.ok(dioramasCodigo.includes("dibujarFondoRiscos"));
   assert.ok(dioramasCodigo.includes("dibujarDioramaRiscos"));
 });
+
+test("TransicionViaje2D: motor cinemático 16-bit de biomas, rumbo cardinal, proyección cover y movimiento reducido", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const { CONFIGURACION_ISLAS_MAPA } = await import("../src/lib/mapa-mundo.ts");
+  const {
+    DURACION_VIAJE_MS,
+    DURACION_VIAJE_REDUCIDO_MS,
+    PERFILES_BIOMA_VIAJE,
+    calcularProyeccionCover,
+    calcularRumboBrujula,
+    evaluarEstadoViaje,
+    mezclarColorRgba,
+    obtenerPerfilBiomaViaje,
+  } = await import("../src/lib/transicion-viaje.ts");
+
+  assert.ok(DURACION_VIAJE_MS >= 1800 && DURACION_VIAJE_MS <= 2600);
+  assert.ok(DURACION_VIAJE_REDUCIDO_MS > 0 && DURACION_VIAJE_REDUCIDO_MS < DURACION_VIAJE_MS);
+
+  // 1. Cobertura de perfiles visuales para los 9 biomas del archipiélago
+  for (const isla of Object.values(CONFIGURACION_ISLAS_MAPA)) {
+    const perfil = obtenerPerfilBiomaViaje(isla.bioma);
+    assert.strictEqual(perfil.bioma, isla.bioma);
+    assert.ok(PERFILES_BIOMA_VIAJE[isla.bioma]);
+    assert.ok(perfil.tituloRegion.length >= 6);
+    assert.ok(perfil.colorAcento.startsWith("#"));
+  }
+
+  // 2. Rumbo de brújula real sobre la topología de islas
+  assert.strictEqual(
+    calcularRumboBrujula(CONFIGURACION_ISLAS_MAPA["ZON-02"], CONFIGURACION_ISLAS_MAPA["ZON-03"]).sigla,
+    "E",
+  );
+  assert.strictEqual(
+    calcularRumboBrujula(CONFIGURACION_ISLAS_MAPA["LOC-01"], CONFIGURACION_ISLAS_MAPA["ZON-01"]).sigla,
+    "N",
+  );
+  assert.strictEqual(
+    calcularRumboBrujula(CONFIGURACION_ISLAS_MAPA["ZON-05"], CONFIGURACION_ISLAS_MAPA["ZON-06"]).sigla,
+    "NO",
+  );
+
+  // 3. Cinemática continua: barrido del Velo Astral derecha->izquierda, cruce con pico de intensidad y estandarte destino
+  const inicio = evaluarEstadoViaje(0);
+  const mitad = evaluarEstadoViaje(0.47);
+  const llegada = evaluarEstadoViaje(0.72);
+  const final = evaluarEstadoViaje(1);
+
+  assert.ok(inicio.posicionVeloNormX > 1, "El Velo debe iniciar fuera del borde derecho");
+  assert.ok(final.posicionVeloNormX < 0, "El Velo debe completar el barrido más allá del borde izquierdo");
+  assert.ok(inicio.opacidadCortinaEntrada >= 0.99, "Debe abrir desde Abismo Astral oscuro");
+  assert.ok(final.opacidadCortinaSalida >= 0.99, "Debe cerrar hacia Abismo Astral oscuro");
+  assert.ok(mitad.intensidadCruceVelo > 0.35, "Debe detectar el cruce de la criatura sobre el Velo");
+  assert.ok(llegada.opacidadTituloDestino > 0.95, "Debe desplegar el estandarte de la zona destino tras cruzar el Velo");
+  assert.ok(final.criaturaNormX > inicio.criaturaNormX);
+
+  for (let i = 0; i <= 20; i++) {
+    const st = evaluarEstadoViaje(i / 20);
+    assert.ok(Number.isFinite(st.criaturaNormX) && Number.isFinite(st.saltoPx));
+    assert.ok(st.opacidadCriatura >= 0 && st.opacidadCriatura <= 1);
+  }
+
+  // 4. Proyección object-cover exacta para escritorio (1280x560) y móvil vertical (390x620)
+  for (const [w, h] of [
+    [1280, 560],
+    [390, 620],
+    [360, 480],
+  ] as const) {
+    const rect = calcularProyeccionCover(800, 450, w, h, 0.5, 1.08);
+    assert.ok(rect.sx >= 0 && rect.sy >= 0);
+    assert.ok(rect.sx + rect.sw <= 800.01 && rect.sy + rect.sh <= 450.01);
+    const ratioRecorte = rect.sw / rect.sh;
+    const ratioCanvas = w / h;
+    assert.ok(
+      Math.abs(ratioRecorte - ratioCanvas) < 0.02,
+      `La proyección cover debe conservar proporción (${ratioRecorte} vs ${ratioCanvas})`,
+    );
+  }
+
+  assert.ok(mezclarColorRgba("#14d1e8", "#22c55e", 0.5, 0.8).startsWith("rgba("));
+
+  // 5. Contrato semántico y accesibilidad en TransicionViaje2D.tsx
+  const codigo = readFileSync(join(__dirname, "../src/components/mundo/TransicionViaje2D.tsx"), "utf-8");
+  assert.ok(codigo.includes("prefers-reduced-motion"), "Debe soportar prefers-reduced-motion");
+  assert.ok(codigo.includes("obtenerImagenZona"), "Debe cargar paisajes reales de origen y destino");
+  assert.ok(codigo.includes("obtenerImagenCriatura"), "Debe cargar sprite real del líder");
+  assert.ok(codigo.includes("dibujarCosturaVeloAstral"), "Debe renderizar el Velo Astral entre biomas");
+  assert.ok(codigo.includes("dibujarCalzadaArcos16Bit"), "Debe renderizar la calzada de arcos 16-bit");
+  assert.ok(codigo.includes('reproducirSonido("velo"'), "Debe emitir tono retro al cruzar el Velo");
+});
+
+test("Optimización 60 FPS del Hub y Sonner retro: frustum culling, caché de halos y tipografía retro en alertas", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join, dirname } = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+
+  const __dirname = dirname(fileURLToPath(import.meta.url));
+  const { esIslaVisibleEnVista } = await import("../src/lib/mapa-dioramas.ts");
+
+  // 1. Frustum culling: enfocando Villa Serena (suroeste), Cueva Umbría (este) y La Cumbre (norte) quedan fuera de vista
+  const vistaVillaMovil = { minX: 10, minY: 450, maxX: 460, maxY: 900 };
+  assert.strictEqual(esIslaVisibleEnVista("LOC-01", vistaVillaMovil), true);
+  assert.strictEqual(esIslaVisibleEnVista("ZON-05", vistaVillaMovil, 150), false);
+  assert.strictEqual(esIslaVisibleEnVista("ZON-06", vistaVillaMovil, 180), false);
+
+  // Enfocando Cueva Umbría, ZON-05 es visible y LOC-01 se descarta
+  const vistaCueva = { minX: 1120, minY: 160, maxX: 1640, maxY: 640 };
+  assert.strictEqual(esIslaVisibleEnVista("ZON-05", vistaCueva, 150), true);
+  assert.strictEqual(esIslaVisibleEnVista("LOC-01", vistaCueva), false);
+
+  // Sin vista explícita (respaldo) devuelve true
+  assert.strictEqual(esIslaVisibleEnVista("ZON-05", null), true);
+
+  // 2. Caché de sprites de halo y agrupación de trazos sin regresiones
+  const dioramasCodigo = readFileSync(join(__dirname, "../src/lib/mapa-dioramas.ts"), "utf-8");
+  assert.ok(dioramasCodigo.includes("spritesHaloMapaCache"), "Debe cachear sprites radiales en mapa-dioramas");
+  assert.ok(dioramasCodigo.includes("ultimoTiempoBrumaMs"), "Debe regular la recomposición offscreen de brumas");
+
+  // 3. Sonner con tipografía retro y marco 8-bit sin bordes redondeados
+  const sonnerCodigo = readFileSync(join(__dirname, "../src/components/ui/sonner.tsx"), "utf-8");
+  assert.ok(sonnerCodigo.includes("aethelgard-toaster") && sonnerCodigo.includes("aethelgard-toast-title"));
+  assert.ok(sonnerCodigo.includes('"--border-radius": "0px"'));
+});
+
 
 
 

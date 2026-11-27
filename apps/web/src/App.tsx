@@ -29,7 +29,7 @@ import { PantallaCatalogo } from "@/paginas/PantallaCatalogo";
 import { PantallaHistorial } from "@/paginas/PantallaHistorial";
 
 function RutaRaiz() {
-  const { cargando, token, personajeActivo } = useAutenticacion();
+  const { cargando, token, personajeActivo, combateActivo } = useAutenticacion();
   if (cargando) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 text-center p-6">
@@ -45,6 +45,15 @@ function RutaRaiz() {
   }
   if (!personajeActivo) {
     return <Navigate to="/crear-personaje" replace />;
+  }
+  if (combateActivo) {
+    return (
+      <Navigate
+        to="/combate"
+        state={{ encuentroActivoConfirmado: true }}
+        replace
+      />
+    );
   }
   return <Navigate to="/hub" replace />;
 }
@@ -101,7 +110,7 @@ const enrutador = createBrowserRouter([
       {
         path: "/combate",
         element: (
-          <RutaProtegida>
+          <RutaProtegida permitirEnCombate>
             <PantallaCombate />
           </RutaProtegida>
         ),

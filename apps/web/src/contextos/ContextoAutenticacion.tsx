@@ -26,12 +26,14 @@ export interface ContextoAutenticacionTipo {
   token: string | null;
   usuario: UsuarioSesion | null;
   personajeActivo: PersonajeActivo | null;
+  combateActivo: boolean;
   cargando: boolean;
   iniciarSesion: (peticion: PeticionLogin) => Promise<RespuestaLogin>;
   registrarUsuario: (peticion: PeticionRegistro) => Promise<RespuestaRegistro>;
   cerrarSesion: () => Promise<void>;
   actualizarPersonajeActivo: () => Promise<PersonajeActivo | null>;
   establecerPersonajeActivo: (personaje: PersonajeActivo | null) => void;
+  establecerCombateActivo: (activo: boolean) => void;
 }
 
 const ContextoAutenticacion = createContext<ContextoAutenticacionTipo | undefined>(
@@ -56,6 +58,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(tokenInicial);
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(null);
   const [personajeActivo, setPersonajeActivo] = useState<PersonajeActivo | null>(null);
+  const [combateActivo, setCombateActivo] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(() => Boolean(tokenInicial));
   const omitirBootstrapTokenRef = useRef<string | null>(null);
 
@@ -76,6 +79,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     api.establecerToken(null);
     setUsuario(null);
     setPersonajeActivo(null);
+    setCombateActivo(false);
     try {
       localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
     } catch {
@@ -125,9 +129,14 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
             });
           }
 
+          if (typeof perfil.tieneEncuentroActivo === "boolean") {
+            setCombateActivo(perfil.tieneEncuentroActivo);
+          }
+
           if (typeof perfil.tienePersonaje === "boolean") {
             if (!perfil.tienePersonaje) {
               setPersonajeActivo(null);
+              setCombateActivo(false);
               return;
             }
             if (perfil.personaje) {
@@ -144,6 +153,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
         .catch((error: unknown) => {
           if (!cancelado) {
             setPersonajeActivo(null);
+            setCombateActivo(false);
             if (
               typeof error === "object" &&
               error !== null &&
@@ -200,9 +210,21 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
         correo: peticion.correo,
       });
       if (respuesta.tienePersonaje) {
-        await actualizarPersonajeActivo();
+        try {
+          const perfil = await api.obtenerPerfil();
+          setCombateActivo(Boolean(perfil.tieneEncuentroActivo));
+          if (perfil.personaje) {
+            setPersonajeActivo(perfil.personaje);
+          } else {
+            await actualizarPersonajeActivo();
+          }
+        } catch {
+          setCombateActivo(false);
+          await actualizarPersonajeActivo();
+        }
       } else {
         setPersonajeActivo(null);
+        setCombateActivo(false);
       }
       return respuesta;
     },
@@ -226,6 +248,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
         correo: respuesta.correo,
       });
       setPersonajeActivo(null);
+      setCombateActivo(false);
       return respuesta;
     },
     [],
@@ -235,12 +258,14 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     token,
     usuario,
     personajeActivo,
+    combateActivo,
     cargando,
     iniciarSesion,
     registrarUsuario,
     cerrarSesion,
     actualizarPersonajeActivo,
     establecerPersonajeActivo: setPersonajeActivo,
+    establecerCombateActivo: setCombateActivo,
   };
 
   return (

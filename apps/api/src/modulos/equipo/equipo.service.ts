@@ -6,6 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { asegurarSinEncuentroActivo } from '../../comun/util/encuentro-activo.util';
 import { MoverCriaturaEquipoDto } from './dto/mover-criatura-equipo.dto';
 import { ActualizarOrdenEquipoDto } from './dto/actualizar-orden-equipo.dto';
 import { calcularProgresoXp, calcularXpRequerida } from '../progreso/progreso.service';
@@ -203,6 +204,12 @@ export class EquipoService {
         mensaje: 'No se encontró un personaje activo.',
       });
     }
+
+    await asegurarSinEncuentroActivo(
+      this.prisma,
+      personaje.id,
+      'No puedes transferir criaturas del almacén mientras tienes un combate activo pendiente de resolución.',
+    );
 
     // Regla de negocio: La gestión de equipo requiere estar en una localidad segura
     if (!personaje.ubicacionActual || !personaje.ubicacionActual.esSegura) {

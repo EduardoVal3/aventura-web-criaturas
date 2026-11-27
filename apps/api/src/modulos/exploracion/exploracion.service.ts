@@ -2,10 +2,11 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  ConflictException,
+  BadRequestException,
   Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { asegurarSinEncuentroActivo } from '../../comun/util/encuentro-activo.util';
 import { HistorialService } from '../historial/historial.service';
 import { SelectorPonderado } from '../../comun/azar/selector-ponderado.util';
 import { GeneradorAleatorio, GeneradorAleatorioNativo } from '../../comun/azar/generador-aleatorio.interface';
@@ -58,18 +59,29 @@ export class ExploracionService {
     }
 
     // Validación 2: No explorar si ya existe un combate activo pendiente de resolución
-    const encuentroActivo = await this.prisma.encuentro.findFirst({
-      where: {
-        personajeId: personaje.id,
-        estado: 'EN_CURSO',
-      },
-    });
+    await asegurarSinEncuentroActivo(
+      this.prisma,
+      personaje.id,
+      'Tienes un encuentro activo pendiente de resolución en esta zona.',
+    );
 
-    if (encuentroActivo) {
-      throw new ConflictException({
-        codigo: 'ENCUENTRO_PREVIO_ACTIVO',
-        mensaje: 'Tienes un encuentro activo pendiente de resolución en esta zona.',
+    // Validación 3: Exigir al menos una criatura viva (HP > 0) en el equipo activo
+    if (typeof this.prisma.criatura?.count === 'function') {
+      const criaturasVivas = await this.prisma.criatura.count({
+        where: {
+          personajeId: personaje.id,
+          enEquipo: true,
+          hpActual: { gt: 0 },
+        },
       });
+
+      if (criaturasVivas === 0) {
+        throw new BadRequestException({
+          codigo: 'EQUIPO_DEBILITADO',
+          mensaje:
+            'Todas tus criaturas del equipo están debilitadas (0 HP). Usa una poción o viaja a una localidad con santuario antes de explorar.',
+        });
+      }
     }
 
     // 2. ETAPA 1 DEL SORTEO: Evento de la zona (tabla evento_zona)

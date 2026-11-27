@@ -49,6 +49,15 @@ export interface RespuestaLogout {
   mensaje: string;
 }
 
+export interface RespuestaPerfil {
+  sub?: string;
+  usuarioId?: string;
+  nombreUsuario?: string;
+  correo?: string;
+  tienePersonaje?: boolean;
+  personaje?: PersonajeActivo | null;
+}
+
 export interface PeticionCrearPersonaje {
   nombre: string;
   especieInicialSlug: string;
@@ -163,6 +172,7 @@ export interface UbicacionActual {
   nivelSugerido?: string | null;
   servicios: string[];
   progresoZona?: number;
+  tieneEncuentroActivo?: boolean;
   poderEquipo?: PoderEquipoExplorador;
   nodosMapa?: NodoMapaTerritorial[];
   conexiones: ConexionUbicacion[];
@@ -673,6 +683,7 @@ export interface ApiJuego {
   registrarUsuario(peticion: PeticionRegistro): Promise<RespuestaRegistro>;
   iniciarSesion(peticion: PeticionLogin): Promise<RespuestaLogin>;
   cerrarSesion(): Promise<RespuestaLogout>;
+  obtenerPerfil(): Promise<RespuestaPerfil>;
   crearPersonaje(peticion: PeticionCrearPersonaje): Promise<RespuestaCrearPersonaje>;
   obtenerPersonajeActivo(): Promise<PersonajeActivo>;
   obtenerUbicacionActual(): Promise<UbicacionActual>;

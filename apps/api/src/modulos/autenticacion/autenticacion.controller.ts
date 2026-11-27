@@ -46,6 +46,6 @@ export class AutenticacionController {
   @ApiResponse({ status: 200, description: 'Perfil obtenido exitosamente.' })
   @ApiResponse({ status: 401, description: 'Token faltante o inválido.' })
   async obtenerPerfil(@UsuarioActual() usuario: any) {
-    return usuario;
+    return this.autenticacionService.obtenerPerfil(usuario);
   }
 }

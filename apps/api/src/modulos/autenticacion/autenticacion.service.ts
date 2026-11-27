@@ -96,4 +96,48 @@ export class AutenticacionService {
       tienePersonaje: Boolean(personaje),
     };
   }
+
+  async obtenerPerfil(usuario: {
+    sub: string;
+    nombreUsuario?: string;
+    correo?: string;
+    [clave: string]: unknown;
+  }) {
+    let personaje: {
+      id: string;
+      nombre: string;
+      monedas: number;
+      ubicacionActualId: string;
+      criaturas?: { enEquipo: boolean }[];
+    } | null = null;
+
+    if (this.prisma.personaje?.findUnique) {
+      personaje = await this.prisma.personaje.findUnique({
+        where: { usuarioId: usuario.sub },
+        include: {
+          criaturas: {
+            select: { enEquipo: true },
+          },
+        },
+      });
+    }
+
+    const criaturas = personaje?.criaturas ?? [];
+
+    return {
+      ...usuario,
+      usuarioId: usuario.sub,
+      tienePersonaje: Boolean(personaje),
+      personaje: personaje
+        ? {
+            personajeId: personaje.id,
+            nombre: personaje.nombre,
+            monedas: personaje.monedas,
+            ubicacionActualId: personaje.ubicacionActualId,
+            totalCriaturasEquipo: criaturas.filter((c) => c.enEquipo).length,
+            totalCriaturasAlmacen: criaturas.filter((c) => !c.enEquipo).length,
+          }
+        : null,
+    };
+  }
 }

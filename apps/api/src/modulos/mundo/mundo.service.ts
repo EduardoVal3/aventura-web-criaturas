@@ -237,6 +237,22 @@ export class MundoService {
       };
     });
 
+    let tieneEncuentroActivo = false;
+    if (this.prisma.encuentro?.findFirst) {
+      try {
+        const encuentroEnCurso = await this.prisma.encuentro.findFirst({
+          where: {
+            personajeId: personaje.id,
+            estado: 'EN_CURSO',
+          },
+          select: { id: true },
+        });
+        tieneEncuentroActivo = Boolean(encuentroEnCurso);
+      } catch {
+        tieneEncuentroActivo = false;
+      }
+    }
+
     return {
       ubicacionId: zona.id,
       nombre: zona.nombre,
@@ -252,6 +268,7 @@ export class MundoService {
       nivelSugerido,
       servicios: zona.servicios,
       progresoZona,
+      tieneEncuentroActivo,
       poderEquipo,
       nodosMapa,
       conexiones,

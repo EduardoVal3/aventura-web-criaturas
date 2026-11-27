@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
-import { api, type PersonajeActivo } from "@/api";
+import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,41 +70,33 @@ export function PaginaKitUi() {
   const [especieSeleccionada, setEspecieSeleccionada] = useState("lobo-estepario");
   const [mensajeFormulario, setMensajeFormulario] = useState<string | null>(null);
 
-  // Estado para la sección de carga con API simulada
-  const [personaje, setPersonaje] = useState<PersonajeActivo | null>(null);
-  const [cargandoApi, setCargandoApi] = useState(true);
+  // Estado para la sección de carga con API del servidor (solo consulta si existe sesión y personaje)
+  const {
+    token,
+    personajeActivo: personaje,
+    cargando: cargandoSesion,
+    actualizarPersonajeActivo,
+  } = useAutenticacion();
+  const [recargandoApi, setRecargandoApi] = useState(false);
+  const cargandoApi = cargandoSesion || recargandoApi;
 
   const cargarDatosPersonaje = async () => {
-    setCargandoApi(true);
+    if (!token || !personaje) {
+      toast("Inicia sesión con un personaje activo para consultar el servidor.");
+      return;
+    }
+    setRecargandoApi(true);
     try {
-      const datos = await api.obtenerPersonajeActivo();
-      setPersonaje(datos);
+      const datos = await actualizarPersonajeActivo();
+      if (!datos) {
+        toast("No se encontró un personaje activo en el servidor.");
+      }
     } catch {
       toast("Error al cargar los datos del personaje.");
     } finally {
-      setCargandoApi(false);
+      setRecargandoApi(false);
     }
   };
-
-  useEffect(() => {
-    let activo = true;
-    api
-      .obtenerPersonajeActivo()
-      .then((datos) => {
-        if (activo) {
-          setPersonaje(datos);
-          setCargandoApi(false);
-        }
-      })
-      .catch(() => {
-        if (activo) {
-          setCargandoApi(false);
-        }
-      });
-    return () => {
-      activo = false;
-    };
-  }, []);
 
   const manejarEnvioFormulario = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -433,8 +425,10 @@ export function PaginaKitUi() {
                   <Spinner variant="diamond" className="size-4" />
                   <span>Consultando API...</span>
                 </div>
-              ) : (
+              ) : personaje ? (
                 <Badge>Conectado</Badge>
+              ) : (
+                <Badge variant="outline">{token ? "Sin personaje" : "Sin sesión"}</Badge>
               )}
             </div>
             <CardDescription>
@@ -467,7 +461,11 @@ export function PaginaKitUi() {
                 </p>
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">Sin datos disponibles.</p>
+              <p className="text-xs text-muted-foreground">
+                {token
+                  ? "Crea tu personaje explorador para inspeccionar su estado en vivo."
+                  : "Inicia sesión para consultar los datos del personaje en vivo."}
+              </p>
             )}
           </CardContent>
           <CardFooter>
@@ -475,7 +473,7 @@ export function PaginaKitUi() {
               size="sm"
               variant="outline"
               onClick={() => void cargarDatosPersonaje()}
-              disabled={cargandoApi}
+              disabled={cargandoApi || !token || !personaje}
               className="w-full"
             >
               {cargandoApi ? "Cargando..." : "Recargar datos del servidor"}

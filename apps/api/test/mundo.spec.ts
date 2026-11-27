@@ -250,6 +250,44 @@ describe('MundoService, Hábitats, Poder de Equipo y Red Territorial (Subfase 10
       assert.strictEqual(nodoZon04.esActual, false);
       assert.strictEqual(nodoZon04.esAdyacente, true);
       assert.strictEqual(nodoZon04.desbloqueada, false);
+      assert.strictEqual(res.tieneEncuentroActivo, false);
+    });
+
+    it('informa tieneEncuentroActivo=true cuando existe un encuentro EN_CURSO para evitar 404 en el cliente', async () => {
+      const mockPrisma = {
+        personaje: {
+          findUnique: async () => ({
+            id: 'pj-enc-1',
+            usuarioId: 'usr-enc-1',
+            nombre: 'Lyra',
+            ubicacionActualId: 'ZON-01',
+          }),
+        },
+        zona: {
+          findUnique: async () => ({
+            id: 'ZON-01',
+            nombre: 'Praderas del Amanecer',
+            tipo: 'ZONA',
+            esSegura: false,
+            descripcion: 'Praderas abiertas.',
+            nivelMinimo: 1,
+            nivelMaximo: 3,
+            servicios: [],
+          }),
+        },
+        criatura: { findMany: async () => [{ nivel: 2, enEquipo: true }] },
+        conexionZona: { findMany: async () => [] },
+        zonaDesbloqueada: {
+          findMany: async () => [{ personajeId: 'pj-enc-1', zonaId: 'ZON-01', progreso: 40 }],
+        },
+        encuentro: {
+          findFirst: async () => ({ id: 'enc-activo-1' }),
+        },
+      } as any;
+
+      const servicio = new MundoService(mockPrisma);
+      const res = await servicio.obtenerUbicacionActual('usr-enc-1');
+      assert.strictEqual(res.tieneEncuentroActivo, true);
     });
   });
 });

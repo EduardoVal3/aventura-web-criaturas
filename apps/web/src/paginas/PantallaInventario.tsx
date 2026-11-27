@@ -522,7 +522,7 @@ export function PantallaInventario() {
         }}
       >
         <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md border-4 border-black shadow-[8px_8px_0_0_#000] bg-card overflow-hidden p-4 sm:p-5 rounded-none">
-          {itemSeleccionado && (
+          {itemSeleccionado ? (
             <>
               <DialogHeader className="text-left space-y-2">
                 <div className="flex items-center gap-2">
@@ -690,6 +690,11 @@ export function PantallaInventario() {
                 </Button>
               </DialogFooter>
             </>
+          ) : (
+            <DialogHeader className="sr-only">
+              <DialogTitle>Curación de Compañero</DialogTitle>
+              <DialogDescription>Selección de criatura para aplicar un consumible.</DialogDescription>
+            </DialogHeader>
           )}
         </DialogContent>
       </Dialog>

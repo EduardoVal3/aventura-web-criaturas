@@ -532,15 +532,12 @@ function dibujarDestelloCruzPixel(
   const py = Math.round(cy);
   const largo = Math.max(2, Math.round(brazo));
 
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
   ctx.globalAlpha = alfa;
   ctx.fillStyle = colorBrazo;
   ctx.fillRect(px - largo, py, largo * 2 + 1, 1);
   ctx.fillRect(px, py - largo, 1, largo * 2 + 1);
   ctx.fillStyle = "#fdf4ff";
   ctx.fillRect(px - 1, py - 1, 2, 2);
-  ctx.restore();
 }
 
 function muestrearPolilinea(
@@ -707,7 +704,7 @@ function dibujarCavernaSombria(
   dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, grietaSuperior.x, grietaSuperior.y, 20, 14, 0.5 * pulsoGrieta);
   dibujarSpriteCentrado(ctx, sprites.haloMagmaNucleo, pozaImpacto.x, pozaImpacto.y, radioPozaX * 1.2, radioPozaY * 2.0, 0.55 * pulsoGrieta);
 
-  // Dos chorros líquidos continuos con crestas térmicas viajeras (sin barras cuadradas cortadas)
+  // Dos chorros líquidos continuos con crestas térmicas agrupadas por banda cromática (3 strokes por columna en vez de 15)
   const largoCaida = pozaImpacto.y - grietaSuperior.y;
   const segmentosCaida = 14;
   ctx.lineCap = "round";
@@ -722,7 +719,7 @@ function dibujarCavernaSombria(
       flujoBufferY[s] = grietaSuperior.y + 2 + u * (largoCaida - 2);
     }
 
-    // Manto exterior incandescente continuo
+    // Banda 1: manto exterior incandescente continuo
     ctx.globalAlpha = 0.42 * pulsoGrieta;
     ctx.strokeStyle = "#f97316";
     ctx.lineWidth = 4.6;
@@ -731,18 +728,33 @@ function dibujarCavernaSombria(
     for (let s = 1; s <= segmentosCaida; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
     ctx.stroke();
 
-    // Pulsos líquidos blanco-dorados viajando de forma orgánica por el chorro
+    // Banda 2: crestas líquidas doradas agrupadas en un solo trazado
+    ctx.globalAlpha = 0.64;
+    ctx.strokeStyle = "#fde047";
+    ctx.lineWidth = 1.75;
+    ctx.beginPath();
     for (let s = 0; s < segmentosCaida; s++) {
       const u = (s + 0.5) / segmentosCaida;
       const onda = 0.5 + 0.5 * Math.sin(u * 12.0 - t * 0.0085 + col * 1.8);
-      ctx.globalAlpha = 0.36 + onda * 0.56;
-      ctx.strokeStyle = onda > 0.62 ? "#fef9c3" : "#fde047";
-      ctx.lineWidth = 1.0 + onda * 1.3;
-      ctx.beginPath();
+      if (onda <= 0.25) continue;
       ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
       ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
-      ctx.stroke();
     }
+    ctx.stroke();
+
+    // Banda 3: núcleos blanco-dorados en las crestas más calientes
+    ctx.globalAlpha = 0.88;
+    ctx.strokeStyle = "#fef9c3";
+    ctx.lineWidth = 2.15;
+    ctx.beginPath();
+    for (let s = 0; s < segmentosCaida; s++) {
+      const u = (s + 0.5) / segmentosCaida;
+      const onda = 0.5 + 0.5 * Math.sin(u * 12.0 - t * 0.0085 + col * 1.8);
+      if (onda <= 0.62) continue;
+      ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+      ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+    }
+    ctx.stroke();
   }
 
   // Salpicaduras incandescentes y corona hirviente al impactar la poza central
@@ -771,17 +783,16 @@ function dibujarRiosLavaMeseta(
   reducirMovimiento: boolean,
 ): void {
   ctx.save();
-  trazarPoligono(ctx, SILUETA_ENVOLVENTE_CUEVA);
-  ctx.clip();
+  // simplificacion: las coordenadas de cauces y burbujas ya están calibradas dentro de SILUETA_ENVOLVENTE_CUEVA; omitir ctx.clip() de 33 vértices evita generar máscara stencil en cada cuadro
 
   // Resplandor térmico sobre la cuenca central de basalto
   ctx.globalCompositeOperation = "lighter";
   const calor = 0.22 + Math.sin(t * 0.0031) * 0.05;
   dibujarSpriteCentrado(ctx, sprites.haloVolcanico, 1435, 384, 62, 26, calor);
 
-  // Corrientes continuas de magma fluido con ondas térmicas viajeras hacia las cornisas
+  // Corrientes continuas de magma fluido agrupadas por banda térmica (3 strokes por ramal en lugar de 19)
   const muestreado: Punto2D = { x: 0, y: 0 };
-  const pasosRio = 18;
+  const pasosRio = 16;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
@@ -795,7 +806,7 @@ function dibujarRiosLavaMeseta(
       flujoBufferY[s] = muestreado.y + serpenteo * 0.45;
     }
 
-    // Aura térmica continua a lo largo de todo el cauce
+    // Banda 1: aura térmica continua a lo largo de todo el cauce
     ctx.globalAlpha = 0.28 + Math.sin(t * 0.003 + r) * 0.05;
     ctx.strokeStyle = "#ea580c";
     ctx.lineWidth = 6.2;
@@ -804,20 +815,33 @@ function dibujarRiosLavaMeseta(
     for (let s = 1; s <= pasosRio; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
     ctx.stroke();
 
-    // Crestas líquidas doradas-naranjas fluyendo de forma orgánica sin parecer trazos blancos rígidos
-    for (let s = 0; s < pasosRio; s++) {
+    // Banda 2: crestas naranjas-doradas agrupadas
+    ctx.globalAlpha = 0.38;
+    ctx.strokeStyle = "#fb923c";
+    ctx.lineWidth = 2.3;
+    ctx.beginPath();
+    for (let s = 1; s < pasosRio - 1; s++) {
       const u = (s + 0.5) / pasosRio;
-      const env = Math.sin(u * Math.PI);
       const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0046 + r * 1.7);
-      if (onda < 0.25) continue;
-      ctx.globalAlpha = env * onda * 0.54;
-      ctx.strokeStyle = onda > 0.78 ? "#fef08a" : onda > 0.52 ? "#fde047" : "#fb923c";
-      ctx.lineWidth = 1.4 + onda * 1.8;
-      ctx.beginPath();
+      if (onda <= 0.35) continue;
       ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
       ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
-      ctx.stroke();
     }
+    ctx.stroke();
+
+    // Banda 3: lenguas incandescentes doradas agrupadas
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = "#fef08a";
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    for (let s = 1; s < pasosRio - 1; s++) {
+      const u = (s + 0.5) / pasosRio;
+      const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0046 + r * 1.7);
+      if (onda <= 0.66) continue;
+      ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+      ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+    }
+    ctx.stroke();
   }
 
   // Domos de magma incandescente hinchándose en la poza y estallando en micro-chispas
@@ -906,7 +930,7 @@ function dibujarCascadasYVaporCueva(
         flujoBufferY[s] = puntoFlujo.y;
       }
 
-      // Base fluida naranja envolvente
+      // Banda 1: base fluida naranja envolvente
       ctx.globalAlpha = 0.34 * pulso;
       ctx.strokeStyle = "#f97316";
       ctx.lineWidth = cascada.hebras.length > 1 ? 3.8 : 5.0;
@@ -915,18 +939,33 @@ function dibujarCascadasYVaporCueva(
       for (let s = 1; s <= pasosCascada; s++) ctx.lineTo(flujoBufferX[s], flujoBufferY[s]);
       ctx.stroke();
 
-      // Lenguas de magma vivo descendiendo continuamente por cada hebra
+      // Banda 2: lenguas doradas agrupadas en un solo trazado
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = "#fde047";
+      ctx.lineWidth = cascada.hebras.length > 1 ? 1.55 : 1.9;
+      ctx.beginPath();
       for (let s = 0; s < pasosCascada; s++) {
         const u = (s + 0.5) / pasosCascada;
         const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0075 + h * 2.2 + cascada.fase);
-        ctx.globalAlpha = 0.28 + onda * 0.64;
-        ctx.strokeStyle = onda > 0.68 ? "#fef9c3" : onda > 0.42 ? "#fde047" : "#fb923c";
-        ctx.lineWidth = (cascada.hebras.length > 1 ? 0.9 : 1.1) + onda * 1.4;
-        ctx.beginPath();
+        if (onda <= 0.36) continue;
         ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
         ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
-        ctx.stroke();
       }
+      ctx.stroke();
+
+      // Banda 3: núcleos blanco-amarillo en picos térmicos
+      ctx.globalAlpha = 0.86;
+      ctx.strokeStyle = "#fef9c3";
+      ctx.lineWidth = cascada.hebras.length > 1 ? 1.9 : 2.2;
+      ctx.beginPath();
+      for (let s = 0; s < pasosCascada; s++) {
+        const u = (s + 0.5) / pasosCascada;
+        const onda = 0.5 + 0.5 * Math.sin(u * 13.0 - t * 0.0075 + h * 2.2 + cascada.fase);
+        if (onda <= 0.68) continue;
+        ctx.moveTo(flujoBufferX[s], flujoBufferY[s]);
+        ctx.lineTo(flujoBufferX[s + 1], flujoBufferY[s + 1]);
+      }
+      ctx.stroke();
     }
 
     // Nubes de vapor hirviente subiendo desde la zona de choque sobre el acantilado inferior (nunca sobre Bosque)
@@ -1030,9 +1069,10 @@ function dibujarArcoElectricoBifurcado(
   ctx.lineWidth = 1.25;
   ctx.stroke();
 
-  // Dos bifurcaciones angulosas saliendo en ángulos vivos
+  // Bifurcaciones angulosas agrupadas en un solo path (2 strokes totales en lugar de 4)
   if (arco.conRama) {
     const cantidadRamas = dist > 45 ? 2 : 1;
+    ctx.beginPath();
     for (let r = 0; r < cantidadRamas; r++) {
       const nodoBif = r === 0 ? 4 + (indiceArco % 2) : 8;
       const bx0 = arcoBufferX[nodoBif];
@@ -1052,17 +1092,16 @@ function dibujarArcoElectricoBifurcado(
         ramaBufferY[k] = by0 + dirY * f + ny * jitter;
       }
 
-      ctx.beginPath();
       ctx.moveTo(ramaBufferX[0], ramaBufferY[0]);
       for (let k = 1; k < 6; k++) ctx.lineTo(ramaBufferX[k], ramaBufferY[k]);
-      ctx.strokeStyle = `rgba(217, 70, 239, ${(intensidad * 0.55).toFixed(2)})`;
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
-
-      ctx.strokeStyle = `rgba(253, 244, 255, ${(intensidad * 0.92).toFixed(2)})`;
-      ctx.lineWidth = 0.95;
-      ctx.stroke();
     }
+    ctx.strokeStyle = `rgba(217, 70, 239, ${(intensidad * 0.55).toFixed(2)})`;
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(253, 244, 255, ${(intensidad * 0.92).toFixed(2)})`;
+    ctx.lineWidth = 0.95;
+    ctx.stroke();
   }
 
   ctx.restore();
@@ -1196,8 +1235,7 @@ function dibujarCenizaYPavesasCueva(
   reducirMovimiento: boolean,
 ): void {
   ctx.save();
-  trazarPoligono(ctx, SILUETA_ENVOLVENTE_CUEVA);
-  ctx.clip();
+  // simplificacion: confinamiento elíptico analítico en lugar de ctx.clip() de 33 vértices para evitar máscara stencil GPU en partículas de 1.5px
 
   // Ceniza volcánica gris en deriva lenta
   const limiteCeniza = reducirMovimiento ? 10 : CENIZA_VOLCANICA_CUEVA.length;
@@ -1207,6 +1245,9 @@ function dibujarCenizaYPavesasCueva(
     const ry = ((c.yBase - t * c.velocidad * 0.65) - 220) % 275;
     const px = Math.round(1255 + (rx < 0 ? rx + 340 : rx));
     const py = Math.round(220 + (ry < 0 ? ry + 275 : ry));
+    const dx = (px - 1428) / 162;
+    const dy = (py - 360) / 138;
+    if (dx * dx + dy * dy > 1) continue;
     ctx.fillStyle = i % 3 === 0 ? "rgba(203, 213, 225, 0.46)" : "rgba(148, 163, 184, 0.38)";
     ctx.fillRect(px, py, c.tamano, c.tamano);
   }
@@ -1219,6 +1260,7 @@ function dibujarCenizaYPavesasCueva(
       const progreso = (t * pav.velocidad + pav.fase * 0.17) % 1;
       const px = Math.round(pav.xBase + Math.sin(progreso * Math.PI * 3 + pav.fase) * pav.amplitud);
       const py = Math.round(pav.yBase - progreso * 105);
+      if (py < 212 || py > 500) continue;
       const alfa = Math.sin(progreso * Math.PI) * 0.85;
       ctx.globalAlpha = alfa;
       ctx.fillStyle = p % 3 === 0 ? "#fef08a" : "#fb923c";

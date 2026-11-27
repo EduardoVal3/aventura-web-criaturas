@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
@@ -18,7 +18,9 @@ import {
   Zap,
   Eye,
   Crown,
+  HeartPulse,
 } from "lucide-react";
+import { useAutenticacion } from "@/contextos/ContextoAutenticacion";
 
 import { Button } from "@/components/ui/8bit/button";
 import { Badge } from "@/components/ui/8bit/badge";
@@ -60,6 +62,7 @@ export interface EntradaBitacora {
 
 export function PantallaExploracion() {
   const navigate = useNavigate();
+  const { establecerCombateActivo } = useAutenticacion();
   const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
   const [cargandoInicial, setCargandoInicial] = useState(true);
   const [progresoZona, setProgresoZona] = useState<number>(0);
@@ -84,13 +87,28 @@ export function PantallaExploracion() {
   const [modalBotinAbierto, setModalBotinAbierto] = useState(false);
   const [ultimaRecompensa, setUltimaRecompensa] = useState<RecompensaExploracion | null>(null);
   const [bitacoraExploracion, setBitacoraExploracion] = useState<EntradaBitacora[]>([]);
+  const rivalActivoRef = useRef(false);
+
+  useEffect(() => {
+    rivalActivoRef.current = Boolean(rivalActivo);
+  }, [rivalActivo]);
+
+  useEffect(() => {
+    return () => {
+      // Si el explorador intenta abandonar la pantalla tras detonar un encuentro, bloquear navegación hacia el combate
+      if (rivalActivoRef.current) {
+        establecerCombateActivo(true);
+      }
+    };
+  }, [establecerCombateActivo]);
 
   useEffect(() => {
     let cancelado = false;
 
     async function cargarEstado() {
+      let ubi: UbicacionActual | null = null;
       try {
-        const ubi = await api.obtenerUbicacionActual();
+        ubi = await api.obtenerUbicacionActual();
         if (!cancelado) {
           setUbicacion(ubi);
           setProgresoZona(ubi.progresoZona ?? 0);
@@ -120,10 +138,29 @@ export function PantallaExploracion() {
         }
       }
 
-      // Reanudación activa: verificar si hay combate en curso en el servidor
+      // Reanudación activa: consultar /encuentros/activo solo cuando el servidor confirma combate en curso (evita 404 innecesarios)
+      if (ubi !== null && ubi.tieneEncuentroActivo === true) {
+        if (!cancelado) {
+          establecerCombateActivo(true);
+          setCargandoInicial(false);
+        }
+        return;
+      }
+
+      const debeConsultarEncuentro =
+        ubi !== null && ubi.tieneEncuentroActivo === undefined && !ubi.esSegura;
+
+      if (!debeConsultarEncuentro) {
+        if (!cancelado) {
+          setCargandoInicial(false);
+        }
+        return;
+      }
+
       try {
         const encuentroEnCurso = await api.obtenerEncuentroActivo();
         if (!cancelado && encuentroEnCurso && encuentroEnCurso.estado === "EN_CURSO") {
+          establecerCombateActivo(true);
           const rival = encuentroEnCurso.criaturaRival;
           setRivalActivo({
             slug: rival.slug,
@@ -139,7 +176,7 @@ export function PantallaExploracion() {
           });
         }
       } catch {
-        // simplificacion: 404 o ENCUENTRO_NO_ENCONTRADO es el estado esperado cuando no hay batalla activa en curso.
+        // simplificacion: tolerancia si el encuentro se resolvió entre la lectura de ubicación y la reanudación.
       } finally {
         if (!cancelado) {
           setCargandoInicial(false);
@@ -151,7 +188,7 @@ export function PantallaExploracion() {
     return () => {
       cancelado = true;
     };
-  }, [navigate]);
+  }, [navigate, establecerCombateActivo]);
 
   const handleExplorar = async () => {
     if (explorando) return;
@@ -159,14 +196,23 @@ export function PantallaExploracion() {
     // Si ya existe un combate activo detectado, dirigir directamente a combate
     if (rivalActivo) {
       reproducirSonido("alerta", 0.5);
+      establecerCombateActivo(true);
       toast.info(`¡Tienes un combate en curso con ${rivalActivo.nombre}!`);
-      navigate("/combate");
+      navigate("/combate", { state: { encuentroActivoConfirmado: true } });
       return;
     }
 
     if (ubicacion?.esSegura) {
       reproducirSonido("error", 0.4);
       toast.info("Esta localidad es pacífica. Viaja a una ruta silvestre para explorar.");
+      return;
+    }
+
+    if (ubicacion?.equipoDebilitado) {
+      reproducirSonido("error", 0.5);
+      toast.error(
+        "Todas tus criaturas están debilitadas (0 HP). Usa una poción en tu bolsa o viaja al santuario desde el mapa.",
+      );
       return;
     }
 
@@ -245,8 +291,14 @@ export function PantallaExploracion() {
           error.codigo === "ENCUENTRO_ACTIVO_PENDIENTE" ||
           error.codigo === "ENCUENTRO_PREVIO_ACTIVO"
         ) {
+          establecerCombateActivo(true);
           toast.info("Tienes un combate activo pendiente de resolución.");
-          navigate("/combate");
+          navigate("/combate", { state: { encuentroActivoConfirmado: true } });
+          return;
+        }
+        if (error.codigo === "EQUIPO_DEBILITADO") {
+          setUbicacion((prev) => (prev ? { ...prev, equipoDebilitado: true } : prev));
+          toast.error(error.message);
           return;
         }
         if (error.codigo === "ZONA_NO_EXPLORABLE") {
@@ -265,7 +317,8 @@ export function PantallaExploracion() {
   const handleIniciarCombate = () => {
     reproducirSonido("confirmar", 0.5);
     setModalEncuentroAbierto(false);
-    navigate("/combate");
+    establecerCombateActivo(true);
+    navigate("/combate", { state: { encuentroActivoConfirmado: true } });
   };
 
   if (cargandoInicial) {
@@ -394,22 +447,31 @@ export function PantallaExploracion() {
               )}
             </div>
 
-            <Link
-              to="/hub"
-              className={cn("shrink-0", explorando && "pointer-events-none opacity-50")}
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              font="retro"
+              className={cn(
+                "shrink-0 bg-black/85 hover:bg-[#1a2332] text-slate-200 hover:text-[#14d1e8] border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 text-[8px] sm:text-[9px] gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 cursor-pointer",
+                explorando && "pointer-events-none opacity-50",
+              )}
             >
-              <Button
-                variant="outline"
-                size="sm"
-                font="retro"
-                disabled={explorando}
-                onClick={() => reproducirSonido("click", 0.3)}
-                className="bg-black/85 hover:bg-[#1a2332] text-slate-200 hover:text-[#14d1e8] border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 text-[8px] sm:text-[9px] gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 cursor-pointer"
+              <Link
+                to="/hub"
+                aria-disabled={explorando}
+                onClick={(e) => {
+                  if (explorando) {
+                    e.preventDefault();
+                    return;
+                  }
+                  reproducirSonido("click", 0.3);
+                }}
               >
                 <ArrowLeft className="size-2.5 sm:size-3 shrink-0" />
                 <span>CAMPAMENTO</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           {/* Nombre de la zona sobre la franja inferior del paisaje sin truncamiento rígido */}
@@ -582,6 +644,15 @@ export function PantallaExploracion() {
               explorando y cartografiando la ruta.
             </span>
           </p>
+        ) : ubicacion?.equipoDebilitado ? (
+          <div className="p-2.5 sm:p-3 bg-red-950/50 border-2 border-red-500/80 shadow-[2px_2px_0_0_#000] flex items-start gap-2.5">
+            <HeartPulse className="size-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="retro text-[8px] sm:text-[9px] text-red-100 leading-relaxed break-words">
+              <strong className="text-red-300">Equipo debilitado (0 HP):</strong> Ninguna criatura
+              de tu equipo activo puede combatir. Usa una poción desde tu bolsa o regresa al mapa
+              para viajar a una localidad con santuario antes de continuar explorando.
+            </div>
+          </div>
         ) : (
           <p className="retro text-[8px] sm:text-[9px] text-slate-400 leading-relaxed break-words">
             {progresoZona >= 100 ? (
@@ -601,21 +672,30 @@ export function PantallaExploracion() {
         {/* Botón Principal de Inmersión Brutalist 8-Bit con holgura y marco de 4px */}
         <div className="pt-4 sm:pt-5 mt-2 sm:mt-3">
           {ubicacion?.esSegura ? (
-            <Link
-              to="/hub"
-              className={cn("block w-full", explorando && "pointer-events-none opacity-50")}
+            <Button
+              asChild
+              variant="outline"
+              font="retro"
+              className={cn(
+                "w-full py-3 sm:py-4 px-2 sm:px-4 bg-[#1a2332] hover:bg-[#1a2332]/80 text-[#14d1e8] border-4 border-black shadow-[6px_6px_0_0_#000] active:translate-y-1 active:shadow-[2px_2px_0_0_#000] text-[9.5px] sm:text-xs md:text-sm tracking-normal sm:tracking-wider uppercase gap-2 cursor-pointer text-center whitespace-normal leading-snug",
+                explorando && "pointer-events-none opacity-50",
+              )}
             >
-              <Button
-                variant="outline"
-                font="retro"
-                disabled={explorando}
-                onClick={() => reproducirSonido("click", 0.4)}
-                className="w-full py-3 sm:py-4 px-2 sm:px-4 bg-[#1a2332] hover:bg-[#1a2332]/80 text-[#14d1e8] border-4 border-black shadow-[6px_6px_0_0_#000] active:translate-y-1 active:shadow-[2px_2px_0_0_#000] text-[9.5px] sm:text-xs md:text-sm tracking-normal sm:tracking-wider uppercase gap-2 cursor-pointer text-center whitespace-normal leading-snug"
+              <Link
+                to="/hub"
+                aria-disabled={explorando}
+                onClick={(e) => {
+                  if (explorando) {
+                    e.preventDefault();
+                    return;
+                  }
+                  reproducirSonido("click", 0.4);
+                }}
               >
                 <Compass className="size-4 text-[#14d1e8] shrink-0" />
                 <span className="break-words">VIAJAR A SENDA SILVESTRE DESDE EL CAMPAMENTO</span>
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           ) : rivalActivo ? (
             <Button
               font="retro"
@@ -625,6 +705,36 @@ export function PantallaExploracion() {
               <Swords className="size-4 text-white shrink-0" />
               <span className="break-words">RESOLVER COMBATE CON {rivalActivo.nombre.toUpperCase()}</span>
             </Button>
+          ) : ubicacion?.equipoDebilitado ? (
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button
+                asChild
+                font="retro"
+                className="w-full sm:flex-1 py-3 sm:py-3.5 px-3 bg-red-600 hover:bg-red-500 text-white border-4 border-black shadow-[4px_4px_0_0_#000] active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] text-[9px] sm:text-xs uppercase gap-2 cursor-pointer text-center whitespace-normal leading-snug"
+              >
+                <Link
+                  to="/hub"
+                  onClick={() => reproducirSonido("click", 0.4)}
+                >
+                  <Compass className="size-4 shrink-0" />
+                  <span className="break-words">IR AL MAPA (VIAJAR A SANTUARIO)</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                font="retro"
+                className="w-full sm:flex-1 py-3 sm:py-3.5 px-3 bg-[#1a2332] hover:bg-[#232d3f] text-emerald-300 hover:text-emerald-200 border-4 border-black shadow-[4px_4px_0_0_#000] active:translate-y-0.5 active:shadow-[2px_2px_0_0_#000] text-[9px] sm:text-xs uppercase gap-2 cursor-pointer text-center whitespace-normal leading-snug"
+              >
+                <Link
+                  to="/inventario"
+                  onClick={() => reproducirSonido("click", 0.4)}
+                >
+                  <Backpack className="size-4 shrink-0" />
+                  <span className="break-words">ABRIR BOLSA (USAR POCIÓN)</span>
+                </Link>
+              </Button>
+            </div>
           ) : (
             <Button
               font="retro"

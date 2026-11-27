@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { obtenerOReconciliarEncuentroActivo } from '../../comun/util/encuentro-activo.util';
 import { RegistroDto } from './dto/registro.dto';
 import { IngresoDto } from './dto/ingreso.dto';
 
@@ -94,6 +95,66 @@ export class AutenticacionService {
       nombreUsuario: usuario.nombreUsuario,
       tokenAcceso,
       tienePersonaje: Boolean(personaje),
+    };
+  }
+
+  async obtenerPerfil(usuario: {
+    sub: string;
+    nombreUsuario?: string;
+    correo?: string;
+    [clave: string]: unknown;
+  }) {
+    let personaje: {
+      id: string;
+      nombre: string;
+      monedas: number;
+      ubicacionActualId: string;
+      criaturas?: { enEquipo: boolean; hpActual?: number }[];
+    } | null = null;
+
+    if (this.prisma.personaje?.findUnique) {
+      personaje = await this.prisma.personaje.findUnique({
+        where: { usuarioId: usuario.sub },
+        include: {
+          criaturas: {
+            select: { enEquipo: true, hpActual: true },
+          },
+        },
+      });
+    }
+
+    const criaturas = personaje?.criaturas ?? [];
+    const criaturasEquipo = criaturas.filter((c) => c.enEquipo);
+    let tieneEncuentroActivo = false;
+    if (personaje) {
+      try {
+        tieneEncuentroActivo = Boolean(
+          await obtenerOReconciliarEncuentroActivo(
+            this.prisma,
+            personaje.id,
+            criaturasEquipo,
+          ),
+        );
+      } catch {
+        tieneEncuentroActivo = false;
+      }
+    }
+
+    return {
+      ...usuario,
+      usuarioId: usuario.sub,
+      tienePersonaje: Boolean(personaje),
+      tieneEncuentroActivo,
+      personaje: personaje
+        ? {
+            personajeId: personaje.id,
+            nombre: personaje.nombre,
+            monedas: personaje.monedas,
+            ubicacionActualId: personaje.ubicacionActualId,
+            totalCriaturasEquipo: criaturasEquipo.length,
+            totalCriaturasAlmacen: criaturas.filter((c) => !c.enEquipo).length,
+          }
+        : null,
     };
   }
 }

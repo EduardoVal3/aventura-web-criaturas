@@ -58,8 +58,8 @@ graphify-out/
 # Documentos de planificación interna y workflows que no se versionan (regla R3)
 Plan_Desarrollo_ISC305_Entregable1.md
 Proyecto Integrador ISC305 Aventura Web Criaturas.md
-GUIA_REPOSITORIO_EQUIPO.md
-GUIA_REPOSITORIO_EQUIPO.pdf
+GUIA_REPOSITORIO_EQUIPO*.md
+GUIA_REPOSITORIO_EQUIPO*.pdf
 docs/workflows/
 
 # Registros y archivos del sistema operativo

@@ -283,3 +283,75 @@ test("Auditoría Impeccable: Tipografía retro integral Press Start 2P, separaci
     "La etiqueta de acción en curso debe llevar tilde correcta según R1",
   );
 });
+
+test("Calibración de las 6 arenas de combate y proyección exacta object-cover en desktop y móvil", async () => {
+  const {
+    CALIBRACION_ARENAS_ZONA,
+    obtenerCalibracionArena,
+    proyectarPlataformaEnArena,
+  } = await import("../src/lib/battlegrounds.ts");
+
+  const zonasEsperadas = [
+    "praderas-del-amanecer",
+    "riberas-del-lago-espejo",
+    "bosque-susurrante",
+    "paso-de-los-riscos",
+    "cueva-umbria",
+    "pico-de-la-cumbre",
+  ];
+
+  for (const zona of zonasEsperadas) {
+    const cal = CALIBRACION_ARENAS_ZONA[zona];
+    assert.ok(cal, `Debe existir calibración exacta para ${zona}`);
+    assert.strictEqual(obtenerCalibracionArena(zona), cal);
+    assert.ok(cal.aliado.x < cal.rival.x, `${zona}: aliado debe estar a la izquierda del rival`);
+    assert.ok(cal.aliado.y > cal.rival.y, `${zona}: aliado debe estar en primer plano más abajo que el rival`);
+    assert.ok(cal.foco.x >= 40 && cal.foco.x <= 60, `${zona}: foco horizontal equilibrado`);
+    assert.ok(cal.foco.y >= 50 && cal.foco.y <= 70, `${zona}: foco vertical equilibrado`);
+
+    // Proyección en escritorio panorámico (1280x720 -> arena 1280x500 con cabecera de 44px)
+    const dimDesktop = {
+      anchoFondo: 1280,
+      altoFondo: 544,
+      anchoArena: 1280,
+      altoArena: 500,
+      offsetSuperior: 44,
+    };
+    const rivalDesktop = proyectarPlataformaEnArena(cal.rival, cal.foco, dimDesktop, {
+      margenX: 64,
+      margenSuperior: 112,
+      margenInferior: 24,
+    });
+    const aliadoDesktop = proyectarPlataformaEnArena(cal.aliado, cal.foco, dimDesktop, {
+      margenX: 76,
+      margenSuperior: 130,
+      margenInferior: 8,
+    });
+    assert.ok(rivalDesktop.xPx >= 64 && rivalDesktop.xPx <= 1216);
+    assert.ok(aliadoDesktop.xPx >= 76 && aliadoDesktop.xPx <= 1204);
+    assert.ok(aliadoDesktop.yPx > rivalDesktop.yPx);
+
+    // Proyección en móvil vertical (390x844 -> arena 390x510 con cabecera de 44px)
+    const dimMovil = {
+      anchoFondo: 390,
+      altoFondo: 554,
+      anchoArena: 390,
+      altoArena: 510,
+      offsetSuperior: 44,
+    };
+    const rivalMovil = proyectarPlataformaEnArena(cal.rival, cal.foco, dimMovil, {
+      margenX: 46,
+      margenSuperior: 78,
+      margenInferior: 20,
+    });
+    const aliadoMovil = proyectarPlataformaEnArena(cal.aliado, cal.foco, dimMovil, {
+      margenX: 52,
+      margenSuperior: 96,
+      margenInferior: 6,
+    });
+    assert.ok(rivalMovil.xPx >= 46 && rivalMovil.xPx <= 344, `${zona}: rival móvil dentro del viewport`);
+    assert.ok(aliadoMovil.xPx >= 52 && aliadoMovil.xPx <= 338, `${zona}: aliado móvil dentro del viewport`);
+    assert.ok(aliadoMovil.xPx < rivalMovil.xPx, `${zona}: diagonal preservada en móvil`);
+    assert.ok(aliadoMovil.yPx > rivalMovil.yPx, `${zona}: profundidad vertical preservada en móvil`);
+  }
+});

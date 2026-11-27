@@ -617,7 +617,7 @@ export function PantallaCatalogo() {
           showCloseButton={false}
           className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col"
         >
-          {especieSeleccionada && (
+          {especieSeleccionada ? (
             <div className="flex flex-col max-h-[85dvh] overflow-hidden">
               {/* Cabecera del Modal con Título y Botón Cerrar */}
               <div className="p-3 bg-bastion border-b-2 border-black flex items-center justify-between gap-3 shrink-0">
@@ -827,6 +827,11 @@ export function PantallaCatalogo() {
                   </Button>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="sr-only">
+              <DialogTitle>Ficha de especie</DialogTitle>
+              <DialogDescription>Detalles biológicos y movimientos de la criatura.</DialogDescription>
             </div>
           )}
         </DialogContent>

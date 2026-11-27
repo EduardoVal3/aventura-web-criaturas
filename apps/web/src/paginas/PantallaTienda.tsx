@@ -453,7 +453,7 @@ export function PantallaTienda() {
         }}
       >
         <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md border-4 border-black shadow-[8px_8px_0_0_#000] bg-card overflow-hidden p-4 sm:p-5 rounded-none">
-          {articuloConfirmar && resumenModal && (
+          {articuloConfirmar && resumenModal ? (
             <>
               <DialogHeader className="text-left space-y-1.5">
                 <DialogTitle className="retro text-[10px] sm:text-xs text-primary leading-relaxed">
@@ -590,6 +590,11 @@ export function PantallaTienda() {
                 </Button>
               </DialogFooter>
             </>
+          ) : (
+            <DialogHeader className="sr-only">
+              <DialogTitle>Confirmación de Adquisición</DialogTitle>
+              <DialogDescription>Resumen de compra en el bazar comercial.</DialogDescription>
+            </DialogHeader>
           )}
         </DialogContent>
       </Dialog>

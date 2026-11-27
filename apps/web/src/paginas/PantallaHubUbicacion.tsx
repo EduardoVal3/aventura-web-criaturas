@@ -81,7 +81,7 @@ const IDS_SERVICIOS_DERECHA = ["curacion", "tienda", "inventario"] as const;
 
 export function PantallaHubUbicacion() {
   const navigate = useNavigate();
-  const { cerrarSesion } = useAutenticacion();
+  const { cerrarSesion, establecerCombateActivo } = useAutenticacion();
   const [ubicacion, setUbicacion] = useState<UbicacionActual | null>(null);
   const [personaje, setPersonaje] = useState<PersonajeActivo | null>(null);
   const [equipo, setEquipo] = useState<CriaturaEquipo[]>([]);
@@ -116,7 +116,10 @@ export function PantallaHubUbicacion() {
     setPersonaje(datosPersonaje);
     setEquipo(datosEquipo?.criaturas ?? []);
     setLimiteEquipo(Math.max(6, datosEquipo?.limiteEquipo ?? 6));
-  }, []);
+    if (datosUbicacion.tieneEncuentroActivo === true) {
+      establecerCombateActivo(true);
+    }
+  }, [establecerCombateActivo]);
 
   useEffect(() => {
     iniciarMusicaAmbiente("hub");
@@ -246,7 +249,11 @@ export function PantallaHubUbicacion() {
       setViajando(false);
       reproducirSonido("error", 0.5);
       if (error instanceof ErrorApi) {
-        if (error.codigo === "ZONA_BLOQUEADA") {
+        if (error.codigo === "ENCUENTRO_PREVIO_ACTIVO") {
+          establecerCombateActivo(true);
+          toast.info("Tienes un combate activo pendiente de resolución.");
+          navigate("/combate", { state: { encuentroActivoConfirmado: true } });
+        } else if (error.codigo === "ZONA_BLOQUEADA") {
           toast.error(`Zona bloqueada: ${error.message}`);
         } else {
           toast.error(error.message);
@@ -697,7 +704,7 @@ export function PantallaHubUbicacion() {
           showCloseButton={false}
           className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col text-slate-100"
         >
-          {nodoSeleccionado && (
+          {nodoSeleccionado ? (
             <div className="flex flex-col max-h-[85dvh] overflow-hidden min-w-0">
               {/* Cabecera fija del Modal con Insignias, Título y Botón Cerrar */}
               <DialogHeader className="p-3 bg-bastion border-b-2 border-black flex flex-row items-start justify-between gap-3 shrink-0 text-left">
@@ -976,6 +983,11 @@ export function PantallaHubUbicacion() {
                 ) : null}
               </div>
             </div>
+          ) : (
+            <DialogHeader className="sr-only">
+              <DialogTitle>Inspección de zona</DialogTitle>
+              <DialogDescription>Detalles e inspección de viaje.</DialogDescription>
+            </DialogHeader>
           )}
         </DialogContent>
       </Dialog>

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { asegurarSinEncuentroActivo } from '../../comun/util/encuentro-activo.util';
 
 @Injectable()
 export class CuracionService {
@@ -26,6 +27,12 @@ export class CuracionService {
         mensaje: 'No se encontró el personaje activo del explorador.',
       });
     }
+
+    await asegurarSinEncuentroActivo(
+      this.prisma,
+      personaje.id,
+      'No puedes usar el santuario mientras tienes un combate activo pendiente de resolución.',
+    );
 
     const servicios = personaje.ubicacionActual.servicios ?? [];
     const tieneServicioCuracion =

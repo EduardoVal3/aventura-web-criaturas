@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../comun/prisma/prisma.service';
+import { asegurarSinEncuentroActivo } from '../../comun/util/encuentro-activo.util';
 
 @Injectable()
 export class TiendaService {
@@ -78,6 +79,12 @@ export class TiendaService {
         mensaje: 'No se encontró un personaje activo para este usuario.',
       });
     }
+
+    await asegurarSinEncuentroActivo(
+      this.prisma,
+      personaje.id,
+      'No puedes comprar en la tienda mientras tienes un combate activo pendiente de resolución.',
+    );
 
     const servicios = personaje.ubicacionActual.servicios ?? [];
     if (!servicios.includes('TIENDA')) {

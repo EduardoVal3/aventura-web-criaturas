@@ -238,7 +238,7 @@ export function MapaInteractivoCanvas({
       const recursosOceano = recursosOceanoRef.current;
       if (mapaImagenLista && mapaImagenRef.current && recursosOceano) {
         dibujarOceanoVivo(ctx, recursosOceano, tiempo, reducirMovimiento, vistaMundo);
-        dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento);
+        dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento, vistaMundo);
         ctx.drawImage(
           mapaImagenRef.current,
           0,
@@ -255,6 +255,7 @@ export function MapaInteractivoCanvas({
           reducirMovimiento,
           recursosOceano.mascara,
           true,
+          vistaMundo,
         );
         dibujarAvesMarinasLejanas(ctx, recursosOceano, tiempo, reducirMovimiento);
       } else {
@@ -262,7 +263,7 @@ export function MapaInteractivoCanvas({
         dibujarAguasCosterasMapa(ctx, nodos, tiempo, reducirMovimiento);
         const hayMapaReal = Boolean(mapaImagenLista && mapaImagenRef.current);
         if (hayMapaReal && mapaImagenRef.current) {
-          dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento);
+          dibujarFondoCieloMapa(ctx, nodos, tiempo, reducirMovimiento, vistaMundo);
           ctx.drawImage(
             mapaImagenRef.current,
             0,
@@ -282,6 +283,7 @@ export function MapaInteractivoCanvas({
           reducirMovimiento,
           recursosOceano?.mascara,
           hayMapaReal,
+          vistaMundo,
         );
       }
 

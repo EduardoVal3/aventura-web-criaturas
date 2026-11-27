@@ -103,17 +103,27 @@ Este documento define la especificación técnica de la API REST que comunica el
 
 #### `GET /api/autenticacion/perfil` (alias `GET /api/usuarios/perfil`)
 - **Módulo:** `M-USR`.
-- **Descripción:** Retorna los datos del usuario autenticado extraídos del JWT verificado. Requiere cabecera `Authorization: Bearer <token>`.
+- **Descripción:** Retorna los datos del usuario autenticado extraídos del JWT verificado junto con el estado de personaje activo (`tienePersonaje` y resumen `personaje` o `null`), permitiendo al Front-End hidratar sesión al recargar sin provocar `404` en `/api/personajes/activo` para cuentas nuevas. Requiere cabecera `Authorization: Bearer <token>`.
 - **Respuesta exitosa (`200 OK`):**
   ```json
   {
     "sub": "usr-101",
+    "usuarioId": "usr-101",
     "nombreUsuario": "arturo_sendas",
-    "correo": "arturo@ejemplo.com"
+    "correo": "arturo@ejemplo.com",
+    "tienePersonaje": true,
+    "personaje": {
+      "personajeId": "pj-201",
+      "nombre": "Arturo",
+      "monedas": 120,
+      "ubicacionActualId": "LOC-01",
+      "totalCriaturasEquipo": 3,
+      "totalCriaturasAlmacen": 1
+    }
   }
   ```
-- **Nota sobre cierre de sesión:** La autenticación es *stateless* con JWT; el cierre de sesión se efectúa en el cliente (`ContextoAutenticacion.tsx`) eliminando `aethelgard_token_acceso` de `localStorage` y limpiando el estado reactivo (el servidor NestJS no expone ruta `/logout`).
-- **Salvaguarda de Autenticación Global (`AutenticacionGuard`):** Todas las rutas protegidas validan tanto la firma criptográfica del JWT como la existencia efectiva del usuario en PostgreSQL (`Usuario.id`). Si el registro fue eliminado o la base de datos fue reseteada, el guard arroja `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`, provocando que el Front-End purgue de inmediato `aethelgard_token_acceso` y emita el evento global `aethelgard:no-autorizado`.
+- **Nota sobre cierre de sesión:** La autenticación es *stateless* con JWT; el cierre de sesión se efectúa localmente en el cliente (`apiHttp.cerrarSesion()` y `ContextoAutenticacion.tsx`) eliminando `aethelgard_token_acceso` de `localStorage` y limpiando el estado reactivo sin emitir peticiones a un `/logout` inexistente.
+- **Salvaguarda de Autenticación Global (`AutenticacionGuard`):** Todas las rutas protegidas validan tanto la firma criptográfica del JWT como la existencia efectiva del usuario en PostgreSQL (`Usuario.id`). Si el registro fue eliminado o la base de datos fue reseteada, el guard arroja `401 Unauthorized` con código `USUARIO_NO_ENCONTRADO`; `apiHttp.ts` emite `aethelgard:no-autorizado` únicamente ante respuestas `401` de rutas protegidas con token activo (nunca ante credenciales erróneas en `/login` o `/registro`), purgando `aethelgard_token_acceso` sin llamadas redundantes.
 
 ---
 
@@ -192,6 +202,7 @@ Este documento define la especificación técnica de la API REST que comunica el
     "faunaNivelMaximo": null,
     "servicios": ["CURACION", "ALMACEN", "HISTORIAL"],
     "progresoZona": 100,
+    "tieneEncuentroActivo": false,
     "especiesHabitantes": [],
     "poderEquipo": {
       "nivelMaximoEquipo": 5,

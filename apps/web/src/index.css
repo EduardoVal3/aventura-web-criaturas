@@ -508,6 +508,126 @@
   animation: impacto-golpe 320ms ease-out forwards;
 }
 
+/* 11. Travesía cinematográfica entre biomas (TransicionViaje2D) */
+@keyframes banda-cine-superior {
+  0% { transform: translateY(-100%); opacity: 0.4; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes banda-cine-inferior {
+  0% { transform: translateY(100%); opacity: 0.4; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.anim-banda-cine-superior {
+  animation: banda-cine-superior 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-banda-cine-inferior {
+  animation: banda-cine-inferior 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.retro-scanlines-viaje {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(5, 7, 11, 0) 0px,
+    rgba(5, 7, 11, 0) 2px,
+    rgba(5, 7, 11, 0.26) 3px,
+    rgba(5, 7, 11, 0.26) 4px
+  );
+}
+
+.texto-contorno-retro {
+  text-shadow:
+    2px 2px 0px #05070b,
+    -2px -2px 0px #05070b,
+    2px -2px 0px #05070b,
+    -2px 2px 0px #05070b,
+    0px 4px 0px #05070b;
+}
+
+/* 12. Notificaciones Sonner con estética retro 8-bit de Aethelgard (docs/DESIGN.md) */
+.aethelgard-toaster [data-sonner-toast].aethelgard-toast {
+  border-radius: 0px !important;
+  background: linear-gradient(180deg, #131c2e 0%, #0b111e 100%) !important;
+  color: hsl(45, 29%, 95%) !important;
+  border: 3px solid #05070b !important;
+  outline: 2px solid hsl(187, 85%, 53%);
+  outline-offset: -5px;
+  box-shadow: 4px 4px 0px 0px #05070b !important;
+  padding: 12px 14px !important;
+  gap: 10px !important;
+  align-items: center !important;
+  max-width: calc(100vw - 1.5rem);
+}
+
+.aethelgard-toaster [data-sonner-toast][data-type="success"].aethelgard-toast {
+  outline-color: hsl(142, 70%, 45%);
+}
+
+.aethelgard-toaster [data-sonner-toast][data-type="error"].aethelgard-toast {
+  outline-color: hsl(0, 84%, 60%);
+}
+
+.aethelgard-toaster [data-sonner-toast][data-type="warning"].aethelgard-toast {
+  outline-color: hsl(38, 92%, 50%);
+}
+
+.aethelgard-toaster [data-sonner-toast][data-type="info"].aethelgard-toast {
+  outline-color: hsl(187, 85%, 53%);
+}
+
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-title {
+  font-family: var(--font-pixel, 'Press Start 2P', monospace) !important;
+  font-size: 9px !important;
+  line-height: 1.6 !important;
+  letter-spacing: 0.4px !important;
+  color: hsl(45, 29%, 95%) !important;
+  text-shadow: 1px 1px 0px #05070b;
+  word-break: break-word;
+}
+
+@media (min-width: 640px) {
+  .aethelgard-toaster [data-sonner-toast] .aethelgard-toast-title {
+    font-size: 10px !important;
+  }
+}
+
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-description {
+  font-family: var(--font-sans, 'Geist Variable', sans-serif) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  color: hsl(215, 20%, 78%) !important;
+  margin-top: 4px !important;
+}
+
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  background-color: #05070b;
+  border: 2px solid hsl(215, 25%, 30%);
+  box-shadow: 2px 2px 0px 0px #05070b;
+  margin: 0 2px 0 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+}
+
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-icon > svg {
+  margin: 0 !important;
+}
+
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-action,
+.aethelgard-toaster [data-sonner-toast] .aethelgard-toast-cancel {
+  border-radius: 0px !important;
+  border: 2px solid #05070b !important;
+  box-shadow: 2px 2px 0px 0px #05070b !important;
+  font-size: 8px !important;
+  padding: 4px 8px !important;
+}
+
 /* Accesibilidad: Reducción de movimiento para usuarios sensibles */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -39,14 +39,16 @@ Asentamientos seguros que ofrecen servicios permanentes al jugador:
 ### 4.2 Zonas explorables
 Rutas y parajes naturales que albergan vida salvaje y desafíos:
 
-| ID | Nombre | Conexiones inmediatas | Nivel sugerido | Requisito de desbloqueo (`M-PRO`) |
+| ID | Nombre | Conexiones inmediatas | Fauna salvaje (nivel) | Requisito de desbloqueo (`M-PRO`) |
 | --- | --- | --- | --- | --- |
-| `ZON-01` | Praderas del Amanecer | `LOC-01` (Villa Serena), `LOC-02` (Puesto Fronterizo) | Nivel 1–3 | Ninguno (acceso inicial libre). |
+| `ZON-01` | Praderas del Amanecer | `LOC-01` (Villa Serena), `LOC-02` (Puesto Fronterizo del Río) | Nivel 1–3 | Ninguno (acceso inicial libre). |
 | `ZON-02` | Riberas del Lago Espejo | `LOC-01` (Villa Serena), `ZON-03` (Bosque Susurrante) | Nivel 2–4 | Ninguno (acceso inicial libre). |
-| `ZON-03` | Bosque Susurrante | `ZON-02` (Riberas del Lago Espejo), `LOC-02` (Puesto Fronterizo) | Nivel 3–5 | Ninguno (acceso libre). |
-| `ZON-04` | Paso de los Riscos | `LOC-02` (Puesto Fronterizo), `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 5–7 | Ninguno (acceso libre desde Puesto Fronterizo). |
-| `ZON-05` | Cueva Umbría | `ZON-04` (Paso de los Riscos), `ZON-06` (Pico de la Cumbre) | Nivel 7–10 | **Bloqueada:** Requiere poseer al menos 3 criaturas en el equipo de nivel ≥ 5 y haber alcanzado el Puesto Fronterizo. |
-| `ZON-06` | Pico de la Cumbre | `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 8–12 | **Bloqueada:** Requiere haber superado la expedición de la Cueva Umbría y rango de explorador veterano en el Bastión del Norte. |
+| `ZON-03` | Bosque Susurrante | `ZON-02` (Riberas del Lago Espejo), `LOC-02` (Puesto Fronterizo del Río) | Nivel 3–5 | **Bloqueada:** Cartografiar `ZON-02` (Riberas del Lago Espejo) al 100 %. |
+| `ZON-04` | Paso de los Riscos | `LOC-02` (Puesto Fronterizo del Río), `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 5–7 | **Bloqueada:** Cartografiar `ZON-03` (Bosque Susurrante) al 100 % y poseer 1 criatura Nv. 5+. |
+| `ZON-05` | Cueva Umbría | `ZON-04` (Paso de los Riscos), `ZON-06` (Pico de la Cumbre) | Nivel 7–10 | **Bloqueada:** Cartografiar `ZON-04` (Paso de los Riscos) al 100 % y 3 criaturas en equipo Nv. 5+. |
+| `ZON-06` | Pico de la Cumbre | `LOC-03` (Bastión del Norte), `ZON-05` (Cueva Umbría) | Nivel 8–12 | **Bloqueada:** Cartografiar `ZON-05` (Cueva Umbría) al 100 % y poseer 1 criatura Nv. 10+. |
+
+*Nota sobre localidades progresivas:* `LOC-02` (Puesto Fronterizo del Río) se desbloquea al cartografiar `ZON-01` al 100 %, y `LOC-03` (Bastión del Norte) al cartografiar `ZON-04` al 100 % (`ProgresoService`).
 
 ### 4.3 Grafo de conexiones del mundo
 
@@ -54,17 +56,17 @@ Rutas y parajes naturales que albergan vida salvaje y desafíos:
 flowchart LR
     subgraph Localidades ["Localidades Seguras"]
         LOC01["LOC-01: Villa Serena\n(Inicial)"]
-        LOC02["LOC-02: Puesto Fronterizo"]
-        LOC03["LOC-03: Bastión del Norte"]
+        LOC02["LOC-02: Puesto Fronterizo\n(ZON-01 100%)"]
+        LOC03["LOC-03: Bastión del Norte\n(ZON-04 100%)"]
     end
 
     subgraph Zonas ["Rutas y Zonas Salvajes"]
         ZON01["ZON-01: Praderas del Amanecer\n(Nv. 1-3)"]
         ZON02["ZON-02: Riberas del Lago Espejo\n(Nv. 2-4)"]
-        ZON03["ZON-03: Bosque Susurrante\n(Nv. 3-5)"]
-        ZON04["ZON-04: Paso de los Riscos\n(Nv. 5-7)"]
-        ZON05["ZON-05: Cueva Umbría\n(Nv. 7-10 | BLOQUEADA)"]
-        ZON06["ZON-06: Pico de la Cumbre\n(Nv. 8-12 | BLOQUEADA)"]
+        ZON03["ZON-03: Bosque Susurrante\n(Nv. 3-5 | ZON-02 100%)"]
+        ZON04["ZON-04: Paso de los Riscos\n(Nv. 5-7 | ZON-03 100% + Nv.5+)"]
+        ZON05["ZON-05: Cueva Umbría\n(Nv. 7-10 | ZON-04 100% + 3x Nv.5+)"]
+        ZON06["ZON-06: Pico de la Cumbre\n(Nv. 8-12 | ZON-05 100% + Nv.10+)"]
     end
 
     LOC01 <--> ZON01
@@ -74,8 +76,9 @@ flowchart LR
     ZON03 <--> LOC02
     LOC02 <--> ZON04
     ZON04 <--> LOC03
-    ZON04 -.->|Desbloqueo: 3 criaturas Nv 5+| ZON05
-    LOC03 -.->|Desbloqueo: Cueva Umbría superada| ZON06
+    ZON04 <--> ZON05
+    LOC03 <--> ZON06
+    ZON05 <--> ZON06
 
     style ZON05 fill:#fee2e2,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
     style ZON06 fill:#fee2e2,stroke:#ef4444,stroke-width:2px,stroke-dasharray: 5 5
@@ -90,7 +93,7 @@ flowchart LR
 
 | ID | Nombre | Qué hace en el juego | Pantallas | Endpoints |
 | --- | --- | --- | --- | --- |
-| `M-USR` | Usuarios | Registro de cuenta, inicio de sesión y validación de tokens de sesión. | `PantallaIngreso`, `PantallaRegistro` | `POST /api/usuarios/registro`, `POST /api/usuarios/login`, `POST /api/usuarios/logout` |
+| `M-USR` | Usuarios | Registro de cuenta, inicio de sesión y validación de tokens JWT de sesión. | `PantallaIngreso`, `PantallaRegistro` | `POST /api/usuarios/registro`, `POST /api/usuarios/login`, `GET /api/usuarios/perfil` (aliases `/api/autenticacion/*`) |
 | `M-PJ` | Personaje | Creación y visualización del explorador, ubicación actual, saldo de monedas y estado de progreso. | `PantallaCrearPersonaje`, `PantallaHubUbicacion` | `POST /api/personajes`, `GET /api/personajes/activo` |
 | `M-MUN` | Mundo | Consulta de localidades, rutas conectadas, desplazamientos válidos y estado de accesos. | `PantallaHubUbicacion` | `GET /api/mundo/ubicacion-actual`, `POST /api/mundo/viajar` |
 | `M-EXP` | Exploración | Ejecución de eventos de exploración probabilística al recorrer una zona activa. | `PantallaExploracion` | `POST /api/exploracion/explorar` |
@@ -117,7 +120,7 @@ flowchart LR
 - **Equipo:** Grupo activo de hasta un máximo de 6 criaturas que acompañan al explorador en sus viajes y pueden combatir en los encuentros.
 - **Especie:** Registro arquetípico del catálogo (con datos base de Open5e y normalización) que define los atributos, tipos y movimientos posibles de una familia de criaturas.
 - **Huida:** Acción de combate mediante la cual el jugador intenta retirarse del encuentro para preservar a su criatura activa, sujeta a una probabilidad calculada por el servidor.
-- **Índice de Desafío (`challenge_rating` / CR):** Medida de peligrosidad y poder de una criatura en Open5e; empleado en el juego para calibrar la dificultad de captura y el nivel sugerido.
+- **Índice de Desafío (`challenge_rating` / CR):** Medida de peligrosidad de referencia en Open5e SRD 5.2; empleado en el servidor para calcular la experiencia base (`xpBase`) otorgada al derrotar a un rival en combate (la tasa de captura base se deriva soberanamente del presupuesto BST de la especie).
 - **Localidad:** Asentamiento civilizado y seguro (aldea, pueblo o fortaleza) dotado de servicios donde no ocurren encuentros hostiles.
 - **Nivel:** Escala numérica del desarrollo de una criatura (del 1 en adelante) que refleja su crecimiento en poder y atributos.
 - **Puntos de Golpe (`hit_points` / HP):** Medida de la salud y resistencia de una criatura; al llegar a 0 la criatura queda debilitada y fuera de combate.

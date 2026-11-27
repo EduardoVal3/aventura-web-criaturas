@@ -376,7 +376,7 @@ Al utilizar una poción o descansar en `PantallaCuracion.tsx`, la barra y avatar
 Los valores de daño o curación saltan 16px hacia arriba desvaneciéndose en 600ms con contorno ortogonal de 2px para legibilidad absoluta.
 
 ### 6.8 Prevención de Doble Clic y Estados de Carga (Harden)
-- Todo botón que despache una mutación hacia el servidor (`POST /api/combate/accion`, `POST /api/exploracion`, etc.) pasa inmediatamente a estado deshabilitado (`disabled`) con `aria-busy="true"`.
+- Todo botón que despache una mutación hacia el servidor (`POST /api/combate/atacar`, `POST /api/combate/:id/acciones`, `POST /api/exploracion/explorar`, etc.) pasa inmediatamente a estado deshabilitado (`disabled`) con `aria-busy="true"`.
 - Mientras dura la solicitud, el texto de la acción se reemplaza por el componente `Spinner` de 8bitcn/ui o el texto retro `PROCESANDO...` en `Press Start 2P`.
 
 ---
@@ -399,10 +399,11 @@ El módulo `apps/web/src/lib/assets.ts` es la única fuente de verdad para resol
 ### 7.2 Estructura en `apps/web/public/assets/`
 ```text
 apps/web/public/assets/
-├── criaturas/              -> Sprites individuales (formato WebP, ej. lobo-estelar.webp)
-├── zonas/                  -> Paisajes panorámicos (formato WebP 16:9, ej. praderas-del-amanecer.webp)
-├── objetos/                -> Iconos de pociones y talismanes (formato WebP, ej. pocion-curativa.webp)
-├── sonidos/                -> Clips breves de audio retro (formato MP3, ej. ataque.mp3, click.mp3)
+├── battlegrounds/          -> 6 arenas de combate WebP 16:9 (800x450)
+├── criaturas/              -> 30 sprites individuales WebP RGBA (512x512, ej. lobo-estepario.webp)
+├── zonas/                  -> 9 paisajes panorámicos WebP 16:9 (800x450, ej. praderas-del-amanecer.webp)
+├── objetos/                -> 4 iconos WebP RGBA (256x256, ej. pocion-menor.webp, talisman-basico.webp)
+├── sonidos/                -> Clips opcionales de audio retro (con síntesis Web Audio API nativa)
 ├── placeholder-criatura.svg-> Silueta pixelada SVG vectorial de respaldo
 ├── placeholder-zona.svg    -> Paisaje pixelado SVG vectorial de respaldo
 ├── placeholder-objeto.svg  -> Icono de cofre/orbe SVG vectorial de respaldo

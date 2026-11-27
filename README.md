@@ -3,8 +3,8 @@
 Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión de equipo y combate elemental.  
 **Proyecto Integrador — ISC-305 Programación Web (III PAC 2026).**
 
-> **Estado actual del proyecto:** **Versión `1.0.0` — Fases 0 a 12 completadas (entrega final consolidada).**  
-> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite 8 + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL 17 + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), pipeline completo de assets pixel-art WebP, 6 zonas desbloqueables con dioramas animados, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación, **API Gateway Kong 3.9.5 DB-less (`X-API +2`)**, **auditoría integral `8bitcn/ui` (`X-UI +3`)** y despliegue gratuito en nube (**Cloudflare Pages + Render Free + Neon**).
+> **Estado actual del proyecto:** **Versión `1.0.1` — Fases 0 a 12 completadas + auditoría integral de coherencia documental.**  
+> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite 8 + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL 17 + JWT (**44 rutas REST / 46 operaciones HTTP**), con 30 especies canónicas (basadas en Open5e SRD 5.2), pipeline completo de assets pixel-art WebP, 6 zonas desbloqueables con dioramas animados, motor de combate táctico con 51 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación, **API Gateway Kong 3.9.5 DB-less (`X-API +2`)**, **auditoría integral `8bitcn/ui` (`X-UI +3`)** y despliegue gratuito en nube (**Cloudflare Pages + Render Free + Neon**).
 
 ---
 
@@ -18,7 +18,7 @@ Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión 
 6. [Flujo de Git y Pull Requests (Todo va hacia `desarrollo`, NUNCA a `main`)](#6-flujo-de-git-y-pull-requests-todo-va-hacia-desarrollo-nunca-a-main)
 7. [Cómo trabajar con Agentes de IA sin cometer errores](#7-cómo-trabajar-con-agentes-de-ia-sin-cometer-errores)
 8. [Documentación en `/docs` y qué debes actualizar en cada cambio](#8-documentación-en-docs-y-qué-debes-actualizar-en-cada-cambio)
-9. [Estado de avance, partes que aún faltan y flujo final de entrega](#9-estado-de-avance-partes-que-aún-faltan-y-flujo-final-de-entrega)
+9. [Estado de entrega (`v1.0.1`) y guía de defensa](#9-estado-de-entrega-v101-y-guía-de-defensa)
 10. [Comandos útiles de desarrollo y verificación](#10-comandos-útiles-de-desarrollo-y-verificación)
 11. [Créditos y licencias](#11-créditos-y-licencias)
 
@@ -152,29 +152,33 @@ aventura-web-criaturas/
 │   ├── pre-commit                 # Bloquea commits directos en main/master
 │   └── commit-msg                 # Exige formato: tipo(alcance): descripción en español
 ├── apps/
-│   ├── api/                       # Back-End en NestJS 10 + Prisma 6 + PostgreSQL
-│   │   ├── prisma/                # schema.prisma, migraciones y seed.ts
+│   ├── api/                       # Back-End en NestJS 10 + Prisma 6 + PostgreSQL 17
+│   │   ├── prisma/                # schema.prisma, migraciones, seed.ts, importar-especies.ts e inicializar-nube.ts
 │   │   ├── src/
 │   │   │   ├── comun/             # Guards JWT, filtros de excepción, decoradores, Prisma, azar
-│   │   │   └── modulos/           # Módulos de dominio (autenticacion, personajes, mundo,
+│   │   │   └── modulos/           # 15 módulos de dominio (autenticacion, usuarios, personajes, mundo,
 │   │   │                          # exploracion, encuentros, combate, criaturas, equipo,
 │   │   │                          # inventario, tienda, curacion, progreso, historial, externo)
 │   │   └── test/                  # Pruebas unitarias (*.spec.ts) y extremo a extremo (*.e2e-spec.ts)
-│   └── web/                       # Front-End en React 19 + TypeScript + Vite + Tailwind v4
-│       ├── public/assets/         # Recursos gráficos (zonas, criaturas, objetos) y README de assets
+│   └── web/                       # Front-End en React 19 + TypeScript + Vite 8 + Tailwind v4
+│       ├── public/assets/         # Recursos gráficos WebP (criaturas, zonas, battlegrounds, objetos)
 │       ├── src/
-│       │   ├── api/               # Cliente HTTP (apiHttp.ts), interfaz (ApiJuego.ts) y tipos DTO
-│       │   ├── components/        # LayoutPrincipal, RutaProtegida, arena de combate y 8bitcn/ui
+│       │   ├── api/               # Cliente HTTP único (apiHttp.ts), contrato (ApiJuego.ts) y tipos
+│       │   ├── components/        # LayoutPrincipal, RutaProtegida, combate, mundo y 17 componentes 8bitcn/ui
 │       │   ├── contextos/         # ContextoAutenticacion (sesión JWT y estado del jugador)
-│       │   ├── lib/               # Utilidades de dominio UI, audio Web Audio API y validadores
-│       │   └── paginas/           # Pantallas del juego (Ingreso, Registro, CrearPersonaje,
-│       │                          # HubUbicacion, Exploracion, Combate, Equipo, Almacen,
-│       │                          # Inventario, Tienda, Curacion, Historial, Catalogo)
+│       │   ├── lib/               # Utilidades de dominio UI, dioramas Canvas, audio Web Audio API y validadores
+│       │   └── paginas/           # 15 pantallas activas (Ingreso, Registro, CrearPersonaje, HubUbicacion,
+│       │                          # Exploracion, Combate, Equipo, Almacen, Inventario, Tienda, Curacion,
+│       │                          # Historial, Catalogo, PaginaKitUi, PaginaCreditos) + PaginaNoEncontrada
 │       └── test/                  # Pruebas unitarias de interfaz y lógica cliente (*.spec.ts)
 ├── datos/
-│   └── open5e-srd-2024-seleccion.json # Snapshot base de criaturas SRD 5.2
-├── docs/                          # Documentación técnica, reglas, diseño e informe incremental
-├── docker-compose.yml             # Definición opcional de contenedor PostgreSQL / Gateway
+│   └── open5e-srd-2024-seleccion.json # Snapshot base de 30 criaturas SRD 5.2
+├── kong/
+│   └── kong.yml.plantilla         # Plantilla declarativa DB-less sin secretos (Kong 3.9.5)
+├── scripts/
+│   └── verificar-gateway.mjs      # Verificación reproducible 401/CORS/200/429 de Kong
+├── docs/                          # Documentación técnica, reglas, diagramas PNG e informe final
+├── docker-compose.yml             # Contenedores opcionales PostgreSQL 17 y Kong 3.9.5 DB-less
 └── package.json                   # Scripts globales del workspace pnpm
 ```
 
@@ -229,7 +233,7 @@ flowchart LR
     V --> PR["Abrir Pull Request<br/>base: desarrollo ← compare: tu-rama"]
     PR --> MC["Integrar con Merge Commit<br/>(NUNCA Squash ni Rebase)"]
     MC --> D2["desarrollo actualizado"]
-    D2 -. "Solo al cerrar el proyecto final" .-> M["main (tag: version-1.0.0)"]
+    D2 -. "Solo en cierres oficiales" .-> M["main (tags: version-1.0.0, version-1.0.1)"]
 ```
 
 ### Reglas estrictas de ramas, commits y PRs
@@ -319,13 +323,13 @@ No le pidas al agente que lea todo el repositorio a ciegas. En tu primer mensaje
 | [`docs/reglas-de-trabajo.md`](docs/reglas-de-trabajo.md) | Reglas R1 (español y glosario), R2 (Git y hooks), R3 (MCP) y reglas transversales. | Si el equipo acuerda agregar un término técnico nuevo al glosario permitido. |
 | [`docs/contrato-api.md`](docs/contrato-api.md) | Especificación completa de todos los endpoints REST (`/api/...`), parámetros, DTOs, respuestas JSON y códigos de error. | **Siempre** que agregues un endpoint nuevo o modifiques la ruta, cuerpo de petición o respuesta JSON de un endpoint existente. |
 | [`docs/reglas-juego.md`](docs/reglas-juego.md) | Todas las fórmulas matemáticas del servidor: normalización, daño elemental, probabilidad de captura, curva de XP, efectos de estado y economía. | **Siempre** que ajustes una fórmula matemática, probabilidad, efecto de combate, precio o invariante numérico (junto con su prueba unitaria). |
-| [`docs/catalogo-criaturas.md`](docs/catalogo-criaturas.md) | Bestiario canónico de las 30 criaturas, jerarquías (`J-1` a `J-4`), estadísticas base, sets de movimientos y tablas de aparición por zona. | Si modificas estadísticas base, movimientos asignados o pesos de aparición en `bestiario-canonico.ts` o `seed.ts`. |
+| [`docs/catalogo-criaturas.md`](docs/catalogo-criaturas.md) | Bestiario canónico de las 30 criaturas, jerarquías (`J-1` a `J-5`), estadísticas base, sets de 4 movimientos y tablas de aparición por zona. | Si modificas estadísticas base, movimientos asignados o pesos de aparición en `bestiario-canonico.ts` o `seed.ts`. |
 | [`docs/DESIGN.md`](docs/DESIGN.md) | Sistema de diseño retro Aethelgard: paleta HSL, tipografía bimodal, bordes pixelados, componentes `8bitcn/ui` y reglas de accesibilidad. | Si creas nuevos tokens de color, estilos globales en `index.css` o patrones visuales reutilizables. |
-| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de decisiones arquitectónicas y técnicas (`D-01`, `D-02`...) con justificación, URL oficial y versión verificada. | **Siempre** que incorpores una tecnología o librería nueva (p. ej. Kong en la Fase 11), cambies una regla de alcance o tomes una decisión de arquitectura. |
+| [`docs/decisiones.md`](docs/decisiones.md) | Bitácora de decisiones arquitectónicas y técnicas (`D-01` a `D-23`) con justificación, URL oficial y versión verificada. | **Siempre** que incorpores una tecnología o librería nueva (p. ej. Kong en la Fase 11), cambies una regla de alcance o tomes una decisión de arquitectura. |
 | [`docs/diseno-juego.md`](docs/diseno-juego.md) y [`docs/wireframes.md`](docs/wireframes.md) | Concepto narrativo del mundo de Aethelgard, bucle principal del jugador y bocetos estructurales de las pantallas. | Si se agrega una pantalla nueva o cambia el flujo de navegación entre vistas. |
 | [`docs/mcp.md`](docs/mcp.md) | Documentación y plantilla (sin credenciales) de los servidores MCP de apoyo. | Si se añade un nuevo servidor MCP al flujo de desarrollo. |
-| [`docs/diagramas/*.mmd`](docs/diagramas/) | Código fuente en formato Mermaid de los diagramas de arquitectura, modelo conceptual, entidad-relación, estados y secuencias. | **Siempre** que cambie el esquema de Prisma (`modelo-datos.mmd`), la arquitectura de contenedores (ej. `arquitectura-con-gateway.mmd` en Fase 11) o un flujo de secuencia. |
-| [`docs/informe/`](docs/informe/) | Secciones incrementales del Informe Técnico académico (`01-concepto-y-diseno.md` hasta `09-experiencia-usuario.md`, y próximas `10-extras.md` y `11-pruebas-y-demo.md`). | **En cada tarea, mejora de UI o fase.** Todo aporte debe quedar redactado técnicamente en la sección correspondiente de `docs/informe/` detallando qué problema resuelve, cómo se implementó y qué pruebas lo respaldan. |
+| [`docs/diagramas/*.mmd`](docs/diagramas/) | Código fuente Mermaid y exportaciones PNG de los 10 diagramas de arquitectura, modelos de datos, estados, flujos y secuencias. | **Siempre** que cambie el esquema de Prisma (`modelo-datos.mmd`), la arquitectura de contenedores o un flujo de secuencia. |
+| [`docs/informe/`](docs/informe/) | Capítulos completos del Informe Técnico académico (`01-concepto-y-diseno.md` hasta `11-pruebas-y-demo.md` e `INFORME-FINAL.md`). | **En cada tarea, mejora de UI o fase.** Todo aporte debe quedar redactado técnicamente en la sección correspondiente de `docs/informe/` detallando qué problema resuelve, cómo se implementó y qué pruebas lo respaldan. |
 
 ### Estructura actual de `docs/informe/`
 
@@ -344,18 +348,18 @@ No le pidas al agente que lea todo el repositorio a ciegas. En tu primer mensaje
 
 ---
 
-## 9. Estado de entrega (`v1.0.0`) y guía de defensa
+## 9. Estado de entrega (`v1.0.1`) y guía de defensa
 
 ### 9.1 Todas las fases obligatorias y extras completadas (Fases 0 a 12)
 
 | Fase | Alcance completado | Estado |
 | :---: | :--- | :---: |
 | **Fases 0 a 3** | Cimientos del monorepo, diseño conceptual, sistema de diseño `8bitcn/ui` y todas las pantallas del cliente. | ✅ Completada |
-| **Fases 4 a 7** | Back-End en NestJS + JWT, modelo de datos en PostgreSQL/Prisma, importación Open5e, exploración ponderada, combate por turnos, captura, equipo/almacén, tienda, inventario, curación e historial. | ✅ Completada |
+| **Fases 4 a 7** | Back-End en NestJS 10 + JWT, modelo de datos en PostgreSQL 17/Prisma 6, importación Open5e, exploración ponderada, combate por turnos, captura, equipo/almacén, tienda, inventario, curación e historial. | ✅ Completada |
 | **Fases 8 y 9** | Integración completa Front-End ↔ API REST y suite de seguridad `S-1` a `S-7` en verde. | ✅ Completada |
-| **Fase 10** | Pulido UX retro integral pantalla por pantalla, audio Web Audio API, bestiario canónico de 30 criaturas, combate táctico con 52 efectos, pipeline WebP completo (30 criaturas, 9 zonas, 6 arenas, 4 objetos), dioramas animados y despliegue gratuito en nube (`Cloudflare Pages + Render Free + Neon`). | ✅ Completada |
+| **Fase 10** | Pulido UX retro integral pantalla por pantalla, audio Web Audio API, bestiario canónico de 30 criaturas, combate táctico con 51 efectos, pipeline WebP completo (30 criaturas, 9 zonas, 6 arenas, 4 objetos), dioramas animados y despliegue gratuito en nube (`Cloudflare Pages + Render Free + Neon`). | ✅ Completada |
 | **Fase 11 (`+5 pts`)** | **11a (`X-API +2`):** Kong 3.9.5 DB-less en Docker (`cors`, `key-auth`, `rate-limiting` `429` y logs) con `kong/kong.yml.plantilla` sin secretos. **11b (`X-UI +3`):** Auditoría verificada de los 17 componentes `8bitcn/ui` en 15 pantallas + vitrina `/kit-ui`. | ✅ Completada |
-| **Fase 12 (`FIN`)** | Informe consolidado ([`INFORME-FINAL.md`](docs/informe/INFORME-FINAL.md)), 10 diagramas PNG ([`docs/diagramas/`](docs/diagramas/)), OpenAPI exportado ([`docs/swagger-openapi.json`](docs/swagger-openapi.json)), guion de demo y defensa para 8 integrantes ([`11-pruebas-y-demo.md`](docs/informe/11-pruebas-y-demo.md)), cierre `desarrollo → main` y tag `version-1.0.0`. | ✅ Completada |
+| **Fase 12 (`FIN`)** | Informe consolidado ([`INFORME-FINAL.md`](docs/informe/INFORME-FINAL.md)), 10 diagramas `.mmd`/`.png` sincronizados ([`docs/diagramas/`](docs/diagramas/)), OpenAPI exportado ([`docs/swagger-openapi.json`](docs/swagger-openapi.json)), guion de demo y defensa para 8 integrantes ([`11-pruebas-y-demo.md`](docs/informe/11-pruebas-y-demo.md)), cierre `desarrollo → main` (`version-1.0.0`) y auditoría integral de coherencia documental (`version-1.0.1`). | ✅ Completada |
 | **Fase 13 (Opcional)** | Presencia WebSockets sin puntaje extra (explícitamente opcional en el enunciado `A-7`). | Descartada |
 
 ---

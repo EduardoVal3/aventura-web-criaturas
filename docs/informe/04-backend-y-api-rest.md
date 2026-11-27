@@ -10,7 +10,7 @@ Este documento corresponde al capítulo de la **Fase 4 (Fundación del Back-End)
 
 **Cumplimiento de hitos y requisitos:**
 - `ARQ`: Arquitectura limpia por capas y módulos desacoplados en NestJS. La separación de responsabilidades evita la proliferación de abstracciones redundantes: los controladores atienden el tráfico HTTP y delegan la lógica a los servicios de dominio, los cuales interactúan de forma directa y tipada con `PrismaService`.
-- `T-1`: Estructura del Back-End organizada en módulos orientados al dominio del juego (`autenticacion`, `usuarios`, `personajes`, `mundo`, `criaturas`, `encuentros`, `combate`, `inventario`, `tienda`, `historial` y `externo`).
+- `T-1`: Estructura del Back-End organizada en **15 módulos** orientados al dominio del juego (`autenticacion`, `usuarios`, `personajes`, `equipo`, `mundo`, `criaturas`, `exploracion`, `encuentros`, `combate`, `progreso`, `curacion`, `inventario`, `tienda`, `historial` y `externo`) más `SaludController` (`/api/salud`), tal como refleja [arquitectura-capas.mmd](../diagramas/arquitectura-capas.mmd).
 - `T-4`: Exposición de endpoints REST funcionales consumibles mediante clientes HTTP estándar, Swagger o la aplicación web React.
 - `T-5`: Conexión de persistencia con base de datos relacional PostgreSQL 17 en contenedor Docker (`aventura-postgres`) con comprobación de salud continua.
 - `S-1`: Mecanismo integral de identidad y autenticación con tokens JWT y cifrado unidireccional de contraseñas.
@@ -117,10 +117,10 @@ Se activó `ValidationPipe` global con:
 ## 5. Documentación viva de la API con Swagger
 
 La documentación OpenAPI interactiva se expone en la ruta `/docs`:
-- Título: **Aethelgard API REST** (versión 0.1.0).
+- Título: **Aethelgard API REST** (versión `0.1.0` en `DocumentBuilder`, con **44 rutas REST / 46 operaciones HTTP** en `v1.0`).
 - Soporte para autenticación tipo Bearer JWT (`addBearerAuth()`).
 - Documentación detallada de esquemas de petición, respuestas exitosas y códigos de error en cada endpoint.
-- Exportación del esquema en formato JSON disponible en `/docs-json`.
+- Exportación del esquema en formato JSON disponible en `/docs-json` y versionada en [`docs/swagger-openapi.json`](../swagger-openapi.json).
 
 ---
 
@@ -141,13 +141,13 @@ Este capítulo documenta el cierre formal del hito **Avance 4 (parte 2)**, media
 
 La comunicación se centraliza a través del cliente HTTP definitivo `apiHttp.ts`, el cual satisface estrictamente el contrato tipado `ApiJuego`:
 
-1. **Cliente HTTP Tipado (`apiHttp.ts`):** Todas las solicitudes son emitidas utilizando `fetch` nativo sobre la URL base configurada en `VITE_URL_API` (puerto 3000 por defecto) bajo el prefijo unificado `/api`.
+1. **Cliente HTTP Tipado (`apiHttp.ts`):** Todas las solicitudes son emitidas utilizando `fetch` nativo sobre la URL base configurada en `VITE_URL_API` (`:3000` en modo directo, `:8000` detrás de Kong DB-less o la URL HTTPS de Render Free en nube) bajo el prefijo unificado `/api`. Cuando se define `VITE_CLAVE_GATEWAY`, adjunta adicionalmente la cabecera `apikey` exigida por el plugin `key-auth` de Kong.
 2. **Inyección y Ciclo de Vida de Tokens JWT:**
    - Al registrar o ingresar un explorador, el token JWT devuelto por NestJS se almacena de forma persistente en `localStorage` bajo la clave `aethelgard_token_acceso`.
    - Cada solicitud posterior inyecta automáticamente la cabecera `Authorization: Bearer <token>` mediante `tokenActual`.
-   - Si el servidor responde con un código `401 Unauthorized` por expiración de token, se dispara el evento global `aethelgard:no-autorizado`, limpiando el almacenamiento y redirigiendo a la pantalla de ingreso sin estados inconsistentes.
+   - Si el servidor responde con un código `401 Unauthorized` por expiración de token o usuario inexistente (`USUARIO_NO_ENCONTRADO`), se dispara el evento global `aethelgard:no-autorizado`, limpiando el almacenamiento y redirigiendo a la pantalla de ingreso sin estados inconsistentes.
 3. **Manejo Centralizado de Excepciones y Resiliencia Visual:**
-   - La respuesta del filtro global `ExcepcionesFilter` de NestJS (`{ error: { codigo, mensaje } }`) es deserializada en instancias de `ErrorApi(estado, codigo, mensaje)`.
+   - La respuesta del filtro global `ExcepcionesFilter` de NestJS (`{ error: { codigo, mensaje } }`) es deserializada en instancias de `ErrorApi(estado, codigo, mensaje)`; adicionalmente, un `429 Too Many Requests` del gateway se normaliza a `LIMITE_SOLICITUDES`.
    - Los componentes gráficos capturan dichos errores y los proyectan al explorador empleando el sistema de notificaciones retro de Sonner / 8bitcn, asegurando una experiencia retro pulida y uniforme.
    - En caso de indisponibilidad del servidor, `apiHttp` emite un error estructurado `SIN_CONEXION` previniendo bloqueos silenciosos en la interfaz.
 
@@ -159,50 +159,52 @@ A continuación se detalla la correspondencia entre las vistas de la SPA, los en
 | :--- | :--- | :--- |
 | `PantallaIngreso` | `POST /api/usuarios/login` | Autenticación con credenciales, guardado de JWT y redirección a Hub o Creación de Personaje. |
 | `PantallaRegistro` | `POST /api/usuarios/registro` | Registro atómico de usuario con contraseña hasheada y asignación de token de sesión. |
-| `PantallaCrearPersonaje` | `GET /api/especies`, `POST /api/personajes` | Selección de criatura inicial, creación del héroe con inventario y zonas iniciales en base de datos. |
-| `PantallaHubUbicacion` | `GET /api/mundo/ubicacion-actual`, `GET /api/personajes/activo`, `POST /api/mundo/viajar` | Visualización de localidad, control de desplazamiento territorial y validación de zonas bloqueadas. |
-| `PantallaExploracion` | `GET /api/encuentros/activo`, `POST /api/exploracion/explorar` | Reanudación activa de combates pendientes y generación aleatoria en servidor de eventos silvestres. |
-| `PantallaCombate` | `GET /api/encuentros/activo`, `POST /api/combate/atacar`, `POST /api/combate/capturar`, `POST /api/combate/huir` | Turnos y daño gobernados por el servidor (A-8), captura transaccional y huida probabilística determinista. |
-| `PantallaEquipo` | `GET /api/equipo`, `POST /api/equipo/transferir` | Consulta del equipo activo (hasta 6) y transferencia al almacén respetando regla de última criatura. |
-| `PantallaAlmacen` | `GET /api/almacen`, `POST /api/equipo/transferir` | Gestión de criaturas en reserva y traslado a equipo activo con validación de tope. |
-| `PantallaInventario` | `GET /api/inventario`, `POST /api/inventario/usar` | Consulta de monedas y consumibles; aplicación de pociones curativas sobre criaturas heridas. |
-| `PantallaTienda` | `POST /api/tienda/comprar`, `GET /api/personajes/activo` | Adquisición de talismanes y pociones con control atómico de saldo en PostgreSQL. |
-| `PantallaCuracion` | `GET /api/equipo`, `POST /api/curacion/restaurar` | Restauración íntegra de puntos de vida de todas las criaturas del equipo en santuarios seguros. |
-| `PantallaCatalogo` | `GET /api/especies`, `GET /api/especies/:slug` | Consulta filtrada de especies biológicas sembradas en la base de datos relacional. |
-| `PantallaHistorial` | `GET /api/historial` | Bitácora cronológica inmutable de victorias, compras y capturas registradas por el servidor. |
+| `PantallaCrearPersonaje` | `GET /api/especies`, `POST /api/personajes` | Selección de criatura inicial canónica, creación del héroe con inventario y zonas iniciales en base de datos. |
+| `PantallaHubUbicacion` | `GET /api/mundo/ubicacion-actual`, `GET /api/personajes/activo`, `GET /api/progreso/desbloqueos`, `POST /api/progreso/verificar-zona`, `POST /api/mundo/viajar` | Visualización del mapa interactivo, desplazamiento territorial, verificación y desbloqueo de zonas bloqueadas. |
+| `PantallaExploracion` | `GET /api/encuentros/activo`, `POST /api/exploracion/explorar` | Reanudación activa de combates en curso y generación aleatoria en servidor de eventos silvestres. |
+| `PantallaCombate` | `GET /api/encuentros/activo`, `POST /api/combate/atacar`, `POST /api/combate/capturar`, `POST /api/combate/huir`, `POST /api/combate/:id/acciones` | Turnos con `turnoEsperado` y `FOR UPDATE`, daño elemental y 51 efectos en servidor (`A-8`), captura transaccional y huida probabilística determinista. |
+| `PantallaEquipo` | `GET /api/equipo`, `PATCH /api/equipo/orden`, `POST /api/equipo/transferir` | Consulta del equipo activo (hasta 6), reordenamiento táctico del líder y transferencia al almacén. |
+| `PantallaAlmacen` | `GET /api/almacen`, `POST /api/equipo/transferir` | Gestión de criaturas en reserva e intercambio atómico con el equipo activo respetando tope de 6 (`A-6`). |
+| `PantallaInventario` | `GET /api/inventario`, `POST /api/inventario/usar` | Consulta de monedas y consumibles; aplicación de pociones curativas sobre criaturas heridas (`INV-03`). |
+| `PantallaTienda` | `GET /api/tienda`, `POST /api/tienda/comprar`, `GET /api/personajes/activo` | Catálogo oficial del bazar y compra por lotes con control atómico de saldo y precio en servidor (`S-4`, `S-6`). |
+| `PantallaCuracion` | `GET /api/equipo`, `POST /api/curacion/restaurar` | Restauración íntegra y resurrección de criaturas del equipo en santuarios seguros (`INV-03`). |
+| `PantallaCatalogo` | `GET /api/especies`, `GET /api/especies/:slug` | Consulta enriquecida de las 30 especies canónicas sembradas en PostgreSQL con sus 4 movimientos. |
+| `PantallaHistorial` | `GET /api/historial` | Bitácora cronológica categorizada y paginada de victorias, compras, curaciones, exploraciones y capturas. |
 
 ### 7.3 Diagrama de secuencia de integración de combate
 
-El diagrama interactivo reside en `docs/diagramas/secuencia-integracion-front-api.mmd`. Representa el flujo gobernado por el servidor para la reanudación tras recarga y la ejecución de ataques:
+El diagrama interactivo reside en [`docs/diagramas/secuencia-integracion-front-api.mmd`](../diagramas/secuencia-integracion-front-api.mmd) ([PNG](../diagramas/secuencia-integracion-front-api.png)). Representa el flujo gobernado por el servidor para la reanudación tras recarga y la ejecución de ataques con `turnoEsperado` y bloqueo pesimista `FOR UPDATE`:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Usuario
     participant UI as React SPA (PantallaCombate)
-    participant API as apiHttp (Fetch)
-    participant Nest as NestJS (CombateController)
-    participant DB as PostgreSQL (Prisma)
+    participant API as apiHttp.ts (Fetch + JWT + apikey opcional)
+    participant Nest as NestJS (EncuentrosController / CombateController)
+    participant DB as PostgreSQL 17 (Prisma $transaction)
 
-    Usuario->>UI: Recarga página (/combate)
+    Usuario->>UI: Abre o recarga página (/combate)
     UI->>API: obtenerEncuentroActivo()
     API->>Nest: GET /api/encuentros/activo (Bearer JWT)
-    Nest->>DB: Consultar encuentro ACTIVO del personaje
-    DB-->>Nest: Registro de encuentro + criaturas
+    Nest->>DB: Consultar encuentro EN_CURSO del personaje (JWT sub)
+    DB-->>Nest: Encuentro + criatura aliada, rival, 4 movimientos, estados y resonancia
     Nest-->>API: 200 OK (EncuentroActivo JSON)
     API-->>UI: EncuentroActivo
-    UI->>UI: Renderizar rival, aliado y turno
+    UI->>UI: Renderizar arena, afinidades, 4 slots tácticos y turno actual
 
-    Usuario->>UI: Clic en "Atacar" (movimiento 0)
-    UI->>UI: Deshabilitar controles (cargando = true)
-    UI->>API: atacar({ encuentroId, movimientoIndice: 0 })
-    API->>Nest: POST /api/combate/atacar (Bearer JWT)
-    Nest->>Nest: Calcular daño (fórmulas servidor)
-    Nest->>DB: Actualizar HP en transacción atómica
-    DB-->>Nest: HP actualizado
+    Usuario->>UI: Clic en movimiento (cerrojo useRef anti-doble clic)
+    UI->>UI: Deshabilitar controles (aria-busy = true)
+    UI->>API: atacar({ encuentroId, movimientoIndice, turnoEsperado })
+    API->>Nest: POST /api/combate/atacar (Bearer JWT + apikey si usa Kong)
+    Nest->>DB: BEGIN TRANSACTION + SELECT id FROM personaje FOR UPDATE
+    Nest->>DB: Validar encuentro EN_CURSO y turnoEsperado (409 TURNO_DESACTUALIZADO si difiere)
+    Nest->>Nest: Resolver ronda autoritativa (afinidades 6x6, 51 efectos, resonancia, INV-04)
+    Nest->>DB: Persistir HP, turno combate, XP/monedas, progreso +20% e historial
+    DB-->>Nest: COMMIT TRANSACTION
     Nest-->>API: 200 OK (RespuestaAtacar)
     API-->>UI: RespuestaAtacar
-    UI->>UI: Actualizar barras de HP y bitácora de combate
+    UI->>UI: Actualizar barras 8bitcn/ui, estados, audio Web Audio y bitácora
 ```
 
 ### 7.4 Erradicación de la simulación y soberanía del Back-End

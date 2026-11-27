@@ -16,9 +16,9 @@ Este documento constituye la sección correspondiente a la **Fase 1 (Concepto y 
 El mundo prescinde de mapas con coordenadas continuas o motores gráficos (`A-2`), modelándose como una red topológica de nodos seguros y rutas silvestres (`A-4`):
 - **Localidades principales (3):** `LOC-01` Villa Serena (asentamiento inicial), `LOC-02` Puesto Fronterizo del Río (comercio y almacén) y `LOC-03` Bastión del Norte (fortaleza avanzada).
 - **Rutas y zonas explorables (6):** `ZON-01` Praderas del Amanecer, `ZON-02` Riberas del Lago Espejo, `ZON-03` Bosque Susurrante, `ZON-04` Paso de los Riscos, `ZON-05` Cueva Umbría y `ZON-06` Pico de la Cumbre.
-- **Zonas con requisito de desbloqueo (`M-PRO`):**
-  - `ZON-05` Cueva Umbría: Bloqueada hasta contar con al menos 3 criaturas en el equipo de nivel $\ge 5$ y haber alcanzado el Puesto Fronterizo.
-  - `ZON-06` Pico de la Cumbre: Bloqueada hasta superar la expedición en la Cueva Umbría.
+- **Zonas y localidades con requisito de desbloqueo (`M-PRO`, matriz final en `ProgresoService`):**
+  - Acceso inicial abierto por defecto: `LOC-01` Villa Serena, `ZON-01` Praderas del Amanecer y `ZON-02` Riberas del Lago Espejo.
+  - `LOC-02` Puesto Fronterizo del Río (`ZON-01` al 100 %), `ZON-03` Bosque Susurrante (`ZON-02` al 100 %), `ZON-04` Paso de los Riscos (`ZON-03` al 100 % y 1 criatura Nv. 5+), `LOC-03` Bastión del Norte (`ZON-04` al 100 %), `ZON-05` Cueva Umbría (`ZON-04` al 100 % y 3 criaturas en equipo Nv. 5+) y `ZON-06` Pico de la Cumbre (`ZON-05` al 100 % y 1 criatura Nv. 10+).
 - **Grafo de conexiones:** Modelado mediante diagrama de flujo Mermaid e integrado directamente en [docs/diseno-juego.md](../diseno-juego.md#43-grafo-de-conexiones-del-mundo).
 
 ---
@@ -50,17 +50,16 @@ Los 13 componentes funcionales obligatorios del enunciado han sido especificados
 
 1. **Justificación de Open5e y documento `srd-2024`:**
    Se eligió Open5e v2 filtrando estrictamente por `document__key__in=srd-2024` porque contiene exactamente **331 criaturas oficiales** del System Reference Document 5.2 de D&D, publicadas formalmente bajo licencia libre **Creative Commons Attribution 4.0 International (CC BY 4.0)**, permitiendo su uso, adaptación y traducción académica sin riesgos de infracción de propiedad intelectual (`PI`).
-2. **Criterios de selección:**
-   Se seleccionaron 25 especies con amplia diversidad de tipos (bestias, elementales, no-muertos, monstruosidades, autómatas y plantas) y retos entre CR 0.25 y CR 5, incorporando 2 especies de CR alto (`quimera-tricefala` CR 6 e `hidra-de-las-marismas` CR 8) asignadas como criaturas especiales con probabilidad del $5\,\%$ en tablas de aparición. Se descartaron criaturas sin ataques con dados o con mecánicas intratables para un motor por turnos simple.
-3. **Mapeo y normalización (Anexo A.3):**
-   Las estadísticas originales de D&D se transforman a la escala del juego $[30, 100]$:
+2. **Criterios de selección y evolución al Bestiario Canónico (`v1.0`):**
+   - *Diseño inicial de Fase 1 (histórico):* Se partió de una selección preliminar de 25 especies variadas (`beast`, `elemental`, `undead`, `monstrosity`, `construct`, `plant`) descartando criaturas sin ataques modelables para un motor por turnos.
+   - *Catálogo definitivo (`v1.0`, Subfases 10j y 10m):* El catálogo se expandió y consolidó en **30 especies canónicas** (exactamente 5 especies por cada una de las 6 zonas con pesos `35 % / 35 % / 15 % / 10 % / 5 %`), 4 movimientos tácticos por especie, 6 afinidades elementales y **2 criaturas legendarias** (`behir-abismo` BST 360 en `ZON-05` y `remorhaz-glaciar` BST 375 en `ZON-06`), con `tasaCaptura` soberana en $[0.10, 0.85]$ derivada del BST (ver [docs/catalogo-criaturas.md](../catalogo-criaturas.md)).
+3. **Mapeo y normalización metodológica (Anexo A.3):**
+   Las estadísticas originales de D&D sirvieron como referencia metodológica para la escala $[30, 100]$:
    $$\text{valorJuego} = 30 + 70 \times \frac{\text{valor} - \text{minimo}}{\text{maximo} - \text{minimo}}$$
-   - **Ejemplo resuelto (`srd-2024_wolf` / Lobo Gris):**
-     - $\text{HP}: 11 \rightarrow 30 + 70 \times (11 - 11) / (184 - 11) = \mathbf{30}$
-     - $\text{Mejor Ataque} (1d6+2): 5.5 \rightarrow 30 + 70 \times (5.5 - 3.5) / (15.0 - 3.5) = 30 + 70 \times (2 / 11.5) = \mathbf{42}$
-     - $\text{AC}: 12 \rightarrow 30 + 70 \times (12 - 8) / (18 - 8) = 30 + 70 \times 0.40 = \mathbf{58}$
-     - $\text{Velocidad}: 40 \rightarrow 30 + 70 \times (40 - 20) / (90 - 20) = 30 + 70 \times (20 / 70) = \mathbf{50}$
-     - $\text{tasaCaptura}: \text{clamp}(0.10, 0.90, 0.90 - 0.07 \times 0.25) = \mathbf{0.88}$
+   - **Ejemplo histórico de normalización SRD (`srd-2024_wolf`, Fase 1):**
+     - $\text{HP}: 11 \rightarrow \mathbf{30}$, $\text{Mejor Ataque} (1d6+2): 5.5 \rightarrow \mathbf{42}$, $\text{AC}: 12 \rightarrow \mathbf{58}$, $\text{Velocidad}: 40 \rightarrow \mathbf{50}$.
+   - **Calibración soberana definitiva (`v1.0`, `lobo-estepario` en `bestiario-canonico.ts`):**
+     - $\text{HP}: 34$, $\text{ATQ}: 39$, $\text{DEF}: 32$, $\text{VEL}: 45$ ($\text{BST} = 150$), $\text{tasaCaptura} = \text{clamp}(0.10, 0.85, 1.35 - 150/300) = \mathbf{0.85}$.
 4. **Frontera de datos (Anexo A.2):**
    - *Externo (Open5e):* `key`, `type.key`, tiradas de dados de ataque, velocidad, clase de armadura y puntos de golpe originales.
    - *Propio:* Nombres en español, `slug`, estadísticas normalizadas, tasa de captura, nivel, experiencia, propietario, estado y tablas por zona.
@@ -86,7 +85,7 @@ Las reglas del motor de combate y progresión han sido formuladas con precisión
 Se resolvieron formalmente las ambigüedades del enunciado y la integración con aprobación escrita del usuario:
 - **D-01 (API externa):** Open5e v2 `srd-2024` validada con 331 criaturas, licencia CC BY 4.0 confirmada y límite de una sola importación mediante script (`importar:especies`).
 - **D-02 (Tamaño del equipo):** Equipo activo estrictamente limitado a 6 criaturas (`A-6`); criaturas capturadas con equipo lleno van al almacén de forma transparente.
-- **D-03 (Alcance de tienda):** Tienda mínima compuesta por 4 consumibles esenciales (Talismán Básico a 50 monedas, Talismán Resonante a 150 monedas, Poción Menor a 40 monedas y Poción Mayor a 100 monedas).
+- **D-03 (Alcance de tienda):** Tienda mínima compuesta por 4 consumibles esenciales sembrados en `prisma/seed.ts`: Talismán Básico de Captura (`talisman-basico`, 50 monedas), Talismán Avanzado de Captura (`talisman-avanzado`, alias `talisman-resonante`, 150 monedas), Poción de Curación Menor (`pocion-menor`, 30 monedas) y Poción de Curación Mayor (`pocion-mayor`, 80 monedas).
 - **D-04 (Momento de captura):** La captura ocurre dentro del combate como acción táctica del turno consumiendo un talismán, evaluada en el servidor.
 - **D-05 (Definición de localidad):** Las localidades son asentamientos seguros (`esSegura: true`) sin encuentros hostiles que ofrecen servicios permanentes; las rutas o zonas son salvajes y permiten la acción de explorar.
 - **Documento fuente:** [docs/decisiones.md](../decisiones.md).
@@ -105,7 +104,7 @@ Se elaboraron los wireframes de todas las vistas del flujo en formato ASCII (anc
 - `PantallaCuracion` (recuperación gratuita del equipo)
 - `PantallaCatalogo` (enciclopedia de especies registradas)
 - `PantallaHistorial` (bitácora de expediciones)
-- `PantallaCreditos` (atribuciones legales obligatorias)
+- `PaginaCreditos` (atribuciones legales obligatorias) y `PaginaKitUi` (vitrina `/kit-ui` de los 17 componentes `8bitcn/ui`)
 - **Documentos fuente:** [docs/wireframes.md](../wireframes.md) y diagrama Mermaid [docs/diagramas/flujo-pantallas.mmd](../diagramas/flujo-pantallas.mmd).
 
 ---
@@ -141,4 +140,4 @@ En cumplimiento de la licencia **Creative Commons Attribution 4.0 International 
 
 ### Licencia del sistema de interfaz (8bitcn/ui)
 La biblioteca de componentes UI retro pixel-art `8bitcn/ui` se encuentra protegida bajo la licencia **MIT**:
-> *Copyright (c) 2024 8bitcn. Licensed under the MIT License.*
+> *Copyright (c) 2025 8bitcn. Licensed under the MIT License.*

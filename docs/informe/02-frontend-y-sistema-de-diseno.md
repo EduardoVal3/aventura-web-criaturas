@@ -6,7 +6,7 @@ Este documento constituye la sección correspondiente a la **Fase 2 (Fundación 
 
 ## 1. Objetivo de la fase y requisitos cubiertos
 
-**Objetivo general:** Establecer la infraestructura base del Front-End en `apps/web` utilizando React 19, Vite, TypeScript y Tailwind CSS v4, integrando los 17 componentes de interfaz retro del registro de 8bitcn/ui sobre shadcn/ui traducidos al español (R1), un `LayoutPrincipal` semántico y mobile-first con React Router en modo biblioteca, la capa desacoplada `ApiJuego` con modo simulado y modo HTTP, y la vista de demostración `/kit-ui`.
+**Objetivo general:** Establecer la infraestructura base del Front-End en `apps/web` utilizando React 19, Vite, TypeScript y Tailwind CSS v4, integrando los 17 componentes de interfaz retro del registro de 8bitcn/ui sobre shadcn/ui traducidos al español (R1), un `LayoutPrincipal` semántico y mobile-first con React Router en modo biblioteca, la capa desacoplada `ApiJuego` y la vista de demostración `/kit-ui`. *(Nota evolutiva: en la Fase 2 inicial se incluyó un modo simulado temporal y vistas de respaldo que fueron sustituidas por las 15 pantallas reales en Fase 3 y eliminadas definitivamente al conectar el cliente único `apiHttp.ts` en Fase 8.)*
 
 **Requisitos e identificadores cubiertos:**
 - `T-2`: Aplicación web responsiva desarrollada con React y TypeScript sobre Vite.
@@ -49,19 +49,24 @@ En cumplimiento de las normas de estabilidad del monorepo, todas las dependencia
 
 ## 3. Estructura de código en `apps/web/src`
 
-El código de la aplicación cliente organiza sus responsabilidades de forma clara y desacoplada:
+El código de la aplicación cliente organiza sus responsabilidades de forma clara y desacoplada (estado consolidado `v1.0` tras la integración de Fases 3, 8, 10 y 11):
 
 ```text
 apps/web/src/
 ├── api/                                # Capa de datos y abstracción de red (ARQ)
-│   ├── ApiJuego.ts                     # Tipos de petición/respuesta y contrato ApiJuego
-│   ├── apiHttp.ts                      # Implementación basada en fetch (/api)
-│   ├── apiSimulada.ts                  # Implementación en memoria con retardo realista
-│   └── index.ts                        # Selector de implementación por VITE_MODO_API
+│   ├── ApiJuego.ts                     # Tipos de petición/respuesta y contrato ApiJuego (28 métodos)
+│   ├── apiHttp.ts                      # Cliente HTTP único (fetch /api + JWT + apikey opcional Kong)
+│   ├── tipos.ts                        # Tipos auxiliares del contrato Front↔API
+│   └── index.ts                        # Exportación única de api = apiHttp
+├── contextos/
+│   └── ContextoAutenticacion.tsx       # Sesión JWT persistente y estado del personaje activo
 ├── components/                         # Componentes de la aplicación y sistema de diseño
 │   ├── LayoutPrincipal.tsx             # Shell estructural mobile-first (header, nav, main, footer)
+│   ├── RutaProtegida.tsx               # Guardas declarativas RutaPublica y RutaProtegida
+│   ├── combate/                        # BattlefieldBackground y PanelTactico
+│   ├── mundo/                          # BannerUbicacionActual, MapaInteractivoCanvas, MinimapaRedTerritorial, TarjetaSenderoConexion, TransicionViaje2D
 │   └── ui/                             # Primitivas base de shadcn (button, card, dialog, etc.)
-│       └── 8bit/                       # Componentes retro temáticos de 8bitcn/ui
+│       └── 8bit/                       # 17 componentes retro temáticos de 8bitcn/ui
 │           ├── styles/retro.css        # Hoja de estilos con bordes pixelados y fuentes retro
 │           ├── alert-dialog.tsx
 │           ├── badge.tsx
@@ -80,17 +85,16 @@ apps/web/src/
 │           ├── tabs.tsx
 │           ├── toast.tsx
 │           └── xp-bar.tsx
-├── paginas/                            # Vistas completas de la aplicación
+├── paginas/                            # 15 pantallas activas + PaginaNoEncontrada (404)
+│   ├── PantallaIngreso.tsx ... PantallaHistorial.tsx  # 13 pantallas funcionales del juego
 │   ├── PaginaCreditos.tsx              # Licencias de 8bitcn y atribución de Open5e
 │   ├── PaginaKitUi.tsx                 # Catálogo interactivo de los 17 componentes de UI
-│   ├── PaginaNoEncontrada.tsx          # Manejo de rutas inexistentes (404)
-│   └── PaginaPendiente.tsx             # Componente reutilizable para pantallas placeholder
-├── lib/
-│   └── utils.ts                        # Helper cn para combinación de clases
-├── App.tsx                             # Configuración del enrutador React Router
-├── index.css                           # Importación central de Tailwind CSS v4
+│   └── PaginaNoEncontrada.tsx          # Manejo de rutas inexistentes (404)
+├── lib/                                # assets.ts (WebP + Web Audio), dioramas Canvas, helpers tácticos y utils.ts
+├── App.tsx                             # Configuración del enrutador React Router 8
+├── index.css                           # Importación central de Tailwind CSS v4 y tokens retro
 ├── main.tsx                            # Punto de entrada de renderizado React
-└── vite-env.d.ts                       # Declaración de variables de entorno de Vite
+└── vite-env.d.ts                       # Declaración de VITE_URL_API y VITE_CLAVE_GATEWAY
 ```
 
 *Nota técnica sobre la ruta `components/ui/8bit`:* La estructura en inglés de esta carpeta la impone el CLI oficial de distribución de shadcn/ui. Constituye una excepción técnica admitida formalmente en el glosario del proyecto (§1 y R1).
@@ -141,54 +145,68 @@ Posteriormente, en estricto cumplimiento de la regla **R1**, se revisaron todos 
 ## 5. Arquitectura de rutas y navegación
 
 ### 5.1 Enrutamiento declarativo
-Se configuró `createBrowserRouter` de `react-router` estructurando a `LayoutPrincipal` como la ruta envolvente raíz (`/`). La ruta principal redirige automáticamente a `/ingreso`. Se generaron rutas placeholder reutilizables mediante `PaginaPendiente` para las 14 pantallas que serán desarrolladas en la Fase 3, manteniendo activos y reales los caminos `/kit-ui` y `/creditos`:
+Se configuró `createBrowserRouter` de `react-router` estructurando a `LayoutPrincipal` como la ruta envolvente raíz (`/`). En la Fase 2 inicial se montaron vistas temporales (`PaginaPendiente`) para las 13 pantallas de juego mientras se construía el sistema de diseño; a partir de la Fase 3 y hasta el cierre `v1.0`, todas las **15 pantallas activas** (13 de juego + `/kit-ui` + `/creditos`, más `PaginaNoEncontrada`) están completamente implementadas y conectadas a la API real con protección `RutaPublica` / `RutaProtegida`:
 
-| Ruta | Pantalla asociada | Estado en Fase 2 |
+| Ruta | Pantalla asociada | Evolución (Fase 2 histórica → Estado final `v1.0`) |
 | --- | --- | --- |
-| `/` | — | Redirección declarativa hacia `/ingreso` |
-| `/ingreso` | `PantallaIngreso` | Marcador de posición (`PaginaPendiente`) |
-| `/registro` | `PantallaRegistro` | Marcador de posición (`PaginaPendiente`) |
-| `/crear-personaje` | `PantallaCrearPersonaje` | Marcador de posición (`PaginaPendiente`) |
-| `/hub` | `PantallaHubUbicacion` | Marcador de posición (`PaginaPendiente`) |
-| `/exploracion` | `PantallaExploracion` | Marcador de posición (`PaginaPendiente`) |
-| `/combate` | `PantallaCombate` | Marcador de posición (`PaginaPendiente`) |
-| `/equipo` | `PantallaEquipo` | Marcador de posición (`PaginaPendiente`) |
-| `/almacen` | `PantallaAlmacen` | Marcador de posición (`PaginaPendiente`) |
-| `/inventario` | `PantallaInventario` | Marcador de posición (`PaginaPendiente`) |
-| `/tienda` | `PantallaTienda` | Marcador de posición (`PaginaPendiente`) |
-| `/curacion` | `PantallaCuracion` | Marcador de posición (`PaginaPendiente`) |
-| `/catalogo` | `PantallaCatalogo` | Marcador de posición (`PaginaPendiente`) |
-| `/historial` | `PantallaHistorial` | Marcador de posición (`PaginaPendiente`) |
-| `/kit-ui` | — | Página interactiva real con los 17 componentes |
-| `/creditos` | `PantallaCreditos` | Página interactiva real de licencias y autorías |
-| `*` | `PaginaNoEncontrada` | Mensaje 404 con enlace hacia `/ingreso` |
+| `/` | `RutaRaiz` | Redirección dinámica según sesión JWT (`/ingreso`, `/crear-personaje` o `/hub`) |
+| `/ingreso` | `PantallaIngreso` | Inicializada en Fase 2 → Implementada y conectada a JWT (`RutaPublica`) |
+| `/registro` | `PantallaRegistro` | Inicializada en Fase 2 → Implementada con validación Zod (`RutaPublica`) |
+| `/crear-personaje` | `PantallaCrearPersonaje` | Inicializada en Fase 2 → Implementada con 3 iniciales canónicas (`RutaProtegida`) |
+| `/hub` | `PantallaHubUbicacion` | Inicializada en Fase 2 → Implementada con mapa interactivo Canvas/WebP (`RutaProtegida`) |
+| `/exploracion` | `PantallaExploracion` | Inicializada en Fase 2 → Implementada con avance cartográfico en BD (`RutaProtegida`) |
+| `/combate` | `PantallaCombate` | Inicializada en Fase 2 → Implementada con 6×6 elemental, 51 efectos y Resonancia (`RutaProtegida`) |
+| `/equipo` | `PantallaEquipo` | Inicializada en Fase 2 → Implementada con reordenamiento táctico (`RutaProtegida`) |
+| `/almacen` | `PantallaAlmacen` | Inicializada en Fase 2 → Implementada con intercambio atómico (`RutaProtegida`) |
+| `/inventario` | `PantallaInventario` | Inicializada en Fase 2 → Implementada con bolsa de 20 ranuras (`RutaProtegida`) |
+| `/tienda` | `PantallaTienda` | Inicializada en Fase 2 → Implementada con compra por lotes en BD (`RutaProtegida`) |
+| `/curacion` | `PantallaCuracion` | Inicializada en Fase 2 → Implementada con santuario transaccional (`RutaProtegida`) |
+| `/catalogo` | `PantallaCatalogo` | Inicializada en Fase 2 → Implementada con las 30 especies canónicas (`RutaProtegida`) |
+| `/historial` | `PantallaHistorial` | Inicializada en Fase 2 → Implementada con búsqueda y filtros (`RutaProtegida`) |
+| `/kit-ui` | `PaginaKitUi` | Vitrina interactiva real con los 17 componentes `8bitcn/ui` |
+| `/creditos` | `PaginaCreditos` | Salón de la Fama, licencias MIT (`8bitcn/ui`) y CC BY 4.0 (`Open5e SRD 5.2`) |
+| `*` | `PaginaNoEncontrada` | Manejo 404 con enlace de retorno |
 
 ### 5.2 Diagrama de arquitectura del Front-End
-El flujo de renderizado y desacoplamiento de red se sintetiza en el siguiente diagrama ([docs/diagramas/arquitectura-frontend.mmd](../diagramas/arquitectura-frontend.mmd)):
+El flujo de renderizado y desacoplamiento de red en su estado definitivo `v1.0` se sintetiza en el siguiente diagrama ([docs/diagramas/arquitectura-frontend.mmd](../diagramas/arquitectura-frontend.mmd) · [PNG](../diagramas/arquitectura-frontend.png)):
 
 ```mermaid
 flowchart TD
-    Navegador["Navegador 360 a 1280 px"] --> Enrutador["React Router"]
-    Enrutador --> Layout["LayoutPrincipal"]
-    Layout --> Paginas["Páginas: placeholders, /kit-ui, /creditos"]
-    Paginas --> Kit["Componentes 8bitcn/ui en src/components/ui/8bit"]
-    Kit --> Base["shadcn/ui + Tailwind CSS v4"]
-    Paginas --> Api["ApiJuego en src/api"]
-    Api -->|"VITE_MODO_API=simulado"| Simulada["apiSimulada.ts, datos en memoria"]
-    Api -->|"VITE_MODO_API=http"| Http["apiHttp.ts, fetch"]
-    Http -.->|"Fase posterior"| Nest["API NestJS con prefijo /api"]
+    Navegador["Navegador Responsive (320 px a escritorio · Vite 8 / Cloudflare Pages)"] --> Contexto["ProveedorAutenticacion (ContextoAutenticacion + JWT en localStorage)"]
+    Contexto --> Enrutador["React Router 8 (createBrowserRouter · RutaPublica / RutaProtegida)"]
+    Enrutador --> Layout["LayoutPrincipal (Cabecera retro, pie legal y Toaster Sonner)"]
+
+    Layout --> PagCuenta["Pantallas de Cuenta (3)<br/>PantallaIngreso · PantallaRegistro · PantallaCrearPersonaje"]
+    Layout --> PagJuego["Pantallas de Aventura y Combate (3)<br/>PantallaHubUbicacion (Mapa Canvas/WebP) · PantallaExploracion · PantallaCombate"]
+    Layout --> PagGestion["Pantallas de Gestión y Consulta (7)<br/>PantallaEquipo · PantallaAlmacen · PantallaInventario · PantallaTienda<br/>PantallaCuracion · PantallaCatalogo · PantallaHistorial"]
+    Layout --> PagSoporte["Vistas de Vitrina y Sistema<br/>PaginaKitUi (/kit-ui) · PaginaCreditos (/creditos) · PaginaNoEncontrada (*)"]
+
+    PagCuenta --> Kit["17 Componentes 8bitcn/ui (src/components/ui/8bit)<br/>+ Audio Web Audio API y Pipeline WebP (src/lib/assets.ts)"]
+    PagJuego --> Kit
+    PagGestion --> Kit
+    PagSoporte --> Kit
+    Kit --> Base["shadcn/ui + Radix UI + Tailwind CSS v4 + Lucide SVG (Cero emojis R1)"]
+
+    PagCuenta --> Api["Contrato ApiJuego (src/api/ApiJuego.ts · 28 métodos)"]
+    PagJuego --> Api
+    PagGestion --> Api
+    PagSoporte --> Api
+
+    Api --> Http["Cliente Único apiHttp.ts (fetch sobre VITE_URL_API/api)<br/>Bearer JWT + cabecera opcional apikey (VITE_CLAVE_GATEWAY)"]
+    Http -->|"Con Kong Gateway (:8000)"| Kong["Kong Gateway 3.9.5 DB-less<br/>(cors · key-auth · rate-limiting 429)"]
+    Http -.->|"Directo (:3000 o Render Free)"| Nest["API REST NestJS 10 (/api · 44 rutas / 46 ops)"]
+    Kong --> Nest
 ```
 
 ---
 
 ## 6. Capa de abstracción `ApiJuego` (ARQ)
 
-En cumplimiento del requisito arquitectónico `ARQ`, las páginas y componentes no realizan llamadas HTTP directas ni acoplan su código a la existencia del servidor backend:
-1. **Contrato unificado (`ApiJuego.ts`):** Define los 25 métodos que cubren la totalidad de los endpoints del contrato REST ([docs/contrato-api.md](../contrato-api.md)), junto con la clase `ErrorApi` que expone los campos `estado` y `codigo`.
-2. **Implementación HTTP (`apiHttp.ts`):** Emplea `fetch` nativo sobre `${VITE_URL_API}/api`, adjuntando cabeceras `Content-Type: application/json` y tokens `Authorization: Bearer <token>`, parseando las estructuras uniformes `{ error: { codigo, mensaje } }` y traduciendo errores de red a `SIN_CONEXION`.
-3. **Implementación simulada (`apiSimulada.ts`):** Trabaja en memoria con datos consistentes basados en el catálogo de criaturas y el contrato REST, introduciendo retardos asíncronos controlados para validar estados de carga.
-4. **Verificación estricta:** Ambas implementaciones aplican `satisfies ApiJuego`. Si el contrato y una implementación divergen, el compilador TypeScript aborta la construcción inmediatamente.
-5. **Selector de modo:** Controlado en tiempo de ejecución por `VITE_MODO_API` (`simulado` o `http`), arrojando una excepción clara en español ante valores inválidos.
+En cumplimiento del requisito arquitectónico `ARQ`, las páginas y componentes no realizan llamadas HTTP directas ni acoplan su código a detalles de transporte:
+1. **Contrato unificado (`ApiJuego.ts`):** Define los **28 métodos** tipados que cubren la totalidad de los flujos del contrato REST ([docs/contrato-api.md](../contrato-api.md)), junto con la clase `ErrorApi` que expone `estado`, `codigo` y `mensaje`.
+2. **Implementación HTTP única (`apiHttp.ts`):** Emplea `fetch` nativo sobre `${VITE_URL_API}/api`, adjuntando cabeceras `Content-Type: application/json`, `Authorization: Bearer <token>` y, de forma opcional cuando se configura `VITE_CLAVE_GATEWAY`, la cabecera `apikey` para autenticarse ante Kong Gateway (`3.9.5` DB-less). Deserializa `{ error: { codigo, mensaje } }`, traduce `HTTP 429` a `LIMITE_SOLICITUDES` y los fallos de red a `SIN_CONEXION`.
+3. **Verificación estricta en compilación:** `apiHttp` aplica `satisfies ApiJuego`; cualquier divergencia respecto al contrato aborta la compilación TypeScript (`tsc -b`).
+4. **Nota histórica (Fases 2–7 → Fase 8):** Durante las Fases 2 y 3 existió temporalmente una implementación en memoria (`apiSimulada.ts`, alternada por `VITE_MODO_API`) para validar flujos de pantalla antes de contar con el servidor NestJS. Al completarse la integración real en la Fase 8, `apiSimulada.ts` y `datos-simulados/` fueron eliminados del repositorio, quedando `apiHttp.ts` como única fuente exportada en `apps/web/src/api/index.ts`.
 
 ---
 
@@ -205,7 +223,7 @@ Tal como exige la sección §2 del plan maestro de desarrollo, la implementació
 ## 8. Evidencia responsive y accesibilidad
 
 ### 8.1 Verificación responsive (360 px, 768 px y 1280 px)
-Mediante pruebas automatizadas de navegador ejecutadas por el subagente de navegación con grabación visual WebP, se evaluó la vista `/kit-ui` y rutas placeholder en tres puntos de quiebre estándar:
+Mediante pruebas automatizadas de navegador con grabación visual WebP, se evaluó la vista `/kit-ui` y las pantallas iniciales de la Fase 2 en tres puntos de quiebre estándar:
 - **360 × 640 px (Móvil compacto):** `scrollWidth` idéntico a `innerWidth` (360 px). Ausencia total de desbordamiento horizontal. Los elementos se apilan ordenadamente en una sola columna.
 - **768 × 1024 px (Tableta):** `scrollWidth` idéntico a `innerWidth` (768 px). La retícula se distribuye fluidamente a dos columnas sin cortes.
 - **1280 × 800 px (Escritorio):** `scrollWidth` idéntico a `innerWidth` (1280 px). Distribución a tres columnas centrada con márgenes confortables.

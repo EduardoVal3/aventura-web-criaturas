@@ -21,9 +21,9 @@ Este documento es el enrutador ligero (~2 KB) para navegar el proyecto sin neces
 | **8** | Integración Front↔API | ✅ Completada | `funcionalidad/fase-08-integracion` | [FASE-08.md](file:///docs/workflows/FASE-08.md) | L394–L410 |
 | **9** | Seguridad y cierre base | ✅ Completada | `pruebas/fase-09-seguridad` | [FASE-09.md](file:///docs/workflows/FASE-09.md) | L415–L431 |
 | **10** | Enriquecimiento UX y Combate Táctico | ✅ Completada (10a a 10v + limpieza tarjetas, equilibrio abisal, ondas en pilares, calibración columnas, responsive del hub, modales sin desborde, requisitos limpios, diorama vivo y aurora multicapa de La Cumbre, diorama volcánico/arcano de Cueva Umbría, diorama del desfiladero de Paso de los Riscos y auditoría integral móvil/copy/safe-area) | `correccion/auditoria-movil-copy-viewport` | [10-19-oceano-vivo.md](file:///docs/workflows/fase-10/10-19-oceano-vivo.md) | L437–L572 |
-| **11** | Extras: Gateway y UI (+5) | Pendiente | `configuracion/fase-11-extras` | `docs/workflows/FASE-11.md` | L554–L571 |
-| **12** | Entrega final (FIN) | Pendiente | `documentacion/fase-12-entrega` | `docs/workflows/FASE-12.md` | L573–L586 |
-| **13** | Multijugador (opcional) | Opcional | `funcionalidad/fase-13-presencia` | `docs/workflows/FASE-13.md` | L588–L600 |
+| **11** | Extras: Gateway y UI (+5) | ✅ Completada (**11a:** Kong DB-less +2 · **11b:** Auditoría UI `8bitcn/ui` +3) | `funcionalidad/fase-11b-auditoria-ui` | [FASE-11.md](file:///docs/workflows/FASE-11.md) | L574–L591 |
+| **12** | Entrega final (FIN) | ✅ Completada (`version-1.0.0`) | `documentacion/fase-12-entrega-final` | [INFORME-FINAL.md](file:///docs/informe/INFORME-FINAL.md) | L593–L606 |
+| **13** | Multijugador (opcional) | Descartada (sin puntos extra, `A-7`) | `funcionalidad/fase-13-presencia` | — | L608–L620 |
 
 ---
 

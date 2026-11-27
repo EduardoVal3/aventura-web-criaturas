@@ -125,7 +125,8 @@ test("Prevención de bucle en 0 HP y sincronización de estado en PantallaExplor
   assert.ok(
     combateCodigo.includes("w-[min(194px,54vw)]") &&
       combateCodigo.includes("grid-cols-10") &&
-      combateCodigo.includes("h-3 sm:h-3.5"),
-    "Las placas HUD de PantallaCombate deben usar ancho fluido anti-desborde y barra de Resonancia de 10 bloques visibles en móvil",
+      combateCodigo.includes("h-3 sm:h-2.5") &&
+      !combateCodigo.includes("font-sans"),
+    "Las placas HUD de PantallaCombate deben preservar tipografía .retro integral, ancho fluido anti-desborde y barra de Resonancia de 10 bloques visibles en móvil",
   );
 });

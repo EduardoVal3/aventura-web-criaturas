@@ -2,7 +2,7 @@
 
 Este capítulo documenta los extras opcionales implementados tras el cierre de la Fase 10 sobre *Aethelgard: Sendas y Criaturas*. Se divide en dos subfases independientes según el plan de desarrollo:
 - **Subfase 11a (`X-API`, +2 pts):** API Gateway en modo DB-less con **Kong Gateway 3.9.5** (`configuracion/fase-11a-api-gateway`). ✅ **Completada.**
-- **Subfase 11b (`X-UI`, +3 pts):** Auditoría funcional y capturas de 8bitcn/ui (`funcionalidad/fase-11b-auditoria-ui`). *Pendiente en su rama dedicada.*
+- **Subfase 11b (`X-UI`, +3 pts):** Auditoría funcional y lista de verificación de **8bitcn/ui** (`funcionalidad/fase-11b-auditoria-ui`). ✅ **Completada.**
 
 ---
 
@@ -152,3 +152,59 @@ Nótese la correlación exacta entre el `request_id: "9e34972eca612a48a9dce86369
 | Compilación Back-End NestJS + Prisma | `pnpm --filter api build` | **Exitosa** (`prisma generate && nest build`) |
 | Validación sintáctica y renderizado del diagrama Mermaid | MCP `mermaid` (`generate`) sobre `docs/diagramas/arquitectura-con-gateway.mmd` | **SVG válido generado sin errores** |
 | Verificación en vivo de Kong DB-less (`401`, CORS, `200`, `429`, logs) | `docker compose up -d postgres kong` + `node scripts/verificar-gateway.mjs` + MCP Docker | **Aprobada integralmente** |
+
+---
+
+## 2. Subfase 11b: Auditoría Funcional de Interfaz Estilo Videojuego con `8bitcn/ui` (`X-UI`, +3 pts)
+
+### 2.1 Justificación de la Librería Especializada (`8bitcn/ui`)
+
+El requisito adicional **`X-UI (+3 puntos)`** (§19 del enunciado oficial) solicita desarrollar una interfaz cercana a un videojuego utilizando una librería o framework CSS especializado —citando como ejemplos *RPGUI*, *NES.css* o una alternativa equivalente— integrada funcionalmente al juego, visualmente consistente y responsive.
+
+Como se fundamenta en la decisión técnica **`D-06`** ([decisiones.md](../decisiones.md)) y en el sistema de diseño retro ([DESIGN.md](../DESIGN.md)), se adoptó **`8bitcn/ui`** (`https://www.8bitcn.com/docs`, licencia MIT) sobre **shadcn/ui + Radix UI + Tailwind CSS v4**, instalada en `apps/web/src/components/ui/8bit/`. Frente a librerías CSS estáticas clásicas como NES.css, `8bitcn/ui` aporta:
+- **Componentes nativos de RPG** (`health-bar`, `enemy-health-display`, `xp-bar`, `progress`, `dialog`, `alert-dialog`) con estética pixel-art/8-bit y bordes escalonados auténticos.
+- **Accesibilidad moderna heredada de Radix UI** (foco de teclado, cierre con `Escape`, atributos ARIA y portales seguros en modales).
+- **Integración directa con React 19 y TypeScript estricto** sin sacrificar tipado ni diseño responsive móvil.
+
+---
+
+### 2.2 Matriz Verificada de Integración Funcional por Pantalla
+
+La auditoría directa sobre el árbol de código fuente (`apps/web/src/`) confirma la presencia de **17 componentes `8bitcn/ui`** en `apps/web/src/components/ui/8bit/` integrados de forma funcional a lo largo de **15 pantallas y 4 componentes territoriales**:
+
+| Pantalla / Módulo (`apps/web/src/`) | Componentes `8bitcn/ui` integrados | Uso funcional verificado en el juego |
+| :--- | :--- | :--- |
+| `paginas/PantallaCombate.tsx` | `health-bar`, `xp-bar`, `dialog`, `alert-dialog`, `badge`, `button`, `spinner` | Arena de combate por turnos: barras de vida aliada y rival, progreso de XP, badges elementales/estados, confirmación de huida (`alert-dialog`), selector modal de captura/pociones (`dialog`) y acciones bloqueadas con `spinner`. |
+| `paginas/PantallaExploracion.tsx` | `dialog`, `progress`, `badge`, `button`, `skeleton` | Exploración probabilística de sendas, barra de avance cartográfico (`progress`), modales de avistamiento de criatura/botín (`dialog`) y esqueletos de carga (`skeleton`). |
+| `paginas/PantallaHubUbicacion.tsx` + `components/mundo/` (`BannerUbicacionActual`, `TarjetaSenderoConexion`, `MinimapaRedTerritorial`, `TransicionViaje2D`) | `dialog`, `alert-dialog`, `progress`, `badge`, `button`, `skeleton` | Hub central y mapa interactivo de Aethelgard: progreso de zona, tarjetas de conexión, modales de requisitos de desbloqueo y viaje (`alert-dialog`/`dialog`) y chips de riesgo táctico (`badge`). |
+| `paginas/PantallaEquipo.tsx` | `card`, `health-bar`, `xp-bar`, `badge`, `button`, `skeleton`, `spinner` | Gestión del equipo activo (máx. 6, `A-6`), tarjetas de criaturas con HP y XP en tiempo real y reordenamiento del líder. |
+| `paginas/PantallaAlmacen.tsx` | `card`, `dialog`, `health-bar`, `xp-bar`, `badge`, `button`, `skeleton`, `spinner` | Reserva de criaturas capturadas y modal de intercambio atómico con el equipo activo (`dialog`). |
+| `paginas/PantallaInventario.tsx` | `card`, `dialog`, `health-bar`, `badge`, `button`, `spinner` | Bolsa de 20 ranuras, filtros táctiles y modal de curación fuera de combate con vista previa de HP (`health-bar` + `INV-03`). |
+| `paginas/PantallaTienda.tsx` | `card`, `dialog`, `badge`, `button`, `spinner` | Bazar de provisiones con selector de lotes (`x1`, `x5`, `x10`) y confirmación modal de compra (`dialog`). |
+| `paginas/PantallaCuracion.tsx` | `card`, `health-bar`, `badge`, `button`, `spinner` | Santuario de curación gratuita con estado vital del equipo (`health-bar`) y restauración integral. |
+| `paginas/PantallaCatalogo.tsx` | `card`, `dialog`, `progress`, `badge`, `button`, `skeleton` | Compendio de las 30 especies canónicas agrupadas por zona, medidores de estadísticas (`progress`) y ficha detallada (`dialog`). |
+| `paginas/PantallaHistorial.tsx` | `card`, `badge`, `button`, `input`, `skeleton` | Crónicas del explorador con búsqueda textual (`input`) y filtros por categoría (`badge`/`button`). |
+| `paginas/PantallaIngreso.tsx`, `PantallaRegistro.tsx` y `PantallaCrearPersonaje.tsx` | `card`, `input`, `label`, `badge`, `button`, `spinner` | Flujos de autenticación y selección de criatura inicial con validación nativa y estados de envío protegidos. |
+| `paginas/PaginaCreditos.tsx` | `card`, `badge`, `button` | Atribución legal CC BY 4.0 de Open5e SRD 5.2, créditos del equipo y stack retro. |
+| `paginas/PaginaKitUi.tsx` (ruta `/kit-ui`) | **Todos los 17 componentes** (incluyendo `enemy-health-display`, `select`, `table`, `tabs`, `toast`) | Vitrina interactiva completa del sistema de diseño retro para inspección rápida durante la demostración. |
+
+---
+
+### 2.3 Lista de Verificación de Consistencia, Responsive y Ergonomía (Auditada en Fase 10 + 11b)
+
+- [x] **Cohesión estética retro-brutalista (`docs/DESIGN.md`):** paleta Aethelgard HSL unificada, sombras sólidas 8-bit, tipografía `Press Start 2P` para jerarquía arcade y `Geist` para lectura clara.
+- [x] **Cero emojis unicode en interfaz (`R1`):** 100 % de la iconografía en controles, estados alterados, insignias legendarias y navegación emplea SVG vectoriales de `lucide-react` (validado automáticamente por pruebas unitarias en todas las pantallas principales).
+- [x] **Diseño responsive sin desbordamiento horizontal (`320 px` a escritorio):** modales sellados con `w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden`, cabecera en fila única accesible en móvil, cuadrículas adaptativas y safe-area verificada en Fase 10.
+- [x] **Arte multimedia pixel-art optimizado (`D-19` a `D-21`):** 30 sprites de criaturas (`512×512` WebP RGBA con `.pixelated`), 9 escenas de zonas, 6 arenas de combate (`800×450` WebP) y 4 objetos (`256×256` WebP), con fallbacks SVG deterministas.
+- [x] **Retroalimentación sensorial y accesibilidad:** síntesis procedural de audio 8-bit vía Web Audio API en `assets.ts` (combate, captura, eficacia elemental, victoria, compra, santuario) y respeto a `@media (prefers-reduced-motion: reduce)`.
+- [x] **Hardening de interacción:** protección contra doble clic (`aria-busy`, deshabilitación reactiva y cerrojo `useRef` en combate) y manejo limpio de estados vacíos/carga (`skeleton`, `spinner`).
+- [x] **Cero impacto en producción:** esta auditoría documental no modifica código de producción ni archivos de estilos ya pulidos en Fase 10; mantiene intactas las **110 pruebas unitarias web**, las **134 pruebas unitarias API** y el despliegue en Cloudflare Pages + Render Free + Neon.
+
+---
+
+### 2.4 Guía Rápida de Demostración en Vivo para la Defensa (`X-UI`, +3 pts)
+
+1. Abrir `/kit-ui` (`PaginaKitUi.tsx`) para exhibir en un solo vistazo los **17 componentes `8bitcn/ui`** interactivos (incluyendo `health-bar`, `enemy-health-display`, `xp-bar`, `toast`, `dialog`, `alert-dialog` y `table`).
+2. Recorrer el flujo real del jugador (`/hub` → `/exploracion` → `/combate` → `/equipo` → `/inventario` → `/catalogo`) mostrando los componentes funcionando conectados a datos reales de PostgreSQL.
+3. Activar la vista móvil en DevTools (`375×812` / `360×800`) para demostrar ausencia total de desbordamiento horizontal y usabilidad táctil en modales y tarjetas.
+

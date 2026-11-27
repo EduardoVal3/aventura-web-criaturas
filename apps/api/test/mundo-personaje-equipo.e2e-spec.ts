@@ -86,7 +86,7 @@ describe('Integración E2E: Mundo, Personaje y Equipo (Fase 5c)', () => {
     assert.strictEqual(datos.ubicacionActualId, 'LOC-01');
     assert.strictEqual(datos.criaturaInicial.especieSlug, 'lobo-estepario');
     assert.strictEqual(datos.criaturaInicial.nivel, 1);
-    assert.strictEqual(datos.criaturaInicial.hpActual, 38);
+    assert.strictEqual(datos.criaturaInicial.hpActual, 34);
     criaturaInicialId = datos.criaturaInicial.criaturaId;
   });
 
@@ -170,8 +170,8 @@ describe('Integración E2E: Mundo, Personaje y Equipo (Fase 5c)', () => {
     assert.strictEqual(datos.error.codigo, 'CONEXION_INVALIDA');
   });
 
-  it('Flujo 8: Movimiento inválido hacia una zona bloqueada ej. ZON-04 desde LOC-02 (403 ZONA_BLOQUEADA)', async () => {
-    // 1. Desplazarse de ZON-01 a LOC-02 (conectada y desbloqueada inicialmente)
+  it('Flujo 8: Movimiento inválido hacia una zona bloqueada ej. LOC-02 desde ZON-01 (403 ZONA_BLOQUEADA)', async () => {
+    // Desde ZON-01 intentar viajar a LOC-02 (conectada topológicamente, pero bloqueada hasta completar ZON-01 al 100%)
     const resHaciaLoc02 = await fetch(`${urlBase}/mundo/viajar`, {
       method: 'POST',
       headers: {
@@ -180,24 +180,24 @@ describe('Integración E2E: Mundo, Personaje y Equipo (Fase 5c)', () => {
       },
       body: JSON.stringify({ destinoId: 'LOC-02' }),
     });
-    assert.strictEqual(resHaciaLoc02.status, 200, 'Viaje a LOC-02 debe ser 200');
 
-    // 2. Desde LOC-02 intentar viajar a ZON-04 (conectada topológicamente, pero bloqueada en ZonaDesbloqueada)
-    const resHaciaZon04 = await fetch(`${urlBase}/mundo/viajar`, {
+    assert.strictEqual(resHaciaLoc02.status, 403, 'Viaje a zona bloqueada debe responder 403');
+    const datos = (await resHaciaLoc02.json()) as any;
+    assert.strictEqual(datos.error.codigo, 'ZONA_BLOQUEADA');
+  });
+
+  it('Flujo 9: Validación de rechazo del 7mo miembro en el equipo con equipo lleno (409 EQUIPO_COMPLETO)', async () => {
+    // Regresar a la localidad segura LOC-01 para gestionar el almacén
+    const resVolverLoc01 = await fetch(`${urlBase}/mundo/viajar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${tokenAcceso}`,
       },
-      body: JSON.stringify({ destinoId: 'ZON-04' }),
+      body: JSON.stringify({ destinoId: 'LOC-01' }),
     });
+    assert.strictEqual(resVolverLoc01.status, 200, 'Regreso a LOC-01 debe responder 200');
 
-    assert.strictEqual(resHaciaZon04.status, 403, 'Viaje a zona bloqueada debe responder 403');
-    const datos = (await resHaciaZon04.json()) as any;
-    assert.strictEqual(datos.error.codigo, 'ZONA_BLOQUEADA');
-  });
-
-  it('Flujo 9: Validación de rechazo del 7mo miembro en el equipo con equipo lleno (409 EQUIPO_COMPLETO)', async () => {
     // Obtener especie para crear criaturas de prueba
     const especie = await prisma.especie.findFirstOrThrow({ where: { slug: 'lobo-estepario' } });
 

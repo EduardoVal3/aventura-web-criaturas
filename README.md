@@ -3,8 +3,8 @@
 Aplicación web tipo RPG táctico por turnos de exploración, captura, gestión de equipo y combate elemental.  
 **Proyecto Integrador — ISC-305 Programación Web (III PAC 2026).**
 
-> **Estado actual del proyecto:** **Fases 0 a 10 completadas en la rama `desarrollo`.**  
-> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), 6 zonas desbloqueables, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación y estética retro 8-bit/16-bit.
+> **Estado actual del proyecto:** **Versión `1.0.0` — Fases 0 a 12 completadas (entrega final consolidada).**  
+> La aplicación cuenta con Front-End en React 19 + TypeScript + Vite 8 + Tailwind CSS v4 + `8bitcn/ui` conectado a un Back-End en NestJS 10 + Prisma 6 + PostgreSQL 17 + JWT, con 30 especies canónicas (basadas en Open5e SRD 5.2), pipeline completo de assets pixel-art WebP, 6 zonas desbloqueables con dioramas animados, motor de combate táctico con 52 efectos mecánicos únicos, afinidades elementales, captura con talismanes, tienda, inventario, santuario de curación, **API Gateway Kong 3.9.5 DB-less (`X-API +2`)**, **auditoría integral `8bitcn/ui` (`X-UI +3`)** y despliegue gratuito en nube (**Cloudflare Pages + Render Free + Neon**).
 
 ---
 
@@ -127,8 +127,18 @@ pnpm dev
 pnpm dev:local
 ```
 
-- **Aplicación Web (Front-End):** [http://localhost:5173](http://localhost:5173)
+- **Aplicación Web (Front-End):** [http://localhost:5173](http://localhost:5173) (vitrina retro en `/kit-ui`)
 - **Servidor API (Back-End — Salud):** [http://localhost:3000/api/salud](http://localhost:3000/api/salud)
+- **Documentación interactiva Swagger:** [http://localhost:3000/docs](http://localhost:3000/docs) (exportada en [`docs/swagger-openapi.json`](docs/swagger-openapi.json))
+
+#### Modo opcional con API Gateway Kong DB-less (`X-API +2`)
+1. Define `KONG_CLAVE_API=<tu_clave_local>` en `.env` (raíz) y en `apps/web/.env` configura `VITE_URL_API=http://localhost:8000` junto con `VITE_CLAVE_GATEWAY=<tu_clave_local>`.
+2. Levanta Kong y verifica `401`, CORS `OPTIONS`, proxy `200` y `429 Too Many Requests` en `/api/exploracion`:
+   ```bash
+   docker compose up -d postgres kong
+   node scripts/verificar-gateway.mjs
+   docker compose logs --tail=15 kong
+   ```
 
 ---
 
@@ -327,92 +337,32 @@ No le pidas al agente que lea todo el repositorio a ciegas. En tu primer mensaje
 6. `06-reglas-de-juego.md` — Motor de exploración, combate por turnos, captura, progresión y economía (Fases 6 y 7).
 7. `07-integracion-externa.md` — Adaptador y normalización del catálogo desde Open5e SRD 5.2 (Fase 5b).
 8. `08-seguridad.md` — Cumplimiento y pruebas e2e de los requisitos de seguridad `S-1` a `S-7` (Fase 9).
-9. `09-experiencia-usuario.md` — Auditoría y rediseño UX retro pantalla por pantalla, bestiario canónico y motor táctico de 52 efectos (Fase 10, subfases 10a a 10l).
+9. `09-experiencia-usuario.md` — Auditoría y rediseño UX retro pantalla por pantalla, bestiario canónico, dioramas Canvas/WebP y motor táctico (Fase 10).
+10. `10-extras.md` — API Gateway Kong 3.9.5 DB-less con evidencia real `429`/logs (`X-API +2`) y auditoría funcional `8bitcn/ui` (`X-UI +3`) (Fase 11).
+11. `11-pruebas-y-demo.md` — Resultados de 268 pruebas automatizadas, guion de demo de ~10 min y reparto de defensa para los 8 integrantes (Fase 12).
+12. **`INFORME-FINAL.md`** — Índice maestro consolidado de entrega con matriz de cobertura, contrato OpenAPI y galería de los 10 diagramas PNG.
 
 ---
 
-## 9. Estado de avance, partes que aún faltan y flujo final de entrega
+## 9. Estado de entrega (`v1.0.0`) y guía de defensa
 
-### 9.1 Lo que YA está terminado (Fases 0 a 10)
+### 9.1 Todas las fases obligatorias y extras completadas (Fases 0 a 12)
 
 | Fase | Alcance completado | Estado |
 | :---: | :--- | :---: |
 | **Fases 0 a 3** | Cimientos del monorepo, diseño conceptual, sistema de diseño `8bitcn/ui` y todas las pantallas del cliente. | ✅ Completada |
 | **Fases 4 a 7** | Back-End en NestJS + JWT, modelo de datos en PostgreSQL/Prisma, importación Open5e, exploración ponderada, combate por turnos, captura, equipo/almacén, tienda, inventario, curación e historial. | ✅ Completada |
 | **Fases 8 y 9** | Integración completa Front-End ↔ API REST y suite de seguridad `S-1` a `S-7` en verde. | ✅ Completada |
-| **Fase 10 (10a–10l)** | Pulido UX retro integral pantalla por pantalla, audio Web Audio API, bestiario canónico de 30 criaturas, jerarquías `J-1` a `J-4` y combate táctico elemental con 52 efectos mecánicos únicos y vista responsive. | ✅ Completada |
+| **Fase 10** | Pulido UX retro integral pantalla por pantalla, audio Web Audio API, bestiario canónico de 30 criaturas, combate táctico con 52 efectos, pipeline WebP completo (30 criaturas, 9 zonas, 6 arenas, 4 objetos), dioramas animados y despliegue gratuito en nube (`Cloudflare Pages + Render Free + Neon`). | ✅ Completada |
+| **Fase 11 (`+5 pts`)** | **11a (`X-API +2`):** Kong 3.9.5 DB-less en Docker (`cors`, `key-auth`, `rate-limiting` `429` y logs) con `kong/kong.yml.plantilla` sin secretos. **11b (`X-UI +3`):** Auditoría verificada de los 17 componentes `8bitcn/ui` en 15 pantallas + vitrina `/kit-ui`. | ✅ Completada |
+| **Fase 12 (`FIN`)** | Informe consolidado ([`INFORME-FINAL.md`](docs/informe/INFORME-FINAL.md)), 10 diagramas PNG ([`docs/diagramas/`](docs/diagramas/)), OpenAPI exportado ([`docs/swagger-openapi.json`](docs/swagger-openapi.json)), guion de demo y defensa para 8 integrantes ([`11-pruebas-y-demo.md`](docs/informe/11-pruebas-y-demo.md)), cierre `desarrollo → main` y tag `version-1.0.0`. | ✅ Completada |
+| **Fase 13 (Opcional)** | Presencia WebSockets sin puntaje extra (explícitamente opcional en el enunciado `A-7`). | Descartada |
 
 ---
 
-### 9.2 Las partes que AÚN FALTAN por realizar (Trabajo en equipo)
+### 9.2 Guion de demostración y defensa en equipo (8 integrantes)
 
-Aquí es donde entra el trabajo coordinado del grupo para cerrar el proyecto al 100% con dirección de arte, los puntos extra y la defensa final:
-
-#### Pendiente 1 — Dirección de Arte, Prompt Maestro y Generación de Assets Visuales (`apps/web/public/assets/`)
-
-Actualmente el juego utiliza *placeholders* SVG automáticos (`placeholder-criatura.svg`, `placeholder-zona.svg`, `placeholder-objeto.svg`) mientras se generan los artes definitivos. El sistema en [`apps/web/src/lib/assets.ts`](apps/web/src/lib/assets.ts) ya está programado para cargar automáticamente las imágenes `.webp` apenas se coloquen en sus carpetas (ver especificaciones en [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md)).
-
-- **Qué falta definir y producir en equipo:**
-  1. **Usar los Prompts Maestros de [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md):** Todos los prompts ya están listos y bloqueados estéticamente en ese archivo para que nadie mezcle estilos distintos.
-  2. **Sprites de las 30 Criaturas MIRANDO A LA IZQUIERDA (`apps/web/public/assets/criaturas/<slug>.webp`, 512×512 px, fondo transparente):** **Obligatorio generarlas mirando hacia la izquierda (`facing LEFT`)**, porque en combate el enemigo mira a la izquierda y la criatura aliada se invierte sola con CSS (`scale-x-[-1]`) para mirar a la derecha.
-  3. **Paisajes de las 6 Zonas (`apps/web/public/assets/zonas/<slug>.webp`) + sus 6 Zonas de Combate (`apps/web/public/assets/battlegrounds/<slug>.webp`, 800×450 px, 16:9):** En [`apps/web/public/assets/README.md`](apps/web/public/assets/README.md) están los prompts individuales listos para copiar y pegar de cada una de las 6 zonas y sus 6 arenas de combate.
-  4. **Iconos de Objetos del Bazar (`apps/web/public/assets/objetos/<slug>.webp`, 256×256 px):** Artes retro para los talismanes de captura y las pociones de curación.
-
-#### Pendiente 2 — Fase 11: Extras de Puntos (+5 puntos sobre la nota)
-
-Se divide en dos sub-ramas independientes que se abren desde `desarrollo` y hacen PR hacia `desarrollo`:
-
-1. **Subfase 11a — API Gateway con Kong DB-less (+2 puntos, requisito `X-API`):**
-   - **Rama:** `configuracion/fase-11a-api-gateway`
-   - **Qué hay que hacer:**
-     - Agregar el servicio **Kong en modo DB-less** (sin base de datos adicional, usando configuración declarativa versionada `kong.yml`) dentro de `docker-compose.yml`, ubicándolo delante de `apps/api`.
-     - Configurar los plugins `key-auth` y `rate-limiting` sobre las rutas de exploración (`/api/exploracion`) y habilitar el registro de logs/métricas.
-     - Apuntar el Front-End al puerto del Gateway mediante la variable `VITE_URL_API`.
-     - Generar la evidencia: realizar peticiones repetidas a `/api/exploracion` a través del Gateway hasta recibir el código HTTP `429 Too Many Requests` y capturar las cabeceras de límite de tasa (`X-RateLimit-*`) y los logs del contenedor de Kong.
-     - Crear el diagrama `docs/diagramas/arquitectura-con-gateway.mmd`.
-     - Registrar la versión y documentación oficial de Kong en `docs/decisiones.md` y redactar el apartado en **`docs/informe/10-extras.md`**.
-
-2. **Subfase 11b — Auditoría Integral de UI Especializada `8bitcn/ui` (+3 puntos, requisito `X-UI`):**
-   - **Rama:** `funcionalidad/fase-11b-auditoria-ui`
-   - **Qué hay que hacer:**
-     - Realizar y documentar la auditoría funcional y visual de todos los componentes de `8bitcn/ui` integrados en la aplicación (`HealthBar`, `EnemyHealthDisplay`, `XpBar`, `Card`, `Badge`, `Dialog`, `AlertDialog`, `Tabs`, `Table`, `Button`, `Select`, `Toast`, etc.).
-     - Verificar consistencia cromática, contraste, comportamiento responsive en móvil y escritorio y ausencia de regresiones.
-     - Elaborar la matriz de verificación de componentes y capturas de evidencia para la demostración en **`docs/informe/10-extras.md`**.
-
-#### Pendiente 3 — Fase 12: Entrega Final, Informe Consolidado y Defensa (`FIN`)
-
-- **Rama:** `documentacion/fase-12-entrega-final`
-- **Qué hay que hacer:**
-  1. **Consolidación del Informe Técnico:** Unificar todas las secciones de `docs/informe/` (`01` a `11`) en el documento académico final revisando coherencia entre arquitectura, modelo ER, contrato REST, fórmulas matemáticas, seguridad, experiencia de usuario y extras.
-  2. **Exportación de Diagramas Mermaid:** Exportar todos los archivos `.mmd` de `docs/diagramas/` a imágenes `.png` de alta resolución para incluirlos en el documento de entrega:
-     ```bash
-     npx -p @mermaid-js/mermaid-cli mmdc -i docs/diagramas/modelo-datos.mmd -o docs/diagramas/modelo-datos.png
-     ```
-  3. **Exportación de Especificación Swagger / OpenAPI:** Generar y versionar el archivo de especificación OpenAPI de los endpoints de NestJS.
-  4. **Guion de Demostración (~10 minutos) en `docs/informe/11-pruebas-y-demo.md`:** Documentar el recorrido paso a paso en vivo con datos seed (registro/ingreso, creación de personaje, hub, exploración, combate táctico elemental, captura, gestión de equipo/almacén, compra en bazar, curación en santuario, catálogo/historial y demostración del rate-limiting 429 en el API Gateway).
-  5. **Distribución de Módulos y Ensayo de Defensa para los 8 Integrantes:**
-     Cada integrante del grupo debe conocer el flujo completo del proyecto y ser responsable de defender con solvencia su módulo asignado (explicando tanto la vista en React como el controlador/servicio en NestJS, el modelo en Prisma y las pruebas):
-     - **Integrante 1:** Arquitectura general, monorepo, Docker, base de datos Prisma/PostgreSQL y seguridad JWT (`M-USR`, `S-1`..`S-7`).
-     - **Integrante 2:** Creación de personaje, mundo de Aethelgard, viaje entre zonas y requisitos de progreso (`M-PJ`, `M-MUN`, `M-PRO`).
-     - **Integrante 3:** Integración y normalización de Open5e SRD 5.2 y Bestiario Canónico de 30 criaturas (`M-CRI`, `Anexo A`).
-     - **Integrante 4:** Motor de exploración, selector ponderado con generador inyectable y creación de encuentros (`M-EXP`, `M-ENC`).
-     - **Integrante 5:** Motor de combate por turnos, fórmulas de daño elemental y los 52 efectos tácticos (`M-COM`).
-     - **Integrante 6:** Mecánica y fórmula matemática de captura con talismanes y gestión de Equipo Activo (máx. 6) y Almacén (`M-CAP`, `M-EQU`).
-     - **Integrante 7:** Economía del jugador, Bazar (Tienda), Inventario de consumibles y Santuario de Curación (`M-INV`, `M-CUR`).
-     - **Integrante 8:** Historial de encuentros, Catálogo de especies descubiertas, sistema visual `8bitcn/ui` y API Gateway Kong (`M-HIS`, `X-UI`, `X-API`).
-
-#### Pendiente 4 — Fase 13 (Opcional): Presencia Multijugador con WebSockets
-
-- **Rama:** `funcionalidad/fase-13-presencia-multijugador`
-- *Nota:* Esta fase es completamente opcional (el enunciado indica que no se requiere tiempo real y solo se aborda si las Fases 11 y 12 ya están 100% cerradas y sobra tiempo). Consiste en un `ZonaGateway` con `@nestjs/websockets` autenticado por JWT para mostrar en memoria qué otros jugadores están conectados en la misma zona.
-
----
-
-### 9.3 El flujo final de cierre hacia `main`
-
-1. Todos los PRs de assets, Fase 11 y Fase 12 se revisan e integran con **merge commit** hacia la rama **`desarrollo`**.
-2. Se verifica en `desarrollo` que todas las pruebas unitarias, pruebas e2e y el build de producción estén en verde (`pnpm --filter api test`, `pnpm --filter api test:e2e`, `pnpm --filter web test`, `pnpm --filter web build`).
-3. **Solo cuando todo el equipo haya terminado y verificado `desarrollo`**, se abre el **único Pull Request final de cierre** desde `desarrollo` hacia `main` (`base: main` ← `compare: desarrollo`), se integra con **merge commit** y se etiqueta la entrega oficial con el tag `version-1.0.0`.
+El guion paso a paso de ~10 minutos (con arranque local precompilado integrado a Kong + respaldo en nube), el reparto de módulos para los 8 integrantes y el banco de preguntas técnicas se encuentran en **[`docs/informe/11-pruebas-y-demo.md`](docs/informe/11-pruebas-y-demo.md)**.
 
 ---
 

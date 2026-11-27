@@ -99,11 +99,11 @@ export function LayoutPrincipal() {
       </header>
 
       {combateActivo && (
-        <div className="border-b-4 border-black bg-red-950/95 px-2.5 py-1.5 sm:px-6 shadow-[0_3px_0_0_#000]">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 w-full">
-            <div className="flex items-center gap-1.5 min-w-0">
+        <div className="border-b-4 border-black bg-red-950/95 px-3 py-2 sm:px-6 shadow-[0_3px_0_0_#000]">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 w-full">
+            <div className="flex items-center justify-center sm:justify-start gap-1.5 min-w-0">
               <Swords className="size-3.5 text-amber-300 shrink-0 animate-pulse" aria-hidden="true" />
-              <span className="retro text-[7.5px] sm:text-[9px] text-amber-200 truncate">
+              <span className="retro text-[7.5px] sm:text-[9px] text-amber-200 leading-snug break-words text-center sm:text-left">
                 COMBATE EN PAUSA · ARENA ACTIVA
               </span>
             </div>
@@ -111,7 +111,7 @@ export function LayoutPrincipal() {
               to="/combate"
               state={{ encuentroActivoConfirmado: true }}
               onClick={() => reproducirSonido("confirmar", 0.35)}
-              className="retro text-[7.5px] sm:text-[9px] px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none whitespace-nowrap shrink-0 transition-all"
+              className="retro text-[7.5px] sm:text-[9px] w-full sm:w-auto inline-flex items-center justify-center text-center px-3 py-1.5 sm:py-1 bg-red-600 hover:bg-red-500 text-white border-2 border-black shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none whitespace-nowrap shrink-0 transition-all"
             >
               VOLVER AL COMBATE
             </Link>

@@ -55,8 +55,10 @@ test("Retorno directo al combate desde vistas informativas (LayoutPrincipal y Pa
   assert.ok(
     layoutCodigo.includes("combateActivo") &&
       layoutCodigo.includes("COMBATE EN PAUSA") &&
-      layoutCodigo.includes("VOLVER AL COMBATE"),
-    "LayoutPrincipal debe mostrar una franja retro para regresar directo a /combate mientras está en pausa",
+      layoutCodigo.includes("VOLVER AL COMBATE") &&
+      layoutCodigo.includes("flex-col sm:flex-row") &&
+      !layoutCodigo.includes("truncate"),
+    "LayoutPrincipal debe mostrar una franja retro responsive sin truncamiento en móvil para regresar directo a /combate",
   );
   assert.strictEqual(
     layoutCodigo.includes("flex-wrap"),
@@ -114,5 +116,10 @@ test("Prevención de bucle en 0 HP y sincronización de estado en PantallaExplor
     combateCodigo.includes('navigate("/inventario")') &&
       combateCodigo.includes("Ir al Mapa (Viajar a Santuario)"),
     "Tras derrota en zona silvestre, PantallaCombate debe dirigir a Mapa/Santuario o Bolsa en lugar de /curacion sin servicio",
+  );
+  assert.strictEqual(
+    combateCodigo.includes("max-w-5xl"),
+    false,
+    "PantallaCombate debe ocupar todo el ancho del viewport en escritorio sin márgenes laterales vacíos",
   );
 });

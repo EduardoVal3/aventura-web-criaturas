@@ -983,14 +983,14 @@ export function PantallaCombate() {
   const calibracionArena = obtenerCalibracionArena(zonaCombateId);
 
   return (
-    <div className="relative h-dvh w-full max-w-5xl mx-auto flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16] border-x-0 md:border-x-4 border-black shadow-[6px_6px_0_0_#000]">
+    <div className="relative h-dvh w-full flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
         zoneId={zonaCombateId}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Indicador Ornato de Turno y Botón de Pausa */}
-        <div className="flex items-center justify-between px-3 pt-zona-segura pb-1 sm:pt-2.5 z-20">
+        <div className="flex items-center justify-between px-3 md:px-6 pt-zona-segura pb-1 sm:pt-2.5 z-20">
           <div className="w-8" />
           {/* Pastilla Central Ornada de Turno Retro */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#0b1424]/95 border-2 border-[#d4af37] shadow-[2px_2px_0_0_#000]">
@@ -1123,7 +1123,7 @@ export function PantallaCombate() {
               top: `${calibracionArena.cartaRival.top}%`,
               left: `${calibracionArena.cartaRival.left}%`,
             }}
-            className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+            className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] lg:w-[270px] space-y-1 sm:space-y-1.5"
           >
               <div className="flex items-start justify-between gap-1.5">
                 <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -1208,7 +1208,7 @@ export function PantallaCombate() {
                 </div>
               )}
               <div
-                className={`relative z-10 size-20 sm:size-28 flex items-center justify-center transition-transform ${animacionRival || "anim-respiracion-combate"}`}
+                className={`relative z-10 size-20 sm:size-28 lg:size-32 flex items-center justify-center transition-transform ${animacionRival || "anim-respiracion-combate"}`}
               >
                 <img
                   src={obtenerImagenCriatura(rival.slug)}
@@ -1248,7 +1248,7 @@ export function PantallaCombate() {
                 </span>
               )}
               <div
-                className={`relative z-10 size-24 sm:size-36 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
+                className={`relative z-10 size-24 sm:size-36 lg:size-40 flex items-center justify-center transition-transform ${animacionAliado || "anim-respiracion-combate"}`}
               >
                 {auraAliado && (
                   <div
@@ -1277,7 +1277,7 @@ export function PantallaCombate() {
                 bottom: `${calibracionArena.cartaAliado.bottom}%`,
                 right: `${calibracionArena.cartaAliado.right}%`,
               }}
-              className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] space-y-1 sm:space-y-1.5"
+              className="absolute z-20 bg-[#0b1322]/90 backdrop-blur-[2px] border-2 border-black p-1.5 sm:p-2 shadow-[3px_3px_0_0_#000] w-[176px] sm:w-[235px] lg:w-[270px] space-y-1 sm:space-y-1.5"
             >
               <div className="flex items-start justify-between gap-1.5">
                 <span className="font-bold text-[8px] sm:text-[9px] leading-tight break-words text-foreground retro flex-1 min-w-0">
@@ -1373,7 +1373,7 @@ export function PantallaCombate() {
       </BattlefieldBackground>
 
       {/* 2. BITÁCORA DE ENCUENTRO: Ticker Colapsado de 1 Sola Línea */}
-      <div className="px-2 py-1 sm:py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black shrink-0">
+      <div className="px-2 md:px-6 py-1 sm:py-1.5 z-20 bg-[#090d16]/95 border-y-2 border-black shrink-0">
         <button
           type="button"
           onClick={() => {
@@ -1459,7 +1459,7 @@ export function PantallaCombate() {
       )}
 
       {/* 4. CONSOLA DE ACCIONES EN LA ZONA DEL PULGAR (In-Place Contextual Deck) */}
-      <div className="px-2.5 pt-1.5 pb-zona-segura sm:px-3 sm:pt-2 bg-[#090d16] z-20 shrink-0">
+      <div className="px-2.5 pt-1.5 pb-zona-segura sm:px-3 md:px-6 sm:pt-2 bg-[#090d16] z-20 shrink-0">
         {combateFinalizado ? (
           /* Estado de Resolución Posterior al Combate */
           <div className="space-y-2 sm:space-y-2.5 py-0.5 sm:py-1">

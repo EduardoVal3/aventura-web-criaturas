@@ -52,13 +52,11 @@ interface BitSelectValueProps
   asChild?: boolean;
 }
 
-function SelectValue({ ...props }: BitSelectValueProps) {
-  const { font } = props;
-
+function SelectValue({ className, font, ...props }: BitSelectValueProps) {
   return (
     <ShadcnSelectValue
-      className={cn(font !== "normal" && "retro")}
       {...props}
+      className={cn(font !== "normal" && "retro", className)}
     />
   );
 }
@@ -69,9 +67,7 @@ interface BitSelectTriggerProps
   asChild?: boolean;
 }
 
-function SelectTrigger({ children, ...props }: BitSelectTriggerProps) {
-  const { className, font } = props;
-
+function SelectTrigger({ className, font, children, ...props }: BitSelectTriggerProps) {
   return (
     <div
       className={cn(
@@ -103,19 +99,18 @@ export interface BitSelectContentProps
 
 function SelectContent({
   className,
+  font,
   children,
   ...props
 }: BitSelectContentProps) {
-  const { font } = props;
-
   return (
     <ShadcnSelectContent
+      {...props}
       className={cn(
         font !== "normal" && "retro",
         className,
         "relative rounded-none border-4 border-foreground dark:border-ring -ml-1 mt-1"
       )}
-      {...props}
     >
       {children}
     </ShadcnSelectContent>

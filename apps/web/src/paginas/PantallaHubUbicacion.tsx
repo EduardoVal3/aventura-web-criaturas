@@ -697,7 +697,7 @@ export function PantallaHubUbicacion() {
           showCloseButton={false}
           className="w-[calc(100vw-2rem)] sm:max-w-md max-h-[85dvh] overflow-hidden rounded-none border-4 border-black shadow-[8px_8px_0_0_#000] bg-card p-0 flex flex-col text-slate-100"
         >
-          {nodoSeleccionado && (
+          {nodoSeleccionado ? (
             <div className="flex flex-col max-h-[85dvh] overflow-hidden min-w-0">
               {/* Cabecera fija del Modal con Insignias, Título y Botón Cerrar */}
               <DialogHeader className="p-3 bg-bastion border-b-2 border-black flex flex-row items-start justify-between gap-3 shrink-0 text-left">
@@ -976,6 +976,11 @@ export function PantallaHubUbicacion() {
                 ) : null}
               </div>
             </div>
+          ) : (
+            <DialogHeader className="sr-only">
+              <DialogTitle>Inspección de zona</DialogTitle>
+              <DialogDescription>Detalles e inspección de viaje.</DialogDescription>
+            </DialogHeader>
           )}
         </DialogContent>
       </Dialog>

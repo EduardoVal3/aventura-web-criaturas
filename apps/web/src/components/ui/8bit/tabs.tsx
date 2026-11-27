@@ -34,9 +34,7 @@ export interface BitTabsProps
   asChild?: boolean;
 }
 
-function Tabs({ className, ...props }: BitTabsProps) {
-  const { font } = props;
-
+function Tabs({ className, font, ...props }: BitTabsProps) {
   return (
     <ShadcnTabs
       {...props}

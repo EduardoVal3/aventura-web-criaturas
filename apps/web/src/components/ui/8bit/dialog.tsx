@@ -31,12 +31,11 @@ export interface BitDialogProps
   extends React.ComponentProps<"div">,
     VariantProps<typeof dialogContentVariants> {}
 
-function DialogTitle({ ...props }: BitDialogProps) {
-  const { className, font } = props;
+function DialogTitle({ className, font, ...props }: BitDialogProps) {
   return (
     <ShadcnDialogTitle
-      className={cn(font !== "normal" && "retro", className)}
       {...props}
+      className={cn(font !== "normal" && "retro", className)}
     />
   );
 }

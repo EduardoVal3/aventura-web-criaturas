@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/8bit/button";
@@ -123,6 +123,11 @@ type EstadoMenuConsola = "ROOT" | "ATTACK" | "ITEMS" | "SWAP" | "CAPTURE";
 
 export function PantallaCombate() {
   const navigate = useNavigate();
+  const ubicacionRuta = useLocation();
+  const encuentroActivoConfirmado = Boolean(
+    (ubicacionRuta.state as { encuentroActivoConfirmado?: boolean } | null)
+      ?.encuentroActivoConfirmado,
+  );
 
   // Estados nucleares del encuentro
   const [encuentro, setEncuentro] = useState<EncuentroActivo | null>(null);
@@ -191,6 +196,16 @@ export function PantallaCombate() {
 
     async function sincronizar() {
       try {
+        if (!encuentroActivoConfirmado) {
+          const estadoUbicacion = await api.obtenerUbicacionActual();
+          if (cancelado) return;
+          if (estadoUbicacion.tieneEncuentroActivo === false) {
+            toast.info("No tienes ningún combate pendiente.");
+            navigate("/exploracion", { replace: true });
+            return;
+          }
+        }
+
         const datos = await api.obtenerEncuentroActivo();
         if (cancelado) return;
         setEncuentro(datos);
@@ -261,7 +276,7 @@ export function PantallaCombate() {
     return () => {
       cancelado = true;
     };
-  }, [navigate]);
+  }, [navigate, encuentroActivoConfirmado]);
 
   // Cerrojo síncrono para hardening estricto contra doble clic rápido
   const cerrojoAccion = useRef(false);

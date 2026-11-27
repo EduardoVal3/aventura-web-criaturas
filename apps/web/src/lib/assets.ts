@@ -125,20 +125,65 @@ export function manejarErrorImagen(
   }
 }
 
+let contextoAudioCompartido: AudioContext | null = null;
+let gestoUsuarioDetectado = false;
+
+function obtenerConstructorAudioContext(): typeof AudioContext | null {
+  if (typeof window === "undefined") return null;
+  return (
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ||
+    null
+  );
+}
+
+/**
+ * Comprueba si el navegador ya recibió un gesto del usuario para habilitar Web Audio
+ * sin disparar advertencias de autoplay en consola.
+ */
+export function puedeIniciarAudioWeb(): boolean {
+  if (typeof window === "undefined") return false;
+  if (gestoUsuarioDetectado) return true;
+  const activacion = (
+    typeof navigator !== "undefined"
+      ? (navigator as Navigator & { userActivation?: { hasBeenActive?: boolean } }).userActivation
+      : undefined
+  );
+  if (activacion?.hasBeenActive) {
+    gestoUsuarioDetectado = true;
+    return true;
+  }
+  return false;
+}
+
+function obtenerContextoAudioSeguro(): AudioContext | null {
+  if (!puedeIniciarAudioWeb()) return null;
+  const VentanaAudio = obtenerConstructorAudioContext();
+  if (!VentanaAudio) return null;
+  if (!contextoAudioCompartido || contextoAudioCompartido.state === "closed") {
+    contextoAudioCompartido = new VentanaAudio();
+  }
+  if (contextoAudioCompartido.state === "suspended") {
+    void contextoAudioCompartido.resume().catch(() => {});
+  }
+  return contextoAudioCompartido;
+}
+
 /**
  * Sintetizador nativo Web Audio de respaldo para efectos de sonido 8-bit.
+ * Reutiliza un único AudioContext tras interacción del usuario para evitar
+ * advertencias de autoplay y el límite de 6 contextos de hardware del navegador.
  */
 function sintetizarTonoRetro(nombre: string, volumen: number): void {
   try {
-    const ventanaAudio =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    if (!ventanaAudio) return;
-    const ctx = new ventanaAudio();
+    const ctx = obtenerContextoAudioSeguro();
+    if (!ctx || ctx.state === "suspended") return;
     const osc = ctx.createOscillator();
-    osc.onended = () => void ctx.close();
     const ganancia = ctx.createGain();
+    osc.onended = () => {
+      osc.disconnect();
+      ganancia.disconnect();
+    };
     osc.type = "square";
     ganancia.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);
 
@@ -255,7 +300,7 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       osc.start();
       osc.stop(ctx.currentTime + 0.42);
     } else if (nombre === "dot") {
-      // simplificacion: ruido blanco breve de quemadura/veneno cerrando el contexto en onended
+      // simplificacion: ruido blanco breve de quemadura/veneno desconectando nodos al finalizar en el contexto compartido
       const tamanoBuffer = Math.floor(ctx.sampleRate * 0.18);
       const buffer = ctx.createBuffer(1, tamanoBuffer, ctx.sampleRate);
       const salida = buffer.getChannelData(0);
@@ -264,8 +309,11 @@ function sintetizarTonoRetro(nombre: string, volumen: number): void {
       }
       const fuenteRuido = ctx.createBufferSource();
       fuenteRuido.buffer = buffer;
-      fuenteRuido.onended = () => void ctx.close();
       const gananciaRuido = ctx.createGain();
+      fuenteRuido.onended = () => {
+        fuenteRuido.disconnect();
+        gananciaRuido.disconnect();
+      };
       gananciaRuido.gain.setValueAtTime(Math.min(0.2, volumen * 0.2), ctx.currentTime);
       gananciaRuido.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
       fuenteRuido.connect(gananciaRuido);
@@ -354,6 +402,7 @@ export function alternarSonidoSilenciado(): boolean {
  */
 export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
   try {
+    registrarListenerDesbloqueoAudio();
     if (estaSonidoSilenciado()) return;
     sintetizarTonoRetro(nombre, volumen);
   } catch {
@@ -363,7 +412,6 @@ export function reproducirSonido(nombre: string, volumen: number = 0.5): void {
 
 export type ModoMusicaAmbiente = "hub" | "combate";
 
-let contextoAmbiente: AudioContext | null = null;
 let temporizadorAmbiente: number | null = null;
 let modoAmbienteDeseado: ModoMusicaAmbiente | null = null;
 let pasoAmbiente = 0;
@@ -382,28 +430,23 @@ function pausarIntervaloAmbiente(): void {
 function tocarNotaSuaveAmbiente(modo: ModoMusicaAmbiente): void {
   if (estaSonidoSilenciado()) return;
   try {
-    const VentanaAudio =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    if (!VentanaAudio) return;
+    const ctx = obtenerContextoAudioSeguro();
+    if (!ctx || ctx.state === "suspended") return;
 
-    if (!contextoAmbiente || contextoAmbiente.state === "closed") {
-      contextoAmbiente = new VentanaAudio();
-    }
-    if (contextoAmbiente.state === "suspended") {
-      void contextoAmbiente.resume().catch(() => {});
-      if (contextoAmbiente.state === "suspended") return;
-    }
-
-    const ahora = contextoAmbiente.currentTime;
+    const ahora = ctx.currentTime;
     const notas = modo === "combate" ? NOTAS_AMBIENTE_COMBATE : NOTAS_AMBIENTE_HUB;
     const frecuencia = notas[pasoAmbiente % notas.length];
     pasoAmbiente += 1;
 
-    const osc = contextoAmbiente.createOscillator();
-    const filtro = contextoAmbiente.createBiquadFilter();
-    const ganancia = contextoAmbiente.createGain();
+    const osc = ctx.createOscillator();
+    const filtro = ctx.createBiquadFilter();
+    const ganancia = ctx.createGain();
+
+    osc.onended = () => {
+      osc.disconnect();
+      filtro.disconnect();
+      ganancia.disconnect();
+    };
 
     osc.type = modo === "combate" ? "triangle" : "sine";
     osc.frequency.setValueAtTime(frecuencia, ahora);
@@ -420,7 +463,7 @@ function tocarNotaSuaveAmbiente(modo: ModoMusicaAmbiente): void {
 
     osc.connect(filtro);
     filtro.connect(ganancia);
-    ganancia.connect(contextoAmbiente.destination);
+    ganancia.connect(ctx.destination);
 
     osc.start(ahora);
     osc.stop(ahora + duracion + 0.02);
@@ -431,7 +474,7 @@ function tocarNotaSuaveAmbiente(modo: ModoMusicaAmbiente): void {
 
 function arrancarLoopAmbiente(modo: ModoMusicaAmbiente): void {
   pausarIntervaloAmbiente();
-  if (typeof window === "undefined" || estaSonidoSilenciado()) return;
+  if (typeof window === "undefined" || estaSonidoSilenciado() || !puedeIniciarAudioWeb()) return;
 
   const intervaloMs = modo === "combate" ? 440 : 780;
   tocarNotaSuaveAmbiente(modo);
@@ -440,30 +483,40 @@ function arrancarLoopAmbiente(modo: ModoMusicaAmbiente): void {
   }, intervaloMs);
 }
 
+function registrarListenerDesbloqueoAudio(): void {
+  if (typeof window === "undefined" || listenerDesbloqueoRegistrado) return;
+  listenerDesbloqueoRegistrado = true;
+  const desbloquear = () => {
+    gestoUsuarioDetectado = true;
+    const ctx = obtenerContextoAudioSeguro();
+    if (ctx && ctx.state === "suspended") {
+      void ctx.resume().then(() => {
+        if (modoAmbienteDeseado && !estaSonidoSilenciado() && temporizadorAmbiente === null) {
+          arrancarLoopAmbiente(modoAmbienteDeseado);
+        }
+      }).catch(() => {});
+      return;
+    }
+    if (modoAmbienteDeseado && !estaSonidoSilenciado() && temporizadorAmbiente === null) {
+      arrancarLoopAmbiente(modoAmbienteDeseado);
+    }
+  };
+  window.addEventListener("pointerdown", desbloquear, { passive: true });
+  window.addEventListener("keydown", desbloquear, { passive: true });
+}
+
 /**
- * Inicia un acompañamiento ambiental suave (modo "hub" o "combate") respetando el estado de silencio.
+ * Inicia un acompañamiento ambiental suave (modo "hub" o "combate") respetando el estado de silencio
+ * y esperando la primera interacción del usuario para evitar advertencias de autoplay en consola.
  */
 export function iniciarMusicaAmbiente(modo: ModoMusicaAmbiente): void {
   if (typeof window === "undefined") return;
   modoAmbienteDeseado = modo;
   pasoAmbiente = 0;
 
-  if (!listenerDesbloqueoRegistrado) {
-    listenerDesbloqueoRegistrado = true;
-    const desbloquear = () => {
-      if (contextoAmbiente && contextoAmbiente.state === "suspended") {
-        void contextoAmbiente.resume().then(() => {
-          if (modoAmbienteDeseado && !estaSonidoSilenciado()) {
-            tocarNotaSuaveAmbiente(modoAmbienteDeseado);
-          }
-        }).catch(() => {});
-      }
-    };
-    window.addEventListener("pointerdown", desbloquear, { passive: true });
-    window.addEventListener("keydown", desbloquear, { passive: true });
-  }
+  registrarListenerDesbloqueoAudio();
 
-  if (!estaSonidoSilenciado()) {
+  if (!estaSonidoSilenciado() && puedeIniciarAudioWeb()) {
     arrancarLoopAmbiente(modo);
   }
 }

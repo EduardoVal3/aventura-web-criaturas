@@ -30,6 +30,7 @@ import {
   type RespuestaInventario,
   type RespuestaLogin,
   type RespuestaLogout,
+  type RespuestaPerfil,
   type RespuestaRegistro,
   type RespuestaRestaurar,
   type RespuestaSalud,
@@ -94,11 +95,34 @@ export function resolverErrorRespuestaHttp(
   };
 }
 
+const RUTAS_AUTENTICACION_PUBLICA = new Set([
+  "/usuarios/login",
+  "/usuarios/ingreso",
+  "/usuarios/registro",
+  "/autenticacion/login",
+  "/autenticacion/ingreso",
+  "/autenticacion/registro",
+]);
+
+export function esRutaAutenticacionPublica(ruta: string): boolean {
+  const rutaLimpia = ruta.split("?")[0].replace(/\/+$/, "");
+  return RUTAS_AUTENTICACION_PUBLICA.has(rutaLimpia);
+}
+
+export function debeNotificarSesionExpirada(
+  estadoHttp: number,
+  ruta: string,
+  teniaToken: boolean,
+): boolean {
+  return estadoHttp === 401 && teniaToken && !esRutaAutenticacionPublica(ruta);
+}
+
 async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Promise<T> {
   const entorno = import.meta.env;
   const urlBase = normalizarUrlBaseApi(entorno?.VITE_URL_API);
   const url = `${urlBase}/api${ruta}`;
-  const encabezados = construirEncabezadosApi(tokenActual, entorno?.VITE_CLAVE_GATEWAY);
+  const tokenEnviado = tokenActual;
+  const encabezados = construirEncabezadosApi(tokenEnviado, entorno?.VITE_CLAVE_GATEWAY);
 
   let respuesta: Response;
   try {
@@ -122,7 +146,10 @@ async function solicitar<T>(metodo: string, ruta: string, cuerpo?: unknown): Pro
 
     const { codigo, mensaje } = resolverErrorRespuestaHttp(respuesta.status, datosError);
 
-    if (respuesta.status === 401 && typeof window !== "undefined") {
+    if (
+      debeNotificarSesionExpirada(respuesta.status, ruta, Boolean(tokenEnviado)) &&
+      typeof window !== "undefined"
+    ) {
       window.dispatchEvent(new CustomEvent("aethelgard:no-autorizado"));
     }
 
@@ -150,7 +177,13 @@ export const apiHttp = {
   },
 
   cerrarSesion(): Promise<RespuestaLogout> {
-    return solicitar<RespuestaLogout>("POST", "/usuarios/logout");
+    // simplificacion: autenticación JWT stateless sin lista negra en servidor; se purga el token localmente sin invocar un endpoint /usuarios/logout inexistente. Si se implementa revocación de sesiones en servidor, conectar aquí el POST correspondiente.
+    tokenActual = null;
+    return Promise.resolve({ mensaje: "Sesión cerrada correctamente." });
+  },
+
+  obtenerPerfil(): Promise<RespuestaPerfil> {
+    return solicitar<RespuestaPerfil>("GET", "/usuarios/perfil");
   },
 
   crearPersonaje(peticion: PeticionCrearPersonaje): Promise<RespuestaCrearPersonaje> {

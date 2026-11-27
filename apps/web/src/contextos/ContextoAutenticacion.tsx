@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -56,6 +57,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(null);
   const [personajeActivo, setPersonajeActivo] = useState<PersonajeActivo | null>(null);
   const [cargando, setCargando] = useState<boolean>(() => Boolean(tokenInicial));
+  const omitirBootstrapTokenRef = useRef<string | null>(null);
 
   const actualizarPersonajeActivo = useCallback(async (): Promise<PersonajeActivo | null> => {
     try {
@@ -68,23 +70,28 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const limpiarSesionLocal = useCallback(() => {
+    omitirBootstrapTokenRef.current = null;
+    setToken(null);
+    api.establecerToken(null);
+    setUsuario(null);
+    setPersonajeActivo(null);
+    try {
+      localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
+    } catch {
+      // ignorar fallo
+    }
+  }, []);
+
   const cerrarSesion = useCallback(async (): Promise<void> => {
     try {
       await api.cerrarSesion();
     } catch {
       // simplificacion: si falla en servidor por token inválido, se purga de todos modos en cliente
     } finally {
-      setToken(null);
-      api.establecerToken(null);
-      setUsuario(null);
-      setPersonajeActivo(null);
-      try {
-        localStorage.removeItem(CLAVE_ALMACENAMIENTO_TOKEN);
-      } catch {
-        // ignorar fallo
-      }
+      limpiarSesionLocal();
     }
-  }, []);
+  }, [limpiarSesionLocal]);
 
   useEffect(() => {
     let cancelado = false;
@@ -96,9 +103,40 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
       } catch {
         // ignorar fallo
       }
+
+      if (omitirBootstrapTokenRef.current === token) {
+        omitirBootstrapTokenRef.current = null;
+        setCargando(false);
+        return () => {
+          cancelado = true;
+        };
+      }
+
       api
-        .obtenerPersonajeActivo()
-        .then((personaje) => {
+        .obtenerPerfil()
+        .then(async (perfil) => {
+          if (cancelado) return;
+          const usuarioId = perfil.usuarioId ?? perfil.sub;
+          if (usuarioId) {
+            setUsuario({
+              usuarioId,
+              nombreUsuario: perfil.nombreUsuario ?? "",
+              correo: perfil.correo,
+            });
+          }
+
+          if (typeof perfil.tienePersonaje === "boolean") {
+            if (!perfil.tienePersonaje) {
+              setPersonajeActivo(null);
+              return;
+            }
+            if (perfil.personaje) {
+              setPersonajeActivo(perfil.personaje);
+              return;
+            }
+          }
+
+          const personaje = await api.obtenerPersonajeActivo();
           if (!cancelado) {
             setPersonajeActivo(personaje);
           }
@@ -112,7 +150,7 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
               "estado" in error &&
               (error as { estado: number }).estado === 401
             ) {
-              cerrarSesion();
+              limpiarSesionLocal();
             }
           }
         })
@@ -133,17 +171,17 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
     return () => {
       cancelado = true;
     };
-  }, [token, cerrarSesion]);
+  }, [token, limpiarSesionLocal]);
 
   useEffect(() => {
     const alDesautorizar = () => {
-      cerrarSesion();
+      limpiarSesionLocal();
     };
     window.addEventListener("aethelgard:no-autorizado", alDesautorizar);
     return () => {
       window.removeEventListener("aethelgard:no-autorizado", alDesautorizar);
     };
-  }, [cerrarSesion]);
+  }, [limpiarSesionLocal]);
 
   const iniciarSesion = useCallback(
     async (peticion: PeticionLogin): Promise<RespuestaLogin> => {
@@ -153,8 +191,9 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
       } catch {
         // ignorar fallo
       }
-      setToken(respuesta.tokenAcceso);
+      omitirBootstrapTokenRef.current = respuesta.tokenAcceso;
       api.establecerToken(respuesta.tokenAcceso);
+      setToken(respuesta.tokenAcceso);
       setUsuario({
         usuarioId: respuesta.usuarioId,
         nombreUsuario: respuesta.nombreUsuario,
@@ -178,8 +217,9 @@ export function ProveedorAutenticacion({ children }: { children: ReactNode }) {
       } catch {
         // ignorar fallo
       }
-      setToken(respuesta.tokenAcceso);
+      omitirBootstrapTokenRef.current = respuesta.tokenAcceso;
       api.establecerToken(respuesta.tokenAcceso);
+      setToken(respuesta.tokenAcceso);
       setUsuario({
         usuarioId: respuesta.usuarioId,
         nombreUsuario: respuesta.nombreUsuario,

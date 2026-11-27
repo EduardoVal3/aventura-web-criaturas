@@ -45,7 +45,11 @@ import {
   manejarErrorImagen,
   reproducirSonido,
 } from "@/lib/assets";
-import { obtenerCalibracionArena } from "@/lib/battlegrounds";
+import {
+  obtenerCalibracionArena,
+  proyectarPlataformaEnArena,
+  type DimensionesArenaProyeccion,
+} from "@/lib/battlegrounds";
 import {
   Lock,
   Crown,
@@ -189,6 +193,63 @@ export function PantallaCombate() {
   const [itemsCuracion, setItemsCuracion] = useState<ItemInventario[]>([]);
   const [equipoCriaturas, setEquipoCriaturas] = useState<CriaturaEquipo[]>([]);
   const [talismanSeleccionado, setTalismanSeleccionado] = useState<string>("talisman-basico");
+
+  // Medición reactiva de la arena para proyectar plataformas exactas sobre object-cover (desktop y móvil)
+  const refArenaCombate = useRef<HTMLDivElement | null>(null);
+  const [dimensionesArena, setDimensionesArena] = useState<DimensionesArenaProyeccion | null>(null);
+
+  useEffect(() => {
+    if (cargando || !rival || !aliado) return;
+    let rafId = 0;
+
+    const medir = () => {
+      const elArena = refArenaCombate.current;
+      if (!elArena) return;
+      const elFondo = elArena.closest('[data-testid="battlefield-background"]');
+      const rectArena = elArena.getBoundingClientRect();
+      const rectFondo = elFondo ? elFondo.getBoundingClientRect() : rectArena;
+      if (
+        rectFondo.width <= 0 ||
+        rectFondo.height <= 0 ||
+        rectArena.width <= 0 ||
+        rectArena.height <= 0
+      ) {
+        return;
+      }
+      const siguiente: DimensionesArenaProyeccion = {
+        anchoFondo: Math.round(rectFondo.width),
+        altoFondo: Math.round(rectFondo.height),
+        anchoArena: Math.round(rectArena.width),
+        altoArena: Math.round(rectArena.height),
+        offsetSuperior: Math.round(rectArena.top - rectFondo.top),
+      };
+      setDimensionesArena((prev) =>
+        prev &&
+        prev.anchoFondo === siguiente.anchoFondo &&
+        prev.altoFondo === siguiente.altoFondo &&
+        prev.anchoArena === siguiente.anchoArena &&
+        prev.altoArena === siguiente.altoArena &&
+        prev.offsetSuperior === siguiente.offsetSuperior
+          ? prev
+          : siguiente,
+      );
+    };
+
+    rafId = window.requestAnimationFrame(medir);
+    const observador =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(medir) : null;
+    if (observador && refArenaCombate.current) {
+      observador.observe(refArenaCombate.current);
+      const elFondo = refArenaCombate.current.closest('[data-testid="battlefield-background"]');
+      if (elFondo) observador.observe(elFondo);
+    }
+    window.addEventListener("resize", medir);
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      observador?.disconnect();
+      window.removeEventListener("resize", medir);
+    };
+  }, [cargando, rival, aliado]);
 
   useEffect(() => {
     iniciarMusicaAmbiente("combate");
@@ -990,12 +1051,30 @@ export function PantallaCombate() {
 
   const zonaCombateId = obtenerSlugZonaPorCriatura(rival.slug);
   const calibracionArena = obtenerCalibracionArena(zonaCombateId);
+  const esVistaCompacta = (dimensionesArena?.anchoArena ?? 1024) < 640;
+  const posRival = proyectarPlataformaEnArena(
+    calibracionArena.rival,
+    calibracionArena.foco,
+    dimensionesArena,
+    esVistaCompacta
+      ? { margenX: 46, margenSuperior: 78, margenInferior: 20 }
+      : { margenX: 64, margenSuperior: 112, margenInferior: 24 },
+  );
+  const posAliado = proyectarPlataformaEnArena(
+    calibracionArena.aliado,
+    calibracionArena.foco,
+    dimensionesArena,
+    esVistaCompacta
+      ? { margenX: 52, margenSuperior: 96, margenInferior: 6 }
+      : { margenX: 76, margenSuperior: 130, margenInferior: 8 },
+  );
 
   return (
     <div className="relative h-dvh w-full flex flex-col justify-between overflow-hidden overflow-x-hidden select-none bg-[#090d16]">
       {/* 1. ARENA DINÁMICA CON FONDO DESACOPLADO (Battlefield Background System) */}
       <BattlefieldBackground
         zoneId={zonaCombateId}
+        objectPosition={`${calibracionArena.foco.x}% ${calibracionArena.foco.y}%`}
         className="flex-1 w-full relative min-h-0"
       >
         {/* Cabecera Superior: Afinidad de Cruce (solo móvil), Indicador Ornato de Turno y Botón de Pausa */}
@@ -1093,8 +1172,9 @@ export function PantallaCombate() {
           </div>
         )}
 
-        {/* ARENA DE COMBATE: Posicionamiento milimétrico calibrado por escenario */}
+        {/* ARENA DE COMBATE: Posicionamiento milimétrico calibrado por escenario y proyectado sobre object-cover */}
         <div
+          ref={refArenaCombate}
           className={`flex-1 w-full relative z-10 overflow-hidden transition-transform duration-300 ${sacudidaArena ? "anim-sacudida" : ""} ${zoomArena ? "scale-[1.04]" : "scale-100"}`}
         >
           {/* Proyectil Pixel-Art en vuelo exacto entre plataformas (por encima de cartas HUD) */}
@@ -1105,23 +1185,23 @@ export function PantallaCombate() {
                 {
                   "--origen-x": `${
                     proyectilActivo.direccion === "aliado-a-rival"
-                      ? calibracionArena.aliado.x
-                      : calibracionArena.rival.x
+                      ? posAliado.xPct
+                      : posRival.xPct
                   }%`,
                   "--origen-y": `${
                     proyectilActivo.direccion === "aliado-a-rival"
-                      ? Math.max(20, calibracionArena.aliado.y - 14)
-                      : Math.max(16, calibracionArena.rival.y - 12)
+                      ? Math.max(18, posAliado.yPct - 14)
+                      : Math.max(14, posRival.yPct - 12)
                   }%`,
                   "--destino-x": `${
                     proyectilActivo.direccion === "aliado-a-rival"
-                      ? calibracionArena.rival.x
-                      : calibracionArena.aliado.x
+                      ? posRival.xPct
+                      : posAliado.xPct
                   }%`,
                   "--destino-y": `${
                     proyectilActivo.direccion === "aliado-a-rival"
-                      ? Math.max(16, calibracionArena.rival.y - 12)
-                      : Math.max(20, calibracionArena.aliado.y - 14)
+                      ? Math.max(14, posRival.yPct - 12)
+                      : Math.max(18, posAliado.yPct - 14)
                   }%`,
                 } as React.CSSProperties
               }
@@ -1140,13 +1220,13 @@ export function PantallaCombate() {
               style={{
                 left: `${
                   impactoVisual.objetivo === "rival"
-                    ? calibracionArena.rival.x
-                    : calibracionArena.aliado.x
+                    ? posRival.xPct
+                    : posAliado.xPct
                 }%`,
                 top: `${
                   impactoVisual.objetivo === "rival"
-                    ? Math.max(16, calibracionArena.rival.y - 12)
-                    : Math.max(20, calibracionArena.aliado.y - 14)
+                    ? Math.max(14, posRival.yPct - 12)
+                    : Math.max(18, posAliado.yPct - 14)
                 }%`,
               }}
               className={`absolute z-40 size-12 sm:size-16 border-2 pointer-events-none anim-impacto-golpe ${impactoVisual.claseColor}`}
@@ -1229,8 +1309,12 @@ export function PantallaCombate() {
             {/* Sprite del Rival apoyado exactamente en la plataforma elevada de la zona */}
             <div
               style={{
-                left: `clamp(56px, ${calibracionArena.rival.x}%, calc(100% - 56px))`,
-                top: `clamp(88px, ${calibracionArena.rival.y}%, calc(100% - 24px))`,
+                left: dimensionesArena
+                  ? `${posRival.xPx}px`
+                  : `clamp(56px, ${calibracionArena.rival.x}%, calc(100% - 56px))`,
+                top: dimensionesArena
+                  ? `${posRival.yPx}px`
+                  : `clamp(88px, ${calibracionArena.rival.y}%, calc(100% - 24px))`,
               }}
               className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
             >
@@ -1264,8 +1348,12 @@ export function PantallaCombate() {
           {/* Sprite del Aliado apoyado exactamente en la plataforma en primer plano */}
           <div
             style={{
-              left: `clamp(56px, ${calibracionArena.aliado.x}%, calc(100% - 56px))`,
-              top: `clamp(110px, ${calibracionArena.aliado.y}%, calc(100% - 6px))`,
+              left: dimensionesArena
+                ? `${posAliado.xPx}px`
+                : `clamp(56px, ${calibracionArena.aliado.x}%, calc(100% - 56px))`,
+              top: dimensionesArena
+                ? `${posAliado.yPx}px`
+                : `clamp(110px, ${calibracionArena.aliado.y}%, calc(100% - 6px))`,
             }}
             className="absolute -translate-x-1/2 -translate-y-full flex flex-col items-center z-10 pointer-events-none"
           >

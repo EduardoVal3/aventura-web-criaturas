@@ -16,6 +16,10 @@ export interface BattlefieldBackgroundProps {
    */
   videoUrl?: string | null;
   /**
+   * Punto focal CSS object-position (ej. "53% 56%") para alinear plataformas en desktop y móvil.
+   */
+  objectPosition?: string;
+  /**
    * Clases adicionales para el contenedor raíz.
    */
   className?: string;
@@ -79,6 +83,7 @@ export function BattlefieldBackground({
   zoneId,
   backgroundUrl,
   videoUrl,
+  objectPosition = "50% 50%",
   className = "",
   children,
 }: BattlefieldBackgroundProps) {
@@ -138,6 +143,7 @@ export function BattlefieldBackground({
           loop
           muted
           playsInline
+          style={{ objectPosition }}
           className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
           src={videoUrl}
         />
@@ -146,6 +152,7 @@ export function BattlefieldBackground({
           src={fuenteActual}
           alt="Escenario de combate"
           onError={manejarError}
+          style={{ objectPosition }}
           className={`absolute inset-0 w-full h-full object-cover z-0 pixelated pointer-events-none ${
             pasoFallback > 0 ? "opacity-35" : "opacity-100"
           }`}

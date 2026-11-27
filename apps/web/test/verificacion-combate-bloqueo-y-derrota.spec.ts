@@ -122,4 +122,10 @@ test("Prevención de bucle en 0 HP y sincronización de estado en PantallaExplor
     false,
     "PantallaCombate debe ocupar todo el ancho del viewport en escritorio sin márgenes laterales vacíos",
   );
+  assert.ok(
+    combateCodigo.includes("w-[min(194px,54vw)]") &&
+      combateCodigo.includes("grid-cols-10") &&
+      combateCodigo.includes("h-3 sm:h-3.5"),
+    "Las placas HUD de PantallaCombate deben usar ancho fluido anti-desborde y barra de Resonancia de 10 bloques visibles en móvil",
+  );
 });

@@ -35,13 +35,13 @@
 - **Impacto:**
   - Módulos: `M-EQU`, `M-CAP`.
   - Pantallas: `PantallaEquipo`, `PantallaAlmacen`, `PantallaCombate`.
-  - Tablas/Entidades: `Criatura` (atributos `enEquipo: boolean`, `enAlmacen: boolean`, `ordenEquipo: int | null`).
+  - Tablas/Entidades: `Criatura` (atributos `enEquipo: boolean`, `ordenEquipo: int | null`; las criaturas en almacén se representan con `enEquipo = false` y `ordenEquipo = null`).
 
 ## D-03. Alcance del catálogo de la tienda
 - **Contexto:** El enunciado exige un módulo de inventario con elementos básicos de captura y recuperación (`M-INV`), requiriendo acotar los objetos disponibles y su economía.
 - **Decisión:** Se define una tienda mínima con 4 objetos consumibles esenciales clasificados en captura y recuperación, tasados en monedas:
   1. *Talismán Básico de Captura* (50 monedas): Objeto de captura estándar (multiplicador x1.0).
-  2. *Talismán Resonante de Captura* (150 monedas): Objeto de captura avanzado con mayor afinidad arcana (multiplicador x1.5).
+  2. *Talismán Avanzado de Captura* (`talisman-avanzado`, alias `talisman-resonante`, 150 monedas): Objeto de captura avanzado con mayor afinidad arcana (multiplicador x1.5).
   3. *Poción de Curación Menor* (30 monedas): Consumible que restablece 20 HP a una criatura aliada.
   4. *Poción de Curación Mayor* (80 monedas): Consumible que restablece 50 HP a una criatura aliada.
 - **Justificación:** Cumple la regla YAGNI y la simplificación de alcance pactada, sincronizando con los valores canónicos sembrados en `prisma/seed.ts`, evitando complejidades innecesarias de equipamiento o estadísticas pasivas, garantizando un flujo económico claro y funcional para el jugador.
@@ -68,8 +68,8 @@
 - **Justificación:** Otorga claridad absoluta a la máquina de estados de navegación, previene la ambigüedad sobre dónde se puede combatir o curar, y simplifica la validación de seguridad de movimientos en el servidor (`S-2`).
 - **Impacto:**
   - Módulos: `M-MUN`, `M-EXP`, `M-CUR`, `M-PRO`.
-  - Pantallas: `PantallaLocalidad`, `PantallaZonaExploracion`, `PantallaMapaMundo`.
-  - Tablas/Entidades: `Ubicacion`, `ConexionUbicacion`, `TablaAparicionZona`, `TablaEventoZona`.
+  - Pantallas: `PantallaHubUbicacion`, `PantallaExploracion` (originalmente denominadas en diseño preliminar `PantallaLocalidad`, `PantallaZonaExploracion`, `PantallaMapaMundo`).
+  - Tablas/Entidades: `Zona`, `ConexionZona`, `AparicionZona`, `EventoZona` (implementación Prisma del concepto preliminar `Ubicacion`).
 
 ## D-06. Sistema de diseño Front-End: 8bitcn/ui sobre shadcn/ui y Tailwind CSS v4
 - **Fuentes y documentación consultada:**
@@ -117,10 +117,9 @@
     - `@radix-ui/react-label`: 2.1.16 (para tipos de `LabelPrimitive`)
     - `@radix-ui/react-select`: 2.3.8 (para tipos de `SelectPrimitive`)
     - `@radix-ui/react-tabs`: 1.1.22 (para tipos de `TabsPrimitive`)
-- **Modo de API:**
-  - Controlado por la variable de entorno `VITE_MODO_API` (`simulado` por defecto, o `http`).
-  - URL base configurable mediante `VITE_URL_API` (prefijo `/api`).
-  - La interfaz `ApiJuego` aísla por completo la capa de presentación de la implementación de datos (`ARQ`).
+- **Capa de comunicación HTTP (evolución Fase 2 → Fase 8 → Fase 11a):**
+  - *Contexto histórico (Fases 2–7):* Inicialmente existió una implementación temporal en memoria (`apiSimulada.ts`) seleccionada por `VITE_MODO_API`.
+  - *Estado definitivo (`v1.0`):* En Fase 8 se eliminó definitivamente `apiSimulada.ts` y la carpeta `datos-simulados/`. `apps/web/src/api/index.ts` exporta exclusivamente `apiHttp` (que implementa los 28 métodos de `ApiJuego`), conectado a `${VITE_URL_API}/api` con soporte opcional de cabecera `apikey` mediante `VITE_CLAVE_GATEWAY` cuando opera detrás de Kong Gateway (`D-23`).
 
 ---
 
@@ -168,11 +167,11 @@
   - **D-1 (Unificación de Slugs):** Se unifica el slug oficial de la quimera como `quimera-tricefala` (descartando `quimera` obsoleto).
   - **D-2 (Semilla de Quelonio Lacustre):** Para mantener la legitimidad y trazabilidad con el SRD 5.2 de Open5e, el `quelonio-lacustre` adopta como clave externa y dados de referencia `srd-2024_plesiosaurus` (suavizado a desafío CR 1 en la Zona 2 de Marismas).
   - **D-3 (Depuración Transaccional de Especies):** El importador (`importar-especies.ts`) opera mediante upsert idempotente por `idExterno` y ejecuta un borrado transaccional de especies obsoletas no pertenecientes al bestiario canónico (`brown-bear`, `werewolf`, etc.), resembrando limpiamente las filas dependientes en `AparicionZona`, `Movimiento` y `Criatura`.
-  - **D-4 (Jerarquía de Slots y Bloqueo de Furia en Servidor):** Cada especie cuenta con exactamente 4 movimientos (`slot: 1..4`). El jugador solo puede invocar en combate los slots 1 a 3 (`movimientoIndice: 0..2`). El slot 4 (`movimientoIndice: 3`, Furia) está formalmente bloqueado en el servidor bajo código `400 MOVIMIENTO_BLOQUEADO` hasta que se desarrolle la mecánica de Resonancia. Los rivales salvajes seleccionan aleatoriamente su contraataque exclusivamente entre los slots 1 y 3 (el rival nunca sortea el slot 4).
+  - **D-4 (Jerarquía de Slots y Bloqueo de Furia en Servidor):** Cada especie cuenta con exactamente 4 movimientos (`slot: 1..4`). El jugador puede invocar libremente los slots 1 a 3 (`movimientoIndice: 0..2`). El slot 4 (`movimientoIndice: 3`, movimiento insignia) es rechazado por el servidor con `400 MOVIMIENTO_BLOQUEADO` mientras la Resonancia sea `< 100` y se desbloquea al alcanzar `100 %` de Resonancia (mecánica completada en Subfase 10k, §11). Los rivales salvajes seleccionan aleatoriamente su contraataque exclusivamente entre los slots 1 y 3 (el rival nunca sortea el slot 4).
   - **D-5 (Afinidad Elemental Retro Canónica):** Cada criatura posee una de las 6 afinidades elementales oficiales: `fisico`, `fuego`, `agua`, `natura`, `sombra` o `luz`, expuestas en la base de datos y en la UI con paleta y badges retro.
   - **D-6 (Principio de Soberanía Interna de Atributos):** Las estadísticas de combate de las 30 criaturas (`hpBase`, `ataqueBase`, `defensaBase`, `velocidadBase`) y sus movimientos no se recalculan al vuelo ni quedan a merced de anomalías del SRD externo. Residen de forma inmutable y soberana en `apps/api/src/modulos/externo/bestiario-canonico.ts`, asegurando un presupuesto balanceado de J-1 (160–210) a J-4 (310–380) con estadísticas individuales estrictamente en $[30, 100]$.
   - **D-7 (Estandarización de Tigre Dientes de Sable):** Se estandariza el slug como `tigre-dientes-sable` con clave externa estable `srd-2024_tiger` para la Zona 6.
-  - **D-8 (Consagración de Criaturas Legendarias):** Se elevan oficialmente a la categoría de **Criaturas Legendarias** a `behir-abismo` (Zona 5, Presupuesto 355) y `remorhaz-glaciar` (Zona 6, Presupuesto 380), dotándolas de `esLegendaria: true`, insignia `Crown` de Lucide y tratamiento visual dorado retro en el compendio.
+  - **D-8 (Consagración de Criaturas Legendarias):** Se elevan oficialmente a la categoría de **Criaturas Legendarias** a `behir-abismo` (Zona 5, presupuesto inicial 355 recalibrado a **BST 360** en §13 Subfase 10m) y `remorhaz-glaciar` (Zona 6, presupuesto inicial 380 recalibrado a **BST 375** en §13 Subfase 10m), dotándolas de `esLegendaria: true`, insignia `Crown` de Lucide y tratamiento visual dorado retro en el compendio.
   - **Distribución de Aparición Normalizada INV-01:** Las 6 tablas de aparición (`AparicionZona`) cuentan con exactamente 5 especies autóctonas ponderadas como $35\% + 35\% + 15\% + 10\% + 5\% = 100\%$, cumpliendo el invariante **INV-01** de manera estricta y predecible.
 
 ---
@@ -220,7 +219,7 @@
   - **D-9 (Síntesis Procedural de Audio 8-bit en Web Audio API):** Se enriqueció `assets.ts` con osciladores y buffers locales para sintetizar retroalimentación acústica procedural sin requerir archivos de audio externos: trino ascendente para `"eficaz"`, impacto amortiguado para `"resistido"`, ráfaga de ruido blanco con caída exponencial para `"dot"`, barrido épico en diente de sierra para `"furia"` y fanfarria triunfal para avistamientos legendarios.
   - **D-10 (Accesibilidad para Movimiento Reducido):** En cumplimiento de las directrices WCAG e Impeccable, se añadió `@media (prefers-reduced-motion: reduce)` en `index.css` anulando las animaciones continuas de `.anim-pulso-resonancia` y `.anim-halo-legendario`.
   - **D-11 (Integración Exclusiva hacia `desarrollo` con Merge Commit):** La culminación de la Subfase 10l se integra formalmente en la rama `desarrollo` mediante Pull Request y merge commit (`gh pr merge --merge`), postergando el merge a `main` y el tag `avance-5` para la revisión y autorización expresa posterior.
-  - **D-12 (Cobertura Integral de los 51 Efectos del Bestiario en Servidor y UI):** Se completó la cobertura exhaustiva y autoritativa de los 51 efectos existentes en la base de datos de movimientos. 41 efectos se integraron en `EFECTO_A_ESTADO` hacia los 6 estados alterados persistentes (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), y los 10 efectos tácticos restantes (`CRITICO`, `EJECUCION`, `EMPUJE`, `DRENAJE`, `REGENERACION`, `PURIFICACION`, `LUZ`, `ATQ_UP`, `DEF_DOWN`, `ATQ_DOWN`, `VEL_UP`) se implementaron con cálculos matemáticos puros en el servidor en `motor-combate.ts` respetando INV-03 e INV-04. Asimismo, el cliente web (`combate-tactico.ts` y `PantallaCombate.tsx`) mapea los 51 efectos a badges retro con iconos SVG de Lucide temáticos.
+  - **D-12 (Cobertura Integral de los 51 Efectos del Bestiario en Servidor y UI):** Se completó la cobertura exhaustiva y autoritativa de los 51 efectos únicos existentes en la base de datos de movimientos. **40 efectos** se integraron en `EFECTO_A_ESTADO` hacia los 6 estados alterados persistentes (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`, `BASTION`), y los **11 efectos** tácticos instantáneos restantes (`CRITICO`, `EJECUCION`, `EMPUJE`, `DRENAJE`, `REGENERACION`, `PURIFICACION`, `LUZ`, `ATQ_UP`, `DEF_DOWN`, `ATQ_DOWN`, `VEL_UP`) se implementaron con cálculos matemáticos puros en el servidor en `motor-combate.ts` respetando INV-03 e INV-04. Asimismo, el cliente web (`combate-tactico.ts` y `PantallaCombate.tsx`) mapea los 51 efectos a badges retro con iconos SVG de Lucide temáticos.
 
 ---
 

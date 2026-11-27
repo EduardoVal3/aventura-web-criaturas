@@ -11,7 +11,7 @@ El diseño arquitectónico de *Aethelgard* parte de un principio estricto de **c
 
 El navegador web del usuario es considerado un entorno hostil y susceptible de manipulación (vía herramientas de desarrollo, interceptores HTTP o clientes automatizados maliciosos). En consecuencia:
 1. **El cliente nunca decide:** El Front-End no calcula daño, no descuenta monedas, no asigna experiencia ni decrece cantidades de consumibles de forma autoritativa; únicamente envía intenciones y renderiza los estados emitidos por el servidor con una cadencia visual adecuada (~800 ms).
-2. **Defensa en profundidad:** Toda petición que ingresa al servidor atraviesa secuencialmente filtros globales de manejo de excepciones (`ExcepcionesFilter`), tuberías de saneamiento y rechazo de payloads (`ValidationPipe`), guardias de autenticación JWT (`JwtAuthGuard`), validaciones de lógica de dominio y transacciones atómicas de base de datos (`prisma.$transaction`).
+2. **Defensa en profundidad:** Toda petición que ingresa al servidor atraviesa secuencialmente filtros globales de manejo de excepciones (`ExcepcionesFilter`), tuberías de saneamiento y rechazo de payloads (`ValidationPipe`), el guardián global de autenticación JWT (`AutenticacionGuard`, que verifica firma y existencia del usuario en PostgreSQL), validaciones de lógica de dominio y transacciones atómicas de base de datos (`prisma.$transaction` con `SELECT ... FOR UPDATE`).
 3. **Aislamiento multiusuario:** La identidad del explorador se deriva exclusivamente del reclamo `sub` verificado dentro del token JWT firmado; ningún endpoint privado acepta que el cliente especifique arbitrariamente el identificador de usuario o personaje sobre el cual desea operar.
 
 ---
@@ -22,12 +22,12 @@ A continuación se detalla la matriz integral de salvaguardas implementadas en l
 
 | Salvaguarda | Descripción del riesgo atacado | Código HTTP emitido | Mecanismo de mitigación en Back-End (NestJS / Prisma) | Prueba automatizada |
 | --- | --- | --- | --- | --- |
-| **Sin Token / Token Inválido** | Acceso no autenticado a rutas privadas o falsificación de credenciales | `401 Unauthorized` | `JwtAuthGuard` aplicado globalmente vía `APP_GUARD` o en controladores privados, verificando firma con `JWT_SECRETO`. | `seguridad-s1-s7.e2e-spec.ts` |
+| **Sin Token / Token Inválido** | Acceso no autenticado a rutas privadas o falsificación de credenciales | `401 Unauthorized` | `AutenticacionGuard` aplicado globalmente vía `APP_GUARD`, verificando firma con `JWT_SECRETO` y existencia del usuario en PostgreSQL (`USUARIO_NO_ENCONTRADO`). | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-1** | Mutación o acceso a personajes, criaturas, encuentros o inventarios pertenecientes a otro usuario | `403 Forbidden` / `404 Not Found` | Extracción estricta del `usuarioId` desde el JWT (`sub`). Verificación de propiedad `encuentro.personajeId === personaje.id` arrojando `ENCUENTRO_NO_AUTORIZADO`. | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-2** | Desplazamiento ilegal a zonas inexistentes o no conectadas topológicamente en el mapa | `400 Bad Request` / `403 Forbidden` | Verificación del grafo relacional `ConexionZona` (`CONEXION_INVALIDA`) y consulta de prerequisitos en `ZonaDesbloqueada` (`ZONA_BLOQUEADA`). | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-3** | Invocación de captura sin encuentro activo o sobre combates ajenos | `404 Not Found` / `403 Forbidden` | Consulta en tabla `encuentro` verificando coincidencia de identificador y estado `EN_CURSO`; rechazo con `ENCUENTRO_NO_ENCONTRADO`. | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-4** | Uso de talismanes, pociones o recursos que el explorador no posee en su inventario | `400 Bad Request` | Consulta y deducción dentro de `prisma.$transaction`. Verificación de `cantidad >= 1`; rechazo con `ITEM_NO_DISPONIBLE`. | `seguridad-s1-s7.e2e-spec.ts` |
-| **S-5** | Ataque fuera de turno o interacción con encuentros previamente resueltos | `400 Bad Request` / `409 Conflict` | Candado de estado con `esEstadoTerminal(encuentro.estado)`. Verificación de alternancia de turnos `ultimoCombate.esTurnoJugador`. | `seguridad-s1-s7.e2e-spec.ts` |
+| **S-5** | Ataque fuera de turno, ráfaga concurrente o interacción con encuentros previamente resueltos | `400 Bad Request` / `409 Conflict` | Candado de estado con `esEstadoTerminal(encuentro.estado)`, verificación de turno `esTurnoJugador`, bloqueo pesimista `SELECT ... FOR UPDATE` por personaje y control de `turnoEsperado` (`409 TURNO_DESACTUALIZADO`). | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-6** | Inyección de monedas, experiencia, niveles o estadísticas arbitrarias en payloads JSON | `400 Bad Request` | `ValidationPipe` global con `whitelist: true` y `forbidNonWhitelisted: true`, rechazando cualquier propiedad no declarada explícitamente en el DTO. | `seguridad-s1-s7.e2e-spec.ts` |
 | **S-7** | Exposición de secretos en repositorio o almacenamiento de contraseñas en texto claro | N/A (Defensa arquitectónica) | Hash criptográfico con `bcrypt` (factor de costo 10), variables de entorno aisladas en `.env` y CORS restringido sin comodín abierto. | Auditoría directa SQL con MCP PostgreSQL |
 
@@ -108,17 +108,17 @@ En `apps/api/src/main.ts`, la configuración de CORS delimita explícitamente el
 ```typescript
 // Auditoría S-7: CORS restringido al origen web autorizado sin comodín universal
 app.enableCors({
-  origin: configService.get<string>('CORS_ORIGEN', 'http://localhost:5173'),
+  origin: resolverOrigenesCors(configService.get<string>('CORS_ORIGEN')),
   credentials: true,
 });
 ```
 
-- Se prohíbe el uso de comodines universales (`origin: '*'`) en combinación con `credentials: true`.
+- `resolverOrigenesCors` normaliza barras finales, admite orígenes separados por coma y rechaza explícitamente el comodín universal (`*`).
 - Las peticiones provenientes de orígenes no registrados son bloqueadas de forma preventiva a nivel del navegador mediante cabeceras `Access-Control-Allow-Origin`.
 
 ### 5.2 Aislamiento de variables de entorno
-Se auditó exhaustivamente el archivo de configuración del Front-End (`apps/web/.env`), verificando que únicamente expone variables con el prefijo seguro de Vite:
-- `VITE_MODO_API=http`
-- `VITE_URL_API=http://localhost:3000`
+Se auditó exhaustivamente la configuración del Front-End (`apps/web/.env`), verificando que el cliente HTTP (`apps/web/src/api/apiHttp.ts`) únicamente consume variables públicas con prefijo `VITE_`:
+- `VITE_URL_API=http://localhost:3000` (o `http://localhost:8000` detrás de Kong DB-less, o la URL HTTPS pública en Cloudflare Pages / Render Free)
+- `VITE_CLAVE_GATEWAY` *(opcional; solo cuando se opera detrás de Kong Gateway con plugin `key-auth`)*
 
-Las credenciales críticas del sistema (`JWT_SECRETO`, `DATABASE_URL`, credenciales de conexión a Docker y contraseñas maestras) residen exclusivamente en `apps/api/.env`, fuera del árbol de compilación del cliente web y excluidas del historial de control de versiones mediante `.gitignore`.
+Las credenciales críticas del sistema (`JWT_SECRETO`, `DATABASE_URL`, `POSTGRES_PASSWORD`, `KONG_CLAVE_API`) residen exclusivamente en `.env` / `apps/api/.env`, fuera del árbol de compilación del cliente web y excluidas del historial de control de versiones mediante `.gitignore`.

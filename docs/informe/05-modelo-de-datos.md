@@ -32,7 +32,7 @@ erDiagram
     PERSONAJE ||--o{ ENCUENTRO : "inicia"
     PERSONAJE ||--o{ ZONA_DESBLOQUEADA : "desbloquea"
     PERSONAJE ||--o{ HISTORIAL : "registra"
-    PERSONAJE }|--|| ZONA : "reside_en"
+    PERSONAJE }o--|| ZONA : "reside_en"
 
     ZONA ||--o{ CONEXION_ZONA : "origen"
     ZONA ||--o{ CONEXION_ZONA : "destino"
@@ -47,7 +47,7 @@ erDiagram
 
     OBJETO ||--o{ INVENTARIO_PERSONAJE : "contenido_en"
 
-    ENCUENTRO ||--|| CRIATURA : "enfrenta_rival"
+    CRIATURA ||--o{ ENCUENTRO : "rival_en"
     ENCUENTRO ||--o{ COMBATE : "registra_turnos"
 ```
 
@@ -98,25 +98,29 @@ erDiagram
    - `nivel_minimo`, `nivel_maximo` (INT): Rango de nivel al aparecer.
    - Restricción de unicidad: `@@unique([zona_id, especie_id])`.
 
-7. **`especie` (Catálogo normalizado):**
+7. **`especie` (Catálogo canónico de 30 especies):**
    - `id` (UUID, PK).
    - `id_externo` (VARCHAR, UK): Clave de origen en Open5e (`srd-2024_wolf`, etc.).
    - `nombre` (VARCHAR): Denominación en español.
-   - `slug` (VARCHAR, UK): Identificador web en minúsculas (`lobo-gris`).
-   - `tipo` (VARCHAR): Clasificación (`beast`, `undead`, `elemental`, etc.).
+   - `slug` (VARCHAR, UK): Identificador web en minúsculas (`lobo-estepario`, `behir-abismo`, etc.).
+   - `tipo` (VARCHAR): Clasificación biológica (`beast`, `monstrosity`, `undead`, `elemental`, `construct`, `plant`).
+   - `elemento` (VARCHAR, default `"fisico"`): Afinidad elemental canónica (`fisico`, `fuego`, `agua`, `natura`, `sombra`, `luz`; añadido en migración `20261017050700_bestiario_canonico`).
    - `challenge_rating` (FLOAT): Desafío original de Open5e.
-   - `hp_base`, `ataque_base`, `defensa_base`, `velocidad_base` (INT): Estadísticas normalizadas en escala 30–100.
-   - `tasa_captura` (FLOAT): Probabilidad calibrada entre 0.10 y 0.90.
-   - `es_especial` (BOOLEAN): Señalizador de criatura rara (5 % en tablas de aparición).
+   - `hp_base`, `ataque_base`, `defensa_base`, `velocidad_base` (INT): Estadísticas soberanas acotadas en $[30, 100]$.
+   - `tasa_captura` (FLOAT): Probabilidad soberana calibrada entre `0.10` y `0.85` a partir del BST.
+   - `es_especial` (BOOLEAN, default `false`): Señalizador de criatura ápice regional (5 % en tablas de aparición).
+   - `es_legendaria` (BOOLEAN, default `false`): Distintivo de criatura legendaria (`behir-abismo`, `remorhaz-glaciar`; añadido en `20261017050700_bestiario_canonico`).
    - `descripcion` (TEXT, nullable).
 
-8. **`movimiento` (Ataques por especie):**
+8. **`movimiento` (Set de 4 movimientos tácticos por especie):**
    - `id` (UUID, PK).
    - `especie_id` (UUID, FK): Especie vinculada.
-   - `nombre_original` (VARCHAR): Nombre en inglés según Open5e.
-   - `nombre` (VARCHAR): Traducción oficial al español.
-   - `tipo_accion` (VARCHAR): `"Ataque melé"` o `"Ataque distancia"`.
-   - `poder` (FLOAT): Daño promedio calibrado del ataque.
+   - `nombre_original` (VARCHAR): Nombre técnico de referencia en inglés.
+   - `nombre` (VARCHAR): Nombre canónico en español.
+   - `tipo_accion` (VARCHAR): `"Ataque melé"`, `"Ataque a distancia"` o `"Estado"`.
+   - `poder` (FLOAT): Potencia calibrada del movimiento.
+   - `slot` (INT, default `1`): Posición táctica `1..4` (M1 Básico a M4 Insignia). Restricción de unicidad: `@@unique([especie_id, slot])`.
+   - `efecto` (VARCHAR, nullable): Clave de uno de los 51 efectos mecánicos resueltos por `motor-combate.ts`.
 
 9. **`criatura` (Ejemplar individual):**
    - `id` (UUID, PK).
@@ -166,27 +170,29 @@ erDiagram
     - `id` (UUID, PK).
     - `personaje_id` (UUID, FK).
     - `zona_id` (VARCHAR, FK).
+    - `progreso` (INT, default `0`): Porcentaje cartográfico persistido en servidor (`0` a `100`, añadido en migración `20261009042525_agrega_progreso_zona_desbloqueada`).
     - `fecha_desbloqueo` (TIMESTAMP).
     - Restricción de unicidad: `@@unique([personaje_id, zona_id])`.
 
 15. **`historial` (Bitácora del explorador):**
     - `id` (UUID, PK).
     - `personaje_id` (UUID, FK).
-    - `tipo` (VARCHAR): `"EXPLORACION"`, `"COMBATE"`, `"CAPTURA"`.
+    - `tipo` (VARCHAR): `"EXPLORACION"`, `"OBJETO"`, `"ENCUENTRO"`, `"COMBATE"`, `"CAPTURA"`, `"PROGRESO"`, `"TIENDA"`, `"CURACION"`.
     - `descripcion` (TEXT).
     - `datos_json` (JSONB, nullable).
     - `fecha_registro` (TIMESTAMP).
 
 ---
 
-## 3. Estrategia de normalización e invariantes de integridad
+## 3. Estrategia de normalización, migraciones e invariantes de integridad
 
-El diseño cumple la Tercera Forma Normal (3FN), garantizando:
-- **Ausencia de redundancia:** Las estadísticas base y nombres residen en `especie`; el ejemplar en `criatura` almacena únicamente estado mutable (HP actual, nivel, XP, apodo).
+El diseño cumple la Tercera Forma Normal (3FN) y evoluciona mediante **4 migraciones versionadas en `apps/api/prisma/migrations/`** (`20261008184352_inicial`, `20261008204643_modelo_datos_mundo_criaturas`, `20261009042525_agrega_progreso_zona_desbloqueada` y `20261017050700_bestiario_canonico`), garantizando:
+- **Ausencia de redundancia:** Las estadísticas base, afinidad y nombres residen en `especie`; el ejemplar en `criatura` almacena únicamente estado mutable (HP actual, nivel, XP, apodo).
 - **Índices únicos compuestos:**
   - `conexion_zona`: Evita aristas duplicadas en el grafo topológico (`zona_origen_id` + `zona_destino_id`).
   - `evento_zona`: Garantiza un solo registro de probabilidad por tipo de evento en cada zona (`zona_id` + `tipo`).
   - `aparicion_zona`: Previene registros redundantes para una misma especie en una zona (`zona_id` + `especie_id`).
+  - `movimiento`: Garantiza exactamente un movimiento por slot (`1..4`) en cada especie (`especie_id` + `slot`).
   - `inventario_personaje`: Modela posesiones aditivas agregando cantidad sobre la tupla (`personaje_id` + `objeto_id`).
   - `zona_desbloqueada`: Controla estados de progresión sin duplicidades (`personaje_id` + `zona_id`).
 - **Políticas de eliminación referencial:**

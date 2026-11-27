@@ -1,10 +1,25 @@
 flowchart TD
-    Navegador["Navegador 360 a 1280 px"] --> Enrutador["React Router"]
-    Enrutador --> Layout["LayoutPrincipal"]
-    Layout --> Paginas["Páginas: placeholders, /kit-ui, /creditos"]
-    Paginas --> Kit["Componentes 8bitcn/ui en src/components/ui/8bit"]
-    Kit --> Base["shadcn/ui + Tailwind CSS v4"]
-    Paginas --> Api["ApiJuego en src/api"]
-    Api -->|"VITE_MODO_API=simulado"| Simulada["apiSimulada.ts, datos en memoria"]
-    Api -->|"VITE_MODO_API=http"| Http["apiHttp.ts, fetch"]
-    Http -.->|"Fase posterior"| Nest["API NestJS con prefijo /api"]
+    Navegador["Navegador Responsive (320 px a escritorio · Vite 8 / Cloudflare Pages)"] --> Contexto["ProveedorAutenticacion (ContextoAutenticacion + JWT en localStorage)"]
+    Contexto --> Enrutador["React Router 8 (createBrowserRouter · RutaPublica / RutaProtegida)"]
+    Enrutador --> Layout["LayoutPrincipal (Cabecera retro, pie legal y Toaster Sonner)"]
+
+    Layout --> PagCuenta["Pantallas de Cuenta (3)<br/>PantallaIngreso · PantallaRegistro · PantallaCrearPersonaje"]
+    Layout --> PagJuego["Pantallas de Aventura y Combate (3)<br/>PantallaHubUbicacion (Mapa Canvas/WebP) · PantallaExploracion · PantallaCombate"]
+    Layout --> PagGestion["Pantallas de Gestión y Consulta (7)<br/>PantallaEquipo · PantallaAlmacen · PantallaInventario · PantallaTienda<br/>PantallaCuracion · PantallaCatalogo · PantallaHistorial"]
+    Layout --> PagSoporte["Vistas de Vitrina y Sistema<br/>PaginaKitUi (/kit-ui) · PaginaCreditos (/creditos) · PaginaNoEncontrada (*)"]
+
+    PagCuenta --> Kit["17 Componentes 8bitcn/ui (src/components/ui/8bit)<br/>+ Audio Web Audio API y Pipeline WebP (src/lib/assets.ts)"]
+    PagJuego --> Kit
+    PagGestion --> Kit
+    PagSoporte --> Kit
+    Kit --> Base["shadcn/ui + Radix UI + Tailwind CSS v4 + Lucide SVG (Cero emojis R1)"]
+
+    PagCuenta --> Api["Contrato ApiJuego (src/api/ApiJuego.ts · 28 métodos)"]
+    PagJuego --> Api
+    PagGestion --> Api
+    PagSoporte --> Api
+
+    Api --> Http["Cliente Único apiHttp.ts (fetch sobre VITE_URL_API/api)<br/>Bearer JWT + cabecera opcional apikey (VITE_CLAVE_GATEWAY)"]
+    Http -->|"Con Kong Gateway (:8000)"| Kong["Kong Gateway 3.9.5 DB-less<br/>(cors · key-auth · rate-limiting 429)"]
+    Http -.->|"Directo (:3000 o Render Free)"| Nest["API REST NestJS 10 (/api · 44 rutas / 46 ops)"]
+    Kong --> Nest

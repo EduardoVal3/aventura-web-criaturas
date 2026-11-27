@@ -1,60 +1,51 @@
 sequenceDiagram
     autonumber
-    actor Dev as Desarrollador / CLI
+    actor Dev as Desarrollador / Arranque Nube
     participant Script as Script Batch (importar-especies.ts)
+    participant Bestiario as Bestiario Canónico (bestiario-canonico.ts)
     participant Adaptador as AdaptadorCriaturasExternas
-    participant Open5e as API Externa (Open5e v2)
-    participant Snapshot as Snapshot Local (open5e-srd-2024-seleccion.json)
-    participant Normalizador as Normalizador Matemático (Anexo A.3)
-    participant DB as PostgreSQL (Prisma ORM)
+    participant Open5e as API Externa (Open5e v2 · srd-2024)
+    participant Snapshot as Snapshot Local (datos/open5e-srd-2024-seleccion.json)
+    participant DB as PostgreSQL 17 (Prisma ORM)
 
-    Dev->>Script: pnpm run importar:especies
+    Dev->>Script: pnpm --filter api run importar:especies
     activate Script
 
-    Script->>Adaptador: obtenerEspeciesSeleccionadas(25 claves)
+    Script->>Bestiario: Validar INV-01 en TABLAS_APARICION (suma = 100 por zona)
+    Bestiario-->>Script: 6 zonas válidas (5 especies/zona · 30 entradas)
+
+    Script->>Adaptador: obtenerEspeciesSeleccionadas(30 claves SRD)
     activate Adaptador
 
-    alt Conexión Exitosa con Open5e
-        Adaptador->>Open5e: GET /v2/creatures/?key__in=... (timeout 10s)
-        Open5e-->>Adaptador: 200 OK con registros crudos
+    alt Conexión Exitosa con Open5e v2
+        Adaptador->>Open5e: GET /v2/creatures/?document__key__in=srd-2024&key__in=... (timeout 10s)
+        Open5e-->>Adaptador: 200 OK con registros crudos (completa faltantes con snapshot)
     else Falla de Red / Timeout / Error HTTP
-        Adaptador->>Open5e: GET /v2/creatures/?key__in=...
-        Open5e--xAdaptador: Error de red o Timeout
+        Adaptador->>Open5e: GET /v2/creatures/?document__key__in=srd-2024&key__in=...
+        Open5e--xAdaptador: Error de red o Timeout (AbortController)
         Note over Adaptador,Snapshot: Logger.warn: Activando fallback al snapshot local
         Adaptador->>Snapshot: fs.readFileSync(datos/open5e-srd-2024-seleccion.json)
-        Snapshot-->>Adaptador: Retorna 25 criaturas de contingencia
+        Snapshot-->>Adaptador: Retorna las 30 criaturas SRD 5.2 de contingencia
     end
 
-    Adaptador-->>Script: Lista de 25 CriaturaExternaDto
+    Adaptador-->>Script: Lista de 30 CriaturaExternaDto (challengeRating, tipoExterno)
     deactivate Adaptador
 
-    loop Para cada criatura (25 especies)
-        Script->>Normalizador: calcularHpBase(hit_points)
-        Normalizador-->>Script: hpBase calibrado [30-100]
+    loop Para cada especie canónica (30 especies en BESTIARIO)
+        Script->>Bestiario: Leer statsBase soberanas [30-100], elemento, esEspecial y esLegendaria
+        Script->>Bestiario: calcularTasaCapturaPorPresupuesto(BST)
+        Bestiario-->>Script: tasaCaptura soberana calibrada [0.10-0.85]
 
-        Script->>Normalizador: calcularAtaqueBase(mejorAtaque)
-        Normalizador-->>Script: ataqueBase calibrado [30-100]
+        Script->>DB: prisma.especie.upsert(...) por idExterno
+        DB-->>Script: Especie persistida y criaturas existentes recalibradas
 
-        Script->>Normalizador: calcularDefensaBase(armor_class)
-        Normalizador-->>Script: defensaBase calibrada [30-100]
-
-        Script->>Normalizador: calcularVelocidadBase(speedMax)
-        Normalizador-->>Script: velocidadBase calibrada [30-100]
-
-        Script->>Normalizador: calcularTasaCaptura(challenge_rating)
-        Normalizador-->>Script: tasaCaptura calibrada [0.10-0.90]
-
-        Script->>DB: prisma.especie.upsert(...)
-        DB-->>Script: Especie persistida / actualizada
-
-        Script->>DB: prisma.movimiento.deleteMany() + createMany() (hasta 3 ataques)
-        DB-->>Script: Movimientos traducidos persistidos
+        Script->>DB: prisma.movimiento.deleteMany() + create() (4 slots M1..M4 + efecto)
+        DB-->>Script: 4 movimientos tácticos persistidos
     end
 
-    loop Para cada zona (6 zonas silvestres)
-        Script->>DB: prisma.aparicionZona.upsert(...) (pesos y rangos de nivel)
-        DB-->>Script: Tabla de aparición persistida
-    end
+    Script->>DB: Eliminar especies obsoletas sin criaturas vinculadas
+    Script->>DB: $transaction: deleteMany() + create() en aparicion_zona (6 zonas · 30 filas)
+    DB-->>Script: Tablas de aparición sembradas (idempotente)
 
-    Script-->>Dev: Proceso de importación finalizado con éxito
+    Script-->>Dev: Importación soberana de 30 especies finalizada con éxito
     deactivate Script

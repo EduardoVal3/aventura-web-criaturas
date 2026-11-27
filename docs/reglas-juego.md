@@ -59,7 +59,7 @@ Determina el daño infligido a los puntos de golpe del defensor al impactar un m
 
 - **Variables y rangos:**
   - $\text{ataque}$ (Atacante): $[30, 250]$ (estadística escalada por nivel).
-  - $\text{defensaEfectiva}$ (Defensor): $[1, 250]$ ($\text{defensa} \times 0.75$ si sufre `QUEMADURA`, sino $\text{defensa}$).
+  - $\text{defensaEfectiva}$ (Defensor): $[1, 375]$ ($\lfloor \text{defensa} \times 1.50 \rfloor$ si sufre `PETRIFICACION`, sino $\text{defensa}$).
   - $\text{poder}$ (Movimiento): $[5, 80]$.
   - $\text{nivel}$ (Atacante): $[1, 50]$.
   - $F_{\text{afinidad}}$: Multiplicador de ventaja elemental ($1.5$ ventaja, $0.75$ desventaja, $1.0$ neutral).
@@ -81,14 +81,14 @@ Determina la probabilidad de éxito al intentar capturar una criatura salvaje du
   - $\text{tasaCaptura}$ (Especie): $[0.10, 0.85]$ (calculada soberanamente mediante $\text{clamp}(0.10, 0.85, 1.35 - \text{BST}/300)$).
   - $\text{hpActual}$: $[1, \text{hpMaximo}]$.
   - $\text{hpMaximo}$: $[30, 500]$.
-  - $\text{multiplicadorTalisman}$: $1.0$ (Básico) o $1.5$ (Resonante).
+  - $\text{multiplicadorTalisman}$: $1.0$ (`talisman-basico`) o $1.5$ (`talisman-avanzado`, alias `talisman-resonante`).
   - $\text{multiplicadorEstado}$: $1.25$ si el rival sufre un estado alterado activo (`QUEMADURA`, `VENENO`, `ESCARCHA`, `PARALISIS`, `PETRIFICACION`), $1.0$ en caso contrario.
 - **Fórmula:**
   $$\text{factorSalud} = 1.0 - 0.5 \times \left( \frac{\text{hpActual}}{\text{hpMaximo}} \right)$$
   $$\text{probBruta} = \text{tasaCaptura} \times \text{factorSalud} \times \text{multiplicadorTalisman} \times \text{multiplicadorEstado}$$
   $$\text{probFinal} = \text{clamp}(0.05, 0.95, \text{probBruta})$$
 - **Relación entre $\text{tasaCaptura}$ y $\text{probFinal}$:**
-  La $\text{tasaCaptura}$ ($0.10$ a $0.90$) es una propiedad genética fija de la especie. La probabilidad final ($\text{probFinal}$) modula dicha tasa en función de la salud rival, el talismán y la sinergia de estados alterados activos ($\times 1.25$). La función $\text{clamp}$ final impone una salvaguarda universal estricta: ninguna captura tiene garantizado el éxito absoluto ($95\,\%$ máximo) ni es matemáticamente imposible ($5\,\%$ mínimo).
+  La $\text{tasaCaptura}$ ($0.10$ a $0.85$) es una propiedad genética fija de la especie derivada de su BST. La probabilidad final ($\text{probFinal}$) modula dicha tasa en función de la salud rival, el talismán y la sinergia de estados alterados activos ($\times 1.25$). La función $\text{clamp}$ final impone una salvaguarda universal estricta: ninguna captura tiene garantizado el éxito absoluto ($95\,\%$ máximo) ni es matemáticamente imposible ($5\,\%$ mínimo).
 - **Invariante cumplido:** **INV-02** ($\text{probFinal} \in [0.05, 0.95]$).
 - **Ejemplo numérico resuelto:**
   - Criatura salvaje con $\text{tasaCaptura} = 0.50$, reducida a $\text{hpActual} = 30$ de $\text{hpMaximo} = 60$, afectada por `QUEMADURA` ($\text{multiplicadorEstado} = 1.25$). Se usa Talismán Básico ($1.0$).
@@ -134,8 +134,8 @@ Determina la cantidad total de XP necesaria para que una criatura alcance un niv
 Determina la probabilidad de éxito al intentar escapar de un encuentro salvaje, evaluando velocidades efectivas.
 
 - **Variables y rangos:**
-  - $\text{velEfectivaJugador}$: $[10, 200]$ ($\text{velocidad} \times 0.60$ si sufre `ESCARCHA`, $\times 0.75$ si sufre `PARALISIS`).
-  - $\text{velEfectivaRival}$: $[10, 200]$ ($\text{velocidad} \times 0.60$ si sufre `ESCARCHA`, $\times 0.75$ si sufre `PARALISIS`).
+  - $\text{velEfectivaJugador}$: $[1, 200]$ ($\max(1, \lfloor \text{velocidad} \times 0.50 \rfloor)$ si sufre `ESCARCHA`, sino $\text{velocidad}$).
+  - $\text{velEfectivaRival}$: $[1, 200]$ ($\max(1, \lfloor \text{velocidad} \times 0.50 \rfloor)$ si sufre `ESCARCHA`, sino $\text{velocidad}$).
   - $\text{intentos}$: Contador de intentos fallidos previos en el encuentro ($1, 2, 3\dots$).
 - **Fórmula:**
   $$\text{probHuidaBruta} = \left(\frac{\text{velEfectivaJugador}}{\text{velEfectivaJugador} + \text{velEfectivaRival}}\right) + 0.10 \times (\text{intentos} - 1)$$
@@ -163,15 +163,15 @@ Para acceder a zonas avanzadas y asentamientos fronterizos, el servidor evalúa 
 | :--- | :--- | :--- | :--- | :--- |
 | `LOC-01` | Villa Serena | Asentamiento | Inicial (100% por defecto) | Ninguno |
 | `ZON-01` | Praderas del Amanecer | Zona Salvaje | Inicial (Accesible) | Nivel 1 |
-| `ZON-02` | Marismas Sombrías | Zona Salvaje | Inicial (Accesible) | Nivel 1 |
-| `LOC-02` | Bastión de la Cumbre | Asentamiento | `ZON-01` con progreso 100% | Ninguno |
-| `ZON-03` | Ciénaga Tenebrosa | Zona Salvaje | `ZON-02` con progreso 100% | Nivel 1 |
-| `ZON-04` | Ruinas Olvidadas | Zona Salvaje | `ZON-03` con progreso 100% | Al menos 1 criatura con nivel $\ge 5$ |
-| `LOC-03` | Puesto Fronterizo del Río | Asentamiento | `ZON-04` con progreso 100% | Ninguno |
-| `ZON-05` | Picos Helados | Zona Salvaje | `ZON-04` con progreso 100% | Al menos 3 criaturas en equipo con nivel $\ge 5$ |
-| `ZON-06` | Volcán de Fuego Profundo | Zona Salvaje | `ZON-05` con progreso 100% | Al menos 1 criatura con nivel $\ge 10$ |
+| `ZON-02` | Riberas del Lago Espejo | Zona Salvaje | Inicial (Accesible) | Nivel 1 |
+| `LOC-02` | Puesto Fronterizo del Río | Asentamiento | `ZON-01` con progreso 100% | Ninguno |
+| `ZON-03` | Bosque Susurrante | Zona Salvaje | `ZON-02` con progreso 100% | Nivel 1 |
+| `ZON-04` | Paso de los Riscos | Zona Salvaje | `ZON-03` con progreso 100% | Al menos 1 criatura con nivel $\ge 5$ |
+| `LOC-03` | Bastión del Norte | Asentamiento | `ZON-04` con progreso 100% | Ninguno |
+| `ZON-05` | Cueva Umbría | Zona Salvaje | `ZON-04` con progreso 100% | Al menos 3 criaturas en equipo con nivel $\ge 5$ |
+| `ZON-06` | Pico de la Cumbre | Zona Salvaje | `ZON-05` con progreso 100% | Al menos 1 criatura con nivel $\ge 10$ |
 
-*Nota operativa:* Las condiciones son evaluadas de forma idempotente tanto proactivamente (tras exploración que alcanza 100%, victorias de combate o capturas) como a demanda mediante el endpoint `POST /progreso/verificar-zona`.
+*Nota operativa:* Las condiciones son evaluadas de forma idempotente tanto proactivamente (tras exploración que alcanza 100%, victorias de combate o capturas) como a demanda mediante el endpoint `POST /api/progreso/verificar-zona`.
 
 #### 2.6.1 Claridad Semántica Territorial: Nivel de Fauna Salvaje vs. Poder del Equipo (Subfase 10n)
 Para erradicar la ambigüedad del término `"Nivel sugerido"` presente en fases previas, el sistema formaliza dos magnitudes tácticas disjuntas e independientes:
@@ -187,12 +187,12 @@ Para erradicar la ambigüedad del término `"Nivel sugerido"` presente en fases 
      - $\text{nivelMaximoEquipo} = \max(\{ \text{c.nivel} \mid c \in \text{equipo} \})$ (o 1 por defecto).
      - $\text{nivelPromedioEquipo} = \text{round}\left(\frac{\sum_{c \in \text{equipo}} \text{c.nivel}}{|\text{equipo}|}\right)$.
      - $\text{nivelMaximoColeccion} = \max(\{ \text{c.nivel} \mid c \in \text{equipo} \cup \text{almacen} \})$.
-     - $\text{rangoDomador}$: Título honorífico canónico del explorador según su mejor criatura activa:
-       - $\text{nivelMaximo} < 3 \implies$ `"Aspirante a Domador"`
-       - $\text{nivelMaximo} < 5 \implies$ `"Domador Novato"`
-       - $\text{nivelMaximo} < 8 \implies$ `"Explorador de Senderos"`
-       - $\text{nivelMaximo} < 10 \implies$ `"Veterano de Aethelgard"`
-       - $\text{nivelMaximo} \ge 10 \implies$ `"Maestro Domador de la Cumbre"`
+     - $\text{rangoDomador}$: Título honorífico canónico del explorador según el nivel máximo de su colección (`determinarRangoDomador`):
+       - $\text{nivelMaximo} < 3 \implies$ `"Recluta del Gremio"`
+       - $3 \le \text{nivelMaximo} < 5 \implies$ `"Rastreador de Sendas"`
+       - $5 \le \text{nivelMaximo} < 8 \implies$ `"Domador de Riscos"`
+       - $8 \le \text{nivelMaximo} < 10 \implies$ `"Custodio Umbrío"`
+       - $\text{nivelMaximo} \ge 10 \implies$ `"Maestro de la Cumbre"`
 
 3. **Matriz de Riesgo Táctico Comparativo:**
    - Si la zona es segura: `PACIFICO` $\implies$ `"ZONA SEGURA"`.
@@ -219,12 +219,12 @@ Rige las interacciones elementales entre el tipo del movimiento atacante y la af
 | **Luz** | $1.0\times$ | $1.0\times$ | $1.0\times$ | $1.0\times$ | **$1.5\times$** | $0.75\times$ |
 
 ### 2.11 Catálogo y reglas de estados alterados (Subfase 10k y 10l)
-1. **`QUEMADURA`:** DoT del $8\,\%$ del HP Máximo (mínimo 1), $\text{defensaEfectiva} = \text{defensa} \times 0.75$. Duración: 3 turnos. Aplica sobre el objetivo.
-2. **`VENENO`:** DoT del $6\,\%$ del HP Máximo (mínimo 1). Duración: 3 turnos. Aplica sobre el objetivo.
-3. **`ESCARCHA`:** $\text{velEfectiva} = \max(1, \lfloor \text{velocidad} \times 0.50 \rfloor)$. Duración: 2 turnos. Aplica sobre el objetivo.
-4. **`PARALISIS`:** $\text{velEfectiva} = \max(1, \lfloor \text{velocidad} \times 0.75 \rfloor)$, $25\,\%$ de probabilidad estocástica de perder turno ($r < 0.25$). Duración: 3 turnos. Aplica sobre el objetivo.
-5. **`PETRIFICACION`:** Pérdida total del turno ($100\,\%$, sin consumir tirada estocástica) y $\text{defensaEfectiva} = \lfloor \text{defensa} \times 1.50 \rfloor$. Duración: 2 turnos. Aplica sobre el objetivo.
-6. **`BASTION`:** Escudo místico de protección equivalente al $20\,\%$ del HP Máximo (o $35\,\%$ en M4 Insignia) que absorbe daño directo antes de impactar los puntos de salud. Expira al consumirse o tras 3 turnos (beneficio: `esBeneficioso: true`). Aplica sobre el combatiente que lo conjura.
+1. **`QUEMADURA`:** DoT del $8\,\%$ del HP Máximo ($\max(1, \lfloor 0.08 \times \text{hpMaximo} \rfloor)$). Duración base: 3 turnos (+1 si se aplica con M4 Insignia). Aplica sobre el objetivo.
+2. **`VENENO`:** DoT del $6\,\%$ del HP Máximo ($\max(1, \lfloor 0.06 \times \text{hpMaximo} \rfloor)$). Duración base: 4 turnos (+1 si M4). Aplica sobre el objetivo.
+3. **`ESCARCHA`:** $\text{velEfectiva} = \max(1, \lfloor \text{velocidad} \times 0.50 \rfloor)$. Duración base: 2 turnos (+1 si M4). Aplica sobre el objetivo.
+4. **`PARALISIS`:** $25\,\%$ de probabilidad estocástica de perder turno ($r < 0.25$). Duración base: 3 turnos (+1 si M4). Aplica sobre el objetivo.
+5. **`PETRIFICACION`:** Pérdida total del turno ($100\,\%$, sin consumir tirada estocástica) y $\text{defensaEfectiva} = \lfloor \text{defensa} \times 1.50 \rfloor$. Duración base: 2 turnos (+1 si M4). Aplica sobre el objetivo.
+6. **`BASTION`:** Escudo místico de protección equivalente al $15\,\%$ del HP Máximo ($\max(1, \lfloor 0.15 \times \text{hpMaximo} \rfloor)$) que absorbe daño directo antes de impactar los puntos de salud. Expira al consumirse o tras 3 turnos (+1 si M4; beneficio: `esBeneficioso: true`). Aplica sobre el combatiente que lo conjura.
 
 - **Regla DoT No Letal (D-4):** Los daños por estado al final del turno se acotan a $\max(1, \text{hpActual} - \text{danoDoT})$, impidiendo que un estado alterado debilite a una criatura por sí solo para favorecer la captura táctica.
 - **Inmunidad de 1 Turno (D-6):** Al expirar un estado natural o por escudo agotado, la criatura adquiere inmunidad al mismo código de estado durante el turno inmediatamente posterior.
@@ -256,7 +256,7 @@ El bestiario canónico y la base de datos cuentan con 51 efectos únicos asociad
 La barra de Resonancia ($0 - 100\,\%$) se incrementa al final de cada ronda según las siguientes reglas autoritativas:
 1. **Ganancia base:** $+8\,\%$ por ronda concluida.
 2. **Bonificación elemental:** $+10\,\%$ si el atacante asestó un golpe con ventaja elemental ($F_{\text{afinidad}} = 1.5$).
-3. **Carga por daño recibido:** $\lfloor (\text{danoAbsorbido} / \text{hpMaximo}) \times 40 \rfloor$, con un tope máximo de $+20\,\%$ por ronda.
+3. **Carga por daño recibido:** $\text{round}((\text{danoRecibido} \times 50) / \text{hpMaximo})$, con un tope máximo de $+20\,\%$ por ronda.
 4. **Saturación:** Acotada en $[0, 100]$. Al alcanzar $100\,\%$, desbloquea el movimiento insignia M4.
 5. **Consumo:** Ejecutar M4 reinicia la resonancia a $0\,\%$ sin acumular ganancias en dicha ronda.
 6. **Representación en cliente (Subfase 10l):** El cliente representa la Resonancia mediante 10 bloques discretos retro calculados como $\lfloor \text{resonancia} / 10 \rfloor$. El servidor permanece como la única fuente autoritativa de su acumulación y persistencia.
@@ -325,18 +325,18 @@ Los objetos de curación y talismanes de captura poseen precios y efectos canón
 
 ---
 
-### 2.8 Jerarquía de 4 slots de movimientos y bloqueo de Furia (Subfase 10j, D-4)
+### 2.8 Jerarquía de 4 slots de movimientos y ejecución de M4 (Subfases 10j y 10k)
 
 Cada criatura posee exactamente 4 movimientos tácticos ordenados por slot (`1..4`):
 1. **Slot 1 (M1 - Básico):** Ataque elemental o físico estándar sin costo adicional.
 2. **Slot 2 (M2 - Táctico):** Ataque con efecto secundario de estado, debilitamiento o ventaja.
 3. **Slot 3 (M3 - Cobertura):** Movimiento de defensa, barrera, drenaje o potencia superior.
-4. **Slot 4 (M4 - Furia/Especial):** Técnica definitiva de devastación elemental ($24 - 40$ de poder).
+4. **Slot 4 (M4 - Insignia/Furia):** Técnica definitiva de devastación elemental ($24 - 40$ de poder).
 
-**Regla de bloqueo en servidor (Decisión D-4):**
-- Durante la Subfase 10j, el jugador solo puede invocar en combate los slots 1 a 3 (`movimientoIndice: 0, 1, 2`).
-- El Slot 4 (`movimientoIndice: 3`, slot 4) está formalmente bloqueado en el servidor bajo código de error `400 MOVIMIENTO_BLOQUEADO` («El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.») hasta que se implemente la mecánica de medidor de Resonancia.
-- Los rivales salvajes seleccionan aleatoriamente su contraataque exclusivamente entre los slots 1 y 3 (el rival nunca ejecuta el slot 4 de Furia).
+**Regla de validación en servidor:**
+- El jugador puede ejecutar en cualquier turno los slots 1 a 3 (`movimientoIndice: 0, 1, 2`).
+- El Slot 4 (`movimientoIndice: 3` o `tipoAccion: "RESONANCIA"`) se desbloquea autoritativamente al alcanzar **100 % de Resonancia** (ver §2.12); mientras la resonancia sea $< 100$, el servidor rechaza el intento con `400 MOVIMIENTO_BLOQUEADO` («El movimiento seleccionado requiere 100% de Resonancia en combate para ejecutarse.»). Tras ejecutarse, la resonancia se reinicia a $0\,\%$.
+- Los rivales salvajes seleccionan aleatoriamente su contraataque exclusivamente entre los slots 1 y 3 (el rival nunca ejecuta el slot 4).
 
 ---
 

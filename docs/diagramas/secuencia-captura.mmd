@@ -1,27 +1,36 @@
 sequenceDiagram
     autonumber
     actor Jugador
-    participant API as NestJS (CapturaService)
+    participant API as NestJS (CombateController / CapturaService)
     participant Azar as GeneradorAleatorio
-    participant DB as PostgreSQL (Prisma $transaction)
+    participant DB as PostgreSQL 17 (Prisma $transaction)
 
-    Jugador->>API: POST /api/encuentros/{id}/capturar { itemCodigo }
-    API->>DB: Validar encuentro ACTIVO y pertenencia (JWT)
-    API->>DB: Verificar posesión de talismán (cantidad > 0)
-    API->>API: Calcular probabilidad final (clamp 0.05 a 0.95)
+    Jugador->>API: POST /api/combate/capturar { encuentroId, itemCodigo, turnoEsperado } (Bearer JWT)
+    Note over API: También acepta alias /api/combates/capturar y /api/encuentros/{id}/capturar
+    API->>DB: Validar encuentro EN_CURSO y pertenencia al personaje (S-1, S-3)
+    API->>DB: Validar talismán (talisman-basico x1.0 / talisman-avanzado x1.5)
+    API->>API: probFinal = clamp(0.05, 0.95, tasaBST * factorSalud * multTalisman * multEstado)
     API->>Azar: generar()
-    alt Tirada exitosa
-        API->>DB: BEGIN TRANSACTION
-        DB->>DB: Descontar 1 talismán de inventario
-        DB->>DB: Actualizar encuentro a CAPTURADO
-        DB->>DB: Asignar criatura a Equipo (<6) o Almacén (=6)
-        DB->>DB: Registrar en Historial
+
+    API->>DB: BEGIN TRANSACTION (prisma.$transaction)
+    API->>DB: Verificar y descontar 1 talismán en inventario_personaje (S-4)
+    API->>DB: SELECT id FROM personaje WHERE id = ... FOR UPDATE
+    API->>DB: Validar turnoEsperado vs último turno en combate (S-5)
+
+    alt Turno desactualizado por concurrencia
+        DB-->>API: ROLLBACK
+        API-->>Jugador: 409 Conflict (TURNO_DESACTUALIZADO)
+    else Tirada exitosa (azar < probFinal)
+        DB->>DB: Actualizar encuentro a estado = CAPTURADO
+        DB->>DB: Asignar criatura a Equipo (si <6) o Almacén (si =6, A-6)
+        DB->>DB: Insertar turno en combate y sumar +20% a zona_desbloqueada.progreso
+        DB->>DB: Evaluar desbloqueos automáticos y registrar en historial
         DB-->>API: COMMIT TRANSACTION
-        API-->>Jugador: 200 OK (Captura exitosa)
-    else Tirada fallida
-        API->>DB: BEGIN TRANSACTION
-        DB->>DB: Descontar 1 talismán de inventario
-        DB->>DB: Contraataque rival (reducir HP aliado)
+        API-->>Jugador: 200 OK { exito: true, estado: CAPTURADO, destinoCaptura }
+    else Tirada fallida (azar >= probFinal)
+        DB->>DB: Resolver contraataque rival y DoTs (motor-combate)
+        DB->>DB: Actualizar HP aliado/rival (DERROTA si no quedan aliadas vivas)
+        DB->>DB: Insertar turno CAPTURAR_FALLIDO en combate y registrar en historial
         DB-->>API: COMMIT TRANSACTION
-        API-->>Jugador: 200 OK (Captura fallida, encuentro sigue ACTIVO)
+        API-->>Jugador: 200 OK { exito: false, estado: EN_CURSO o DERROTA, contraataqueRival }
     end

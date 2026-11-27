@@ -421,16 +421,16 @@ Este documento contiene los bocetos ASCII de todas las pantallas del flujo del j
 | [Crown SALÓN DE LA FAMA] [Trophy ISC-305 · III PAC 2026]              |
 | AETHELGARD: CRÉDITOS Y HONOR           [CELEBRAR FANFARRIA]           |
 |                                        [boton-volver-inicio-creditos] |
-| Bestiario Victorioso: [Lobo] [Grifo] [Quimera] [Hidra]                |
+| Bestiario Victorioso: [Lobo Estepario] [Golem Granito] [Quimera] [Remorhaz] |
 +-----------------------------------------------------------------------+
 | [GraduationCap] HOMENAJE ACADÉMICO — INGENIERO CLAUDIO                 |
 | Cátedra de Programación Web y Arquitectura de Sistemas de Información |
-| Reconocimiento al rigor metodológico, erradicación de N+1,             |
-| validación en servidor y trazabilidad en ISC-305.                     |
+| Reconocimiento al rigor metodológico, validación en servidor y        |
+| arquitectura limpia en ISC-305.                                       |
 +-----------------------------------------------------------------------+
-| [Code2] EQUIPO DE DESARROLLO Y ARQUITECTURA FULL-STACK (FASE 10 · AV5)|
-| React 19 + Tailwind CSS v4 + NestJS 11 + Prisma + PostgreSQL          |
-| Salvaguarda de invariantes estocásticas y seguridad S-1 a S-7.        |
+| [Code2] EQUIPO DE DESARROLLO Y ARQUITECTURA FULL-STACK                |
+| React 19 + Tailwind CSS v4 + NestJS 10 + Prisma 6 + PostgreSQL 17     |
+| Reglas en servidor, transacciones atómicas y seguridad JWT.           |
 +-----------------------------------------------------------------------+
 | [BookOpen] CATÁLOGO DE CRIATURAS: OPEN5E Y SRD 5.2 (CC BY 4.0)        |
 | Atribución literal obligatoria a Wizards of the Coast LLC.            |
